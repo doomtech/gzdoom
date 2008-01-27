@@ -251,7 +251,7 @@ void AActor::Serialize (FArchive &arc)
 	}
 	arc << effects
 		<< alpha
-		<< alphacolor
+		<< fillcolor
 		<< pitch
 		<< roll
 		<< Sector
@@ -287,6 +287,7 @@ void AActor::Serialize (FArchive &arc)
 		<< player
 		<< SpawnPoint[0] << SpawnPoint[1] << SpawnPoint[2]
 		<< SpawnAngle
+		<< skillrespawncount
 		<< tracer
 		<< floorclip
 		<< tid
@@ -393,7 +394,7 @@ void AActor::Serialize (FArchive &arc)
 		touching_sectorlist = NULL;
 		LinkToWorld (Sector);
 		AddToHash ();
-		SetShade (alphacolor);
+		SetShade (fillcolor);
 		if (player)
 		{
 			if (playeringame[player - players] && 
@@ -1153,7 +1154,7 @@ void P_ExplodeMissile (AActor *mo, line_t *line, AActor *target)
 			}
 			else
 			{
-				mo->RenderStyle = deh.ExplosionStyle;
+				mo->RenderStyle = ERenderStyle(deh.ExplosionStyle);
 				mo->alpha = deh.ExplosionAlpha;
 			}
 		}
@@ -2245,6 +2246,8 @@ void P_NightmareRespawn (AActor *mobj)
 	AActor *mo;
 	AActor *info = mobj->GetDefault();
 
+	mobj->skillrespawncount++;
+
 	// spawn the new monster (assume the spawn will be good)
 	if (info->flags & MF_SPAWNCEILING)
 		z = ONCEILINGZ;
@@ -2288,6 +2291,8 @@ void P_NightmareRespawn (AActor *mobj)
 	mo->reactiontime = 18;
 	mo->CopyFriendliness (mobj, false);
 	mo->Translation = mobj->Translation;
+
+	mo->skillrespawncount = mobj->skillrespawncount;
 
 	// spawn a teleport fog at old spot because of removal of the body?
 	mo = Spawn ("TeleportFog", mobj->x, mobj->y, mobj->z, ALLOW_REPLACE);
@@ -2551,12 +2556,12 @@ bool AActor::IsOkayToAttack (AActor *link)
 void AActor::SetShade (DWORD rgb)
 {
 	PalEntry *entry = (PalEntry *)&rgb;
-	alphacolor = rgb | (ColorMatcher.Pick (entry->r, entry->g, entry->b) << 24);
+	fillcolor = rgb | (ColorMatcher.Pick (entry->r, entry->g, entry->b) << 24);
 }
 
 void AActor::SetShade (int r, int g, int b)
 {
-	alphacolor = MAKEARGB(ColorMatcher.Pick (r, g, b), r, g, b);
+	fillcolor = MAKEARGB(ColorMatcher.Pick (r, g, b), r, g, b);
 }
 
 //
@@ -2687,6 +2692,7 @@ void AActor::Tick ()
 	else if (flags & MF_STEALTH)
 	{
 		// [RH] Fade a stealth monster in and out of visibility
+		RenderStyle.Flags &= ~STYLEF_Alpha1;
 		if (visdir > 0)
 		{
 			alpha += 2*FRACUNIT/TICRATE;
@@ -3064,6 +3070,9 @@ void AActor::Tick ()
 			return;
 
 		if (pr_nightmarerespawn() > 4)
+			return;
+
+		if (G_SkillProperty (SKILLP_RespawnLimit) && (this)->skillrespawncount >= G_SkillProperty (SKILLP_RespawnLimit))
 			return;
 
 		P_NightmareRespawn (this);

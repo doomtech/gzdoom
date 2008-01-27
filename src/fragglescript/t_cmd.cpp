@@ -75,29 +75,29 @@ static void FS_Gimme(const char * what)
 }
 
 
-void FS_MapCmd()
+void FS_MapCmd(FScanner &sc)
 {
 	char nextmap[9];
 	int NextSkill = -1;
 	bool resetplayers=true;
 	bool nomonsters = !!(dmflags & DF_NO_MONSTERS);
-	SC_MustGetString();
-	strncpy (nextmap, sc_String, 8);
+	sc.MustGetString();
+	strncpy (nextmap, sc.String, 8);
 	nextmap[8]=0;
 
-	while (SC_GetString())
+	while (sc.GetString())
 	{
-		if (SC_Compare("-skill"))
+		if (sc.Compare("-skill"))
 		{
-			SC_MustGetNumber();
-			NextSkill = clamp<int>(sc_Number-1, 0, AllSkills.Size()-1);
+			sc.MustGetNumber();
+			NextSkill = clamp<int>(sc.Number-1, 0, AllSkills.Size()-1);
 		}
-		else if (SC_Compare("-monsters"))
+		else if (sc.Compare("-monsters"))
 		{
-			SC_MustGetNumber();
-			nomonsters = !!sc_Number;
+			sc.MustGetNumber();
+			nomonsters = !!sc.Number;
 		}
-		else if (SC_Compare("-noresetplayers"))
+		else if (sc.Compare("-noresetplayers"))
 		{
 			resetplayers=false;
 		}
@@ -108,73 +108,74 @@ void FS_MapCmd()
 
 void FS_EmulateCmd(char * string)
 {
-	SC_OpenMem("RUNCMD", string, (int)strlen(string));
-	while (SC_GetString())
+	FScanner sc;
+	sc.OpenMem("RUNCMD", string, (int)strlen(string));
+	while (sc.GetString())
 	{
-		if (SC_Compare("GIMME"))
+		if (sc.Compare("GIMME"))
 		{
-			while (SC_GetString())
+			while (sc.GetString())
 			{
-				if (!SC_Compare(";")) FS_Gimme(sc_String);
+				if (!sc.Compare(";")) FS_Gimme(sc.String);
 				else break;
 			}
 		}
-		else if (SC_Compare("ALLOWJUMP"))
+		else if (sc.Compare("ALLOWJUMP"))
 		{
-			SC_MustGetNumber();
-			if (sc_Number) dmflags = dmflags & ~DF_NO_JUMP;
+			sc.MustGetNumber();
+			if (sc.Number) dmflags = dmflags & ~DF_NO_JUMP;
 			else dmflags=dmflags | DF_NO_JUMP;
-			while (SC_GetString())
+			while (sc.GetString())
 			{
-				if (SC_Compare(";")) break;
+				if (sc.Compare(";")) break;
 			}
 		}
-		else if (SC_Compare("gravity"))
+		else if (sc.Compare("gravity"))
 		{
-			SC_MustGetFloat();
-			level.gravity=(float)(sc_Float*800);
-			while (SC_GetString())
+			sc.MustGetFloat();
+			level.gravity=(float)(sc.Float*800);
+			while (sc.GetString())
 			{
-				if (SC_Compare(";")) break;
+				if (sc.Compare(";")) break;
 			}
 		}
-		else if (SC_Compare("viewheight"))
+		else if (sc.Compare("viewheight"))
 		{
-			SC_MustGetFloat();
-			fixed_t playerviewheight = (fixed_t)(sc_Float*FRACUNIT);
+			sc.MustGetFloat();
+			fixed_t playerviewheight = (fixed_t)(sc.Float*FRACUNIT);
 			for(int i=0;i<MAXPLAYERS;i++)
 			{
 				// No, this is not correct. But this is the way Legacy WADs expect it to be handled!
 				if (players[i].mo != NULL) players[i].mo->ViewHeight = playerviewheight;
 				players[i].Uncrouch();
 			}
-			while (SC_GetString())
+			while (sc.GetString())
 			{
-				if (SC_Compare(";")) break;
+				if (sc.Compare(";")) break;
 			}
 		}
-		else if (SC_Compare("map"))
+		else if (sc.Compare("map"))
 		{
-			FS_MapCmd();
+			FS_MapCmd(sc);
 		}
-		else if (SC_Compare("gr_fogdensity"))
+		else if (sc.Compare("gr_fogdensity"))
 		{
-			SC_MustGetNumber();
+			sc.MustGetNumber();
 			// Using this disables most MAPINFO fog options!
-			gl_SetFogParams(sc_Number*70/400, 0xff000000, 0, 0);
+			gl_SetFogParams(sc.Number*70/400, 0xff000000, 0, 0);
 		}
-		else if (SC_Compare("gr_fogcolor"))
+		else if (sc.Compare("gr_fogcolor"))
 		{
-			SC_MustGetString();
-			level.fadeto = strtol(sc_String, NULL, 16);
+			sc.MustGetString();
+			level.fadeto = strtol(sc.String, NULL, 16);
 		}
 
 		else
 		{
 			// Skip unhandled commands
-			while (SC_GetString())
+			while (sc.GetString())
 			{
-				if (SC_Compare(";")) break;
+				if (sc.Compare(";")) break;
 			}
 		}
 	}

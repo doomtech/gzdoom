@@ -555,20 +555,19 @@ void FBehavior::StaticLoadDefaultModules ()
 
 	while ((lump = Wads.FindLump ("LOADACS", &lastlump)) != -1)
 	{
-		SC_OpenLumpNum (lump, "LOADACS");
-		while (SC_GetString())
+		FScanner sc(lump, "LOADACS");
+		while (sc.GetString())
 		{
-			int acslump = Wads.CheckNumForName (sc_String, ns_acslibrary);
+			int acslump = Wads.CheckNumForName (sc.String, ns_acslibrary);
 			if (acslump >= 0)
 			{
 				StaticLoadModule (acslump);
 			}
 			else
 			{
-				Printf ("Could not find autoloaded ACS library %s\n", sc_String);
+				Printf ("Could not find autoloaded ACS library %s\n", sc.String);
 			}
 		}
-		SC_Close ();
 	}
 }
 
@@ -2153,6 +2152,22 @@ void DLevelScript::DoSetFont (int fontnum)
 #define APROP_DeathSound	8
 #define APROP_ActiveSound	9
 
+// These are needed for ACS's APROP_RenderStyle
+static const int LegacyRenderStyleIndices[] =
+{
+	0,	// STYLE_None,
+	1,  // STYLE_Normal,
+	2,  // STYLE_Fuzzy,
+	3,	// STYLE_SoulTrans,
+	4,	// STYLE_OptFuzzy,
+	5,	// STYLE_Stencil,
+	64,	// STYLE_Translucent
+	65,	// STYLE_Add,
+	66,	// STYLE_Shaded,
+	67,	// STYLE_TranslucentStencil,
+	-1
+};
+
 void DLevelScript::SetActorProperty (int tid, int property, int value)
 {
 	if (tid == 0)
@@ -2200,7 +2215,14 @@ void DLevelScript::DoSetActorProperty (AActor *actor, int property, int value)
 		break;
 
 	case APROP_RenderStyle:
-		actor->RenderStyle = value;	
+		for(int i=0; LegacyRenderStyleIndices[i] >= 0; i++)
+		{
+			if (LegacyRenderStyleIndices[i] == value) 
+			{
+				actor->RenderStyle = ERenderStyle(i);
+				break;
+			}
+		}
 		break;
 
 	case APROP_Ambush:
@@ -2290,7 +2312,16 @@ int DLevelScript::GetActorProperty (int tid, int property)
 	case APROP_Speed:		return actor->Speed;
 	case APROP_Damage:		return actor->Damage;	// Should this call GetMissileDamage() instead?
 	case APROP_Alpha:		return actor->alpha;
-	case APROP_RenderStyle:	return actor->RenderStyle;
+	case APROP_RenderStyle:	for (int style = STYLE_None; style < STYLE_Count; ++style)
+							{ // Check for a legacy render style that matches.
+								if (LegacyRenderStyles[style] == actor->RenderStyle)
+								{
+									return LegacyRenderStyleIndices[style];
+								}
+							}
+							// The current render style isn't expressable as a legacy style,
+							// so pretends it's normal.
+							return STYLE_Normal;
 	case APROP_Gravity:		return actor->gravity;
 	case APROP_Ambush:		return !!(actor->flags & MF_AMBUSH);
 	case APROP_ChaseGoal:	return !!(actor->flags5 & MF5_CHASEGOAL);

@@ -585,7 +585,10 @@ void SF_Include(void)
 	if (T_CheckArgs(1))
 	{
 		if(t_argv[0].type == svt_string)
+		{
 			strncpy(tempstr, t_argv[0].value.s, 8);
+			tempstr[8]=0;
+		}
 		else
 			sprintf(tempstr, "%i", (int)t_argv[0].value.i);
 		

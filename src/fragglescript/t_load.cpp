@@ -108,10 +108,11 @@ static void ParseInfoCmd(char *line)
 	{
 		// Read the usable parts of the level info header 
 		// and ignore the rest.
-		SC_OpenMem("LEVELINFO", line, (int)strlen(line));
-		SC_SetCMode(true);
-		SC_MustGetString();
-		if (SC_Compare("levelname"))
+		FScanner sc;
+		sc.OpenMem("LEVELINFO", line, (int)strlen(line));
+		sc.SetCMode(true);
+		sc.MustGetString();
+		if (sc.Compare("levelname"))
 		{
 			char * beg = strchr(line, '=')+1;
 			while (*beg<=' ') beg++;
@@ -120,68 +121,68 @@ static void ParseInfoCmd(char *line)
 			strncpy(level.level_name, beg, 63);
 			level.level_name[63]=0;
 		}
-		else if (SC_Compare("partime"))
+		else if (sc.Compare("partime"))
 		{
-			SC_MustGetStringName("=");
-			SC_MustGetNumber();
-			level.partime=sc_Number;
+			sc.MustGetStringName("=");
+			sc.MustGetNumber();
+			level.partime=sc.Number;
 		}
-		else if (SC_Compare("music"))
+		else if (sc.Compare("music"))
 		{
 			bool FS_ChangeMusic(const char * string);
 
-			SC_MustGetStringName("=");
-			SC_MustGetString();
-			if (!FS_ChangeMusic(sc_String))
+			sc.MustGetStringName("=");
+			sc.MustGetString();
+			if (!FS_ChangeMusic(sc.String))
 			{
 				S_ChangeMusic(level.music, level.musicorder);
 			}
 		}
-		else if (SC_Compare("skyname"))
+		else if (sc.Compare("skyname"))
 		{
-			SC_MustGetStringName("=");
-			SC_MustGetString();
+			sc.MustGetStringName("=");
+			sc.MustGetString();
 		
-			strncpy(level.skypic1, sc_String, 8);
-			strncpy(level.skypic2, sc_String, 8);
+			strncpy(level.skypic1, sc.String, 8);
+			strncpy(level.skypic2, sc.String, 8);
 			level.skypic1[8]=level.skypic2[8]=0;
-			sky2texture = sky1texture = TexMan.GetTexture (sc_String, FTexture::TEX_Wall, FTextureManager::TEXMAN_Overridable);
+			sky2texture = sky1texture = TexMan.GetTexture (sc.String, FTexture::TEX_Wall, FTextureManager::TEXMAN_Overridable);
 			R_InitSkyMap ();
 		}
-		else if (SC_Compare("interpic"))
+		else if (sc.Compare("interpic"))
 		{
-			SC_MustGetStringName("=");
-			SC_MustGetString();
-			strncpy(level.info->exitpic, sc_String, 8);
+			sc.MustGetStringName("=");
+			sc.MustGetString();
+			strncpy(level.info->exitpic, sc.String, 8);
 			level.info->exitpic[8]=0;
 		}
-		else if (SC_Compare("gravity"))
+		else if (sc.Compare("gravity"))
 		{
-			SC_MustGetStringName("=");
-			SC_MustGetNumber();
-			level.gravity=sc_Number*8.f;
+			sc.MustGetStringName("=");
+			sc.MustGetNumber();
+			level.gravity=sc.Number*8.f;
 		}
-		else if (SC_Compare("nextlevel"))
+		else if (sc.Compare("nextlevel"))
 		{
-			SC_MustGetStringName("=");
-			SC_MustGetString();
-			strncpy(level.nextmap, sc_String, 8);
+			sc.MustGetStringName("=");
+			sc.MustGetString();
+			strncpy(level.nextmap, sc.String, 8);
 			level.nextmap[8]=0;
 		}
-		else if (SC_Compare("nextsecret"))
+		else if (sc.Compare("nextsecret"))
 		{
-			SC_MustGetStringName("=");
-			SC_MustGetString();
-			strncpy(level.secretmap, sc_String, 8);
+			sc.MustGetStringName("=");
+			sc.MustGetString();
+			strncpy(level.secretmap, sc.String, 8);
 			level.secretmap[8]=0;
 		}
-		else if (SC_Compare("drown"))
+		else if (sc.Compare("drown"))
 		{
-			SC_MustGetStringName("=");
-			SC_MustGetNumber();
-			drownflag=!!sc_Number;
+			sc.MustGetStringName("=");
+			sc.MustGetNumber();
+			drownflag=!!sc.Number;
 		}
-		else if (SC_Compare("consolecmd"))
+		else if (sc.Compare("consolecmd"))
 		{
 			char * beg = strchr(line, '=')+1;
 			while (*beg<' ') beg++;
@@ -190,7 +191,7 @@ static void ParseInfoCmd(char *line)
 			FS_EmulateCmd(beg);
 		}
 		// Ignore anything unknows
-		SC_Close();
+		sc.Close();
 	}
 }
 

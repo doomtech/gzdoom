@@ -25,8 +25,8 @@ clean:
 # This target is for Visual C++'s Rebuild All command
 nrebuild: clean
 	$(MAKE) NOLOGO=$(NOLOGO) SLASH=$(SLASH)
-	copy zdoom.pk3 ..\..
+	copy gzdoom.pk3 ..\..
 
 # Copy the wad to my testing area
 andcopy: makethewad
-	copy zdoom.pk3 ..\..
+	copy gzdoom.pk3 ..\..

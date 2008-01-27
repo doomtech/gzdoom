@@ -294,4 +294,4 @@ gzdoom.pk3: zdoom.lst \
 	decorate/strife/strifekeys.txt \
 	decorate/strife/strifestuff.txt \
 	decorate/strife/zombie.txt
-	..\tools\makewad\makewad.EXE zdoom.lst
+	..\tools\makewad\makewad zdoom.lst

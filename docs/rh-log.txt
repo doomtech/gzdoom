@@ -1,4 +1,344 @@
+January 27, 2008 (Changes by Graf Zahl)
+- Changed license for r_data.cpp because there isn't anything of id's original
+  code left in that file.
+- Cleaned up r_data.cpp.
+- Fixed: FTextureManager::FindTexture should not print error messages if it
+  doesn't find the texture.
+- Added Karate Chris's patch for fixing Strife quit messages.
+
+January 26, 2008
+- Added preloading of fonts to reduce the chance that characters from a single
+  font will require more than one hardware texture to display.
+- Fixed: P_RailAttack() crashed if you didn't specify a puff for a rail.
+- Decided that allowing arbitrary alpha values for color remaps isn't so hot.
+  Changed it back the way it was.
+
+January 26, 2008 (Changes by Graf Zahl)
+- Got rid of most TexMan.AddPatch calls because they are no longer needed.
+- Got rid of R_InitPatches because the new texture init code needs to preload
+  everything to work correctly.
+- Rewrote texture manager initialization to order textures primarily by WAD 
+  rather than by type. This way later textures will always override earlier 
+  ones. The only exception is that TEX_MiscPatch are only used as a fallback
+  if nothing else can be found.
+- Optimized the tryany case of FTextureManager::CheckForTexture. It is not
+  necessary to scan the hash chain twice. The required information can be
+  retrieved during the first pass as easily and even offers a little more
+  control.
+- Made FFont destructor virtual.
+- Added 'Ice' translation to DECORATE.
+- Added Karate Chris's patch for teamplay MAPINFO option.
+- Added Karate Chris's patch for custom damage color per player class.
+- Added Karate Chris's patch for respawnlimit skill property.
+- Added Karate Chris's patch for Strife quit messages.
+- Fixed: P_RailAttack ignored the puff's damage type.
+- Fixed: ACS used incompatible values for APROP_RenderStyle. It needs to use
+  the exact same values as previous ZDoom versions
+- Added a DECORATE 'stencilcolor' property so that the stencil render style
+  can be used.
+- Added some NULL pointer checks to the font loading code.
+
+January 25, 2008
+- Undid some of the changes from lempar.c v1.30->v1.31, because it broke
+  error handling.
+- Fixed: dehsupp/scanner.re defined "}" as the token RPAREN. dehsupp/parse.y
+  also defined action_list_def as needing a RBARCE. I'm surprised it worked
+  at all before. I guess Lemon really was too accepting. I have verified that
+  the lump it outputs is unchanged from before.
+- Changed the way that xlatcc handles include statements so that I don't need
+  to modify the logic of lempar.c. I also discovered that the grammar was
+  improperly defined and only accepted the first statement. It worked before
+  because Lemon used to accept multiple times before reaching the EOF token.
+  I have also verified that it is still generating the proper lumps.
+- Removed some unused wadsrc files from the repository.
+- Fixed my re2c upgrade.
+- Back to lemon.c v1.53 now. The bad change was v1.51: "Changes lemon so
+  that the generated parser does not accept prior to seeing the EOF token."
+  This seems like a valid change, which means I need to rethink my strategy
+  for handling include statements, since this change breaks what I was
+  doing before.
+- Lemon is now producing parsers that don't accept anything, so I'm going
+  back to v1.43 and trying each intermediate version to see where things
+  went wrong.
+
+January 24, 2008
+- Updated Lemon to its latest versions as of today.
+  (lemon.c: v1.53, lempar.c: v1.31)
+- Added .txt files to the list of types (wad, zip, and pk3) that can be
+  loaded without listing them after -file.
+- Fonts that are created by the ACS setfont command to wrap a texture now
+  support animated textures.
+- FON2 fonts can now use their full palette for CR_UNTRANSLATED when drawn
+  with the hardware 2D path instead of being restricted to the game palette.
+
+January 23, 2008
+- Fixed: Toggling vid_vsync would reset the displayed fullscreen gamma to 1
+  on a Radeon 9000.
+- Added back the off-by-one palette handling, but in a much more limited
+  scope than before. The skipped entry is assumed to always be at 248, and
+  it is assumed that all Shader Model 1.4 cards suffer from this. That's
+  because all SM1.4 cards are based on variants of the ATI R200 core, and the
+  RV250 in a Radeon 9000 craps up like this. I see no reason to assume that
+  other flavors of the R200 are any different. (Interesting note: With the
+  Radeon 9000, D3DTADDRESS_CLAMP is an invalid address mode when using the
+  debug Direct3D 9 runtime, but it works perfectly fine with the retail
+  Direct3D 9 runtime.) (Insight: The R200 probably uses bytes for all its
+  math inside pixel shaders. That would explain perfectly why I can't use
+  constants greater than 1 with PS1.4 and why it can't do an exact mapping to
+  every entry in the color palette.
+- Fixed: The software shaded drawer did not work for 2D, because its selected
+  "color"map was replaced with the identitymap before being used.
+- Fixed: I cannot use Printf to output messages before the framebuffer was
+  completely setup, meaning that Shader Model 1.4 cards could not change
+  resolution.
+- I have decided to let remap palettes specify variable alpha values for
+  their colors. D3DFB no longer forces them to 255.
+
+January 22, 2008
+- Updated re2c to version 0.12.3.
+- Fixed: A_Wander used threshold as a timer, when it should have used
+  reactiontime.
+- Fixed: A_CustomRailgun would not fire at all for actors without a target
+  when the aim parameter was disabled.
+- Made the warp command work in multiplayer, again courtesy of Karate Chris.
+- Fixed: Trying to spawn a bot while not in a game made for a crashing time.
+  (Patch courtesy of Karate Chris.)
+
+January 21, 2008
+- Removed some floating point math from hu_scores.cpp that somebody's GCC
+  gave warnings for (not mine, though).
+- Fixed: The SBarInfo drawbar command crashed if the sprite image was
+  unavailable.
+- Fixed: FString::operator=(const char *) did not release its old buffer when
+  being assigned to the null string.
+- The scanner no longer has an upper limit on the length of strings it
+  accepts, though short strings will be faster than long ones.
+- Moved all the text scanning functions into a class. Mainly, this means that
+  multiple script scanner states can be stored without being forced to do so
+  recursively. I think I might be taking advantage of that in the near
+  future. Possibly. Maybe.
+- Removed some potential buffer overflows from the decal parser.
+
+January 18, 2008
+- Applied Blzut3's SBARINFO update #9:
+  * Fixed: When using even length values in drawnumber it would cap to a 98
+    value instead of a 99 as intended.
+  * The SBarInfo parser can now accept negatives for coordinates. This
+    doesn't allow much right now, but later I plan to add better fullscreen
+    hud support in which the negatives will be more useful. This also cleans
+    up the source a bit since all calls for (x, y) coordinates are with the
+    function getCoordinates().
+- Added support for stencilling actors.
+- Added support for non-black colors specified with DTA_ColorOverlay to the
+  software renderer.
+- Fixed: The inverse, gold, red, and green fixed colormaps each allocated
+  space for 32 different colormaps, even though each only used the first one.
+- Added two new blending flags to make reverse subtract blending more useful:
+  STYLEF_InvertSource and STYLEF_InvertOverlay. These invert the color that
+  gets blended with the background, since that seems like a good idea for
+  reverse subtraction. They also work with the other two blending operations.
+
+January 17, 2008
+- Added subtract and reverse subtract blending operations to the renderer.
+  Since the ERenderStyle enumeration was getting rather unwieldy, I converted
+  it into a new FRenderStyle structure that lets each parameter of the
+  blending equation be set separately. This simplified the set up for the
+  blend quite a bit, and it means a number of new combinations are available
+  by setting the parameters properly.
+
+January 16, 2008 (Changes by Graf Zahl)
+- Fixed: The StatusBar pointer was not NULLed after being deleted.
+
+January 15, 2008
+- Plugged more leaks in SBARINFO.
+- Spawned actors that have MF2_DORMANT set in their default instance now have
+  Deactivate() called on them immediately after spawning.
+
+January 15, 2008 (Changes by Graf Zahl)
+- Fixed: Skip_Super didn't clear the current state label list.
+
+January 14, 2008
+- Fixed: ACS translations were loaded into the wrong slot after restoring a
+  savegame.
+- Fixed exploit: Dropping ammo at baby and nightmare skill levels would give
+  you back more than you dropped.
+
+January 13, 2008 (Changes by Graf Zahl)
+- Moved A_Punch from Inventory to Actor. Apparently there are WADs that use it
+  for monsters. The function works fine for monsters as it is.
+
+January 12, 2008
+- Applied Blzut3's SBARINFO update #8:
+  * Fixed: Drawbar had a few memory leaks.
+- Applied Blzut3's SBARINFO update #7:
+  * Added drawstring to SBARINFO.
+  * Added animatedgodmode flag to drawmugshot, also changed the flags to use the
+    standard named arguments instead of numbers.  The old way is considered
+    deprecated.
+  * Added kills, monsters, items, totalitems, secrets, and totalsecrets to
+    drawnumber.  Drawbar can also use kills, items, and secrets.
+  * Added weaponicon to drawimage which will display the inventory.icon of the
+    currently selected weapon.
+  * Fixed: I apparently forgot to add the "rampage" face to drawmugshot.
+
+January 12, 2008 (Changes by Graf Zahl)
+- Moved renderer dependent part of savegame pic creation into DFrameBuffer
+  as a virtual function so that it can be overridden.
+- Fixed: M_SaveBitmap::prior was too small. It must be 3 bytes per pixel,
+  not 1.
+- Replaced INVGEM** graphics with PNG versions so that they have the
+  correct colors when used on the AltHUD in Strife.
+
+January 11, 2008
+- Added support for 24-bit screenshots, so now accelerated 2D screenshots
+  can work.
+- Tweaked the box splitting algorithm for packed textures to hopefully
+  produce less wasted space.
+- For compatibility with the software renderer, D3DFB::DrawTextureV needs to
+  truncate the coordinates to integers before sending them to the hardware.
+  Otherwise, there can be one pixel gaps compared to the software renderer,
+  because the hardware is rounding to nearest but the software renderer is
+  simply truncating the fractional part of the coordinate. This is the real
+  cause of the gap above the status bar at 1152x864 (and another gap to the
+  left of the status bar at 800x500).
+- Fixed: When D3DFB::DrawTextureV had to clip a tile, it adjusted the 
+  texture coordinates erroneously, still using the old calculations from
+  before texture packing was implemented.
+- Moved thingdef_codeptr.cpp into thingdef/ with the other thingdef files.
+
+January 11, 2008 (Changes by Graf Zahl)
+- Added Skulltag's pickup sprite and related information to the pistol. This
+  will also double as the pistol's icon in the AltHUD.
+- Added a generic log display that can show Strife's log messages in all games
+  regardless of the current game, active status bar and HUD mode.
+- Added GZDoom's alt HUD.
+
+January 10, 2008
+- Fixed: After loading a savegame, G_UnSnapshotLevel() destroyed the
+  unmorphed versions of players because it thought they were extras.
+- Fixed: Weapon positions were only adjusted in 1280x1024 if the status
+  bar was hidden.
+- Fixed: If you died in co-op and somebody else ended the map before you
+  respawned, you would start the next map with only default inventory, no
+  matter what dmflags was set to.
+- Applied Karate Chris's TEAMINFO logo patch.
+
+January 10, 2008 (Changes by Graf Zahl)
+- Moved the code that renders the view from D_Display into a virtual function
+  of the frame buffer so I can get rid of the last remaining renderer check
+  outside the display code in GZDoom.
+- made V_SetResolution a virtual function in IVideo. It's probably not a perfect
+  solution but at least it allows overriding it (which I need in GZDoom.)
+  Note: There's a lot of redundancy between hardware.cpp/h in the SDL and Win32
+  folders so some cleaning up might be a good idea.
+- defined a constant for the crosshair menu entry's index to get a direct
+  reference out of the function code. In GZDoom the menu contains different
+  information.
+- Fixed: The BrainExplosions should not perform any collision detection. To
+  achieve this their Damage value must be set to 0 when being spawned.
+
+January 9, 2008
+- Added Blzut3's SBARINFO update #6:
+  * Fixed: A tutti-frutti like effect would occur if transparent images were
+    used in bars.
+  * Fixed: drawswitchableimage didn't count having 0 of an item as not having
+    the said item.
+  * Added alwaysshowcounter flag to both drawinventorybar and
+    drawselectedinventory.
+  * Added armoricon image type to drawimage.
+  * Added low-on secondary coloring and high-on coloring to drawnumber.
+- Added texture packing to D3DFB so that textures that are temporally related
+  can share the same hardware texture. This greatly reduces the number of
+  DrawPrimitive calls that need to be made when drawing text (or any 2D
+  graphics in general), so now hardware text is much faster than software text
+  all around. (As an example, one scenario went from 315 fps to over 1635 fps
+  for hardware, compared to 540 fps for software.)
+- Fixed: The mouse was being grabbed in windowed mode again.
+- Modified M_DrawFrame() and R_DrawTopBorder() so that they call FlatFill() to
+  draw the edges of the frames. This at least seems a bit faster for hardware
+  2D.
+- Implemented FlatFill() for D3DFB. It seems to be exactly as fast as the
+  default implementation that just calls DrawTexture() to tile the pieces onto
+  the screen, so I'm not sure it was worth the bother.
+- Merged the separate line and quad vertex buffers in D3DFB back into a single
+  vertex buffer, made line batching automatic, and added an index buffer for
+  use when batching quads. The index buffer actually offered more of a
+  performance boost than simply batching the quads alone did.
+
+January 9, 2008 (Changes by Graf Zahl)
+- Added a safety check to savegame versioning so that an invalid revision
+  (reported as 0) will be handled without breaking savegame compatibility.
+- Fixed: 'Painchance' in DECORATE failed when reading custom damage type names.
+- Added Karate Chris's patch for menu opening console commands.
+
+January 8, 2008
+- Fixed: When starting a teamplay netgame, players who did not specify a team
+  were not informed about which team they ended up joining.
+- Added Skulltag's DF2_SAME_SPAWN_SPOT flags.
+- Fixed: DF2_YES_DEGENERATION was pretty much guaranteed to go out of sync
+  because it used gametic for timing.
+- Added DoubleAmmoFactor as a skill property for the DF2_YES_DOUBLEAMMO flag.
+- Renumbered the dmflags2 entries to match Skulltag's again.
+- Added Karate Chris's infinite inventory patch.
+
+January 7, 2008
+- Added support for user-defined crosshairs in the Display Options menu. See
+  xhairs.txt in zdoom.pk3. It's pretty simple.
+- Fixed: P_BounceWall() cannot assume that BlockingLine is the line the actor
+  should bounce off of. Since the order lines in a blockmap cell are checked
+  for collision is essentially undefined, there could be another line closer to
+  the actor that it should bounce off of instead.
+- Fixed: Thing_SetTranslation still used a 16-bit word to hold the translation.
+- Bumped the maximum resolution up to 2560x1600.
+- Fixed: DCanvas::DrawTexture() only expanded virtual screen sizes for widescreen
+  resolutions but left 5:4 modes alone. This fix neccessitated the addition of
+  DTA_Bottom320x200 for the status bar to use so that it could be flush with the
+  bottom of the screen rather than sitting slightly above it.
+- Fixed: FConfigFile::ReadConfig()'s definition of whitespace was too broad.
+- Fixed: Defining custom translation ranges in descending order and/or with gaps
+  made for crashes.
+
+January 7, 2008 (Changes by Graf Zahl)
+- Added fix for Heretic IDKFA cheat by Karate Chris.
+- Added fix for Strife's AlienSpectre obituary by Karate Chris.
+
+January 6, 2008 (Changes by Graf Zahl)
+- Re-converted icebreak.flac because the old version apparently didn't work.
+- Added SBARINFO update #5 by blzut3:
+    - Fixed: Playerclass still didn't work due to comparing of improper numbers.
+    - Fixed: The arrows on drawinventorybar had a hard coded location instead of
+      relative to the specified coordinates.
+    - Added noarrows flag to drawinventorybar to remove the blue arrows drawn when
+      there are more items to the left or right of the viewable bar.
+    - Added forcescaled flag to the statusbar command.  This is ignored on the
+      inventory and inventoryfullscreen types.
+- Added obituary fix for Strife peasants by Karate Chris.
+- Added fix for loading during demo playback by Karate Chris.
+- Added scoreboard fix by Karate Chris.
+- Added teamgame fix for menu by Karate Chris.
+- Added GZDoom's Sector_Outside sector type which forces outside fog
+  regardless of ceiling texture.
+
+January 6, 2008
+- Fixed: Since the minimum size for a texture is 2x2, FBarShader can't use
+  a one-dimensional texture.
+- Added back the code to allow some variation to the players' shades when
+  players are on teams.
+- Set TEAM_None back to 255. Since a player's team has already been accessible
+  through ACS, needlessly redefining this is a bad thing to do, since it can
+  break existing maps. 255 different teams should still be more than enough.
+- Fixed: At certain resolutions, there was a one pixel row between the status
+  bar and the rest of the screen, thanks to rounding error.
+- Added automatic batching of quads to D3DFB. Screens with a lot of text are
+  ever-so-slightly faster now, though still only about half the speed of
+  sofware-only text. I suppose the only way to see a marked improvement is
+  going to be by stuffing multiple glyphs in a single texture.
+- Fixed: Crosshairgrow's animation was not framerate-independent.
+
 January 5, 2008 (Changes by Graf Zahl)
+- Added: Automap markers are stored in savegames now. Also moved the call
+  to AM_LevelInit to its proper place in G_DoLoadLevel, right after
+  the call to P_SetupLevel to make it work as intended.
 - Changed savegame versioning to use the SVN revision number instead of
   an arbitrarily defined value. This reduces the amount of relevant values
   that have to be defined in version.h to 1 (the minimum compatible savegame
@@ -16,7 +356,7 @@ January 4, 2008
   of these ever, and they can be statically generated, so I simplified it some
   more.
 - Added Blzut3's latest SBARINFO patch:
- * Fixed a massive memory leak in SBARINFO.  The leak also lead to progressive
+ * Fixed a massive memory leak in SBARINFO. The leak also lead to progressive
    CPU usage.
  * Fixed: Playerclass didn't work in SBARINFO.
  * Fixed: Artiflash was improperly initialized causing it not to display the

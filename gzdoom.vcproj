@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
-	Name=" zdoom"
+	Version="8.00"
+	Name="zdoom"
 	ProjectGUID="{8049475B-5C87-46F9-9358-635218A4EF18}"
 	RootNamespace=" zdoom"
 	>
@@ -3696,7 +3696,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating $(InputName).h from src/$(InputFileName)"
-						CommandLine="tools\re2c\re2c -s -o &quot;src/$(InputName).h&quot; &quot;src/$(InputFileName)&quot;&#x0D;&#x0A;"
+						CommandLine="tools\re2c\re2c --no-generation-date -s -o &quot;src/$(InputName).h&quot; &quot;src/$(InputFileName)&quot;&#x0D;&#x0A;"
 						Outputs="&quot;src/$(InputName).h&quot;"
 					/>
 				</FileConfiguration>
@@ -3706,7 +3706,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating $(InputName).h from src/$(InputFileName)"
-						CommandLine="tools\re2c\re2c -s -o &quot;src/$(InputName).h&quot; &quot;src/$(InputFileName)&quot;&#x0D;&#x0A;"
+						CommandLine="tools\re2c\re2c --no-generation-date -s -o &quot;src/$(InputName).h&quot; &quot;src/$(InputFileName)&quot;&#x0D;&#x0A;"
 						Outputs="&quot;src/$(InputName).h&quot;"
 					/>
 				</FileConfiguration>
@@ -8991,6 +8991,10 @@
 				Name="Render Headers"
 				>
 				<File
+					RelativePath=".\src\r_blend.h"
+					>
+				</File>
+				<File
 					RelativePath=".\src\r_bsp.h"
 					>
 				</File>
@@ -9100,6 +9104,10 @@
 				</File>
 				<File
 					RelativePath=".\src\textures\texture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\texturemanager.cpp"
 					>
 				</File>
 				<File
@@ -9273,6 +9281,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\sound\music_modplug.cpp"
+				>
+			</File>
+			<File
 				RelativePath="src\sound\music_mus_midiout.cpp"
 				>
 			</File>
@@ -9352,6 +9364,158 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="Modplug"
+				>
+				<File
+					RelativePath=".\src\modplug\fastmix.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\it_defs.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_669.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_amf.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_ams.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_dbm.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_dmf.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_dsm.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_far.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_it.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_j2b.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_mdl.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_med.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_mod.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_mt2.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_mtm.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_okt.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_pat.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_psm.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_ptm.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_s3m.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_stm.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_ult.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_umx.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_wav.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\load_xm.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\mmcmp.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\modplug.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\modplug.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\snd_dsp.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\snd_flt.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\snd_fx.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\sndfile.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\sndfile.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\sndmix.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\stdafx.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\modplug\tables_mp.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="SDL Files"
@@ -9425,26 +9589,6 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\src\sdl\glstubs.cpp"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
 			</File>
