@@ -879,18 +879,9 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 		switch (seg->sidedef->Flags& WALLF_ADDTRANS)//TRANSBITS)
 		{
 		case 0:
-			if (seg->linedef->alpha<255)
-			{
-				RenderStyle=STYLE_Translucent;
-				alpha=(float)seg->linedef->alpha/255.0f;
-				translucent=true;
-			}
-			else if (seg->linedef->alpha==255)
-			{
-				RenderStyle=STYLE_Normal;
-				alpha=1.0f;
-				translucent=false;
-			}
+			RenderStyle=STYLE_Translucent;
+			alpha=(float)seg->linedef->alpha/255.0f;
+			translucent = seg->linedef->alpha<255 || (gltexture && gltexture->GetTransparent());
 			break;
 
 		case WALLF_ADDTRANS:
@@ -898,11 +889,6 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 			alpha=(float)seg->linedef->alpha/255.0f;
 			translucent=true;
 			break;
-		}
-		if (gltexture && gltexture->GetTransparent())
-		{
-			if (RenderStyle == STYLE_Normal) RenderStyle = STYLE_Translucent;
-			translucent = true;
 		}
 
 		//
@@ -978,7 +964,6 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 			else SplitWall(realfront, translucent);
 		}
 		alpha=1.0f;
-		RenderStyle=STYLE_Normal;
 	}
 	// restore some values that have been altered in this function!
 	glseg=glsave;

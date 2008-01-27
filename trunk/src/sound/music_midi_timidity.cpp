@@ -594,6 +594,11 @@ bool TimiditySong::FillStream (SoundStream *stream, void *buff, int len, void *u
 	return true;
 }
 
+void TimiditySong::SetVolume (float volume)
+{
+	if (m_Stream!=NULL) m_Stream->SetVolume (volume*timidity_mastervolume);
+}
+
 bool TimiditySong::IsPlaying ()
 {
 #ifdef _WIN32

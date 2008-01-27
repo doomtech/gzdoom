@@ -69,12 +69,13 @@ private:
 
 	void LoadImage(unsigned char * buffer,int w, int h, unsigned int & glTexID,int wrapparam, bool alphatexture, int texunit);
 	unsigned * GetTexID(int cm, int translation);
+	void SetTextureClamp(int clampmode);
 
 public:
 	GLTexture(int w, int h, bool mip, bool wrap);
 	~GLTexture();
 
-	unsigned int Bind(int texunit, int cm, int translation=0);
+	unsigned int Bind(int texunit, int cm, int translation=0, int clampmode = -1);
 	unsigned int CreateTexture(unsigned char * buffer, int w, int h,bool wrap, int texunit, int cm, int translation=0);
 	void Resize(int _width, int _height) ;
 
@@ -94,7 +95,6 @@ public:
 	float FixToTexU(int v) { return (float)v/(float)FRACUNIT/(float)texwidth; }
 	float FixToTexV(int v) { return (float)v/(float)FRACUNIT/(float)texheight; }
 
-	void SetTextureClamp(int clampmode);
 };
 
 

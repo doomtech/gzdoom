@@ -11,9 +11,9 @@ wadmake: zdoom.lst $(MAKEWAD).exe $(XLATCC).exe $(DEHSUPP).exe
 
 clean:
 ifeq (msys,$(OSTYPE))
-	rm -f wadmake zdoom.pk3 xlat/*.x dehsupp.lmp
+	rm -f wadmake gzdoom.pk3 xlat/*.x dehsupp.lmp
 else
-	del /q /f wadmake zdoom.pk3 xlat\*.x dehsupp.lmp 2>nul
+	del /q /f wadmake gzdoom.pk3 xlat\*.x dehsupp.lmp 2>nul
 endif
 
 ../tools/makewad/makewad.exe:

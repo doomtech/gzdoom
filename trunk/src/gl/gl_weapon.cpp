@@ -144,7 +144,9 @@ void gl_DrawPlayerSprites(sector_t * viewsector)
 	player_t * player=playermo->player;
 	
 	if(!player || playermo->renderflags&RF_INVISIBLE || !r_drawplayersprites ||
-		viewactor!=playermo || playermo->RenderStyle==STYLE_None) return;
+		viewactor!=playermo || playermo->RenderStyle.BlendOp == STYLEOP_None) return;
+
+	P_BobWeapon (player, &player->psprites[ps_weapon], &ofsx, &ofsy);
 
 	// check for fullbright
 	if (player->fixedcolormap==0)
@@ -210,46 +212,21 @@ void gl_DrawPlayerSprites(sector_t * viewsector)
 		}
 	}
 
-	
+	PalEntry ThingColor = playermo->fillcolor;
 	vissprite_t vis;
+
 	vis.RenderStyle=playermo->RenderStyle;
 	vis.alpha=playermo->alpha;
 	if (playermo->Inventory) playermo->Inventory->AlterWeaponSprite(&vis);
 
-	// Set light and blend mode
-	switch(vis.RenderStyle)
-	{											
-	case STYLE_OptFuzzy:
-	case STYLE_Fuzzy:
-		gl.BlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA);
-		gl.AlphaFunc(GL_GEQUAL,0.1f);
-		gl.Color4f(0.2f,0.2f,0.2f,0.33f);
-		break;
-	/*
-	case STYLE_Subtract:
-		gl.BlendEquation(GL_FUNC_REVERSE_SUBTRACT);
-	*/
-	case STYLE_Add:
-	case STYLE_Translucent:
-		if (vis.RenderStyle == STYLE_Add) gl.BlendFunc(GL_SRC_ALPHA,GL_ONE);
-		gl.AlphaFunc(GL_GEQUAL, 0.5f * TO_MAP(abs(vis.alpha)));
-		gl_SetColor(lightlevel, 0, &cm, TO_MAP(vis.alpha), (PalEntry)0xffffff, true);
-		break;
-	case STYLE_Normal:
+	// Set the render parameters
+	vis.RenderStyle.CheckFuzz();
+	gl_SetRenderStyle(vis.RenderStyle, false, false);
 
-		if (gl_light_sprites && gl_lights && !fullbright)
-		{
-			gl_SetSpriteLight(playermo, lightlevel, 0, &cm, 1.0, (PalEntry)0xffffff, true);
-		}
-		else
-		{
-			gl_SetColor(lightlevel, 0, &cm, 1.0f, (PalEntry)0xffffff, true);
-		}
-		break;
+	// set the lighting parameters (only calls glColor and glAlphaFunc)
+	gl_SetSpriteLighting(vis.RenderStyle, playermo, lightlevel, 0, &cm, 0xffffff, fullbright, true);
 
-	}
-
-	P_BobWeapon (player, &player->psprites[ps_weapon], &ofsx, &ofsy);
+	// Weapons are not drawn with fog so we can skip that step here
 
 	// now draw the different layers of the weapon
 	gl_EnableBrightmap(true);
@@ -257,19 +234,11 @@ void gl_DrawPlayerSprites(sector_t * viewsector)
 		if (psp->state) DrawPSprite (player,psp,psp->sx+ofsx, psp->sy+ofsy, cm.LightColor.a);
 	gl_EnableBrightmap(false);
 
-	// Restore default settings
-	switch(vis.RenderStyle)
-	{
-	case STYLE_Stencil:
-	case STYLE_TranslucentStencil:
-	case STYLE_Fuzzy:
-	case STYLE_Add:
-	case STYLE_Translucent:
-		gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		gl.AlphaFunc(GL_GEQUAL,0.5f);
-		break;
-	}
+	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	gl.AlphaFunc(GL_GEQUAL,0.5f);
+	gl.BlendEquation(GL_FUNC_ADD);
 	gl.Color3f(1.0f,1.0f,1.0f);
+	gl_SetTextureMode(TM_MODULATE);
 
 	// The Targeter's sprites are always drawn normally!
 	for (; i<NUMPSPRITES; i++,psp++)

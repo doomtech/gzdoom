@@ -126,7 +126,7 @@ static void M_Options (int choice);
 static void M_EndGame (int choice);
 static void M_ReadThis (int choice);
 static void M_ReadThisMore (int choice);
-static void M_QuitDOOM (int choice);
+static void M_QuitGame (int choice);
 static void M_GameFiles (int choice);
 static void M_ClearSaveStuff ();
 
@@ -170,7 +170,6 @@ static void M_StartMessage (const char *string, void(*routine)(int), bool input)
 	   void M_PlayerSetup ();
 static void M_PlayerSetupTicker ();
 static void M_PlayerSetupDrawer ();
-static void M_RenderPlayerBackdrop ();
 static void M_EditPlayerName (int choice);
 static void M_ChangePlayerTeam (int choice);
 static void M_PlayerNameChanged (FSaveGameNode *dummy);
@@ -275,7 +274,7 @@ static oldmenuitem_t MainMenu[]=
 	{1,0,'s',"M_SAVEG",M_SaveGame, CR_UNTRANSLATED},
 	{1,0,'o',"M_OPTION",M_Options, CR_UNTRANSLATED},		// [RH] Moved
 	{1,0,'r',"M_RDTHIS",M_ReadThis, CR_UNTRANSLATED},	// Another hickup with Special edition.
-	{1,0,'q',"M_QUITG",M_QuitDOOM, CR_UNTRANSLATED}
+	{1,0,'q',"M_QUITG",M_QuitGame, CR_UNTRANSLATED}
 };
 
 static oldmenu_t MainDef =
@@ -296,7 +295,7 @@ static oldmenuitem_t HereticMainMenu[] =
 	{1,1,'o',"MNU_OPTIONS",M_Options, CR_UNTRANSLATED},
 	{1,1,'f',"MNU_GAMEFILES",M_GameFiles, CR_UNTRANSLATED},
 	{1,1,'i',"MNU_INFO",M_ReadThis, CR_UNTRANSLATED},
-	{1,1,'q',"MNU_QUITGAME",M_QuitDOOM, CR_UNTRANSLATED}
+	{1,1,'q',"MNU_QUITGAME",M_QuitGame, CR_UNTRANSLATED}
 };
 
 static oldmenu_t HereticMainDef =
@@ -625,7 +624,7 @@ CCMD (menu_quit)
 {	// F10
 	//M_StartControlPanel (true);
 	S_Sound (CHAN_VOICE, "menu/activate", 1, ATTN_NONE);
-	M_QuitDOOM(0);
+	M_QuitGame(0);
 }
 
 CCMD (menu_game)
@@ -1466,10 +1465,9 @@ void M_DrawReadThis ()
 	{
 		tex = TexMan[gameinfo.info.infoPage[InfoType-1]];
 		// Did the mapper choose a custom help page via MAPINFO?
-		if((level.f1 != NULL) && (strcmp(level.f1, "") != 0)) {
-			if(TexMan.CheckForTexture(level.f1,0,0) == -1)
-				TexMan.AddPatch(level.f1); // Needs to be marked as a patch.
-			tex = TexMan[level.f1];
+		if((level.f1 != NULL) && (strlen(level.f1) > 0)) 
+		{
+			tex = TexMan.FindTexture(level.f1);
 		}
 
 		if (InfoType > 1)
@@ -1942,7 +1940,7 @@ void M_FinishReadThis (int choice)
 }
 
 //
-// M_QuitDOOM
+// M_QuitGame
 //
 
 void M_QuitResponse(int ch)
@@ -1960,16 +1958,16 @@ void M_QuitResponse(int ch)
 	ST_Endoom();
 }
 
-void M_QuitDOOM (int choice)
+void M_QuitGame (int choice)
 {
 	// We pick index 0 which is language sensitive,
 	//  or one at random, between 1 and maximum number.
-	if (gameinfo.gametype == GAME_Doom)
+	if (gameinfo.gametype & (GAME_Doom|GAME_Strife))
 	{
-		int quitmsg = gametic % NUM_QUITMESSAGES;
-		if (quitmsg != 0)
+		int quitmsg = gametic % (gameinfo.gametype == GAME_Doom ? NUM_QUITDOOMMESSAGES : NUM_QUITSTRIFEMESSAGES - 1);
+		if (quitmsg != 0 || gameinfo.gametype == GAME_Strife)
 		{
-			EndString.Format("QUITMSG%d", quitmsg);
+			EndString.Format("QUITMSG%d", quitmsg + (gameinfo.gametype == GAME_Doom ? 0 : NUM_QUITDOOMMESSAGES + 1));
 			EndString.Format("%s\n\n%s", GStrings(EndString), GStrings("DOSY"));
 		}
 		else
@@ -2119,7 +2117,7 @@ static void M_PlayerSetupDrawer ()
 				DTA_DestWidth, 72 * CleanXfac,
 				DTA_DestHeight, 80 * CleanYfac,
 				DTA_Translation, &FireRemap,
-				DTA_Masked, true,
+				DTA_Masked, false,
 				TAG_DONE);
 		}
 
