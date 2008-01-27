@@ -1346,7 +1346,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
-	if (seg->linedef-lines==341)
+	if (seg->linedef-lines==64)
 		__asm nop
 #endif
 #endif

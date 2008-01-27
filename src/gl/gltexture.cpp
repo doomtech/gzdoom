@@ -335,9 +335,6 @@ unsigned * GLTexture::GetTexID(int cm, int translation)
 // 
 //	Binds this patch
 //
-// If this has to be extended for multitexturing this function and
-// the lastbound variable will have to be changed
-//
 //===========================================================================
 unsigned int GLTexture::Bind(int texunit, int cm,int translation, int clampmode)
 {
@@ -349,7 +346,6 @@ unsigned int GLTexture::Bind(int texunit, int cm,int translation, int clampmode)
 		lastbound[texunit]=*pTexID;
 		if (texunit != 0) gl.ActiveTexture(GL_TEXTURE0+texunit);
 		gl.BindTexture(GL_TEXTURE_2D, *pTexID);
-		if (clampmode != -1) SetTextureClamp(clampmode);
 		if (texunit != 0) gl.ActiveTexture(GL_TEXTURE0);
 		return *pTexID;
 	}

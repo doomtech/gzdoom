@@ -69,7 +69,6 @@ private:
 
 	void LoadImage(unsigned char * buffer,int w, int h, unsigned int & glTexID,int wrapparam, bool alphatexture, int texunit);
 	unsigned * GetTexID(int cm, int translation);
-	void SetTextureClamp(int clampmode);
 
 public:
 	GLTexture(int w, int h, bool mip, bool wrap);
@@ -78,6 +77,7 @@ public:
 	unsigned int Bind(int texunit, int cm, int translation=0, int clampmode = -1);
 	unsigned int CreateTexture(unsigned char * buffer, int w, int h,bool wrap, int texunit, int cm, int translation=0);
 	void Resize(int _width, int _height) ;
+	void SetTextureClamp(int clampmode);
 
 	void Clean(bool all);
 
