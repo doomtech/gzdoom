@@ -1112,7 +1112,7 @@ void P_ExplodeMissile (AActor *mo, line_t *line, AActor *target)
 					{
 						// find a 3D-floor to stick to
 						sector_t * backsector=sides[line->sidenum[side^1]].sector;
-						for(int i=0;i<backsector->e->ffloors.Size();i++)
+						for(unsigned int i=0;i<backsector->e->ffloors.Size();i++)
 						{
 							F3DFloor * rover=backsector->e->ffloors[i];
 
@@ -1897,7 +1897,7 @@ void P_ZMovement (AActor *mo)
 	// [GrafZahl] This is a really ugly workaround... :(
 	// But unless the collision code is completely rewritten it is the 
 	// only way to avoid problems caused by incorrect positioning info...
-	for(int i=0;i<mo->Sector->e->ffloors.Size();i++)
+	for(unsigned int i=0;i<mo->Sector->e->ffloors.Size();i++)
     {
 		F3DFloor*  rover=mo->Sector->e->ffloors[i];
 
@@ -3141,7 +3141,7 @@ bool AActor::UpdateWaterLevel (fixed_t oldz, bool dosplash)
 		else
 		{
 			// Check 3D floors as well!
-			for(int i=0;i<Sector->e->ffloors.Size();i++)
+			for(unsigned int i=0;i<Sector->e->ffloors.Size();i++)
 			{
 				F3DFloor*  rover=Sector->e->ffloors[i];
 
@@ -4375,7 +4375,7 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t z)
 	// don't splash above the object
 	else if (z>thing->z+(thing->height>>1)) return false;
 
-	for(int i=0;i<sec->e->ffloors.Size();i++)
+	for(unsigned int i=0;i<sec->e->ffloors.Size();i++)
 	{		
 		F3DFloor * rover = sec->e->ffloors[i];
 		if (!(rover->flags & FF_EXISTS)) continue;
@@ -4496,7 +4496,7 @@ bool P_HitFloor (AActor *thing)
 		}
 
 		// Check 3D floors
-		for(int i=0;i<m->m_sector->e->ffloors.Size();i++)
+		for(unsigned int i=0;i<m->m_sector->e->ffloors.Size();i++)
 		{		
 			F3DFloor * rover = m->m_sector->e->ffloors[i];
 			if (!(rover->flags & FF_EXISTS)) continue;

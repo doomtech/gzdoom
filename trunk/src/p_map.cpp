@@ -738,7 +738,7 @@ bool PIT_CheckLine (line_t *ld)
 		}
 	}
 
-	fixed_t sx, sy;
+	fixed_t sx=0, sy=0;
 
 	// set openrange, opentop, openbottom
 	if ((((ld->frontsector->floorplane.a | ld->frontsector->floorplane.b) |
@@ -768,16 +768,16 @@ bool PIT_CheckLine (line_t *ld)
 			ld->backsector->floorplane.ic);*/
 		if (r <= 0)
 		{
-			P_LineOpening (tmthing, ld, ld->v1->x, ld->v1->y, tmx, tmy);
+			P_LineOpening (tmthing, ld, sx=ld->v1->x, sy=ld->v1->y, tmx, tmy);
 		}
 		else if (r >= (1<<24))
 		{
-			P_LineOpening (tmthing, ld, ld->v2->x, ld->v2->y, tmthing->x, tmthing->y);
+			P_LineOpening (tmthing, ld, sx=ld->v2->x, sy=ld->v2->y, tmthing->x, tmthing->y);
 		}
 		else
 		{
-			P_LineOpening (tmthing, ld, ld->v1->x + MulScale24 (r, ld->dx),
-				ld->v1->y + MulScale24 (r, ld->dy), tmx, tmy);
+			P_LineOpening (tmthing, ld, sx=ld->v1->x + MulScale24 (r, ld->dx),
+				sy=ld->v1->y + MulScale24 (r, ld->dy), tmx, tmy);
 		}
 
 		// the floorplane on both sides is identical with the current one
