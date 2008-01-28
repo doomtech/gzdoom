@@ -720,7 +720,7 @@ public:
 	int GetScaledHeight () { return ((Height<<16) + (yScale>>1)) / yScale; }
 
 	int GetScaledLeftOffset () { return ((LeftOffset<<16) + (xScale>>1)) / xScale; }
-	int GetScaledTopOffset () { return ((TopOffset<<16) + (xScale>>1)) / xScale; }
+	int GetScaledTopOffset () { return ((TopOffset<<16) + (yScale>>1)) / yScale; }
 
 	virtual void SetFrontSkyLayer();
 
@@ -899,8 +899,6 @@ private:
 	TArray<WORD> Translation;
 	WORD HashFirst[HASH_SIZE];
 	int DefaultTexture;
-
-	friend void R_InitData ();
 };
 
 extern FTextureManager TexMan;

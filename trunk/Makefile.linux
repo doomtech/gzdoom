@@ -11,7 +11,8 @@ endif
 CFLAGS += `pkg-config gtk+-2.0 --cflags`
 CFLAGS += -DHAVE_FILELENGTH -D__forceinline=inline `sdl-config --cflags`
 CFLAGS += -DNEED_STRUPR
-LDFLAGS += -lFLAC++ -lFLAC -lz -lfmod `sdl-config --libs`
+CFLAGS += -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp
+LDFLAGS += -lFLAC++ -lFLAC -lz -lmodplug -lfmod `sdl-config --libs`
 LDFLAGS += -ljpeg `pkg-config gtk+-2.0 --libs`
 LDFLAGS += -lGL -lGLU
 NASMFLAGS += -f elf -DM_TARGET_LINUX
@@ -143,6 +144,7 @@ ccdv: ccdv-posix.c
 
 clean: cleanobjs
 	rm -f $(ZDOOMDEBUG) $(ZDOOM) $(ZDOOM).map
+	rm -f $(ZDOOM).pk3
 	rm -f ccdv
 
 cleandebug:

@@ -783,7 +783,7 @@ void FCanvasTexture::RenderGLView (AActor *viewpoint, int fov)
 
 void FTexture::PrecacheGL()
 {
-	if (currentrenderer == 1 && gl_precache)
+	if (gl_precache)
 	{
 		FGLTexture * gltex = FGLTexture::ValidateTexture(this);
 		if (gltex) 

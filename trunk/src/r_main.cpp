@@ -785,6 +785,7 @@ void R_Init ()
 	atterm (R_Shutdown);
 
 	R_InitData ();
+	gl_ParseDefs();
 	R_InitPointToAngle ();
 	R_InitTables ();
 	// viewwidth / viewheight are set by the defaults

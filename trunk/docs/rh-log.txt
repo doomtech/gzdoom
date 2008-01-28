@@ -1,4 +1,15 @@
 January 27, 2008 (Changes by Graf Zahl)
+- Added a PrecacheTexture virtual function to DFrameBuffer because it's the
+  renderer which should decide how to precache a texture.
+- Added SnowKate709's APROP_MaxHealth submission.
+- Fixed: FTexture::GetScaledWidth/Height always rounded down which could result in
+  imprecisions (e.g. when scaling from 128 to 96.)
+- added a mastervolume CVAR for Timidity because for me its output is considerably 
+  louder than everything else.
+- reverted removal of AddPatch call in crosshair initialization.
+- Modified makewad.c so that it doesn't write file names with '[]^' to the 
+  dependency file. Apparenly make can't handle these names and an incomplete
+  list is still better than something that doesn't work at all.
 - Changed license for r_data.cpp because there isn't anything of id's original
   code left in that file.
 - Cleaned up r_data.cpp.

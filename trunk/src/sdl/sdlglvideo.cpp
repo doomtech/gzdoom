@@ -250,15 +250,19 @@ bool SDLGLVideo::SetResolution (int width, int height, int bits)
 	FFont *font;
 	
 	FGLTexture::FlushAll();
-	font = screen->Font;
+	// font = screen->Font;
 	I_ShutdownGraphics();
-	
+
 	Video = new SDLGLVideo(0);
 	if (Video == NULL) I_FatalError ("Failed to initialize display");
-	
+
+#if (defined(WINDOWS)) || defined(WIN32)
 	bits=32;
+#else
+	bits=24;
+#endif
 	
-	V_DoModeSetup(NewWidth, NewHeight, bits);
+	V_DoModeSetup(width, height, bits);
 	screen->SetFont(font);
 #endif
 	return true;	// We must return true because the old video context no longer exists.

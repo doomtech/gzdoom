@@ -58,7 +58,6 @@ IMPLEMENT_CLASS(OpenGLFrameBuffer)
 EXTERN_CVAR (Float, vid_brightness)
 EXTERN_CVAR (Float, vid_contrast)
 
-
 //==========================================================================
 //
 //
@@ -336,6 +335,28 @@ FNativeTexture *OpenGLFrameBuffer::CreateTexture(FTexture *gametex, bool wrappin
 {
 	return new FGLTexture(gametex);
 }
+
+//==========================================================================
+//
+// DFrameBuffer :: PrecacheTexture
+//
+//==========================================================================
+
+void OpenGLFrameBuffer::PrecacheTexture(FTexture *tex, bool cache)
+{
+	if (tex != NULL)
+	{
+		if (cache)
+		{
+			tex->PrecacheGL();
+		}
+		else
+		{
+			tex->UncacheGL();
+		}
+	}
+}
+
 
 //==========================================================================
 //
