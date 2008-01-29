@@ -103,6 +103,10 @@ void GLSprite::Draw(int pass)
 		{
 			gl.Disable(GL_ALPHA_TEST);
 		}
+		else
+		{
+			gl.AlphaFunc(GL_GEQUAL,trans/2.f);
+		}
 
 		if (RenderStyle.BlendOp == STYLEOP_Fuzz)
 		{
@@ -236,6 +240,10 @@ void GLSprite::Draw(int pass)
 		if (hw_styleflags == STYLEHW_NoAlphaTest)
 		{
 			gl.Enable(GL_ALPHA_TEST);
+		}
+		else
+		{
+			gl.AlphaFunc(GL_GEQUAL,0.5f);
 		}
 
 		if (!gl_sprite_blend && hw_styleflags != STYLEHW_Solid && actor && !(actor->momx|actor->momy))
@@ -672,7 +680,7 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 	}
 
 	trans=particle->trans/255.0f;
-	RenderStyle = STYLE_Add;
+	RenderStyle = STYLE_Translucent;
 
 	ThingColor = GPalette.BaseColors[particle->color];
 	ThingColor.a=0;
@@ -733,13 +741,9 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 	actor=NULL;
 	this->particle=particle;
 	
-	// [BB] Smooth particles have to be rendered without the alpha test.
-	if (gl_particles_style == 2) hw_styleflags = STYLEHW_NoAlphaTest;
-	else
-	{
-		if (trans>=1.0f-FLT_EPSILON) hw_styleflags = STYLEHW_Solid;
-		else hw_styleflags = STYLEHW_Normal;
-	}
+	// [BB] Translucent particles have to be rendered without the alpha test.
+	if (gl_particles_style != 2 && trans>=1.0f-FLT_EPSILON) hw_styleflags = STYLEHW_Solid;
+	else hw_styleflags = STYLEHW_NoAlphaTest;
 
 	PutSprite(hw_styleflags != STYLEHW_Solid);
 	rendered_sprites++;

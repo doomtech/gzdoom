@@ -502,8 +502,11 @@ void gl_RenderModel(GLSprite * spr, int cm)
 	gl.PushMatrix();
 	gl.DepthFunc(GL_LEQUAL);
 
-	gl.Enable(GL_CULL_FACE);
-	glFrontFace(GL_CW);
+	if (spr->trans < 1.f - FLT_EPSILON)
+	{
+		gl.Enable(GL_CULL_FACE);
+		glFrontFace(GL_CW);
+	}
 
 	// Model space => World space
 	gl.Translatef(spr->x, spr->z, spr->y );
@@ -612,5 +615,8 @@ void gl_RenderModel(GLSprite * spr, int cm)
 	gl.MatrixMode(GL_MODELVIEW);
 	gl.PopMatrix();
 	gl.DepthFunc(GL_LESS);
-	gl.Disable(GL_CULL_FACE);
+	if (spr->trans < 1.f - FLT_EPSILON)
+	{
+		gl.Disable(GL_CULL_FACE);
+	}
 }
