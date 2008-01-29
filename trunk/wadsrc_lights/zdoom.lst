@@ -2,6 +2,6 @@
 
 @lights.pk3
 
-doomdefs.txt		doomdefs.txt
-hticdefs.txt		hticdefs.txt
-hexndefs.txt		hexndefs.txt
+doomdefs.txt		DOOMDEFS.txt
+hticdefs.txt		HTICDEFS.txt
+hexndefs.txt		HEXNDEFS.txt

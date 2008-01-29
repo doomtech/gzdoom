@@ -1,5 +1,0 @@
-lights.pk3: zdoom.lst \
-	doomdefs.txt \
-	hticdefs.txt \
-	hexndefs.txt
-	..\tools\makewad\makewad.EXE zdoom.lst
