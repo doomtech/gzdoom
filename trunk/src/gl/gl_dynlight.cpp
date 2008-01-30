@@ -1037,7 +1037,7 @@ void gl_SetActorLights(AActor *actor)
 				else
 				{
 					light = Spawn<ADynamicLight>(actor->x, actor->y, actor->z, NO_REPLACE);
-					light->target = actor;
+					light->Owner = light->target = actor;
 					light->owned = true;
 					actor->dynamiclights.Push(light);
 				}
