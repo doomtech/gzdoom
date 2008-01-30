@@ -473,7 +473,7 @@ void STACK_ARGS OpenGLFrameBuffer::DrawTextureV(FTexture *img, int x0, int y0, u
 	// just ignore for now...
 	if (parms.windowleft || parms.windowright != img->GetScaledWidth()) return;
 	
-	if (parms.fillcolor > 0  || (parms.style.Flags & STYLEF_ColorIsFixed))
+	if (parms.style.Flags & STYLEF_ColorIsFixed)
 	{
 		r = RPART(parms.fillcolor)/255.0f;
 		g = GPART(parms.fillcolor)/255.0f;

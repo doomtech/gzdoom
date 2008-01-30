@@ -111,8 +111,6 @@ protected:
 	unsigned int m_lastUpdate;
 	FCycler m_cycler;
 	subsector_t * subsector;
-	
-
 
 public:
 	int m_intensity[2];
@@ -120,6 +118,7 @@ public:
 	BYTE lighttype;
 	bool owned;
 	bool halo;
+	AActor *Owner;	// NOTE: This is *NOT* subject to pointer cleanup!!!
 
 	// intermediate texture coordinate data
 	// this is stored in the light object to avoid recalculating it

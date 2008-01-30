@@ -316,7 +316,7 @@ void ADynamicLight::Tick()
 
 	if (IsOwned())
 	{
-		if (!target || !target->state)
+		if (!target || !target->state || target != Owner)
 		{
 			this->Destroy();
 			return;
@@ -324,7 +324,7 @@ void ADynamicLight::Tick()
 	}
 
 	// Don't bother if the light won't be shown
-	if (!IsActive()) return;
+	if (!IsActive() || target->flags & MF_UNMORPHED) return;
 
 	// I am doing this with a type field so that I can dynamically alter the type of light
 	// without having to create or maintain multiple objects.
