@@ -98,6 +98,11 @@ void GLWall::PutWall(bool translucent)
 		2,		//RENDERWALL_FFBLOCK           // depends on render and texture settings
 		4,		//RENDERWALL_COLORLAYER        // color layer needs special handling
 	};
+	
+	if (gltexture && gltexture->GetTransparent())
+	{
+		translucent = true;
+	}
 
 	if (gl_fixedcolormap) 
 	{
