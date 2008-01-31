@@ -1,3 +1,16 @@
+January 31, 2008 (Changes by Graf Zahl)
+- Fixed: The render style table for old decorations was missing STYLE_Stencil so
+  STYLE_Translucent was mapped incorrectly.
+
+January 30, 2008 (Changes by Graf Zahl)
+- Added support for AttackZOffset to P_RailAttack.
+- Fixed: ParseDrawTextureTags read DTA_RenderStyle as ERenderStyle, not FRenderStyle.
+
+January 29, 2008
+- Added pixel-doubled and -quadrupled screen modes to D3DFB so that users with
+  recent NVidia drivers can still use resolutions below 640x480, since NVidia
+  saw fit to remove all support for them.
+
 January 27, 2008 (Changes by Graf Zahl)
 - Added a PrecacheTexture virtual function to DFrameBuffer because it's the
   renderer which should decide how to precache a texture.
