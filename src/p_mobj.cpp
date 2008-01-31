@@ -3802,12 +3802,6 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 	int mask;
 	AActor *mobj;
 	fixed_t x, y, z;
-	static unsigned int classFlags[] =
-	{
-		MTF_FIGHTER,
-		MTF_CLERIC,
-		MTF_MAGE,
-	};
 
 	T_PrepareSpawnThing();
 

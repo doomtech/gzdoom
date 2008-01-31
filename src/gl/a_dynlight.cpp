@@ -321,10 +321,11 @@ void ADynamicLight::Tick()
 			this->Destroy();
 			return;
 		}
+		if (target->flags & MF_UNMORPHED) return;
 	}
 
 	// Don't bother if the light won't be shown
-	if (!IsActive() || target->flags & MF_UNMORPHED) return;
+	if (!IsActive()) return;
 
 	// I am doing this with a type field so that I can dynamically alter the type of light
 	// without having to create or maintain multiple objects.
