@@ -359,6 +359,8 @@ static BYTE antialias[NUMALIASES][NUMWEIGHTS];
 
 void AM_rotatePoint (fixed_t *x, fixed_t *y);
 void AM_rotate (fixed_t *x, fixed_t *y, angle_t an);
+void AM_doFollowPlayer ();
+static void AM_ToggleFollowPlayer();
 
 // Calculates the slope and slope according to the x-axis of a line
 // segment in map coordinates (with the upright y-axis n' all) so
@@ -489,7 +491,7 @@ static void AM_findMinMaxBoundaries ()
 	max_scale_mtof = MapDiv (SCREENHEIGHT << MAPBITS, 2*PLAYERRADIUS);
 }
 
-static void AM_ClipRotatedExtents ()
+static void AM_ClipRotatedExtents (fixed_t pivotx, fixed_t pivoty)
 {
 	fixed_t rmin_x, rmin_y, rmax_x, rmax_y;
 
@@ -509,15 +511,17 @@ static void AM_ClipRotatedExtents ()
 		xs[1] = max_x;	ys[1] = min_y;
 		xs[2] = max_x;	ys[2] = max_y;
 		xs[3] = min_x;	ys[3] = max_y;
+		rmin_x = rmin_y = FIXED_MAX;
+		rmax_x = rmax_y = FIXED_MIN;
 
 		for (i = 0; i < 4; ++i)
 		{
-			AM_rotatePoint (&xs[i], &ys[i]);
-		}
-		rmin_x = rmin_y = FIXED_MAX;
-		rmax_x = rmax_y = FIXED_MIN;
-		for (i = 0; i < 4; ++i)
-		{
+			xs[i] -= pivotx;
+			ys[i] -= pivoty;
+			AM_rotate (&xs[i], &ys[i], ANG90 - players[consoleplayer].camera->angle);
+			xs[i] += pivotx;
+			ys[i] += pivoty;
+
 			if (xs[i] < rmin_x)	rmin_x = xs[i];
 			if (xs[i] > rmax_x) rmax_x = xs[i];
 			if (ys[i] < rmin_y) rmin_y = ys[i];
@@ -571,12 +575,20 @@ void AM_changeWindowLoc ()
 	}
 
 	int oldmx = m_x, oldmy = m_y;
+	fixed_t incx = m_paninc.x, incy = m_paninc.y;
 
-	m_x += Scale (m_paninc.x, SCREENWIDTH, 320);
-	m_y += Scale (m_paninc.y, SCREENHEIGHT, 200);
+	incx = Scale(m_paninc.x, SCREENWIDTH, 320);
+	incy = Scale(m_paninc.y, SCREENHEIGHT, 200);
+	if (am_rotate == 1 || (am_rotate == 2 && viewactive))
+	{
+		AM_rotate(&incx, &incy, players[consoleplayer].camera->angle - ANG90);
+	}
 
-	AM_ClipRotatedExtents ();
-	AM_ScrollParchment (m_x-oldmx, oldmy-m_y);
+	m_x += incx;
+	m_y += incy;
+
+	AM_ClipRotatedExtents (oldmx + m_w/2, oldmy + m_h/2);
+	AM_ScrollParchment (m_x - oldmx, oldmy - m_y);
 }
 
 
@@ -971,9 +983,7 @@ bool AM_Responder (event_t *ev)
 			switch (ev->data2)
 			{
 			case AM_FOLLOWKEY:
-				followplayer = !followplayer;
-				f_oldloc.x = FIXED_MAX;
-				Printf ("%s\n", GStrings(followplayer ? "AMSTR_FOLLOWON" : "AMSTR_FOLLOWOFF"));
+				AM_ToggleFollowPlayer();
 				break;
 			case AM_GRIDKEY:
 				grid = !grid;
@@ -1080,6 +1090,13 @@ void AM_doFollowPlayer ()
 		f_oldloc.x = players[consoleplayer].camera->x;
 		f_oldloc.y = players[consoleplayer].camera->y;
 	}
+}
+
+static void AM_ToggleFollowPlayer()
+{
+	followplayer = !followplayer;
+	f_oldloc.x = FIXED_MAX;
+	Printf ("%s\n", GStrings(followplayer ? "AMSTR_FOLLOWON" : "AMSTR_FOLLOWOFF"));
 }
 
 //
@@ -1471,11 +1488,13 @@ void AM_rotate (fixed_t *x, fixed_t *y, angle_t a)
 
 void AM_rotatePoint (fixed_t *x, fixed_t *y)
 {
-	*x -= players[consoleplayer].camera->x >> FRACTOMAPBITS;
-	*y -= players[consoleplayer].camera->y >> FRACTOMAPBITS;
+	fixed_t pivotx = m_x + m_w/2;
+	fixed_t pivoty = m_y + m_h/2;
+	*x -= pivotx;
+	*y -= pivoty;
 	AM_rotate (x, y, ANG90 - players[consoleplayer].camera->angle);
-	*x += players[consoleplayer].camera->x >> FRACTOMAPBITS;
-	*y += players[consoleplayer].camera->y >> FRACTOMAPBITS;
+	*x += pivotx;
+	*y += pivoty;
 }
 
 void
@@ -1526,24 +1545,37 @@ AM_drawLineCharacter
 
 void AM_drawPlayers ()
 {
+	mpoint_t pt;
 	angle_t angle;
 	int i;
 
 	if (!multiplayer)
 	{
-		if (am_rotate == 1 || (am_rotate == 2 && viewactive))
-			angle = ANG90;
-		else
-			angle = players[consoleplayer].camera->angle;
+		mline_t *arrow;
+		int numarrowlines;
 
-		if (am_cheat != 0)
-			AM_drawLineCharacter
-			(cheat_player_arrow, NUMCHEATPLYRLINES, 0,
-			 angle, YourColor, players[consoleplayer].camera->x >> FRACTOMAPBITS, players[consoleplayer].camera->y >> FRACTOMAPBITS);
+		pt.x = players[consoleplayer].camera->x >> FRACTOMAPBITS;
+		pt.y = players[consoleplayer].camera->y >> FRACTOMAPBITS;
+		if (am_rotate == 1 || (am_rotate == 2 && viewactive))
+		{
+			angle = ANG90;
+			AM_rotatePoint (&pt.x, &pt.y);
+		}
 		else
-			AM_drawLineCharacter
-			(player_arrow, NUMPLYRLINES, 0, angle,
-			 YourColor, players[consoleplayer].camera->x >> FRACTOMAPBITS, players[consoleplayer].camera->y >> FRACTOMAPBITS);
+		{
+			angle = players[consoleplayer].camera->angle;
+		}
+		if (am_cheat != 0)
+		{
+			arrow = cheat_player_arrow;
+			numarrowlines =  NUMCHEATPLYRLINES;
+		}
+		else
+		{
+			arrow = player_arrow;
+			numarrowlines = NUMPLYRLINES;
+		}
+		AM_drawLineCharacter(arrow, numarrowlines, 0, angle, YourColor, pt.x, pt.y);
 		return;
 	}
 
@@ -1551,7 +1583,6 @@ void AM_drawPlayers ()
 	{
 		player_t *p = &players[i];
 		AMColor color;
-		mpoint_t pt;
 
 		if (!playeringame[i] || p->mo == NULL)
 		{

@@ -495,7 +495,7 @@ static void ParseMapInfoLower (FScanner &sc,
 							   cluster_info_t *clusterinfo,
 							   QWORD levelflags);
 
-static int FindWadLevelInfo (char *name)
+static int FindWadLevelInfo (const char *name)
 {
 	for (unsigned int i = 0; i < wadlevelinfos.Size(); i++)
 		if (!strnicmp (name, wadlevelinfos[i].mapname, 8))
@@ -1551,7 +1551,23 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 	{
 		int cstype = SBarInfoScript->GetGameType();
 
-		if (cstype == GAME_Any || cstype == gameinfo.gametype)
+		if(cstype == GAME_Doom) //Did the user specify a "base"
+		{
+			StatusBar = CreateDoomStatusBar ();
+		}
+		else if(cstype == GAME_Heretic)
+		{
+			StatusBar = CreateHereticStatusBar();
+		}
+		else if(cstype == GAME_Hexen)
+		{
+			StatusBar = CreateHexenStatusBar();
+		}
+		else if(cstype == GAME_Strife)
+		{
+			StatusBar = CreateStrifeStatusBar();
+		}
+		else //Use the default, empty or custom.
 		{
 			StatusBar = CreateCustomStatusBar();
 		}
@@ -1583,7 +1599,7 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 	StatusBar->NewGame ();
 	setsizeneeded = true;
 
-	if (gameinfo.gametype == GAME_Strife)
+	if (gameinfo.gametype == GAME_Strife || (SBarInfoScript != NULL && SBarInfoScript->GetGameType() == GAME_Strife))
 	{
 		// Set the initial quest log text for Strife.
 		for (i = 0; i < MAXPLAYERS; ++i)
@@ -1759,26 +1775,35 @@ void G_ChangeLevel(const char * levelname, int position, bool keepFacing, int ne
 	}
 }
 
-void G_ExitLevel (int position, bool keepFacing)
+const char *G_GetExitMap()
 {
-	G_ChangeLevel(level.nextmap, position, keepFacing);
+	return level.nextmap;
 }
 
-void G_SecretExitLevel (int position) 
+const char *G_GetSecretExitMap()
 {
 	const char *nextmap = level.nextmap;
 
 	if (level.secretmap[0] != 0)
 	{
-		MapData * map = P_OpenMapData(level.secretmap);
+		MapData *map = P_OpenMapData(level.secretmap);
 		if (map != NULL)
 		{
 			delete map;
 			nextmap = level.secretmap;
 		}
 	}
+	return nextmap;
+}
 
-	G_ChangeLevel(nextmap, position, false);
+void G_ExitLevel (int position, bool keepFacing)
+{
+	G_ChangeLevel(G_GetExitMap(), position, keepFacing);
+}
+
+void G_SecretExitLevel (int position) 
+{
+	G_ChangeLevel(G_GetSecretExitMap(), position, false);
 }
 
 void G_DoCompleted (void)
@@ -2201,7 +2226,9 @@ void G_StartTravel ()
 			{
 				pawn->UnlinkFromWorld ();
 				P_DelSector_List ();
+				int tid = pawn->tid;	// Save TID
 				pawn->RemoveFromHash ();
+				pawn->tid = tid;		// Restore TID (but no longer linked into the hash chain)
 				pawn->ChangeStatNum (STAT_TRAVELLING);
 
 				for (inv = pawn->Inventory; inv != NULL; inv = inv->Inventory)
@@ -2292,6 +2319,10 @@ void G_FinishTravel ()
 				inv->Travelled ();
 				inv->dynamiclights.Clear();	// remove all dynamic lights from the previous level
 			}
+			if (level.FromSnapshot)
+			{
+				FBehavior::StaticStartTypedScripts (SCRIPT_Return, pawn, true);
+			}
 		}
 	}
 }
@@ -2321,6 +2352,7 @@ void G_InitLevelLocals ()
 	level.fadeto = info->fadeto;
 	level.cdtrack = info->cdtrack;
 	level.cdid = info->cdid;
+	level.FromSnapshot = false;
 	if (level.fadeto == 0)
 	{
 		R_SetDefaultColormap (info->fadetable);
@@ -2448,7 +2480,7 @@ char *CalcMapName (int episode, int level)
 	return lumpname;
 }
 
-level_info_t *FindLevelInfo (char *mapname)
+level_info_t *FindLevelInfo (const char *mapname)
 {
 	int i;
 
@@ -2820,6 +2852,7 @@ void G_UnSnapshotLevel (bool hubLoad)
 			arc.SetHubTravel ();
 		G_SerializeLevel (arc, hubLoad);
 		arc.Close ();
+		level.FromSnapshot = true;
 
 		TThinkerIterator<APlayerPawn> it;
 		APlayerPawn *pawn, *next;

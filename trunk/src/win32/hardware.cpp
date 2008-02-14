@@ -103,7 +103,7 @@ CUSTOM_CVAR (Int, vid_renderer, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINI
 
 CCMD (vid_restart)
 {
-	if (!gl_disabled) changerenderer = true;
+	//if (!gl_disabled) changerenderer = true;
 }
 
 /*

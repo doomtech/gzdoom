@@ -106,8 +106,8 @@ static value_t Hz[] =
 
 static value_t BillboardModes[] =
 {
-	{ 1.0, "Y Axis" },
-	{ 2.0, "X/Y Axis" },
+	{ 0.0, "Y Axis" },
+	{ 1.0, "X/Y Axis" },
 };
 
 

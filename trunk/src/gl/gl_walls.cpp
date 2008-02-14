@@ -224,7 +224,7 @@ void GLWall::PutWall(bool translucent)
 void GLWall::Put3DWall(lightlist_t * lightlist, bool translucent)
 {
 	bool fadewall = (!translucent && lightlist->caster && (lightlist->caster->flags&FF_FADEWALLS) && 
-		!gl_isBlack((*lightlist->p_extra_colormap)->Fade));
+		!gl_isBlack((*lightlist->p_extra_colormap)->Fade)) && gl_isBlack(Colormap.FadeColor);
 
 	lightlevel=*lightlist->p_lightlevel;
 	// relative light won't get changed here. It is constant across the entire wall.
