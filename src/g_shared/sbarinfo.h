@@ -37,7 +37,6 @@ struct SBarInfoCommand
 	EColorRange translation;
 	EColorRange translation2;
 	EColorRange translation3;
-	FBarTexture *bar;
 	SBarInfoBlock subBlock; //for type SBarInfo_CMD_GAMEMODE
 };
 
@@ -47,6 +46,7 @@ struct SBarInfo
 	SBarInfoBlock huds[6];
 	bool automapbar;
 	bool interpolateHealth;
+	bool completeBorder;
 	int interpolationSpeed;
 	int height;
 	int gameType;
@@ -55,6 +55,7 @@ struct SBarInfo
 	void ParseSBarInfo(int lump);
 	void ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block);
 	void getCoordinates(FScanner &sc, SBarInfoCommand &cmd); //retrieves the next two arguments as x and y.
+	int getSignedInteger(FScanner &sc); //returns a signed integer.
 	int newImage(const char* patchname);
 	void Init();
 	EColorRange GetTranslation(FScanner &sc, char* translation);

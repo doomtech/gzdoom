@@ -1,4 +1,102 @@
+February 13, 2008
+- Removed most checks on vid_hw2d/test2d. This now gets checked only once per
+  frame to avoid the remote possibility that it could change during the middle
+  of drawing the frame and cause strange things to happen.
+- Renamed test2d to vid_hw2d.
+
+February 12, 2008
+- Added the ACS script type "return". These are executed by players who return
+  to a map they've previously been to. This is analagous to enter scripts, but
+  whereas enter scripts execute only the first time a player enters a map,
+  return scripts execute all but the first time.
+- Improved map scrolling when rotation is on and follow mode is off.
+
+February 11, 2008
+- Fixed: Turning off follow mode with automap rotating enabled did not
+  function in an easy-to-understand manner.
+- Fixed: D_AddWildFile() blindly assumed that all matches were files.
+- Added back the dead player check to CheckIfExitIsGood(), but now it
+  applies only if the next map is part of the same hub. Otherwise, you can
+  still exit the map while dead.
+- Removed the SpawnedPuff global variable and made it a return value from 
+  P_LineAttack().
+- Fixed: P_SpawnPuff() played sounds for temporary puffs.
+
+February 9, 2008
+- Fixed: G_StartTravel() inadvertantly removed players' TIDs.
+- Modified FLAC/share/alloc.h to define SIZE_T_MAX if it isn't defined
+  already. For some reason, a stock install of MinGW doesn't define it, but
+  if you compile your own GCC, it installs headers that do.
+- After thoroughly messing up my MinGW/MSYS installation, I deleted the whole
+  thing and reinstalled everything using the latest zips. Much to my surprise,
+  the MSYS-detection in the makefiles no longer worked because OSTYPE wasn't
+  being exported to process launched by the MSYS shell. I've now switched to a
+  different method I found through the power of Google that asks the shell
+  what version it is to see if the version string contains "msys".
+
+February 8, 2008
+- Applied Blzut3's sbarinfo update #11:
+  * SBarInfo will also accept a '|' between flags for those who are really
+    bothered by the indefinite "arguments" in the middle of the statement.
+  * Added: completeBorder. When set to true SBarInfo will draw the border where
+    the status bar normally goes.
+  * Fixed: I forgot to accept TK_None on "base" and "statusbar".
+  * Fixed: "base" was apparently broken when the SBarInfo init code was moved to
+    d_main.cpp. Also, if "base Strife" was used then it would not use the
+    default log message of "find help".
+- Fixed: D_ReadUserInfoString() parsed the final element of a compact string
+  as the empty string. Since that was the player class, this meant that any
+  games with more than one class would pick a random class in multiplayer.
+- Fixed: FCanvasTexture::RenderView() should not have color 0 in its output.
+
+February 5, 2008
+- Updated the GCC-targeted makefiles to turn off two optimizations that cause
+  fmopl.cpp to compile incorrectly: tree-dominator-opts and tree-fre
+- Fixed: Morphed pig and chicken players made normal human *usefail sounds.
+- G_DoSaveGame() now receives the filename and description from its arguments
+  rather than global variables, so autosaves and manual saves can be done
+  in close proximity to each other without overwriting the parameters for
+  one of them.
+- Fixed potential buffer overrun in G_SaveGame() and added a check so that
+  you can't interfere with saves that are still pending.
+- Fixed: P_LineAttack() creates temporary puffs to get damage types, but this
+  had the side effect of creating particles for the puff.
+- Fixed: The Heretic status bar tried to use the graphic "SELECTBOX" for the
+  inventory selector. The correct name is "SELECTBO".
+- Fixed: Using allowrespawn for a single-player map would fire off enter
+  scripts instead of respawn script because the player wasn't assigned the
+  state PST_REBORN.
+- Fixed: P_CheckMissileSpawn() now passes the BlockingMobj to
+  P_ExplodeMissile() so that it can select the appropriate death state.
+- Added the manifest to MinGW-compiled builds of updaterevision so you can
+  build under Vista with MinGW without needing administrative privileges.
+  (But I still want to know why Vista thinks it needs elevated privileges
+  without a manifest telling it otherwise.)
+- Using four 0xFF bytes for the final note of an IMF song should signal the
+  end of the song.
+
+February 4, 2008
+- Applied a modified version of Karate Chris's screenshot naming patch.
+- Sbarinfo optimization: Creating and destroying bar textures every frame is
+  a relatively expensive operation. We can skip the custom texture entirely
+  and just draw the bars directly to the screen, using the clipping parameters
+  for DrawTexture(). This also means bars are no longer limited to the game
+  palette, and the bar itself has the same resolution as the screen.
+
+February 2, 2008
+- Removed support for numeric flags from sbarinfo's drawmugshot command since
+  it was previously declared unrecommended and deprecated.
+- Added Blzut3's sbarinfo update #10:
+  * Fixed: drawmugshot now adjust to the player's max health like it should.
+  * drawgem can now accept negative paddings.
+  * Added: You can now specify a border on drawbar which will reserve x
+    amount of pixels on each side of the fg image.
+  * Added: weaponammo command which allows for determining what kind of ammo
+    the current weapon uses.
+  * Added: Drawkeybar to SBarInfo
+
 January 31, 2008 (Changes by Graf Zahl)
+- Fixed: The STYLEF_Alpha1 flag intended for STYLE_Normal was set for STYLE_Fuzzy.
 - Fixed: The render style table for old decorations was missing STYLE_Stencil so
   STYLE_Translucent was mapped incorrectly.
 

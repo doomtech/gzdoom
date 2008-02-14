@@ -183,7 +183,7 @@ void GLSprite::Draw(int pass)
 		// [BB] Billboard stuff
 		const bool drawWithXYBillboard = ( !(actor && actor->renderflags & RF_FORCEYBILLBOARD)
 		                                   && players[consoleplayer].camera
-		                                   && (gl_billboard_mode == 2 || (actor && actor->renderflags & RF_FORCEXYBILLBOARD )) );
+		                                   && (gl_billboard_mode == 1 || (actor && actor->renderflags & RF_FORCEXYBILLBOARD )) );
 		if ( drawWithXYBillboard )
 		{
 			// Save the current view matrix.
@@ -291,7 +291,7 @@ void GLSprite::SplitSprite(sector_t * frontsector, bool translucent)
 	GLSprite copySprite;
 	fixed_t lightbottom;
 	float maplightbottom;
-	int i;
+	unsigned int i;
 	bool put=false;
 	TArray<lightlist_t> & lightlist=frontsector->e->lightlist;
 
@@ -340,6 +340,46 @@ void GLSprite::SplitSprite(sector_t * frontsector, bool translucent)
 }
 
 
+void GLSprite::SetSpriteColor(fixed_t center_y)
+{
+	fixed_t lightbottom;
+	float maplightbottom;
+	unsigned int i;
+	TArray<lightlist_t> & lightlist=actor->Sector->e->lightlist;
+
+	for(i=0;i<lightlist.Size();i++)
+	{
+		// Particles don't go through here so we can safely assume that actor is not NULL
+		if (i<lightlist.Size()-1) lightbottom=lightlist[i+1].plane.ZatPoint(actor->x,actor->y);
+		else lightbottom=frontsector->floorplane.ZatPoint(actor->x,actor->y);
+
+		//maplighttop=TO_MAP(lightlist[i].height);
+		maplightbottom=TO_MAP(lightbottom);
+		if (maplightbottom<z2) maplightbottom=z2;
+
+		if (maplightbottom<center_y)
+		{
+			lightlevel=*lightlist[i].p_lightlevel;
+			Colormap.CopyLightColor(*lightlist[i].p_extra_colormap);
+
+			if (gl_nocoloredspritelighting)
+			{
+				int v = (Colormap.LightColor.r + Colormap.LightColor.g + Colormap.LightColor.b )/3;
+				Colormap.LightColor.r=
+				Colormap.LightColor.g=
+				Colormap.LightColor.b=(255+v+v)/3;
+			}
+
+			if (!gl_isWhite(ThingColor))
+			{
+				Colormap.LightColor.r=(Colormap.LightColor.r*ThingColor.r)>>8;
+				Colormap.LightColor.g=(Colormap.LightColor.g*ThingColor.g)>>8;
+				Colormap.LightColor.b=(Colormap.LightColor.b*ThingColor.b)>>8;
+			}
+			return;
+		}
+	}
+}
 
 
 //==========================================================================
@@ -615,16 +655,16 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 	
 	const bool drawWithXYBillboard = ( !(actor->renderflags & RF_FORCEYBILLBOARD)
 									   && players[consoleplayer].camera
-									   && (gl_billboard_mode == 2 || actor->renderflags & RF_FORCEXYBILLBOARD ) );
+									   && (gl_billboard_mode == 1 || actor->renderflags & RF_FORCEXYBILLBOARD ) );
 
 
-	if (thing->Sector->e->lightlist.Size()==0 || gl_fixedcolormap || fullbright || (drawWithXYBillboard && !modelframe)) 
+	if (drawWithXYBillboard || modelframe)
 	{
+		if (!gl_fixedcolormap && !fullbright) SetSpriteColor(actor->y + (actor->height>>1));
 		PutSprite(hw_styleflags != STYLEHW_Solid);
 	}
-	else if (modelframe)
+	else if (thing->Sector->e->lightlist.Size()==0 || gl_fixedcolormap || fullbright) 
 	{
-		// FIXME: Get the appropriate light color here!
 		PutSprite(hw_styleflags != STYLEHW_Solid);
 	}
 	else

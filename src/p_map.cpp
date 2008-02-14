@@ -3043,7 +3043,7 @@ static bool CheckForSpectral (FTraceResults &res)
 	return false;
 }
 
-void P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
+AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 				   int pitch, int damage, FName damageType, const PClass *pufftype)
 {
 	fixed_t vx, vy, vz, shootz;
@@ -3088,11 +3088,11 @@ void P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 		}
 		if (puffDefaults->flags3 & MF3_ALWAYSPUFF)
 		{ // Spawn the puff anyway
-			P_SpawnPuff (pufftype, trace.X, trace.Y, trace.Z, angle - ANG180, 2);
+			puff = P_SpawnPuff (pufftype, trace.X, trace.Y, trace.Z, angle - ANG180, 2);
 		}
 		else
 		{
-			return;
+			return NULL;
 		}
 	}
 	else
@@ -3191,7 +3191,7 @@ void P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 				{ 
 					// Since the puff is the damage inflictor we need it here 
 					// regardless of whether it is displayed or not.
-					puff = P_SpawnPuff (pufftype, hitx, hity, hitz, angle - ANG180, 2, true);
+					puff = P_SpawnPuff (pufftype, hitx, hity, hitz, angle - ANG180, 2, true, true);
 					killPuff = true;
 				}
 				P_DamageMobj (trace.Actor, puff ? puff : t1, t1, damage, damageType, flags);
@@ -3202,7 +3202,7 @@ void P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 
 			if (puff == NULL)
 			{ // Spawn puff just to get a mass for the splash
-				puff = P_SpawnPuff (pufftype, hitx, hity, hitz, angle - ANG180, 2, true);
+				puff = P_SpawnPuff (pufftype, hitx, hity, hitz, angle - ANG180, 2, true, true);
 				killPuff = true;
 			}
 			SpawnDeepSplash (t1, trace, puff, vx, vy, vz);
@@ -3211,10 +3211,12 @@ void P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 	if (killPuff && puff != NULL)
 	{
 		puff->Destroy();
+		puff = NULL;
 	}
+	return puff;
 }
 
-void P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
+AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 				   int pitch, int damage, FName damageType, FName pufftype)
 {
 	const PClass * type = PClass::FindClass(pufftype);
@@ -3224,8 +3226,9 @@ void P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 	}
 	else
 	{
-		P_LineAttack(t1, angle, distance, pitch, damage, damageType, type);
+		return P_LineAttack(t1, angle, distance, pitch, damage, damageType, type);
 	}
+	return NULL;
 }
 
 void P_TraceBleed (int damage, fixed_t x, fixed_t y, fixed_t z, AActor *actor, angle_t angle, int pitch)

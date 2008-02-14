@@ -1329,7 +1329,7 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 						
 					if ((gl_warp_shader && tex->bWarped!=0) || 
 						(usebright) ||
-						((tex->bHasCanvas || gl_colormap_shader) && cm!=CM_DEFAULT && cm!=CM_SHADE && gl_texturemode != TM_MASK))
+						((tex->bHasCanvas || gl_colormap_shader) && cm!=CM_DEFAULT && /*!(cm>=CM_DESAT1 && cm<=CM_DESAT31) &&*/  cm!=CM_SHADE && gl_texturemode != TM_MASK))
 					{
 						Shader->Bind(cm, usebright);
 						if (cm != CM_SHADE) cm = CM_DEFAULT;
@@ -1433,7 +1433,7 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 
 					if ((gl_warp_shader && tex->bWarped!=0) || 
 						(usebright) ||
-						((tex->bHasCanvas || gl_colormap_shader) && cm!=CM_DEFAULT && cm!=CM_SHADE && gl_texturemode != TM_MASK))
+						((tex->bHasCanvas || gl_colormap_shader) && cm!=CM_DEFAULT && /*!(cm>=CM_DESAT1 && cm<=CM_DESAT31) &&*/ cm!=CM_SHADE && gl_texturemode != TM_MASK))
 					{
 						Shader->Bind(cm, usebright);
 						if (cm != CM_SHADE) cm = CM_DEFAULT;

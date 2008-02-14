@@ -165,7 +165,6 @@ CVAR (Int, cl_pufftype, 0, CVAR_ARCHIVE);
 CVAR (Int, cl_bloodtype, 0, CVAR_ARCHIVE);
 
 AActor *MissileActor;
-AActor *PuffSpawned;
 
 // CODE --------------------------------------------------------------------
 
@@ -2905,6 +2904,7 @@ void AActor::Tick ()
 		static secplane_t copyplane;
 
 		// Check 3D floors as well
+		if (floorsector->e)	// apparently this can be called when the data is already gone-
 		for(unsigned int i=0;i<floorsector->e->ffloors.Size();i++)
 		{
 			F3DFloor * rover= floorsector->e->ffloors[i];
@@ -3639,22 +3639,22 @@ void P_SpawnPlayer (mapthing2_t *mthing, bool tempplayer)
 		p->cls = PlayerClasses[p->CurrentPlayerClass].Type;
 	}
 
-    if (( dmflags2 & DF2_SAME_SPAWN_SPOT ) &&
-            ( p->playerstate == PST_REBORN ) &&
-            ( deathmatch == false ) &&
-            ( gameaction != ga_worlddone ) &&
-			( p->mo != NULL ))
-    {
-            spawn_x = p->mo->x;
-            spawn_y = p->mo->y;
-			spawn_angle = p->mo->angle;
-    }
-    else
-    {
-            spawn_x = mthing->x << FRACBITS;
-            spawn_y = mthing->y << FRACBITS;
-            spawn_angle = ANG45 * (mthing->angle/45);
-    }
+	if (( dmflags2 & DF2_SAME_SPAWN_SPOT ) &&
+		( p->playerstate == PST_REBORN ) &&
+		( deathmatch == false ) &&
+		( gameaction != ga_worlddone ) &&
+		( p->mo != NULL ))
+	{
+		spawn_x = p->mo->x;
+		spawn_y = p->mo->y;
+		spawn_angle = p->mo->angle;
+	}
+	else
+	{
+		spawn_x = mthing->x << FRACBITS;
+		spawn_y = mthing->y << FRACBITS;
+		spawn_angle = ANG45 * (mthing->angle/45);
+	}
 
 	mobj = static_cast<APlayerPawn *>
 		(Spawn (p->cls, spawn_x, spawn_y, ONFLOORZ, NO_REPLACE));
@@ -4109,7 +4109,6 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 	mobj->LevelSpawned ();
 
 	T_RegisterSpawnThing(mobj);
-
 }
 
 
@@ -4123,7 +4122,7 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 // P_SpawnPuff
 //
 
-AActor *P_SpawnPuff (const PClass *pufftype, fixed_t x, fixed_t y, fixed_t z, angle_t dir, int updown, bool hitthing)
+AActor *P_SpawnPuff (const PClass *pufftype, fixed_t x, fixed_t y, fixed_t z, angle_t dir, int updown, bool hitthing, bool temporary)
 {
 	AActor *puff;
 
@@ -4146,22 +4145,24 @@ AActor *P_SpawnPuff (const PClass *pufftype, fixed_t x, fixed_t y, fixed_t z, an
 		puff->SetState (puff->MeleeState);
 	}
 
-	if (cl_pufftype && updown != 3 && (puff->flags4 & MF4_ALLOWPARTICLES))
+	if (cl_pufftype && updown != 3 && !temporary && (puff->flags4 & MF4_ALLOWPARTICLES))
 	{
 		P_DrawSplash2 (32, x, y, z, dir, updown, 1);
 		puff->renderflags |= RF_INVISIBLE;
 	}
 
-	if (hitthing && puff->SeeSound)
-	{ // Hit thing sound
-		S_SoundID (puff, CHAN_BODY, puff->SeeSound, 1, ATTN_NORM);
-	}
-	else if (puff->AttackSound)
+	if (!temporary)
 	{
-		S_SoundID (puff, CHAN_BODY, puff->AttackSound, 1, ATTN_NORM);
+		if (hitthing && puff->SeeSound)
+		{ // Hit thing sound
+			S_SoundID (puff, CHAN_BODY, puff->SeeSound, 1, ATTN_NORM);
+		}
+		else if (puff->AttackSound)
+		{
+			S_SoundID (puff, CHAN_BODY, puff->AttackSound, 1, ATTN_NORM);
+		}
 	}
 
-	PuffSpawned = puff;
 	return puff;
 }
 
@@ -4566,7 +4567,7 @@ bool P_CheckMissileSpawn (AActor* th)
 			}
 			else
 			{
-				P_ExplodeMissile (th, NULL, NULL);
+				P_ExplodeMissile (th, NULL, BlockingMobj);
 			}
 			return false;
 		}
