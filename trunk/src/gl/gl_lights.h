@@ -85,12 +85,7 @@ public:
 	void Destroy();
 	void Activate(AActor *activator);
 	void Deactivate(AActor *activator);
-	void SetOffset(fixed_t x, fixed_t y, fixed_t z)
-	{
-		m_offX = x;
-		m_offY = y;
-		m_offZ = z;
-	}
+	void SetOffset(fixed_t x, fixed_t y, fixed_t z);
 	void UpdateLocation();
 	bool IsOwned() const { return owned; }
 	bool IsActive() const { return !(flags2&MF2_DORMANT); }
