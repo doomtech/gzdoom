@@ -93,6 +93,7 @@
 // More stuff that needs to be different for derivatives.
 #define GAMENAME "GZDoom"
 #define FORUM_URL "http://forum.drdteam.org"
+#define BUGS_FORUM_URL	"http://forum.drdteam.org/viewforum.php?f=24"
 
 #ifdef unix
 #define HOME_DIR "~/.gzdoom"

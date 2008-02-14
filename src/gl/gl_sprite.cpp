@@ -143,7 +143,7 @@ void GLSprite::Draw(int pass)
 		if (actor)
 		{
 			gl_SetSpriteLighting(RenderStyle, actor, lightlevel, extralight*gl_weaponlight, &Colormap, ThingColor, 
-								 !!(actor->renderflags & RF_FULLBRIGHT), false);
+								 trans, !!(actor->renderflags & RF_FULLBRIGHT), false);
 		}
 		else if (particle)
 		{
@@ -623,11 +623,11 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 		// This is a non-translucent sprite (i.e. STYLE_Normal or equivalent)
 		trans=1.f;
 		
-		if (gltexture && gltexture->GetTransparent())
-		{
-			hw_styleflags = STYLEHW_NoAlphaTest;
-		}
-		else hw_styleflags = STYLEHW_Solid;
+		hw_styleflags = STYLEHW_Solid;
+	}
+	if (gltexture && gltexture->GetTransparent())
+	{
+		hw_styleflags = STYLEHW_NoAlphaTest;
 	}
 
 	if (enhancedvision && gl_enhanced_lightamp)

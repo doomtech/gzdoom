@@ -68,7 +68,7 @@ void gl_GetSpriteLight(AActor * thing, int lightlevel, int rellight, FColormap *
 
 void gl_SetRenderStyle(FRenderStyle style, bool drawopaque, bool allowcolorblending);
 void gl_SetSpriteLighting(FRenderStyle style, AActor *thing, int lightlevel, int rellight, FColormap *cm, 
-						  PalEntry ThingColor, bool fullbright, bool weapon);
+						  PalEntry ThingColor, float alpha, bool fullbright, bool weapon);
 
 
 struct particle_t;

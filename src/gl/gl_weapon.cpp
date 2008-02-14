@@ -47,6 +47,7 @@
 
 EXTERN_CVAR (Bool, r_drawplayersprites)
 EXTERN_CVAR(Bool, gl_nocoloredspritelighting)
+EXTERN_CVAR (Float, transsouls)
 
 //==========================================================================
 //
@@ -223,8 +224,23 @@ void gl_DrawPlayerSprites(sector_t * viewsector)
 	vis.RenderStyle.CheckFuzz();
 	gl_SetRenderStyle(vis.RenderStyle, false, false);
 
+	float trans;
+	if (vis.RenderStyle.Flags & STYLEF_TransSoulsAlpha)
+	{
+		trans = transsouls;
+	}
+	else if (vis.RenderStyle.Flags & STYLEF_Alpha1)
+	{
+		trans = 1.f;
+	}
+	else
+	{
+		trans = TO_MAP(vis.alpha);
+	}
+
+
 	// set the lighting parameters (only calls glColor and glAlphaFunc)
-	gl_SetSpriteLighting(vis.RenderStyle, playermo, lightlevel, 0, &cm, 0xffffff, fullbright, true);
+	gl_SetSpriteLighting(vis.RenderStyle, playermo, lightlevel, 0, &cm, 0xffffff, trans, fullbright, true);
 
 	// Weapons are not drawn with fog so we can skip that step here
 
