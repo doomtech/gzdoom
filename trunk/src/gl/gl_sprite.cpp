@@ -340,7 +340,7 @@ void GLSprite::SplitSprite(sector_t * frontsector, bool translucent)
 }
 
 
-void GLSprite::SetSpriteColor(fixed_t center_y)
+void GLSprite::SetSpriteColor(sector_t *sector, fixed_t center_y)
 {
 	fixed_t lightbottom;
 	float maplightbottom;
@@ -351,7 +351,7 @@ void GLSprite::SetSpriteColor(fixed_t center_y)
 	{
 		// Particles don't go through here so we can safely assume that actor is not NULL
 		if (i<lightlist.Size()-1) lightbottom=lightlist[i+1].plane.ZatPoint(actor->x,actor->y);
-		else lightbottom=frontsector->floorplane.ZatPoint(actor->x,actor->y);
+		else lightbottom=sector->floorplane.ZatPoint(actor->x,actor->y);
 
 		//maplighttop=TO_MAP(lightlist[i].height);
 		maplightbottom=TO_MAP(lightbottom);
@@ -404,11 +404,15 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 	fixed_t thingz = thing->PrevZ + FixedMul (r_TicFrac, thing->z - thing->PrevZ);
 
 	// too close to the camera. This doesn't look good if it is a sprite.
-	if (P_AproxDistance(thingx-viewx, thingy-viewy)<2*FRACUNIT && abs(thingz - viewz) < 30*FRACUNIT)
+	if (P_AproxDistance(thingx-viewx, thingy-viewy)<2*FRACUNIT)
 	{
-		if (!gl_FindModelFrame(RUNTIME_TYPE(thing), thing->sprite, thing->frame /*, thing->state*/))
+		// exclude vertically moving objects from this check.
+		if (!(thing->momx==0 && thing->momy==0 && thing->momz!=0))
 		{
-			return;
+			if (!gl_FindModelFrame(RUNTIME_TYPE(thing), thing->sprite, thing->frame /*, thing->state*/))
+			{
+				return;
+			}
 		}
 	}
 
@@ -660,7 +664,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 
 	if (drawWithXYBillboard || modelframe)
 	{
-		if (!gl_fixedcolormap && !fullbright) SetSpriteColor(actor->y + (actor->height>>1));
+		if (!gl_fixedcolormap && !fullbright) SetSpriteColor(actor->Sector, actor->y + (actor->height>>1));
 		PutSprite(hw_styleflags != STYLEHW_Solid);
 	}
 	else if (thing->Sector->e->lightlist.Size()==0 || gl_fixedcolormap || fullbright) 
