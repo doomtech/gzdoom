@@ -653,9 +653,8 @@ void gl_SetRenderStyle(FRenderStyle style, bool drawopaque, bool allowcolorblend
 //
 //==========================================================================
 void gl_SetSpriteLighting(FRenderStyle style, AActor *thing, int lightlevel, int rellight, FColormap *cm, 
-						  PalEntry ThingColor, bool fullbright, bool weapon)
+						  PalEntry ThingColor, float alpha, bool fullbright, bool weapon)
 {
-	float alpha;
 	FColormap internal_cm;
 
 	if (style.Flags & STYLEF_RedIsAlpha)
@@ -692,9 +691,6 @@ void gl_SetSpriteLighting(FRenderStyle style, AActor *thing, int lightlevel, int
 	}
 	else
 	{
-		if (style.Flags & STYLEF_TransSoulsAlpha) alpha = transsouls;
-		else alpha = TO_MAP(thing->alpha);
-
 		if (gl_light_sprites && gl_lights && !fullbright)
 		{
 			gl_SetSpriteLight(thing, lightlevel, rellight, cm, alpha, ThingColor, weapon);

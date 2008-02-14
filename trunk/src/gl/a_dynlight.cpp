@@ -406,8 +406,8 @@ void ADynamicLight::UpdateLocation()
 	{
 		if (target)
 		{
-			PrevX = x = target->x + m_offX;
-			PrevY = y = target->y + m_offZ;
+			PrevX = x = target->x + FixedMul(m_offX, finecosine[target->angle]) + FixedMul(m_offZ, finesine[target->angle]);
+			PrevY = y = target->y + FixedMul(m_offX, finesine[target->angle]) - FixedMul(m_offZ, finecosine[target->angle]);
 			PrevZ = z = target->z + m_offY;
 			subsector = R_PointInSubsector(x, y);
 			Sector = subsector->sector;
