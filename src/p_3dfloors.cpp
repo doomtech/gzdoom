@@ -720,7 +720,7 @@ void P_CleanExtSectors()
 			// destroy embedded objects (TArrays)
 			extsectordata[i].extsector_t::~extsector_t();
 		}
-		free(extsectordata);
+		M_Free(extsectordata);
 		extsectordata = NULL;
 	}
 }
