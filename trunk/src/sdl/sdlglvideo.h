@@ -48,6 +48,8 @@ public:
 	bool IsValid ();
 	bool IsFullscreen ();
 
+	void NewRefreshRate ();
+
 	friend class SDLGLVideo;
 
 //[C]

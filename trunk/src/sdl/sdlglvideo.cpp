@@ -377,3 +377,7 @@ bool SDLGLFB::IsValid ()
 	return DFrameBuffer::IsValid() && Screen != NULL;
 }
 
+void SDLGLFB::NewRefreshRate ()
+{
+}
+
