@@ -1402,6 +1402,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\src\dobjgc.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\dobjtype.cpp"
 				>
 			</File>

@@ -124,7 +124,11 @@ void I_CheckRestartRenderer()
 void I_ShutdownGraphics ()
 {
 	if (screen)
-		delete screen, screen = NULL;
+	{
+		screen->ObjectFlags |= OF_YesReallyDelete;
+		delete screen;
+		screen = NULL;
+	}
 	if (Video)
 		delete Video, Video = NULL;
 }
