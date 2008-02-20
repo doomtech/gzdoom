@@ -27,6 +27,7 @@ RenderContext gl;
 
 CVAR(Bool, gl_vid_allowsoftware, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 EXTERN_CVAR(Bool, gl_vid_compatibility)
+EXTERN_CVAR(Int, vid_refreshrate)
 
 Win32GLVideo::Win32GLVideo(int parm) : m_Modes(NULL), m_IsFullscreen(false)
 {
@@ -389,7 +390,7 @@ void Win32GLFrameBuffer::SetVSync (bool vsync)
 	if (gl.SetVSync!=NULL) gl.SetVSync(vsync);
 }
 
-void Win32GLFRameBuffer::NewRefreshRate ()
+void Win32GLFrameBuffer::NewRefreshRate ()
 {
 	if (m_Fullscreen)
 	{
