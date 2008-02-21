@@ -56,57 +56,80 @@ IMPLEMENT_POINTY_CLASS(DRunningScript)
 	DECLARE_POINTER(trigger)
 END_POINTERS
 
-void clear_runningscripts();
-extern TArray<void *> levelpointers;
-bool HasScripts;
+IMPLEMENT_CLASS(DFraggleThinker)
 
-// the level script is just the stuff put in the wad,
-// which the other scripts are derivatives of
-script_t levelscript;
-
-DRunningScript runningscripts;
-
-
-//     FraggleScript action special
+//==========================================================================
 //
-
-static int LS_FS_Execute (line_t *ln, AActor *it, bool backSide,
-	int arg0, int arg1, int arg2, int arg3, int arg4)
-// FS_Execute(script#,firstsideonly,lock,msgtype)
-{
-	if (arg1 && ln && backSide) return false;
-	if (arg2!=0 && !P_CheckKeys(it, arg2, !!arg3)) return false;
-	T_RunScript(arg0,it);
-	return true;
-}
-
-
-//     T_Init()
 //
-//    called at program start
+//
+//==========================================================================
 
-void T_Init()
+DFraggleThinker::DFraggleThinker(const char *scriptdata) 
 {
-	// I'd rather link the special here than make another source file depend on FS!
-	LineSpecials[54]=LS_FS_Execute;
-	init_variables();
+
+	memset(&hub_script, 0, sizeof(hub_script));
+	memset(&global_script, 0, sizeof(global_script));
+	memset(&levelscript, 0, sizeof(levelscript));
+
+	// globalscript is the root script
+	global_script.parent = NULL;
+
+	// hub script is the next level down
+	hub_script.parent = &global_script;
+
+	int i;
+	
+	for(i=0; i<VARIABLESLOTS; i++)
+		global_script.variables[i] = hub_script.variables[i] = NULL;
+
+	levelscript.data = strdup(scriptdata);
+	levelscript.scriptnum = -1;
+	levelscript.parent = &hub_script;
+
+	memset(tokens, 0, sizeof(tokens));
+	memset(tokentype, 0, sizeof(tokentype));
+	num_tokens = 0;
+
+	newvar_type = 0;
+	newvar_script = NULL;
+	runningscripts = new DRunningScript;
+
+	trigger_obj = NULL;
+
+	current_script = NULL;
+	nullvar.type = svt_int;
+	nullvar.value.i = 0;
+
+	killscript = false;
+	prev_section = NULL;
+	linestart = NULL;
+	rover = NULL;
+	current_section = NULL;
+	bracetype = 0;
+
 	init_functions();
 }
 
+//==========================================================================
+//
 //     T_ClearScripts()
 //
 //      called at level start, clears all scripts
 //		[CO] now it REALLY clears them!
 //
-void T_ClearScripts()
+//==========================================================================
+
+void DFraggleThinker::Destroy()
 {
 	DRunningScript *current;
 	int i,j;
 	void * p;
 
-	// without the zone heap this has to be cleaned manually
-
-	while (levelpointers.Pop(p)) free(p);
+	for(unsigned int i=0;i<SpawnedThings.Size();i++)
+	{
+		SpawnedThings[i]->Destroy();
+	}
+	SpawnedThings.Clear();
 
 	// clear all old variables in the levelscript
 	for(i=0; i<VARIABLESLOTS; i++)
@@ -135,7 +158,7 @@ void T_ClearScripts()
     
 	// abort all runningscripts and copy their data back to their owner
 	// to make deletion easier
-	current = runningscripts.next;
+	current = runningscripts->next;
 	while(current)
 	{
 		// copy out the script variables from the runningscript
@@ -145,7 +168,7 @@ void T_ClearScripts()
 		current->Destroy();
 		current = next;   // continue to next in chain
 	}
-	runningscripts.next=NULL;
+	runningscripts->Destroy();
 
 	for(j=0;j<MAXSCRIPTS;j++) if (levelscript.children[j])
 	{
@@ -174,70 +197,62 @@ void T_ClearScripts()
 		levelscript.children[j]=NULL;
 	}
 
-	// clear the levelscript
-	levelscript.data = (char *)realloc(levelscript.data, 5);  // empty data
-	levelscript.data[0] = '\0'; // haleyjd 02/22/02: use '\0', not NULL
-	
-	levelscript.scriptnum = -1;
-	levelscript.parent = &hub_script;
-	
+	if (levelscript.data != NULL) free(levelscript.data);
+	levelscript.data=NULL;
+
+	// clear all old variables in the global script
+	// This also takes care of any defined functions.
+	for(i=0; i<VARIABLESLOTS; i++)
+	{
+		svariable_t * var=global_script.variables[i];
+		while(var)
+		{
+			svariable_t *next = var->next;
+			delete var;
+			var = next;
+		}
+		global_script.variables[i] = NULL;
+	}
+	for(i=0;i<SECTIONSLOTS;i++)
+	{
+		section_t * var=global_script.sections[i];
+		while(var)
+		{
+			section_t *next = var->next;
+			delete var;
+			var = next;
+		}
+		global_script.sections[i] = NULL;
+	}
+	while (levelpointers.Pop(p)) free(p);
 }
 
-static struct FSDelete
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void DFraggleThinker::PreprocessScripts()
 {
-	~FSDelete()
-	{
-		int i;
-
-		T_ClearScripts();
-
-		if (levelscript.data != NULL) free(levelscript.data);
-		levelscript.data=NULL;
-
-		// clear all old variables in the global script
-		// This also takes care of any defined functions.
-		for(i=0; i<VARIABLESLOTS; i++)
-		{
-			svariable_t * var=global_script.variables[i];
-			while(var)
-			{
-				svariable_t *next = var->next;
-				delete var;
-				var = next;
-			}
-			global_script.variables[i] = NULL;
-		}
-		for(i=0;i<SECTIONSLOTS;i++)
-		{
-			section_t * var=global_script.sections[i];
-			while(var)
-			{
-				section_t *next = var->next;
-				delete var;
-				var = next;
-			}
-			global_script.sections[i] = NULL;
-		}
-
-	}
-} DeleteFS;
-
-void T_PreprocessScripts()
-{
-	if (HasScripts)
-	{
-		// run the levelscript first
-		// get the other scripts
-		
-		// levelscript started by player 0 'superplayer'
-		levelscript.trigger = players[0].mo;
-		
-		preprocess(&levelscript);
-		run_script(&levelscript);
-	}
+	// run the levelscript first
+	// get the other scripts
+	
+	// levelscript started by player 0 'superplayer'
+	levelscript.trigger = players[0].mo;
+	
+	preprocess(&levelscript);
+	run_script(&levelscript);
 }
 
-void T_RunScript(int snum, AActor * t_trigger)
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void DFraggleThinker::RunScript(int snum, AActor * t_trigger)
 {
 	// [CO] It is far too dangerous to start the script right away.
 	// Better queue it for execution for the next time
@@ -247,7 +262,7 @@ void T_RunScript(int snum, AActor * t_trigger)
 	script_t *script;
 	int i;
 	
-	if(!HasScripts || snum < 0 || snum >= MAXSCRIPTS) return;
+	if(snum < 0 || snum >= MAXSCRIPTS) return;
 	script = levelscript.children[snum];
 	if(!script)	return;
 	
@@ -255,8 +270,8 @@ void T_RunScript(int snum, AActor * t_trigger)
 	runscr->script = script;
 	runscr->savepoint = script->data; // start at beginning
 	runscr->wait_type = wt_none;      // start straight away
-	runscr->next = runningscripts.next;
-	runscr->prev = &runningscripts;
+	runscr->next = runningscripts->next;
+	runscr->prev = runningscripts;
 	runscr->prev->next = runscr;
 	if(runscr->next)
 		runscr->next->prev = runscr;
@@ -281,15 +296,17 @@ void T_RunScript(int snum, AActor * t_trigger)
 
 
 
-/************************
-PAUSING SCRIPTS
-************************/
+//==========================================================================
+//
+//
+//
+//==========================================================================
 
-void clear_runningscripts()
+void DFraggleThinker::clear_runningscripts()
 {
 	DRunningScript *runscr, *next;
 	
-	runscr = runningscripts.next;
+	runscr = runningscripts->next;
 	
 	// free the whole chain
 	while(runscr)
@@ -298,12 +315,18 @@ void clear_runningscripts()
 		runscr->Destroy();
 		runscr = next;
     }
-	runningscripts.next = NULL;
+	runningscripts->next = NULL;
 }
 
 
 
-static bool wait_finished(DRunningScript *script)
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+bool DFraggleThinker::wait_finished(DRunningScript *script)
 {
 	switch(script->wait_type)
     {
@@ -311,7 +334,7 @@ static bool wait_finished(DRunningScript *script)
     case wt_scriptwait:               // waiting for script to finish
 		{
 			DRunningScript *current;
-			for(current = runningscripts.next; current; current = current->next)
+			for(current = runningscripts->next; current; current = current->next)
 			{
 				if(current == script) continue;  // ignore this script
 				if(current->script->scriptnum == script->wait_data)
@@ -341,7 +364,7 @@ static bool wait_finished(DRunningScript *script)
     case wt_scriptwaitpre: // haleyjd - wait for script to start
 		{
 			DRunningScript *current;
-			for(current=runningscripts.next; current; current=current->next)
+			for(current=runningscripts->next; current; current=current->next)
 			{
 				if(current == script) continue;  // ignore this script
 				if(current->script->scriptnum == script->wait_data)
@@ -356,14 +379,18 @@ static bool wait_finished(DRunningScript *script)
 	return false;
 }
 
-void T_DelayedScripts()
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void DFraggleThinker::Tick()
 {
 	DRunningScript *current, *next;
 	int i;
 	
-	if(!HasScripts) return;       // no level scripts
-    
-	current = runningscripts.next;
+	current = runningscripts->next;
     
 	while(current)
 	{
@@ -393,7 +420,13 @@ void T_DelayedScripts()
 	}
 }
 
-static DRunningScript *T_SaveCurrentScript()
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+DRunningScript *DFraggleThinker::T_SaveCurrentScript()
 {
 	DRunningScript *runscr;
 	int i;
@@ -407,8 +440,8 @@ static DRunningScript *T_SaveCurrentScript()
 	
 	// hook into chain at start
 	
-	runscr->next = runningscripts.next;
-	runscr->prev = &runningscripts;
+	runscr->next = runningscripts->next;
+	runscr->prev = runningscripts;
 	runscr->prev->next = runscr;
 	if(runscr->next)
 		runscr->next->prev = runscr;
@@ -433,9 +466,52 @@ static DRunningScript *T_SaveCurrentScript()
 	return runscr;
 }
 
-// script function
+//==========================================================================
+//
+// looping section. using the rover, find the highest level
+// loop we are currently in and return the section_t for it.
+//
+//==========================================================================
 
-void SF_Wait()
+section_t *DFraggleThinker::looping_section()
+{
+	section_t *best = NULL;         // highest level loop we're in
+	// that has been found so far
+	int n;
+	
+	// check thru all the hashchains
+	
+	for(n=0; n<SECTIONSLOTS; n++)
+    {
+		section_t *current = current_script->sections[n];
+		
+		// check all the sections in this hashchain
+		while(current)
+		{
+			// a loop?
+			
+			if(current->type == st_loop)
+				// check to see if it's a loop that we're inside
+				if(rover >= current->start && rover <= current->end)
+				{
+					// a higher nesting level than the best one so far?
+					if(!best || (current->start > best->start))
+						best = current;     // save it
+				}
+				current = current->next;
+		}
+    }
+	
+	return best;    // return the best one found
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void DFraggleThinker::SF_Wait()
 {
 	DRunningScript *runscr;
 	
@@ -452,8 +528,13 @@ void SF_Wait()
 	runscr->wait_data = (intvalue(t_argv[0]) * TICRATE) / 100;
 }
 
+//==========================================================================
+//
 // wait for sector with particular tag to stop moving
-void SF_TagWait()
+//
+//==========================================================================
+
+void DFraggleThinker::SF_TagWait()
 {
 	DRunningScript *runscr;
 	
@@ -469,8 +550,13 @@ void SF_TagWait()
 	runscr->wait_data = intvalue(t_argv[0]);
 }
 
+//==========================================================================
+//
 // wait for a script to finish
-void SF_ScriptWait()
+//
+//==========================================================================
+
+void DFraggleThinker::SF_ScriptWait()
 {
 	DRunningScript *runscr;
 	
@@ -486,8 +572,13 @@ void SF_ScriptWait()
 	runscr->wait_data = intvalue(t_argv[0]);
 }
 
+//==========================================================================
+//
 // haleyjd 05/23/01: wait for a script to start (zdoom-inspired)
-void SF_ScriptWaitPre()
+//
+//==========================================================================
+
+void DFraggleThinker::SF_ScriptWaitPre()
 {
 	DRunningScript *runscr;
 	
@@ -502,9 +593,13 @@ void SF_ScriptWaitPre()
 	runscr->wait_data = intvalue(t_argv[0]);
 }
 
-extern AActor *trigger_obj;           // in t_func.c
+//==========================================================================
+//
+//
+//
+//==========================================================================
 
-void SF_StartScript()
+void DFraggleThinker::SF_StartScript()
 {
 	DRunningScript *runscr;
 	script_t *script;
@@ -539,8 +634,8 @@ void SF_StartScript()
 	// hook into chain at start
 	
 	// haleyjd: restructured
-	runscr->next = runningscripts.next;
-	runscr->prev = &runningscripts;
+	runscr->next = runningscripts->next;
+	runscr->prev = runningscripts;
 	runscr->prev->next = runscr;
 	if(runscr->next)
 		runscr->next->prev = runscr;
@@ -562,7 +657,13 @@ void SF_StartScript()
 	runscr->trigger = current_script->trigger;
 }
 
-void SF_ScriptRunning()
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void DFraggleThinker::SF_ScriptRunning()
 {
 	DRunningScript *current;
 	int snum = 0;
@@ -575,7 +676,7 @@ void SF_ScriptRunning()
 	
 	snum = intvalue(t_argv[0]);  
 	
-	for(current=runningscripts.next; current; current=current->next)
+	for(current=runningscripts->next; current; current=current->next)
     {
 		if(current->script->scriptnum == snum)
 		{
@@ -589,45 +690,6 @@ void SF_ScriptRunning()
 	// script not found
 	t_return.type = svt_int;
 	t_return.value.i = 0;
-}
-
-
-AActor *MobjForSvalue(svalue_t svalue)
-{
-	int intval;
-
-	if(svalue.type == svt_mobj) 
-	{
-		// Inventory items in the player's inventory have to be considered non-present.
-		if (svalue.value.mobj != NULL && 
-			svalue.value.mobj->IsKindOf(RUNTIME_CLASS(AInventory)) && 
-			static_cast<AInventory*>(svalue.value.mobj)->Owner != NULL)
-		{
-			return NULL;
-		}
-
-		return svalue.value.mobj;
-	}
-	else
-	{
-		// this requires some creativity. We use the intvalue
-		// as the thing number of a thing in the level.
-		intval = intvalue(svalue);
-		
-		if(intval < 0 || intval >= (int)SpawnedThings.Size())
-		{ 
-			return NULL;
-		}
-		// Inventory items in the player's inventory have to be considered non-present.
-		if (SpawnedThings[intval]->actor != NULL &&
-			SpawnedThings[intval]->actor->IsKindOf(RUNTIME_CLASS(AInventory)) && 
-			static_cast<AInventory*>(SpawnedThings[intval]->actor)->Owner != NULL)
-		{
-			return NULL;
-		}
-
-		return SpawnedThings[intval]->actor;
-	}
 }
 
 
@@ -645,7 +707,7 @@ ADD SCRIPT
 
 // haleyjd: significant reformatting in 8-17
 
-void spec_script()
+void DFraggleThinker::spec_script()
 {
 	int scriptnum;
 	int datasize;
@@ -712,19 +774,3 @@ void spec_script()
 }
 
 
-CCMD(fpuke)
-{
-	int argc = argv.argc();
-
-	if (argc < 2)
-	{
-		Printf (" fpuke <script>\n");
-	}
-	else
-	{
-		t_argc =1;
-		t_argv[0].type=svt_int;
-		t_argv[0].value.i=atoi (argv[1]);
-		SF_StartScript();
-	}
-}
