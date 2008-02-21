@@ -173,7 +173,7 @@ IMPLEMENT_POINTY_CLASS (AActor)
  DECLARE_POINTER (lastenemy)
  DECLARE_POINTER (tracer)
  DECLARE_POINTER (goal)
- DECLARE_POINTER (LastLook)	// This is actually a union
+ DECLARE_POINTER (LastLookActor)
  DECLARE_POINTER (Inventory)
  DECLARE_POINTER (LastHeard)
  DECLARE_POINTER (master)
@@ -242,11 +242,13 @@ void AActor::Serialize (FArchive &arc)
 	arc << TIDtoHate;
 	if (TIDtoHate == 0)
 	{
-		arc << LastLook.PlayerNumber;
+		arc << LastLookPlayerNumber;
+		LastLookActor = NULL;
 	}
 	else
 	{
-		arc << LastLook.Actor;
+		arc << LastLookActor;
+		LastLookPlayerNumber = -1;
 	}
 	arc << effects
 		<< alpha
@@ -714,7 +716,7 @@ void AActor::DestroyAllInventory ()
 //
 //============================================================================
 
-AInventory *AActor::FirstInv () const
+AInventory *AActor::FirstInv ()
 {
 	if (Inventory == NULL)
 	{
@@ -803,7 +805,7 @@ AInventory *AActor::DropInventory (AInventory *item)
 //
 //============================================================================
 
-AInventory *AActor::FindInventory (const PClass *type) const
+AInventory *AActor::FindInventory (const PClass *type)
 {
 	AInventory *item;
 
@@ -820,7 +822,7 @@ AInventory *AActor::FindInventory (const PClass *type) const
 	return item;
 }
 
-AInventory *AActor::FindInventory (FName type) const
+AInventory *AActor::FindInventory (FName type)
 {
 	return FindInventory(PClass::FindClass(type));
 }
@@ -880,11 +882,12 @@ bool AActor::GiveAmmo (const PClass *type, int amount)
 //
 //============================================================================
 
-void AActor::CopyFriendliness (const AActor *other, bool changeTarget)
+void AActor::CopyFriendliness (AActor *other, bool changeTarget)
 {
 	level.total_monsters -= CountsAsKill();
 	TIDtoHate = other->TIDtoHate;
-	LastLook = other->LastLook;
+	LastLookActor = other->LastLookActor;
+	LastLookPlayerNumber = other->LastLookPlayerNumber;
 	flags  = (flags & ~MF_FRIENDLY) | (other->flags & MF_FRIENDLY);
 	flags3 = (flags3 & ~(MF3_NOSIGHTCHECK | MF3_HUNTPLAYERS)) | (other->flags3 & (MF3_NOSIGHTCHECK | MF3_HUNTPLAYERS));
 	flags4 = (flags4 & ~MF4_NOHATEPLAYERS) | (other->flags4 & MF4_NOHATEPLAYERS);
@@ -3287,7 +3290,7 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 
 	if (actor->flags3 & MF3_ISMONSTER)
 	{
-		actor->LastLook.PlayerNumber = rng() % MAXPLAYERS;
+		actor->LastLookPlayerNumber = rng() % MAXPLAYERS;
 		actor->TIDtoHate = 0;
 	}
 
