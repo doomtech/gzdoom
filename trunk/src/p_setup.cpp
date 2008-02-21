@@ -62,8 +62,7 @@
 
 #include "gl/gl_functions.h"
 
-#define __DEFINE_INTERFACE
-#include "fragglescript/t_script.h"
+#include "fragglescript/t_fs.h"
 
 extern void P_SpawnMapThing (mapthing2_t *mthing, int position);
 extern bool P_LoadBuildMap (BYTE *mapdata, size_t len, mapthing2_t **things, int *numthings);

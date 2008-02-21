@@ -42,11 +42,9 @@ SMMU source (including FraggleScript). You may use any code from SMMU in GZDoom,
 
 /* includes ************************/
 
-int find_operator(int start, int stop, char *value);
-
 // ending brace found in parsing
 
-void spec_brace()
+void DFraggleThinker::spec_brace()
 {
 	//  if(script_debug) C_Printf("brace\n");
 	
@@ -66,7 +64,7 @@ void spec_brace()
 }
 
 // 'if' statement -- haleyjd: changed to bool for else/elseif
-bool spec_if()
+bool DFraggleThinker::spec_if()
 {
 	int endtoken;
 	svalue_t eval;
@@ -99,7 +97,7 @@ bool spec_if()
 }
 
 // haleyjd: elseif
-bool spec_elseif(bool lastif)
+bool DFraggleThinker::spec_elseif(bool lastif)
 {
 	int endtoken;
 	svalue_t eval;
@@ -137,14 +135,14 @@ bool spec_elseif(bool lastif)
 }
 
 // haleyjd: else
-void spec_else(bool lastif)
+void DFraggleThinker::spec_else(bool lastif)
 {
 	if(lastif)
 		rover = current_section->end+1;
 }
 
 // while() loop
-void spec_while()
+void DFraggleThinker::spec_while()
 {
 	int endtoken;
 	svalue_t eval;
@@ -167,7 +165,7 @@ void spec_while()
 	if(!intvalue(eval)) rover = current_section->end+1;
 }
 
-void spec_for()                 // for() loop
+void DFraggleThinker::spec_for()                 // for() loop
 {
 	svalue_t eval;
 	int start;
@@ -216,13 +214,10 @@ void spec_for()                 // for() loop
 
 /**************************** Variable Creation ****************************/
 
-int newvar_type;
-script_t *newvar_script;
-
 // called for each individual variable in a statement
 //  newvar_type must be set
 
-static void create_variable(int start, int stop)
+void DFraggleThinker::create_variable(int start, int stop)
 {
 	if(killscript) return;
 	
@@ -259,7 +254,7 @@ static void create_variable(int start, int stop)
 // divide a statement (without type prefix) into individual
 // variables to create them using create_variable
 
-static void parse_var_line(int start)
+void DFraggleThinker::parse_var_line(int start)
 {
 	int starttoken = start, endtoken;
 	
@@ -275,7 +270,7 @@ static void parse_var_line(int start)
 	create_variable(starttoken, num_tokens-1);
 }
 
-bool spec_variable()
+bool DFraggleThinker::spec_variable()
 {
 	int start = 0;
 	

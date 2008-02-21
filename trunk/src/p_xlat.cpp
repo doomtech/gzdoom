@@ -49,8 +49,7 @@
 #include "sc_man.h"
 #include "cmdlib.h"
 
-#define __DEFINE_INTERFACE
-#include "fragglescript/t_script.h"
+#include "fragglescript/t_fs.h"
 
 // define names for the TriggerType field of the general linedefs
 
