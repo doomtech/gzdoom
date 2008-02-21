@@ -58,8 +58,8 @@
 #include "r_translate.h"
 
 #include "gl/gl_functions.h"
-#define __DEFINE_INTERFACE
-#include "fragglescript/t_script.h"
+
+#include "fragglescript/t_fs.h"
 
 // MACROS ------------------------------------------------------------------
 
