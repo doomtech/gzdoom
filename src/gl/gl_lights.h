@@ -248,9 +248,6 @@ enum
 	STAT_DLIGHT=64
 };
 
-extern TArray<ADynamicLight *> PointLights;
-
-
 
 //
 // Light helper methods

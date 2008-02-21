@@ -178,7 +178,7 @@ void T_UnArchiveScript(FArchive & ar, script_t * script)
 //
 //==========================================================================
 
-void T_ArchiveRunningScript(FArchive & ar,DRunningScript *rs)
+void DFraggleThinker::ArchiveRunningScript(FArchive & ar,DRunningScript *rs)
 {
 	int i;
 	short num_variables;
@@ -223,7 +223,7 @@ void T_ArchiveRunningScript(FArchive & ar,DRunningScript *rs)
 //
 //==========================================================================
 
-DRunningScript *T_UnArchiveRunningScript(FArchive & ar)
+DRunningScript *DFraggleThinker::UnArchiveRunningScript(FArchive & ar)
 {
 	int i;
 	short scriptnum;
@@ -268,21 +268,21 @@ DRunningScript *T_UnArchiveRunningScript(FArchive & ar)
 //
 //==========================================================================
 
-void T_ArchiveRunningScripts(FArchive & ar)
+void DFraggleThinker::ArchiveRunningScripts(FArchive & ar)
 {
 	DRunningScript *rs;
 	short num_runningscripts = 0;
 	
 	// count runningscripts
-	for(rs = runningscripts.next; rs; rs = rs->next) num_runningscripts++;
+	for(rs = runningscripts->next; rs; rs = rs->next) num_runningscripts++;
 	
 	ar << num_runningscripts;
 
 	// now archive them
-	rs = runningscripts.next;
+	rs = runningscripts->next;
 	while(rs)
     {
-		T_ArchiveRunningScript(ar,rs);
+		ArchiveRunningScript(ar,rs);
 		rs = rs->next;
     }
 }
@@ -293,7 +293,7 @@ void T_ArchiveRunningScripts(FArchive & ar)
 //
 //==========================================================================
 
-void T_UnArchiveRunningScripts(FArchive & ar)
+void DFraggleThinker::UnArchiveRunningScripts(FArchive & ar)
 {
 	DRunningScript *rs;
 	short num_runningscripts;
@@ -307,11 +307,11 @@ void T_UnArchiveRunningScripts(FArchive & ar)
 	for(i=0; i<num_runningscripts; i++)
     {
 		// get next runningscript
-		rs = T_UnArchiveRunningScript(ar);
+		rs = UnArchiveRunningScript(ar);
 		
 		// hook into chain
-		rs->next = runningscripts.next;
-		rs->prev = &runningscripts;
+		rs->next = runningscripts->next;
+		rs->prev = runningscripts;
 		rs->prev->next = rs;
 		if(rs->next) rs->next->prev = rs;
     }
@@ -323,7 +323,7 @@ void T_UnArchiveRunningScripts(FArchive & ar)
 //
 //==========================================================================
 
-void T_ArchiveSpawnedThings(FArchive & ar)
+void DFraggleThinker::ArchiveSpawnedThings(FArchive & ar)
 {
 	int count = SpawnedThings.Size ();
 	ar << count;
@@ -340,23 +340,22 @@ void T_ArchiveSpawnedThings(FArchive & ar)
 //
 //==========================================================================
 
-void T_SerializeScripts(FArchive & ar)
+void DFraggleThinker::Serialize(FArchive & ar)
 {
-	if(!HasScripts) return;
-	
+	Super::Serialize(ar);
 	if (ar.IsStoring())
 	{
 		T_ArchiveScript(ar, &levelscript);
 		T_ArchiveScript(ar, &hub_script);
-		T_ArchiveRunningScripts(ar);
-		T_ArchiveSpawnedThings(ar);
+		ArchiveRunningScripts(ar);
+		ArchiveSpawnedThings(ar);
 	}
 	else
 	{
 		T_UnArchiveScript(ar, &levelscript);
 		T_UnArchiveScript(ar, &hub_script);
-		T_UnArchiveRunningScripts(ar);
-		T_ArchiveSpawnedThings(ar);
+		UnArchiveRunningScripts(ar);
+		ArchiveSpawnedThings(ar);
 	}
 }
 

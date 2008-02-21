@@ -67,11 +67,45 @@ float floatvalue(const svalue_s & v);
 const char *stringvalue(const svalue_t & v);
 
 #include "t_vari.h"
-#include "t_prepro.h"
 
 // haleyjd: moved from t_script.h - 8-17
 // 01/06/01: doubled number of allowed scripts
 #define MAXSCRIPTS 257
+
+enum
+{
+	SECTIONSLOTS = 17
+};
+
+/***** {} sections **********/
+
+struct section_t
+{
+	char *start;    // offset of starting brace {
+	char *end;      // offset of ending brace   }
+	int type;       // section type: for() loop, while() loop etc
+
+	union
+	{
+		struct
+		{
+			char *loopstart;  // positioned before the while()
+		} data_loop;
+	} data; // data for section
+
+	section_t *next;        // for hashing
+};
+
+enum    // section types
+{
+	st_empty,       // none: empty {} braces
+	st_if,          // if() statement
+	st_elseif,      // haleyjd: elseif()
+	st_else,        // haleyjd: else()
+	st_loop,        // loop
+};
+
+
 
 struct script_s
 {
@@ -112,7 +146,7 @@ struct script_s
 struct operator_s
 {
   char *string;
-  svalue_t (*handler)(int, int, int); // left, mid, right
+  svalue_t (DFraggleThinker::*handler)(int, int, int); // left, mid, right
   int direction;
 };
 
@@ -121,16 +155,6 @@ enum
   forward,
   backward
 };
-
-void run_script(script_t *script);
-void continue_script(script_t *script, char *continue_point);
-void parse_include(char *lumpname);
-void run_statement();
-void script_error(char *s, ...);
-
-svalue_t evaluate_expression(int start, int stop);
-int find_operator(int start, int stop, char *value);
-int find_operator_backwards(int start, int stop, char *value);
 
 /******* tokens **********/
 
@@ -149,29 +173,6 @@ enum    // brace types: where current_section is a { or }
   bracket_open,
   bracket_close
 };
-
-extern svalue_t nullvar;
-
-extern script_t *current_script;
-extern AActor *trigger_obj;
-extern int killscript;
-
-extern char *tokens[T_MAXTOKENS];
-extern tokentype_t tokentype[T_MAXTOKENS];
-extern int num_tokens;
-extern char *rover;     // current point reached in parsing
-extern char *linestart; // start of the current expression
-
-extern section_t *current_section;
-extern section_t *prev_section;
-extern int bracetype;
-
-// the global_script is the root
-// script and contains only built-in
-// FraggleScript variables/functions
-
-extern script_t global_script; 
-extern script_t hub_script;
 
 #endif
 
