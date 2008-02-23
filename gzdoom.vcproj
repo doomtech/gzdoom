@@ -10109,11 +10109,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\fragglescript\t_func.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\fragglescript\t_load.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\src\fragglescript\t_oper.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\fragglescript\t_oper.h"
 				>
 			</File>
 			<File
@@ -10126,6 +10134,10 @@
 			</File>
 			<File
 				RelativePath=".\src\fragglescript\t_prepro.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\fragglescript\t_prepro.h"
 				>
 			</File>
 			<File
@@ -10145,11 +10157,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\fragglescript\t_util.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\fragglescript\t_util.h"
+				RelativePath=".\src\fragglescript\t_spec.h"
 				>
 			</File>
 			<File

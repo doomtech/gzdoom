@@ -46,10 +46,28 @@ SMMU source (including FraggleScript). You may use any code from SMMU in GZDoom,
 #include "v_text.h"
 #include "c_cvars.h"
 #include "i_system.h"
-#include "a_pickups.h"
 
 
+void parse_script();
+void parse_data(char *data, char *end);
+svalue_t evaluate_expression(int start, int stop);
+
+AActor *trigger_obj;            // object which triggered script
+
+char *tokens[T_MAXTOKENS];
+tokentype_t tokentype[T_MAXTOKENS];
+int num_tokens = 0;
 CVAR(Bool, script_debug, false, 0)
+
+script_t *current_script;       // the current script
+svalue_t nullvar;				// null var for empty return
+int killscript;					// when set to true, stop the script quickly
+section_t *prev_section;		// the section from the previous statement
+
+/************ Divide into tokens **************/
+
+char *linestart;        // start of line
+char *rover;            // current point reached in script
 
 // inline for speed
 // haleyjd: updated
@@ -62,13 +80,14 @@ CVAR(Bool, script_debug, false, 0)
 #define tt (tokentype[num_tokens-1])
 #define tok (tokens[num_tokens-1])
 
-//==========================================================================
-//
-// next_token: end this token, go onto the next
-//
-//==========================================================================
+section_t *current_section; // the section (if any) found in parsing the line
+int bracetype;              // bracket_open or bracket_close
+static void add_char(char c);
 
-void DFraggleThinker::next_token()
+// next_token: end this token, go onto the next
+extern char * scriptstart;
+
+static void next_token()
 {
 	if(tok[0] || tt==string_)
     {
@@ -149,12 +168,8 @@ void DFraggleThinker::next_token()
     }
 }
 
-//==========================================================================
-//
 // return an escape sequence (prefixed by a '\')
 // do not use all C escape sequences
-//
-//==========================================================================
 
 static char escape_sequence(char c)
 {
@@ -168,13 +183,9 @@ static char escape_sequence(char c)
 	return c;
 }
 
-//==========================================================================
-//
 // add_char: add one character to the current token
-//
-//==========================================================================
 
-void DFraggleThinker::add_char(char c)
+static void add_char(char c)
 {
 	char *out = tok + strlen(tok);
 	
@@ -182,8 +193,6 @@ void DFraggleThinker::add_char(char c)
 	*out = 0;
 }
 
-//==========================================================================
-//
 // get_tokens.
 // Take a string, break it into tokens.
 
@@ -201,10 +210,8 @@ void DFraggleThinker::add_char(char c)
 //           the original text
 //   unset: shouldn't ever end up being set really.
 //   function: a function name (found in second stage parsing)
-//
-//==========================================================================
 
-void DFraggleThinker::get_tokens(char *s)
+void get_tokens(char *s)
 {
 	rover = s;
 	num_tokens = 1;
@@ -308,13 +315,7 @@ void DFraggleThinker::get_tokens(char *s)
 }
 
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void DFraggleThinker::print_tokens()	// DEBUG
+void print_tokens()	// DEBUG
 {
 	int i;
 	for (i = 0; i < num_tokens; i++)
@@ -348,15 +349,11 @@ void DFraggleThinker::print_tokens()	// DEBUG
 }
 
 
-//==========================================================================
-//
 // run_script
 //
 // the function called by t_script.c
-//
-//==========================================================================
 
-void DFraggleThinker::run_script(script_t *script)
+void run_script(script_t *script)
 {
 	// set current script
 	current_script = script;
@@ -370,13 +367,7 @@ void DFraggleThinker::run_script(script_t *script)
 	parse_script(); // run it
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void DFraggleThinker::continue_script(script_t *script, char *continue_point)
+void continue_script(script_t *script, char *continue_point)
 {
 	current_script = script;
 	
@@ -386,13 +377,7 @@ void DFraggleThinker::continue_script(script_t *script, char *continue_point)
 	parse_script(); // run 
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void DFraggleThinker::parse_script()
+void parse_script()
 {
 	// check for valid rover
 	if(rover < current_script->data || 
@@ -415,13 +400,7 @@ void DFraggleThinker::parse_script()
 	current_script->lastiftrue = false;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void DFraggleThinker::parse_data(char *data, char *end)
+void parse_data(char *data, char *end)
 {
 	char *token_alloc;      // allocated memory for tokens
 	
@@ -466,21 +445,16 @@ void DFraggleThinker::parse_data(char *data, char *end)
 	delete token_alloc;
 }
 
-//==========================================================================
-//
-// decide what to do with it
-
-// NB this stuff is a bit hardcoded:
-//    it could be nicer really but i'm
-//    aiming for speed
-
-// if() and while() will be mistaken for functions
-// during token processing
-//
-//==========================================================================
-
-void DFraggleThinker::run_statement()
+void run_statement()
 {
+	// decide what to do with it
+	
+	// NB this stuff is a bit hardcoded:
+	//    it could be nicer really but i'm
+	//    aiming for speed
+	
+	// if() and while() will be mistaken for functions
+	// during token processing
 	if(tokentype[0] == function)
     {
 		if(!strcmp(tokens[0], "if"))
@@ -554,13 +528,8 @@ void DFraggleThinker::run_statement()
 
 /***************** Evaluating Expressions ************************/
 
-//==========================================================================
-//
 // find a token, ignoring things in brackets        
-//
-//==========================================================================
-
-int DFraggleThinker::find_operator(int start, int stop, char *value)
+int find_operator(int start, int stop, char *value)
 {
 	int i;
 	int bracketlevel = 0;
@@ -583,13 +552,8 @@ int DFraggleThinker::find_operator(int start, int stop, char *value)
 	return -1;
 }
 
-//==========================================================================
-//
 // go through tokens the same as find_operator, but backwards
-//
-//==========================================================================
-
-int DFraggleThinker::find_operator_backwards(int start, int stop, char *value)
+int find_operator_backwards(int start, int stop, char *value)
 {
 	int i;
 	int bracketlevel = 0;
@@ -616,8 +580,6 @@ int DFraggleThinker::find_operator_backwards(int start, int stop, char *value)
 	return -1;
 }
 
-//==========================================================================
-//
 // simple_evaluate is used once evalute_expression gets to the level
 // where it is evaluating just one token
 
@@ -626,10 +588,10 @@ int DFraggleThinker::find_operator_backwards(int start, int stop, char *value)
 // name tokens are considered to be variables and
 // attempts are made to find the value of that variable
 // command tokens are executed (does not return a svalue_t)
-//
-//==========================================================================
 
-svalue_t DFraggleThinker::simple_evaluate(int n)
+extern svalue_t nullvar;
+
+static svalue_t simple_evaluate(int n)
 {
 	svalue_t returnvar;
 	svariable_t *var;
@@ -637,7 +599,7 @@ svalue_t DFraggleThinker::simple_evaluate(int n)
 	switch(tokentype[n])
     {
     case string_: returnvar.type = svt_string;
-		returnvar.value.s = tokens[n];
+		returnvar.string = tokens[n];
 		return returnvar;
 		
 		// haleyjd: 8-17
@@ -667,18 +629,14 @@ svalue_t DFraggleThinker::simple_evaluate(int n)
     }
 }
 
-//==========================================================================
-//
 // pointless_brackets checks to see if there are brackets surrounding
 // an expression. eg. "(2+4)" is the same as just "2+4"
 //
 // because of the recursive nature of evaluate_expression, this function is
 // neccesary as evaluating expressions such as "2*(2+4)" will inevitably
 // lead to evaluating "(2+4)"
-//
-//==========================================================================
 
-void DFraggleThinker::pointless_brackets(int *start, int *stop)
+static void pointless_brackets(int *start, int *stop)
 {
 	int bracket_level, i;
 	
@@ -710,8 +668,6 @@ void DFraggleThinker::pointless_brackets(int *start, int *stop)
     }
 }
 
-//==========================================================================
-//
 // evaluate_expresion is the basic function used to evaluate
 // a FraggleScript expression.
 // start and stop denote the tokens which are to be evaluated.
@@ -723,10 +679,8 @@ void DFraggleThinker::pointless_brackets(int *start, int *stop)
 // called, which in turn calls evaluate_expression again to
 // evaluate each side. When it reaches the level of being asked
 // to evaluate just 1 token, it calls simple_evaluate
-//
-//==========================================================================
 
-svalue_t DFraggleThinker::evaluate_expression(int start, int stop)
+svalue_t evaluate_expression(int start, int stop)
 {
 	int i, n;
 	
@@ -749,22 +703,15 @@ svalue_t DFraggleThinker::evaluate_expression(int start, int stop)
 		// done backwards for left-to-right reading: eg so
 		// 5-3-2 is (5-3)-2 not 5-(3-2)
 		
-		if (operators[i].direction==forward)
-		{
-			n = find_operator(start, stop, operators[i].string);
-		}
-		else
-		{
-			n = find_operator_backwards(start, stop, operators[i].string);
-		}
-
-		if( n != -1)
+		if( -1 != (n = (operators[i].direction==forward ?
+						find_operator_backwards : find_operator)
+						  (start, stop, operators[i].string)) )
 		{
 			// C_Printf("operator %s, %i-%i-%i\n", operators[count].string, start, n, stop);
 			
 			// call the operator function and evaluate this chunk of tokens
 			
-			return (this->*(operators[i].handler))(start, n, stop);
+			return operators[i].handler(start, n, stop);
 		}
     }
 	
@@ -783,16 +730,10 @@ svalue_t DFraggleThinker::evaluate_expression(int start, int stop)
 	
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void DFraggleThinker::script_error(char *s, ...)
+void script_error(char *s, ...)
 {
 	va_list args;
-	FString tempstr;
+	char tempstr[2048];
 	int linenum = 1;
 	
 	va_start(args, s);
@@ -809,9 +750,9 @@ void DFraggleThinker::script_error(char *s, ...)
     }
 	
 	// print the error
-	tempstr.VFormat(s, args);
+	vsprintf(tempstr, s, args);
 
-	Printf(PRINT_BOLD,"FS Error: %s at Script %d, Line %d\n", tempstr.GetChars(), current_script->scriptnum, linenum);
+	Printf(PRINT_BOLD,"%d(%d): %s\n", current_script->scriptnum,linenum,tempstr);
 	
 	
 	// make a noise
@@ -821,6 +762,61 @@ void DFraggleThinker::script_error(char *s, ...)
 }
 
 
+// [CO] made these real functions to save some memory
+//      The compiler generated insane amounts of code for
+//      these macros without any real benefit. 
+//		Altogether they generated 14(!) KB of code!
 
+int intvalue(const svalue_t &v)
+{
+	return (v.type == svt_string ? atoi(v.string) :       
+	v.type == svt_fixed ? (int)(v.value.f / FRACUNIT) : 
+	v.type == svt_mobj ? -1 : v.value.i );
+}
+
+fixed_t fixedvalue(const svalue_t &v)
+{
+	return (v.type == svt_fixed ? v.value.f :
+	v.type == svt_string ? (fixed_t)(atof(v.string) * FRACUNIT) :
+	v.type == svt_mobj ? -1*FRACUNIT : intvalue(v) * FRACUNIT );
+}
+
+float floatvalue(const svalue_t &v)
+{
+	return (float)( (v.type == svt_string ? atof(v.string) :       
+	v.type == svt_fixed ? (int)(v.value.f / (float)FRACUNIT) : 
+	v.type == svt_mobj ? -1 : v.value.i ));
+}
+
+// haleyjd: 8-17
+//
+// sf: string value of an svalue_t
+//
+const char *stringvalue(const svalue_t & v)
+{
+	static char buffer[256];
+	
+	switch(v.type)
+    {
+	case svt_string:
+		return v.string;
+		
+	case svt_mobj:
+		// return the class name
+		return (const char *)v.value.mobj->GetClass()->TypeName;
+		
+	case svt_fixed:
+		{
+			double val = ((double)v.value.f) / FRACUNIT;
+			sprintf(buffer, "%g", val);
+			return buffer;
+		}
+		
+	case svt_int:
+	default:
+        sprintf(buffer, "%li", v.value.i);  // haleyjd: should be %li, not %i
+		return buffer;	
+    }
+}
 
 // EOF

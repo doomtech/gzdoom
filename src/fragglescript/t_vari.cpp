@@ -55,8 +55,33 @@ IMPLEMENT_POINTY_CLASS(DActorPointer)
 	DECLARE_POINTER(actor)
 END_POINTERS
 
+// the global script just holds all
+// the global variables
+script_t global_script;
 
-void DFraggleThinker::T_ClearHubScript()
+// the hub script holds all the variables
+// shared between levels in a hub
+script_t hub_script;
+
+
+// initialise the global script: clear all the variables
+
+void init_variables()
+{
+	int i;
+	
+	// globalscript is the root script
+	global_script.parent = NULL;
+	// hub script is the next level down
+	hub_script.parent = &global_script;
+	
+	for(i=0; i<VARIABLESLOTS; i++)
+		global_script.variables[i] = hub_script.variables[i] = NULL;
+	
+	// any hardcoded global variables can be added here
+}
+
+void T_ClearHubScript()
 {
 	int i;
 	
@@ -74,7 +99,7 @@ void DFraggleThinker::T_ClearHubScript()
 // find_variable checks through the current script, level script
 // and global script to try to find the variable of the name wanted
 
-svariable_t *DFraggleThinker::find_variable(char *name)
+svariable_t *find_variable(char *name)
 {
 	svariable_t *var;
 	script_t *current;
@@ -95,7 +120,7 @@ svariable_t *DFraggleThinker::find_variable(char *name)
 // create a new variable in a particular script.
 // returns a pointer to the new variable.
 
-svariable_t *DFraggleThinker::new_variable(script_t *script, char *name, int vtype)
+svariable_t *new_variable(script_t *script, char *name, int vtype)
 {
 	int n;
 	svariable_t *newvar;
@@ -106,8 +131,7 @@ svariable_t *DFraggleThinker::new_variable(script_t *script, char *name, int vty
 	if(vtype == svt_string)
 	{
 		// 256 bytes for string
-		newvar->value.s = new char[256];
-		newvar->value.s[0] = 0;
+		newvar->string = "";
 	}
 	else if (vtype != svt_mobj)
 	{
@@ -128,7 +152,7 @@ svariable_t *DFraggleThinker::new_variable(script_t *script, char *name, int vty
 // search a particular script for a variable, which
 // is returned if it exists
 
-svariable_t *DFraggleThinker::variableforname(script_t *script, char *name)
+svariable_t *variableforname(script_t *script, char *name)
 {
 	int n;
 	svariable_t *current;
@@ -148,7 +172,7 @@ svariable_t *DFraggleThinker::variableforname(script_t *script, char *name)
 }
 
 // free all the variables in a given script
-void DFraggleThinker::clear_variables(script_t *script)
+void clear_variables(script_t *script)
 {
 	int i;
 	svariable_t *current, *next;
@@ -179,7 +203,7 @@ void DFraggleThinker::clear_variables(script_t *script)
 // returns an svalue_t holding the current
 // value of a particular variable.
 
-svalue_t DFraggleThinker::getvariablevalue(svariable_t *v)
+svalue_t getvariablevalue(svariable_t *v)
 {
 	svalue_t returnvar;
 	
@@ -213,7 +237,7 @@ svalue_t DFraggleThinker::getvariablevalue(svariable_t *v)
 // set a variable to a value from an svalue_t
 // haleyjd: significant reformatting in 8-17
 
-void DFraggleThinker::setvariablevalue(svariable_t *v, svalue_t newvalue)
+void setvariablevalue(svariable_t *v, const svalue_t &newvalue)
 {
 	if(killscript) return;  // protect the variables when killing script
 	
@@ -226,14 +250,14 @@ void DFraggleThinker::setvariablevalue(svariable_t *v, svalue_t newvalue)
 		
 		// alloc memory for string
 		if(v->type == svt_string)   // static incase a global_script var
-			v->value.s = new char[256];
+			v->string = "";
     }
 	
 	if(v->type == svt_int)
 		v->value.i = intvalue(newvalue);
 	
 	if(v->type == svt_string)
-		strcpy(v->value.s, stringvalue(newvalue));
+		v->string = newvalue.type == svt_string? newvalue.string : stringvalue(newvalue);
 	
 	if(v->type == svt_fixed)
 		v->value.fixed = fixedvalue(newvalue);
@@ -251,7 +275,7 @@ void DFraggleThinker::setvariablevalue(svariable_t *v, svalue_t newvalue)
 		script_error("attempt to set function to a value\n");
 }
 
-svariable_t *DFraggleThinker::add_game_int(char *name, int *var)
+svariable_t *add_game_int(char *name, int *var)
 {
 	svariable_t* newvar;
 	newvar = new_variable(&global_script, name, svt_pInt);
@@ -260,7 +284,7 @@ svariable_t *DFraggleThinker::add_game_int(char *name, int *var)
 	return newvar;
 }
 
-svariable_t *DFraggleThinker::add_game_mobj(char *name, AActor **mo)
+svariable_t *add_game_mobj(char *name, AActor **mo)
 {
 	svariable_t* newvar;
 	newvar = new_variable(&global_script, name, svt_pMobj);
@@ -292,7 +316,12 @@ FUNCTIONS
 
 // the basic handler functions are in func.c
 
-svalue_t DFraggleThinker::evaluate_function(int start, int stop)
+int t_argc;                     // number of arguments
+svalue_t *t_argv;               // arguments
+svalue_t t_return;              // returned value
+char * t_func;					// name of current function
+
+svalue_t evaluate_function(int start, int stop)
 {
 	svariable_t *func = NULL;
 	int startpoint, endpoint;
@@ -355,7 +384,7 @@ svalue_t DFraggleThinker::evaluate_function(int start, int stop)
 	t_return.value.i = 0;
 	
 	// now run the function
-	(this->*(func->Value().handler))();
+	func->Value().handler();
 	
 	// return the returned value
 	return t_return;
@@ -370,7 +399,7 @@ svalue_t DFraggleThinker::evaluate_function(int start, int stop)
 
 // this function is just based on the one above
 
-svalue_t DFraggleThinker::OPstructure(int start, int n, int stop)
+svalue_t OPstructure(int start, int n, int stop)
 {
 	svariable_t *func = NULL;
 	
@@ -437,8 +466,8 @@ svalue_t DFraggleThinker::OPstructure(int start, int n, int stop)
 	t_return.value.i = 0;
 	
 	// now run the function
-	(this->*(func->Value().handler))();
-
+	func->Value().handler();
+	
 	// return the returned value
 	return t_return;
 }
@@ -446,7 +475,7 @@ svalue_t DFraggleThinker::OPstructure(int start, int n, int stop)
 
 // create a new function. returns the function number
 
-svariable_t *DFraggleThinker::new_function(char *name, void (DFraggleThinker::*handler)() )
+svariable_t *new_function(char *name, void (*handler)() )
 {
 	svariable_t *newvar;
 	
