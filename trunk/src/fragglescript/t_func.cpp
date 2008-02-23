@@ -420,7 +420,7 @@ static bool T_CheckArgs(int cnt)
 {
 	if (t_argc<cnt)
 	{
-		script_error("Insufficient parameters for '%s'\n", t_func);
+		script_error("Insufficient parameters for '%s'\n", t_func.GetChars());
 		return false;
 	}
 	return true;
@@ -4325,11 +4325,18 @@ void SF_WallGlow()
 
 
 
-//////////////////////////////////////////////////////////////////////////
+//==========================================================================
 //
 // Init Functions
 //
+//==========================================================================
+
 static int zoom=1;	// Dummy - no longer needed!
+
+inline void new_function(char *name, void (*handler)() )
+{
+	global_script.NewVariable (name, svt_function)->value.handler = handler;
+}
 
 void init_functions(void)
 {
@@ -4339,11 +4346,11 @@ void init_functions(void)
 	}
 
 	// add all the functions
-	add_game_int("consoleplayer", &consoleplayer);
-	add_game_int("displayplayer", &consoleplayer);
-	add_game_int("zoom", &zoom);
-	add_game_int("fov", &zoom); // haleyjd: temporary alias (?)
-	add_game_mobj("trigger", &trigger_obj);
+	global_script.NewVariable("consoleplayer", svt_pInt)->value.pI = &consoleplayer;
+	global_script.NewVariable("displayplayer", svt_pInt)->value.pI = &consoleplayer;
+	global_script.NewVariable("zoom", svt_pInt)->value.pI = &zoom;
+	global_script.NewVariable("fov", svt_pInt)->value.pI = &zoom;
+	global_script.NewVariable("trigger", svt_pMobj)->value.pMobj = &trigger_obj;
 	
 	// important C-emulating stuff
 	new_function("break", SF_Break);

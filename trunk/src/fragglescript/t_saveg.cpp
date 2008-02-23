@@ -43,44 +43,6 @@ SMMU source (including FraggleScript). You may use any code from SMMU in GZDoom,
 
 //==========================================================================
 //
-// Archive one script variable
-//
-//==========================================================================
-
-FArchive & operator <<(FArchive & ar, svariable_t & var)
-{
-	if (ar.IsStoring())	ar.WriteName(var.name);
-	else 
-	{
-		var.name = strdup(ar.ReadName());
-		var.ChangeType(svt_int);	// Just to clear old actor pointers in it!
-	}
-	ar << var.type << var.string;
-	
-	switch(var.type)        // store depending on type
-	{
-	case svt_string:
-		break;
-
-	case svt_int:
-		ar << var.value.i;
-		break;
-
-	case svt_mobj:
-		ar << var.value.acp;
-		break;
-
-	case svt_fixed:
-		ar << var.value.fixed;
-		break;
-	}
-
-	return ar;
-}
-
-
-//==========================================================================
-//
 // save a script
 //
 // all we really need to do is save the variables
@@ -117,7 +79,7 @@ void T_ArchiveScript(FArchive & ar, script_t * script)
 		// variables in the list to store
 		while(sv && sv->Type() != svt_label)
 		{
-			ar << *sv;
+			sv->Serialize(ar);
 			sv = sv->next;
 		}
     }
@@ -157,13 +119,13 @@ void T_UnArchiveScript(FArchive & ar, script_t * script)
 
 	for(i=0; i<num_variables; i++)
     {
-		svariable_t *sv = new svariable_t;
+		svariable_t *sv = new svariable_t("");
 		int hashkey;
 		
-		ar << * sv;
+		sv->Serialize(ar);
 		
 		// link in the new variable
-		hashkey = variable_hash(sv->name);
+		hashkey = variable_hash(sv->Name);
 		sv->next = script->variables[hashkey];
 		script->variables[hashkey] = sv;
     }
@@ -209,7 +171,7 @@ void T_ArchiveRunningScript(FArchive & ar,DRunningScript *rs)
 		// variables in the list to store
 		while(sv && sv->Type() != svt_label)
 		{
-			ar << *sv;
+			sv->Serialize(ar);
 			sv = sv->next;
 		}
     }
@@ -246,14 +208,14 @@ DRunningScript *T_UnArchiveRunningScript(FArchive & ar)
 	
 	for(i=0; i<num_variables; i++)
     {
-		svariable_t *sv = new svariable_t;
+		svariable_t *sv = new svariable_t("");
 		int hashkey;
 		
 		// name
-		ar << *sv;
+		sv->Serialize(ar);
 
 		// link in the new variable
-		hashkey = variable_hash(sv->name);
+		hashkey = variable_hash(sv->Name);
 		sv->next = rs->variables[hashkey];
 		rs->variables[hashkey] = sv;
     }

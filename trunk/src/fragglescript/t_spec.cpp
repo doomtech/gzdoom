@@ -234,7 +234,7 @@ static void create_variable(int start, int stop)
 	
 	// check if already exists, only checking
 	// the current script
-	if(variableforname(newvar_script, tokens[start]))
+	if(newvar_script->VariableForName (tokens[start]))
 	{
 		// In Eternity this was fatal and in Legacy it was ignored
 		// So make this a warning.
@@ -251,7 +251,7 @@ static void create_variable(int start, int stop)
 		return;
 	}
 	
-	new_variable(newvar_script, tokens[start], newvar_type);
+	newvar_script->NewVariable (tokens[start], newvar_type);
 	
 	if(stop != start) evaluate_expression(start, stop);
 }

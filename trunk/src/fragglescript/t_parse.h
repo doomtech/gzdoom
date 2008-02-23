@@ -119,6 +119,13 @@ struct script_s
 
   bool lastiftrue;     // haleyjd: whether last "if" statement was 
                           // true or false
+
+	svariable_t *NewVariable(const char *name, int vtype);
+	svariable_t *VariableForName(const char *name);
+	svariable_t *FindVariable(const char *name);
+	void ClearVariables(bool complete= false);
+	svariable_t *NewLabel(char *labelptr);
+
 };
 
 struct operator_s

@@ -107,17 +107,7 @@ void T_ClearScripts()
 	// without the zone heap this has to be cleaned manually
 
 	// clear all old variables in the levelscript
-	for(i=0; i<VARIABLESLOTS; i++)
-    {
-		svariable_t * var=levelscript.variables[i];
-		while(var)
-		{
-			svariable_t *next = var->next;
-			delete var;
-			var = next;
-		}
-		levelscript.variables[i] = NULL;
-    }
+	levelscript.ClearVariables(true);
 	for(i=0;i<SECTIONSLOTS;i++)
 	{
 		section_t * var=levelscript.sections[i];
@@ -147,16 +137,7 @@ void T_ClearScripts()
 
 	for(j=0;j<MAXSCRIPTS;j++) if (levelscript.children[j])
 	{
-		for(i=0; i<VARIABLESLOTS; i++)
-		{
-			svariable_t * var=levelscript.children[j]->variables[i];
-			while(var)
-			{
-				svariable_t *next = var->next;
-				delete var;
-				var = next;
-			}
-		}
+		levelscript.children[j]->ClearVariables(true);
 		for(i=0;i<SECTIONSLOTS;i++)
 		{
 			section_t * var=levelscript.children[j]->sections[i];
@@ -194,17 +175,7 @@ static struct FSDelete
 
 		// clear all old variables in the global script
 		// This also takes care of any defined functions.
-		for(i=0; i<VARIABLESLOTS; i++)
-		{
-			svariable_t * var=global_script.variables[i];
-			while(var)
-			{
-				svariable_t *next = var->next;
-				delete var;
-				var = next;
-			}
-			global_script.variables[i] = NULL;
-		}
+		global_script.ClearVariables(true);
 		for(i=0;i<SECTIONSLOTS;i++)
 		{
 			section_t * var=global_script.sections[i];
