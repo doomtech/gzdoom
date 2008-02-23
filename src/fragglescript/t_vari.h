@@ -62,7 +62,7 @@ class DActorPointer : public DObject
 
 public:
 
-	AActor * actor;
+	TObjPtr<AActor> actor;
 
 	DActorPointer()
 	{
@@ -75,23 +75,22 @@ public:
 		ar << actor;
 	}
 };
-
-class DFraggleThinker;
-
      // svariable_t
 struct svariable_t
 {
 	char *name;
 	svariable_t *next;       // for hashing
 
+private:
 	SBYTE type;       // vt_string or vt_int: same as in svalue_t
+
+	TObjPtr<DActorPointer> acp;
 
 	union value_t
 	{
 		char *s;
 		SDWORD i;
 		//AActor *mobj;
-		DActorPointer * acp;
 		fixed_t fixed;          // haleyjd: fixed-point
 		sfarray_t *a;           // haleyjd 05/27: arrays
 		
@@ -101,16 +100,18 @@ struct svariable_t
 		fixed_t *pFixed;        // haleyjd: fixed ptr
 		sfarray_t **pA;         // haleyjd 05/27: arrays
 		
-		void (DFraggleThinker::*handler)();      // for functions
+		void (*handler)();      // for functions
 		char *labelptr;         // for labels
 	} value;
 
+public:
 
 	svariable_t(const char * _name=NULL)
 	{
 		name=_name? strdup(_name):NULL;
 		type=svt_int;
 		value.i=0;
+		acp = NULL;
 		next=NULL;
 	}
 
@@ -118,7 +119,7 @@ struct svariable_t
 	{
 		if (name) free(name);
 		if (type==svt_string && value.s) free(value.s);
-		else if (type==svt_mobj) value.acp->Destroy();
+		else if (acp != NULL) acp->Destroy();
 	}
 
 	int Type() const
@@ -130,11 +131,12 @@ struct svariable_t
 	{
 		if (type==svt_mobj && newtype!=svt_mobj)
 		{
-			value.acp->Destroy();
+			acp->Destroy();
+			acp = NULL;
 		}
 		else if (type!=svt_mobj && newtype==svt_mobj)
 		{
-			value.acp = new DActorPointer;
+			acp = new DActorPointer;
 		}
 		type = newtype;
 	}
@@ -143,10 +145,48 @@ struct svariable_t
 	{
 		return value;
 	}
+
+	friend svariable_t *new_variable(script_t *script, char *name, int vtype);
+	friend svalue_t getvariablevalue(svariable_t *v);
+	friend void setvariablevalue(svariable_t *v, svalue_t newvalue);
+	friend svariable_t *add_game_int(char *name, int *var);
+	friend svariable_t *add_game_mobj(char *name, AActor **mo);
+	friend svariable_t *new_function(char *name, void (*handler)() );
+	friend svariable_t *new_label(char *labelptr);
+	friend FArchive & operator <<(FArchive & ar, svariable_t & var);
+	friend void MarkVariable(svariable_t *var);
+
+
 };
+
+
+
+// variables
+
+void T_ClearHubScript();
+
+void init_variables();
+svariable_t *find_variable(char *name);
+svariable_t *variableforname(script_t *script, char *name);
+void clear_variables(script_t *script);
+
+
+// functions
+
+svalue_t evaluate_function(int start, int stop);   // actually run a function
+svariable_t *new_function(char *name, void (*handler)() );
 
 // arguments to handler functions
 
 #define MAXARGS 128
+extern int t_argc;
+extern svalue_t *t_argv;
+extern svalue_t t_return;
+extern char * t_func;
 
+#endif
+#ifdef unix
+svariable_t *add_game_int(char *name, int *var);
+svariable_t *add_game_mobj(char *name, AActor **mo);
+svariable_t *new_variable(script_t *script, char *name, int vtype);
 #endif
