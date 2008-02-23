@@ -43,8 +43,11 @@
 #include "p_lnspec.h"
 #include "c_dispatch.h"
 
+//==========================================================================
+//
 //     FraggleScript action special
 //
+//==========================================================================
 
 static int LS_FS_Execute (line_t *ln, AActor *it, bool backSide,
 	int arg0, int arg1, int arg2, int arg3, int arg4)
@@ -53,8 +56,7 @@ static int LS_FS_Execute (line_t *ln, AActor *it, bool backSide,
 	if (arg1 && ln && backSide) return false;
 	if (arg2!=0 && !P_CheckKeys(it, arg2, !!arg3)) return false;
 
-	TThinkerIterator<DFraggleThinker> iter;
-	DFraggleThinker *th = iter.Next();
+	DFraggleThinker *th = DFraggleThinker::ActiveThinker;
 	if (th)
 	{
 		th->RunScript(arg0,it);
@@ -299,49 +301,6 @@ const char *stringvalue(const svalue_t & v)
         sprintf(buffer, "%li", v.value.i);  // haleyjd: should be %li, not %i
 		return buffer;	
     }
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-AActor *MobjForSvalue(svalue_t svalue)
-{
-	int intval;
-
-	if(svalue.type == svt_mobj) 
-	{
-		// Inventory items in the player's inventory have to be considered non-present.
-		if (svalue.value.mobj != NULL && 
-			svalue.value.mobj->IsKindOf(RUNTIME_CLASS(AInventory)) && 
-			static_cast<AInventory*>(svalue.value.mobj)->Owner != NULL)
-		{
-			return NULL;
-		}
-
-		return svalue.value.mobj;
-	}
-	else
-	{
-		// this requires some creativity. We use the intvalue
-		// as the thing number of a thing in the level.
-		intval = intvalue(svalue);
-		
-		if(intval < 0 || intval >= (int)SpawnedThings.Size())
-		{ 
-			return NULL;
-		}
-		// Inventory items in the player's inventory have to be considered non-present.
-		if (SpawnedThings[intval]->actor != NULL &&
-			SpawnedThings[intval]->actor->IsKindOf(RUNTIME_CLASS(AInventory)) && 
-			static_cast<AInventory*>(SpawnedThings[intval]->actor)->Owner != NULL)
-		{
-			return NULL;
-		}
-
-		return SpawnedThings[intval]->actor;
-	}
 }
 
 
@@ -774,3 +733,4 @@ CCMD(fpuke)
 			th->RunScript(atoi (argv[1]), NULL);
 	}
 }
+

@@ -118,6 +118,9 @@ class DFraggleThinker : public DThinker
 	script_t levelscript;
 
 	DRunningScript *runningscripts;
+public:
+	TArray<DActorPointer*> SpawnedThings;
+private:
 
 
 	section_t *looping_section();
@@ -139,6 +142,7 @@ class DFraggleThinker : public DThinker
 	svariable_t *new_function(char *name, void (DFraggleThinker::*handler)() );
 
 	FString GetFormatString(int startarg);
+	AActor *MobjForSvalue(svalue_t svalue);
 
 	void SF_Print();
 	void SF_Rnd();
@@ -376,6 +380,12 @@ public:
 	void Destroy();
 	void Serialize(FArchive & arc);
 	void Tick();
+
+	static DFraggleThinker *ActiveThinker;
+
+	friend void T_PrepareSpawnThing();
+	friend void T_RegisterSpawnThing(AActor *ac);
+
 };
 
 
@@ -384,8 +394,6 @@ public:
 AActor *MobjForSvalue(svalue_t svalue);
 
 // savegame related stuff
-
-extern TArray<DActorPointer*> SpawnedThings;
 
 void FS_EmulateCmd(char * string);
 
