@@ -170,30 +170,6 @@ section_t *find_section_end(char *brace)
 #define isop(c)   !( ( (c)<='Z' && (c)>='A') || ( (c)<='z' && (c)>='a') || \
 ( (c)<='9' && (c)>='0') || ( (c)=='_') )
 
-// create a new label. pass the location inside the script
-svariable_t *new_label(char *labelptr)
-{
-	svariable_t *newlabel;   // labels are stored as variables
-	char labelname[256];
-	char *temp, *temp2;
-	
-	// copy the label name from the script up to ':'
-	for(temp=labelptr, temp2 = labelname; *temp!=':'; temp++, temp2++)
-		*temp2 = *temp;
-	*temp2 = '\0'; // end string in null (haleyjd 02/02: '\0', not NULL)
-	
-	if (*labelname==0)
-	{
-		Printf(PRINT_BOLD,"Script %d: ':' encountrered in incorrect position!\n",current_script->scriptnum);
-	}
-	newlabel = new_variable(current_script, labelname, svt_label);
-	
-	// put neccesary data in the label
-	
-	newlabel->value.labelptr = labelptr;
-	
-	return newlabel;
-}
 
 /*********** main loop **************/
 
@@ -260,7 +236,16 @@ char *process_find_char(char *data, char find)
 			char *labelptr = data-1;
 			
 			while(!isop(*labelptr)) labelptr--;
-			new_label(labelptr+1);
+
+			FString labelname(labelptr+1, strcspn(labelptr, ":"));
+			
+			if (labelname.Len() == 0)
+			{
+				Printf(PRINT_BOLD,"Script %d: ':' encountrered in incorrect position!\n",current_script->scriptnum);
+			}
+
+			svariable_t *newlabel = current_script->NewVariable(labelname, svt_label);
+			newlabel->value.labelptr = labelptr;
 		}
 		
 		if(*data=='{')  // { -- } sections: add 'em

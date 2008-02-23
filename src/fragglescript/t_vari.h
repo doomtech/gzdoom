@@ -22,21 +22,6 @@
 #ifndef __VARIABLE_H__
 #define __VARIABLE_H__
 
-#define VARIABLESLOTS 16
-
-
-// variable types
-
-
-
-// hash the variables for speed: this is the hashkey
-
-#define variable_hash(n)                \
-              (n[0]? (   ( (n)[0] + (n)[1] +   \
-                   ((n)[1] ? (n)[2] +   \
-				   ((n)[2] ? (n)[3]  : 0) : 0) ) % VARIABLESLOTS ) :0)
-
-
 // It is impractical to have svariable_t being declared as a DObject so
 // I have to use an intermediate class to make this subject to
 // automatic pointer cleanup.
@@ -61,83 +46,8 @@ public:
 		ar << actor;
 	}
 };
-     // svariable_t
-struct svariable_t
-{
-	char *name;
-	svariable_t *next;       // for hashing
 
-private:
-	SBYTE type;       // vt_string or vt_int: same as in svalue_t
-	FString string;
-
-	union value_t
-	{
-		SDWORD i;
-		//AActor *mobj;
-		DActorPointer * acp;
-		fixed_t fixed;          // haleyjd: fixed-point
-		
-		char **pS;              // pointer to game string
-		int *pI;                // pointer to game int
-		AActor **pMobj;         // pointer to game obj
-		fixed_t *pFixed;        // haleyjd: fixed ptr
-		
-		void (*handler)();      // for functions
-		char *labelptr;         // for labels
-	} value;
-
-public:
-
-	svariable_t(const char * _name=NULL)
-	{
-		name=_name? strdup(_name):NULL;
-		type=svt_int;
-		value.i=0;
-		next=NULL;
-	}
-
-	~svariable_t()
-	{
-		if (name) free(name);
-		if (type==svt_mobj) value.acp->Destroy();
-	}
-
-	int Type() const
-	{
-		return type;
-	}
-
-	void ChangeType(int newtype)
-	{
-		if (type==svt_mobj && newtype!=svt_mobj)
-		{
-			value.acp->Destroy();
-		}
-		else if (type!=svt_mobj && newtype==svt_mobj)
-		{
-			value.acp = new DActorPointer;
-		}
-		type = newtype;
-	}
-
-	const value_t & Value() const
-	{
-		return value;
-	}
-
-	friend svariable_t *new_variable(script_t *script, char *name, int vtype);
-	friend svalue_t getvariablevalue(svariable_t *v);
-	friend void setvariablevalue(svariable_t *v, const svalue_t &newvalue);
-	friend svariable_t *add_game_int(char *name, int *var);
-	friend svariable_t *add_game_mobj(char *name, AActor **mo);
-	friend svariable_t *new_function(char *name, void (*handler)() );
-	friend svariable_t *new_label(char *labelptr);
-	friend FArchive & operator <<(FArchive & ar, svariable_t & var);
-
-
-};
-
+#include "t_variable.h"
 
 
 // variables
@@ -145,15 +55,11 @@ public:
 void T_ClearHubScript();
 
 void init_variables();
-svariable_t *find_variable(char *name);
-svariable_t *variableforname(script_t *script, char *name);
-void clear_variables(script_t *script);
 
 
 // functions
 
 svalue_t evaluate_function(int start, int stop);   // actually run a function
-svariable_t *new_function(char *name, void (*handler)() );
 
 // arguments to handler functions
 
@@ -161,11 +67,6 @@ svariable_t *new_function(char *name, void (*handler)() );
 extern int t_argc;
 extern svalue_t *t_argv;
 extern svalue_t t_return;
-extern char * t_func;
+extern FString t_func;
 
-#endif
-#ifdef unix
-svariable_t *add_game_int(char *name, int *var);
-svariable_t *add_game_mobj(char *name, AActor **mo);
-svariable_t *new_variable(script_t *script, char *name, int vtype);
 #endif

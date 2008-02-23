@@ -394,7 +394,7 @@ void parse_script()
 	
 	// dont clear global vars!
 	if(current_script->scriptnum != -1)
-		clear_variables(current_script);        // free variables
+		current_script->ClearVariables();        // free variables
 	
 	// haleyjd
 	current_script->lastiftrue = false;
@@ -616,14 +616,14 @@ static svalue_t simple_evaluate(int n)
 		}
 		return returnvar;
 		
-    case name_:   var = find_variable(tokens[n]);
+    case name_:   var = current_script->FindVariable(tokens[n]);
 		if(!var)
 		{
 			script_error("unknown variable '%s'\n", tokens[n]);
 			return nullvar;
 		}
 		else
-			return getvariablevalue(var);
+			return var->GetValue();
 		
     default: return nullvar;
     }

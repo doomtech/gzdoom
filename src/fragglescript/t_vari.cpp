@@ -81,218 +81,6 @@ void init_variables()
 	// any hardcoded global variables can be added here
 }
 
-void T_ClearHubScript()
-{
-	int i;
-	
-	for(i=0; i<VARIABLESLOTS; i++)
-    {
-		while(hub_script.variables[i])
-		{
-			svariable_t *next = hub_script.variables[i]->next;
-			delete hub_script.variables[i];
-			hub_script.variables[i] = next;
-		}
-    }
-}
-
-// find_variable checks through the current script, level script
-// and global script to try to find the variable of the name wanted
-
-svariable_t *find_variable(char *name)
-{
-	svariable_t *var;
-	script_t *current;
-	
-	current = current_script;
-	
-	while(current)
-    {
-		// check this script
-		if((var = variableforname(current, name)))
-			return var;
-		current = current->parent;    // try the parent of this one
-    }
-	
-	return NULL;    // no variable
-}
-
-// create a new variable in a particular script.
-// returns a pointer to the new variable.
-
-svariable_t *new_variable(script_t *script, char *name, int vtype)
-{
-	int n;
-	svariable_t *newvar;
-	
-	newvar = new svariable_t(name);
-	newvar->type = vtype;
-	
-	if(vtype == svt_string)
-	{
-		// 256 bytes for string
-		newvar->string = "";
-	}
-	else if (vtype != svt_mobj)
-	{
-		newvar->value.i = 0;
-	}
-	else
-	{
-		newvar->value.acp = new DActorPointer;
-	}
-	
-	n = variable_hash(name);
-	newvar->next = script->variables[n];
-	script->variables[n] = newvar;
-	
-	return script->variables[n];
-}
-
-// search a particular script for a variable, which
-// is returned if it exists
-
-svariable_t *variableforname(script_t *script, char *name)
-{
-	int n;
-	svariable_t *current;
-	
-	n = variable_hash(name);
-	
-	current = script->variables[n];
-	
-	while(current)
-    {
-		if(!strcmp(name, current->name))        // found it?
-			return current;         
-		current = current->next;        // check next in chain
-    }
-	
-	return NULL;
-}
-
-// free all the variables in a given script
-void clear_variables(script_t *script)
-{
-	int i;
-	svariable_t *current, *next;
-	
-	for(i=0; i<VARIABLESLOTS; i++)
-    {
-		current = script->variables[i];
-		
-		// go thru this chain
-		while(current)
-		{
-			// labels are added before variables, during
-			// preprocessing, so will be at the end of the chain
-			// we can be sure there are no more variables to free
-			if(current->Type() == svt_label) break;
-			
-			next = current->next; // save for after freeing
-			
-			// if a string, free string data
-			delete current;
-			current = next; // go to next in chain
-		}
-		// start of labels or NULL
-		script->variables[i] = current;
-    }
-}
-
-// returns an svalue_t holding the current
-// value of a particular variable.
-
-svalue_t getvariablevalue(svariable_t *v)
-{
-	svalue_t returnvar;
-	
-	if(!v) return nullvar;
-	
-	else if(v->type == svt_pInt)
-    {
-		returnvar.type = svt_int;
-		returnvar.value.i = *v->value.pI;
-    }
-	else if(v->type == svt_pMobj)
-    {
-		returnvar.type = svt_mobj;
-		returnvar.value.mobj = *v->value.pMobj;
-    }
-	else if (v->type == svt_mobj)
-	{
-		returnvar.type = v->type;
-		returnvar.value.mobj = v->value.acp->actor;
-	}
-	else
-    {
-		returnvar.type = v->type;
-		// copy the value
-		returnvar.value.i = v->value.i;
-    }
-	
-	return returnvar;
-}
-
-// set a variable to a value from an svalue_t
-// haleyjd: significant reformatting in 8-17
-
-void setvariablevalue(svariable_t *v, const svalue_t &newvalue)
-{
-	if(killscript) return;  // protect the variables when killing script
-	
-	if(!v) return;
-	
-	if(v->type == svt_const)
-    {
-		// const adapts to the value it is set to
-		v->ChangeType(newvalue.type);
-		
-		// alloc memory for string
-		if(v->type == svt_string)   // static incase a global_script var
-			v->string = "";
-    }
-	
-	if(v->type == svt_int)
-		v->value.i = intvalue(newvalue);
-	
-	if(v->type == svt_string)
-		v->string = newvalue.type == svt_string? newvalue.string : stringvalue(newvalue);
-	
-	if(v->type == svt_fixed)
-		v->value.fixed = fixedvalue(newvalue);
-	
-	if(v->type == svt_mobj)
-		v->value.acp->actor = MobjForSvalue(newvalue);
-	
-	if(v->type == svt_pInt)
-		*v->value.pI = intvalue(newvalue);
-	
-	if(v->type == svt_pMobj)
-		*v->value.pMobj = MobjForSvalue(newvalue);
-	
-	if(v->type == svt_function)
-		script_error("attempt to set function to a value\n");
-}
-
-svariable_t *add_game_int(char *name, int *var)
-{
-	svariable_t* newvar;
-	newvar = new_variable(&global_script, name, svt_pInt);
-	newvar->value.pI = var;
-	
-	return newvar;
-}
-
-svariable_t *add_game_mobj(char *name, AActor **mo)
-{
-	svariable_t* newvar;
-	newvar = new_variable(&global_script, name, svt_pMobj);
-	newvar->value.pMobj = mo;
-	
-	return newvar;
-}
-
 
 /********************************
 FUNCTIONS
@@ -319,7 +107,7 @@ FUNCTIONS
 int t_argc;                     // number of arguments
 svalue_t *t_argv;               // arguments
 svalue_t t_return;              // returned value
-char * t_func;					// name of current function
+FString t_func;					// name of current function
 
 svalue_t evaluate_function(int start, int stop)
 {
@@ -338,7 +126,7 @@ svalue_t evaluate_function(int start, int stop)
 		script_error("misplaced closing paren\n");
 	
 	// all the functions are stored in the global script
-	else if( !(func = variableforname(&global_script, tokens[start]))  )
+	else if( !(func = global_script.VariableForName (tokens[start]))  )
 		script_error("no such function: '%s'\n",tokens[start]);
 	
 	else if(func->Type() != svt_function)
@@ -411,7 +199,7 @@ svalue_t OPstructure(int start, int n, int stop)
 	svalue_t argv[MAXARGS];
 	
 	// all the functions are stored in the global script
-	if( !(func = variableforname(&global_script, tokens[n+1]))  )
+	if( !(func = global_script.VariableForName (tokens[n+1]))  )
 		script_error("no such function: '%s'\n",tokens[n+1]);
 	
 	else if(func->Type() != svt_function)
@@ -455,7 +243,7 @@ svalue_t OPstructure(int start, int n, int stop)
 	// store the arguments in the global arglist
 	t_argc = argc;
 	t_argv = argv;
-	t_func = func->name;
+	t_func = func->Name;
 	
 	if(killscript) return nullvar;
 	
@@ -472,22 +260,4 @@ svalue_t OPstructure(int start, int n, int stop)
 	return t_return;
 }
 
-
-// create a new function. returns the function number
-
-svariable_t *new_function(char *name, void (*handler)() )
-{
-	svariable_t *newvar;
-	
-	// create the new variable for the function
-	// add to the global script
-	
-	newvar = new_variable(&global_script, name, svt_function);
-	
-	// add neccesary info
-	
-	newvar->value.handler = handler;
-	
-	return newvar;
-}
 

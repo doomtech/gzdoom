@@ -117,12 +117,12 @@ svalue_t OPequals(int start, int n, int stop)
 	svariable_t *var;
 	svalue_t evaluated;
 	
-	var = find_variable(tokens[start]);
+	var = current_script->FindVariable(tokens[start]);
 	
 	if(var)
     {
 		evaluated = evaluate_expression(n+1, stop);
-		setvariablevalue(var, evaluated);
+		var->SetValue (evaluated);
     }
 	else
     {
@@ -466,26 +466,26 @@ svalue_t OPincrement(int start, int n, int stop)
 		svalue_t value;
 		svariable_t *var;
 		
-		var = find_variable(tokens[stop]);
+		var = current_script->FindVariable(tokens[stop]);
 		if(!var)
 		{
 			script_error("unknown variable '%s'\n", tokens[stop]);
 			return nullvar;
 		}
-		value = getvariablevalue(var);
+		value = var->GetValue();
 		
 		// haleyjd
 		if(var->Type() != svt_fixed)
 		{
 			value.value.i = intvalue(value) + 1;
 			value.type = svt_int;
-			setvariablevalue(var, value);
+			var->SetValue (value);
 		}
 		else
 		{
 			value.value.f = fixedvalue(value) + FRACUNIT;
 			value.type = svt_fixed;
-			setvariablevalue(var, value);
+			var->SetValue (value);
 		}
 		
 		return value;
@@ -495,26 +495,26 @@ svalue_t OPincrement(int start, int n, int stop)
 		svalue_t origvalue, value;
 		svariable_t *var;
 		
-		var = find_variable(tokens[start]);
+		var = current_script->FindVariable(tokens[start]);
 		if(!var)
 		{
 			script_error("unknown variable '%s'\n", tokens[start]);
 			return nullvar;
 		}
-		origvalue = getvariablevalue(var);
+		origvalue = var->GetValue();
 		
 		// haleyjd
 		if(var->Type() != svt_fixed)
 		{
 			value.type = svt_int;
 			value.value.i = intvalue(origvalue) + 1;
-			setvariablevalue(var, value);
+			var->SetValue (value);
 		}
 		else
 		{
 			value.type = svt_fixed;
 			value.value.f = fixedvalue(origvalue) + FRACUNIT;
-			setvariablevalue(var, value);
+			var->SetValue (value);
 		}
 		
 		return origvalue;
@@ -532,26 +532,26 @@ svalue_t OPdecrement(int start, int n, int stop)
 		svalue_t value;
 		svariable_t *var;
 		
-		var = find_variable(tokens[stop]);
+		var = current_script->FindVariable(tokens[stop]);
 		if(!var)
 		{
 			script_error("unknown variable '%s'\n", tokens[stop]);
 			return nullvar;
 		}
-		value = getvariablevalue(var);
+		value = var->GetValue();
 		
 		// haleyjd
 		if(var->Type() != svt_fixed)
 		{
 			value.value.i = intvalue(value) - 1;
 			value.type = svt_int;
-			setvariablevalue(var, value);
+			var->SetValue (value);
 		}
 		else
 		{
 			value.value.f = fixedvalue(value) - FRACUNIT;
 			value.type = svt_fixed;
-			setvariablevalue(var, value);
+			var->SetValue (value);
 		}
 		
 		return value;
@@ -561,26 +561,26 @@ svalue_t OPdecrement(int start, int n, int stop)
 		svalue_t origvalue, value;
 		svariable_t *var;
 		
-		var = find_variable(tokens[start]);
+		var = current_script->FindVariable(tokens[start]);
 		if(!var)
 		{
 			script_error("unknown variable '%s'\n", tokens[start]);
 			return nullvar;
 		}
-		origvalue = getvariablevalue(var);
+		origvalue = var->GetValue();
 		
 		// haleyjd
 		if(var->Type() != svt_fixed)
 		{
 			value.type = svt_int;
 			value.value.i = intvalue(origvalue) - 1;
-			setvariablevalue(var, value);
+			var->SetValue (value);
 		}
 		else
 		{
 			value.type = svt_fixed;
 			value.value.f = fixedvalue(origvalue) - FRACUNIT;
-			setvariablevalue(var, value);
+			var->SetValue (value);
 		}
 		
 		return origvalue;

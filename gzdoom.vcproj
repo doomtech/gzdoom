@@ -10168,6 +10168,14 @@
 				RelativePath=".\src\fragglescript\t_vari.h"
 				>
 			</File>
+			<File
+				RelativePath=".\src\fragglescript\t_variable.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\fragglescript\t_variable.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="GL Renderer"
