@@ -47,54 +47,72 @@ SMMU source (including FraggleScript). You may use any code from SMMU in GZDoom,
 	left = evaluate_expression((a), (b)-1); \
 	right = evaluate_expression((b)+1, (c)); }\
 	
+svalue_t OPequals(int, int, int);           // =
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
+svalue_t OPplus(int, int, int);             // +
+svalue_t OPminus(int, int, int);            // -
+svalue_t OPmultiply(int, int, int);         // *
+svalue_t OPdivide(int, int, int);           // /
+svalue_t OPremainder(int, int, int);        // %
 
-operator_t DFraggleThinker::operators[]=
+svalue_t OPor(int, int, int);               // ||
+svalue_t OPand(int, int, int);              // &&
+svalue_t OPnot(int, int, int);              // !
+
+svalue_t OPor_bin(int, int, int);           // |
+svalue_t OPand_bin(int, int, int);          // &
+svalue_t OPnot_bin(int, int, int);          // ~
+
+svalue_t OPcmp(int, int, int);              // ==
+svalue_t OPnotcmp(int, int, int);           // !=
+svalue_t OPlessthan(int, int, int);         // <
+svalue_t OPgreaterthan(int, int, int);      // >
+
+svalue_t OPincrement(int, int, int);        // ++
+svalue_t OPdecrement(int, int, int);        // --
+
+svalue_t OPstructure(int, int, int);    // in t_vari.c
+
+// haleyjd: Eternity operator extensions
+// sorely missing compound comparison operators
+svalue_t OPlessthanorequal(int, int, int);     // <=
+svalue_t OPgreaterthanorequal(int, int, int);  // >=
+
+operator_t operators[]=
 {
-	{"=",   &DFraggleThinker::OPequals,               backward},
-	{"||",  &DFraggleThinker::OPor,                   forward},
-	{"&&",  &DFraggleThinker::OPand,                  forward},
-	{"|",   &DFraggleThinker::OPor_bin,               forward},
-	{"&",   &DFraggleThinker::OPand_bin,              forward},
-	{"==",  &DFraggleThinker::OPcmp,                  forward},
-	{"!=",  &DFraggleThinker::OPnotcmp,               forward},
-	{"<",   &DFraggleThinker::OPlessthan,             forward},
-	{">",   &DFraggleThinker::OPgreaterthan,          forward},
+	{"=",   OPequals,               backward},
+	{"||",  OPor,                   forward},
+	{"&&",  OPand,                  forward},
+	{"|",   OPor_bin,               forward},
+	{"&",   OPand_bin,              forward},
+	{"==",  OPcmp,                  forward},
+	{"!=",  OPnotcmp,               forward},
+	{"<",   OPlessthan,             forward},
+	{">",   OPgreaterthan,          forward},
 	
 	// haleyjd: Eternity Extensions
-	{"<=",  &DFraggleThinker::OPlessthanorequal,      forward},
-	{">=",  &DFraggleThinker::OPgreaterthanorequal,   forward},
+	{"<=",  OPlessthanorequal,      forward},
+	{">=",  OPgreaterthanorequal,   forward},
 	
-	{"+",   &DFraggleThinker::OPplus,                 forward},
-	{"-",   &DFraggleThinker::OPminus,                forward},
-	{"*",   &DFraggleThinker::OPmultiply,             forward},
-	{"/",   &DFraggleThinker::OPdivide,               forward},
-	{"%",   &DFraggleThinker::OPremainder,            forward},
-	{"~",   &DFraggleThinker::OPnot_bin,              forward}, // haleyjd
-	{"!",   &DFraggleThinker::OPnot,                  forward},
-	{"++",  &DFraggleThinker::OPincrement,            forward},
-	{"--",  &DFraggleThinker::OPdecrement,            forward},
-	{".",   &DFraggleThinker::OPstructure,            forward},
+	{"+",   OPplus,                 forward},
+	{"-",   OPminus,                forward},
+	{"*",   OPmultiply,             forward},
+	{"/",   OPdivide,               forward},
+	{"%",   OPremainder,            forward},
+	{"~",   OPnot_bin,              forward}, // haleyjd
+	{"!",   OPnot,                  forward},
+	{"++",  OPincrement,            forward},
+	{"--",  OPdecrement,            forward},
+	{".",   OPstructure,            forward},
 };
 
-int DFraggleThinker::num_operators = sizeof(operators) / sizeof(operator_t);
+int num_operators = sizeof(operators) / sizeof(operator_t);
 
 /***************** logic *********************/
 
 // = operator
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPequals(int start, int n, int stop)
+svalue_t OPequals(int start, int n, int stop)
 {
 	svariable_t *var;
 	svalue_t evaluated;
@@ -116,13 +134,7 @@ svalue_t DFraggleThinker::OPequals(int start, int n, int stop)
 }
 
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPor(int start, int n, int stop)
+svalue_t OPor(int start, int n, int stop)
 {
 	svalue_t returnvar;
 	int exprtrue = false;
@@ -148,13 +160,7 @@ svalue_t DFraggleThinker::OPor(int start, int n, int stop)
 }
 
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPand(int start, int n, int stop)
+svalue_t OPand(int start, int n, int stop)
 {
 	svalue_t returnvar;
 	int exprtrue = true;
@@ -178,13 +184,8 @@ svalue_t DFraggleThinker::OPand(int start, int n, int stop)
 	return returnvar;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPcmp(int start, int n, int stop)
+// haleyjd: reformatted as per 8-17
+svalue_t OPcmp(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -194,7 +195,7 @@ svalue_t DFraggleThinker::OPcmp(int start, int n, int stop)
 	
 	if(left.type == svt_string && right.type == svt_string)
 	{
-		returnvar.value.i = !strcmp(left.value.s, right.value.s);
+		returnvar.value.i = !strcmp(left.string, right.string);
 		return returnvar;
 	}
 	
@@ -220,13 +221,7 @@ svalue_t DFraggleThinker::OPcmp(int start, int n, int stop)
 	
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPnotcmp(int start, int n, int stop)
+svalue_t OPnotcmp(int start, int n, int stop)
 {
 	svalue_t returnvar;
 	
@@ -237,13 +232,7 @@ svalue_t DFraggleThinker::OPnotcmp(int start, int n, int stop)
 	return returnvar;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPlessthan(int start, int n, int stop)
+svalue_t OPlessthan(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -259,13 +248,7 @@ svalue_t DFraggleThinker::OPlessthan(int start, int n, int stop)
 	return returnvar;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPgreaterthan(int start, int n, int stop)
+svalue_t OPgreaterthan(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -281,13 +264,7 @@ svalue_t DFraggleThinker::OPgreaterthan(int start, int n, int stop)
 	return returnvar;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPnot(int start, int n, int stop)
+svalue_t OPnot(int start, int n, int stop)
 {
 	svalue_t right, returnvar;
 	
@@ -298,13 +275,9 @@ svalue_t DFraggleThinker::OPnot(int start, int n, int stop)
 	return returnvar;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
+/************** simple math ***************/
 
-svalue_t DFraggleThinker::OPplus(int start, int n, int stop)
+svalue_t OPplus(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -312,24 +285,19 @@ svalue_t DFraggleThinker::OPplus(int start, int n, int stop)
 	
   	if (left.type == svt_string)
     {
-      	char *tmp;
       	if (right.type == svt_string)
 		{
-		  	tmp = (char *)malloc(strlen(left.value.s) + strlen(right.value.s) + 1);
-		  	sprintf(tmp, "%s%s", left.value.s, right.value.s);
+			returnvar.string.Format("%s%s", left.string.GetChars(), right.string.GetChars());
 		}
       	else if (right.type == svt_fixed)
 		{
-	  		tmp = (char *)malloc(strlen(left.value.s) + 12);
-			sprintf(tmp, "%s%4.4f", left.value.s, floatvalue(right));
+			returnvar.string.Format("%s%4.4f", left.string.GetChars(), floatvalue(right));
 		}
       	else
 		{
-	  		tmp = (char *)malloc(strlen(left.value.s) + 12);
-	  		sprintf(tmp, "%s%i", left.value.s, intvalue(right));
+	  		returnvar.string.Format("%s%i", left.string.GetChars(), intvalue(right));
 		}
       	returnvar.type = svt_string;
-      	returnvar.value.s = tmp;
     }
 	// haleyjd: 8-17
 	else if(left.type == svt_fixed || right.type == svt_fixed)
@@ -346,13 +314,7 @@ svalue_t DFraggleThinker::OPplus(int start, int n, int stop)
 	return returnvar;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPminus(int start, int n, int stop)
+svalue_t OPminus(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -381,13 +343,7 @@ svalue_t DFraggleThinker::OPminus(int start, int n, int stop)
 	return returnvar;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPmultiply(int start, int n, int stop)
+svalue_t OPmultiply(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -408,13 +364,7 @@ svalue_t DFraggleThinker::OPmultiply(int start, int n, int stop)
 	return returnvar;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPdivide(int start, int n, int stop)
+svalue_t OPdivide(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -449,13 +399,7 @@ svalue_t DFraggleThinker::OPdivide(int start, int n, int stop)
 	return returnvar;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPremainder(int start, int n, int stop)
+svalue_t OPremainder(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	int ir;
@@ -474,13 +418,9 @@ svalue_t DFraggleThinker::OPremainder(int start, int n, int stop)
 
 /********** binary operators **************/
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
+// binary or |
 
-svalue_t DFraggleThinker::OPor_bin(int start, int n, int stop)
+svalue_t OPor_bin(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -492,13 +432,9 @@ svalue_t DFraggleThinker::OPor_bin(int start, int n, int stop)
 }
 
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
+// binary and &
 
-svalue_t DFraggleThinker::OPand_bin(int start, int n, int stop)
+svalue_t OPand_bin(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -509,13 +445,8 @@ svalue_t DFraggleThinker::OPand_bin(int start, int n, int stop)
 	return returnvar;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPnot_bin(int start, int n, int stop)
+// haleyjd: binary invert - ~
+svalue_t OPnot_bin(int start, int n, int stop)
 {
 	svalue_t right, returnvar;
 	
@@ -527,13 +458,8 @@ svalue_t DFraggleThinker::OPnot_bin(int start, int n, int stop)
 }
 
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPincrement(int start, int n, int stop)
+// ++
+svalue_t OPincrement(int start, int n, int stop)
 {
 	if(start == n)          // ++n
     {
@@ -598,13 +524,8 @@ svalue_t DFraggleThinker::OPincrement(int start, int n, int stop)
 	return nullvar;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPdecrement(int start, int n, int stop)
+// --
+svalue_t OPdecrement(int start, int n, int stop)
 {
 	if(start == n)          // ++n
     {
@@ -669,13 +590,9 @@ svalue_t DFraggleThinker::OPdecrement(int start, int n, int stop)
 	return nullvar;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
+// haleyjd: Eternity extensions
 
-svalue_t DFraggleThinker::OPlessthanorequal(int start, int n, int stop)
+svalue_t OPlessthanorequal(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -690,13 +607,7 @@ svalue_t DFraggleThinker::OPlessthanorequal(int start, int n, int stop)
 	return returnvar;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-svalue_t DFraggleThinker::OPgreaterthanorequal(int start, int n, int stop)
+svalue_t OPgreaterthanorequal(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	

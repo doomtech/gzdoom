@@ -55,13 +55,11 @@ FArchive & operator <<(FArchive & ar, svariable_t & var)
 		var.name = strdup(ar.ReadName());
 		var.ChangeType(svt_int);	// Just to clear old actor pointers in it!
 	}
-	ar << var.type;
+	ar << var.type << var.string;
 	
 	switch(var.type)        // store depending on type
 	{
 	case svt_string:
-		if (ar.IsStoring()) ar.WriteName(var.value.s);
-		else var.value.s = strdup(ar.ReadName());
 		break;
 
 	case svt_int:
@@ -178,7 +176,7 @@ void T_UnArchiveScript(FArchive & ar, script_t * script)
 //
 //==========================================================================
 
-void DFraggleThinker::ArchiveRunningScript(FArchive & ar,DRunningScript *rs)
+void T_ArchiveRunningScript(FArchive & ar,DRunningScript *rs)
 {
 	int i;
 	short num_variables;
@@ -223,7 +221,7 @@ void DFraggleThinker::ArchiveRunningScript(FArchive & ar,DRunningScript *rs)
 //
 //==========================================================================
 
-DRunningScript *DFraggleThinker::UnArchiveRunningScript(FArchive & ar)
+DRunningScript *T_UnArchiveRunningScript(FArchive & ar)
 {
 	int i;
 	short scriptnum;
@@ -268,21 +266,21 @@ DRunningScript *DFraggleThinker::UnArchiveRunningScript(FArchive & ar)
 //
 //==========================================================================
 
-void DFraggleThinker::ArchiveRunningScripts(FArchive & ar)
+void T_ArchiveRunningScripts(FArchive & ar)
 {
 	DRunningScript *rs;
 	short num_runningscripts = 0;
 	
 	// count runningscripts
-	for(rs = runningscripts->next; rs; rs = rs->next) num_runningscripts++;
+	for(rs = runningscripts.next; rs; rs = rs->next) num_runningscripts++;
 	
 	ar << num_runningscripts;
 
 	// now archive them
-	rs = runningscripts->next;
+	rs = runningscripts.next;
 	while(rs)
     {
-		ArchiveRunningScript(ar,rs);
+		T_ArchiveRunningScript(ar,rs);
 		rs = rs->next;
     }
 }
@@ -293,7 +291,7 @@ void DFraggleThinker::ArchiveRunningScripts(FArchive & ar)
 //
 //==========================================================================
 
-void DFraggleThinker::UnArchiveRunningScripts(FArchive & ar)
+void T_UnArchiveRunningScripts(FArchive & ar)
 {
 	DRunningScript *rs;
 	short num_runningscripts;
@@ -307,11 +305,11 @@ void DFraggleThinker::UnArchiveRunningScripts(FArchive & ar)
 	for(i=0; i<num_runningscripts; i++)
     {
 		// get next runningscript
-		rs = UnArchiveRunningScript(ar);
+		rs = T_UnArchiveRunningScript(ar);
 		
 		// hook into chain
-		rs->next = runningscripts->next;
-		rs->prev = runningscripts;
+		rs->next = runningscripts.next;
+		rs->prev = &runningscripts;
 		rs->prev->next = rs;
 		if(rs->next) rs->next->prev = rs;
     }
@@ -323,7 +321,7 @@ void DFraggleThinker::UnArchiveRunningScripts(FArchive & ar)
 //
 //==========================================================================
 
-void DFraggleThinker::ArchiveSpawnedThings(FArchive & ar)
+void T_ArchiveSpawnedThings(FArchive & ar)
 {
 	int count = SpawnedThings.Size ();
 	ar << count;
@@ -340,22 +338,23 @@ void DFraggleThinker::ArchiveSpawnedThings(FArchive & ar)
 //
 //==========================================================================
 
-void DFraggleThinker::Serialize(FArchive & ar)
+void T_SerializeScripts(FArchive & ar)
 {
-	Super::Serialize(ar);
+	if(!HasScripts) return;
+	
 	if (ar.IsStoring())
 	{
 		T_ArchiveScript(ar, &levelscript);
 		T_ArchiveScript(ar, &hub_script);
-		ArchiveRunningScripts(ar);
-		ArchiveSpawnedThings(ar);
+		T_ArchiveRunningScripts(ar);
+		T_ArchiveSpawnedThings(ar);
 	}
 	else
 	{
 		T_UnArchiveScript(ar, &levelscript);
 		T_UnArchiveScript(ar, &hub_script);
-		UnArchiveRunningScripts(ar);
-		ArchiveSpawnedThings(ar);
+		T_UnArchiveRunningScripts(ar);
+		T_ArchiveSpawnedThings(ar);
 	}
 }
 

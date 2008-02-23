@@ -25,87 +25,65 @@
 #include "m_fixed.h"
 #include "actor.h"
 
-typedef struct sfarray_s sfarray_t;
 typedef struct script_s script_t;
-typedef struct svalue_s svalue_t;
 typedef struct operator_s operator_t;
 
 #define T_MAXTOKENS 256
 #define TOKENLENGTH 128
 
-struct svalue_s
+enum
 {
-  int type;
-  union
-  {
-    long i;
-    char *s;
-    char *labelptr; // goto() label
-    fixed_t f;      // haleyjd: 8-17
-    AActor *mobj;
-    sfarray_t *a;   // haleyjd 05/27: arrays
-  } value;
+  svt_string,
+  svt_int,
+  svt_mobj,         // a map object
+  svt_function,     // functions are stored as variables
+  svt_label,        // labels for goto calls are variables
+  svt_const,        // const
+  svt_fixed,        // haleyjd: fixed-point int - 8-17 std
+  svt_arraysweredeleted,
+  svt_pInt,         // pointer to game int
+  svt_pMobj,        // pointer to game mobj
+  svt_parraysweredeleted,
 };
 
-struct sfarray_s
+struct svalue_t
 {
-   struct sfarray_s *next; // next array in save list
-   int saveindex;	   // index for saving
+	int type;
+	FString string;
+	union
+	{
+		long i;
+		char *labelptr; // goto() label
+		fixed_t f;      // haleyjd: 8-17
+		AActor *mobj;
+	} value;
 
-   unsigned int length;	   // number of values currently initialized   
-   svalue_t *values;	   // array of contained values
+	svalue_t()
+	{
+		type = svt_int;
+		value.i = 0;
+	}
+
+	svalue_t(const svalue_t & other)
+	{
+		type = other.type;
+		string = other.string;
+		value = other.value;
+	}
 };
-
-// haleyjd: following macros updated to 8-17 standard
-
-        // furthered to include support for svt_mobj
 
 // un-inline these two functions to save some memory
-int intvalue(const svalue_s & v);
-fixed_t fixedvalue(const svalue_s & v);
-float floatvalue(const svalue_s & v);
+int intvalue(const svalue_t & v);
+fixed_t fixedvalue(const svalue_t & v);
+float floatvalue(const svalue_t & v);
 const char *stringvalue(const svalue_t & v);
 
 #include "t_vari.h"
+#include "t_prepro.h"
 
 // haleyjd: moved from t_script.h - 8-17
 // 01/06/01: doubled number of allowed scripts
 #define MAXSCRIPTS 257
-
-enum
-{
-	SECTIONSLOTS = 17
-};
-
-/***** {} sections **********/
-
-struct section_t
-{
-	char *start;    // offset of starting brace {
-	char *end;      // offset of ending brace   }
-	int type;       // section type: for() loop, while() loop etc
-
-	union
-	{
-		struct
-		{
-			char *loopstart;  // positioned before the while()
-		} data_loop;
-	} data; // data for section
-
-	section_t *next;        // for hashing
-};
-
-enum    // section types
-{
-	st_empty,       // none: empty {} braces
-	st_if,          // if() statement
-	st_elseif,      // haleyjd: elseif()
-	st_else,        // haleyjd: else()
-	st_loop,        // loop
-};
-
-
 
 struct script_s
 {
@@ -146,7 +124,7 @@ struct script_s
 struct operator_s
 {
   char *string;
-  svalue_t (DFraggleThinker::*handler)(int, int, int); // left, mid, right
+  svalue_t (*handler)(int, int, int); // left, mid, right
   int direction;
 };
 
@@ -155,6 +133,16 @@ enum
   forward,
   backward
 };
+
+void run_script(script_t *script);
+void continue_script(script_t *script, char *continue_point);
+void parse_include(char *lumpname);
+void run_statement();
+void script_error(char *s, ...);
+
+svalue_t evaluate_expression(int start, int stop);
+int find_operator(int start, int stop, char *value);
+int find_operator_backwards(int start, int stop, char *value);
 
 /******* tokens **********/
 
@@ -173,6 +161,29 @@ enum    // brace types: where current_section is a { or }
   bracket_open,
   bracket_close
 };
+
+extern svalue_t nullvar;
+
+extern script_t *current_script;
+extern AActor *trigger_obj;
+extern int killscript;
+
+extern char *tokens[T_MAXTOKENS];
+extern tokentype_t tokentype[T_MAXTOKENS];
+extern int num_tokens;
+extern char *rover;     // current point reached in parsing
+extern char *linestart; // start of the current expression
+
+extern section_t *current_section;
+extern section_t *prev_section;
+extern int bracetype;
+
+// the global_script is the root
+// script and contains only built-in
+// FraggleScript variables/functions
+
+extern script_t global_script; 
+extern script_t hub_script;
 
 #endif
 

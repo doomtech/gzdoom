@@ -55,13 +55,9 @@ SMMU source (including FraggleScript). You may use any code from SMMU in GZDoom,
 #include "w_wad.h"
 
 
-//==========================================================================
-//
 // clear the script: section and variable slots
-//
-//==========================================================================
 
-void DFraggleThinker::clear_script()
+void clear_script()
 {
 	int i;
 	
@@ -90,13 +86,7 @@ void DFraggleThinker::clear_script()
 #define section_hash(b)           \
 ( (int) ( (b) - current_script->data) % SECTIONSLOTS)
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-section_t *DFraggleThinker::new_section(char *brace)
+section_t *new_section(char *brace)
 {
 	int n;
 	section_t *newsec;
@@ -116,13 +106,8 @@ section_t *DFraggleThinker::new_section(char *brace)
 	return newsec;
 }
 
-//==========================================================================
-//
 // find a section_t from the location of the starting { brace
-//
-//==========================================================================
-
-section_t *DFraggleThinker::find_section_start(char *brace)
+section_t *find_section_start(char *brace)
 {
 	int n = section_hash(brace);
 	section_t *current;
@@ -142,13 +127,10 @@ section_t *DFraggleThinker::find_section_start(char *brace)
 }
 
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
+int moredebug=0;
+char * scriptstart;
 
-section_t *DFraggleThinker::find_section_end(char *brace)
+section_t *find_section_end(char *brace)
 {
 	int n;
 	
@@ -188,13 +170,8 @@ section_t *DFraggleThinker::find_section_end(char *brace)
 #define isop(c)   !( ( (c)<='Z' && (c)>='A') || ( (c)<='z' && (c)>='a') || \
 ( (c)<='9' && (c)>='0') || ( (c)=='_') )
 
-//==========================================================================
-//
 // create a new label. pass the location inside the script
-//
-//==========================================================================
-
-svariable_t *DFraggleThinker::new_label(char *labelptr)
+svariable_t *new_label(char *labelptr)
 {
 	svariable_t *newlabel;   // labels are stored as variables
 	char labelname[256];
@@ -218,10 +195,8 @@ svariable_t *DFraggleThinker::new_label(char *labelptr)
 	return newlabel;
 }
 
-//==========================================================================
-//
 /*********** main loop **************/
-//
+
 // This works by recursion. when a { opening
 // brace is found, another instance of the
 // function is called for the data inside
@@ -229,10 +204,10 @@ svariable_t *DFraggleThinker::new_label(char *labelptr)
 // At the same time, the sections are noted
 // down and hashed. Goto() labels are noted
 // down, and comments are blanked out
-//
-//==========================================================================
 
-char *DFraggleThinker::process_find_char(char *data, char find)
+//char * scriptstart;
+
+char *process_find_char(char *data, char find)
 {
 	//	char * start=data;
 	
@@ -314,10 +289,8 @@ char *DFraggleThinker::process_find_char(char *data, char find)
 }
 
 
-//==========================================================================
-//
 /*********** second stage parsing ************/
-//
+
 // second stage preprocessing considers the script
 // in terms of tokens rather than as plain data.
 //
@@ -333,11 +306,10 @@ char *DFraggleThinker::process_find_char(char *data, char find)
 //
 // this is basically a cut-down version of the normal
 // parsing loop.
-//
-//==========================================================================
 
+void get_tokens(char *);         // t_parse.c
 
-void DFraggleThinker::dry_run_script()
+void dry_run_script()
 {
 	// save some stuff
 	char *old_rover = rover;
@@ -396,16 +368,12 @@ void DFraggleThinker::dry_run_script()
 	rover = old_rover;
 }
 
-//==========================================================================
-//
 /***************** main preprocess function ******************/
-//
+
 // set up current_script, script->len
 // just call all the other functions
-//
-//==========================================================================
 
-void DFraggleThinker::preprocess(script_t *script)
+void preprocess(script_t *script)
 {
 	current_script = script;
 	script->len = (int)strlen(script->data);
@@ -417,21 +385,19 @@ void DFraggleThinker::preprocess(script_t *script)
 	dry_run_script();
 }
 
-//==========================================================================
-//
 /************ includes ******************/
-//
+
 // FraggleScript allows 'including' of other lumps.
 // we divert input from the current_script (normally
 // levelscript) to a seperate lump. This of course
 // first needs to be preprocessed to remove comments
 // etc.
-//
-// parse an 'include' lump
-//
-//==========================================================================
 
-void DFraggleThinker::parse_include(char *lumpname)
+void parse_data(char *data, char *end); // t_parse.c
+
+// parse an 'include' lump
+
+void parse_include(char *lumpname)
 {
 	int lumpnum;
 	char *lump, *end;

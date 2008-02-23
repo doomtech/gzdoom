@@ -56,14 +56,23 @@ SMMU source (including FraggleScript). You may use any code from SMMU in GZDoom,
 #include "a_doomglobal.h"
 #include "w_wad.h"
 #include "gi.h"
-#include "t_util.h"
+#include "zstring.h"
 
 #include "gl/gl_data.h"
 
 static FRandom pr_script("FScript");
 
+
 #define AngleToFixed(x)  ((((double) x) / ((double) ANG45/45)) * FRACUNIT)
 #define FixedToAngle(x)  ((((double) x) / FRACUNIT) * ANG45/45)
+
+svalue_t evaluate_expression(int start, int stop);
+int find_operator(int start, int stop, char *value);
+
+
+#define FIXED_TO_FLOAT(f) ((f)/(float)FRACUNIT)
+
+#define CenterSpot(sec) (vertex_t*)&(sec)->soundorg[0]
 
 // Disables Legacy-incompatible bug fixes.
 CVAR(Bool, fs_forcecompatible, false, CVAR_ARCHIVE|CVAR_SERVERINFO)
@@ -72,6 +81,350 @@ CVAR(Bool, fs_forcecompatible, false, CVAR_ARCHIVE|CVAR_SERVERINFO)
 
 /////////// actually running a function /////////////
 
+//==========================================================================
+//
+// The Doom actors in their original order
+//
+//==========================================================================
+
+static const char * const ActorNames_init[]=
+{
+	"DoomPlayer",
+	"ZombieMan",
+	"ShotgunGuy",
+	"Archvile",
+	"ArchvileFire",
+	"Revenant",
+	"RevenantTracer",
+	"RevenantTracerSmoke",
+	"Fatso",
+	"FatShot",
+	"ChaingunGuy",
+	"DoomImp",
+	"Demon",
+	"Spectre",
+	"Cacodemon",
+	"BaronOfHell",
+	"BaronBall",
+	"HellKnight",
+	"LostSoul",
+	"SpiderMastermind",
+	"Arachnotron",
+	"Cyberdemon",
+	"PainElemental",
+	"WolfensteinSS",
+	"CommanderKeen",
+	"BossBrain",
+	"BossEye",
+	"BossTarget",
+	"SpawnShot",
+	"SpawnFire",
+	"ExplosiveBarrel",
+	"DoomImpBall",
+	"CacodemonBall",
+	"Rocket",
+	"PlasmaBall",
+	"BFGBall",
+	"ArachnotronPlasma",
+	"BulletPuff",
+	"Blood",
+	"TeleportFog",
+	"ItemFog",
+	"TeleportDest",
+	"BFGExtra",
+	"GreenArmor",
+	"BlueArmor",
+	"HealthBonus",
+	"ArmorBonus",
+	"BlueCard",
+	"RedCard",
+	"YellowCard",
+	"YellowSkull",
+	"RedSkull",
+	"BlueSkull",
+	"Stimpack",
+	"Medikit",
+	"Soulsphere",
+	"InvulnerabilitySphere",
+	"Berserk",
+	"BlurSphere",
+	"RadSuit",
+	"Allmap",
+	"Infrared",
+	"Megasphere",
+	"Clip",
+	"ClipBox",
+	"RocketAmmo",
+	"RocketBox",
+	"Cell",
+	"CellBox",
+	"Shell",
+	"ShellBox",
+	"Backpack",
+	"BFG9000",
+	"Chaingun",
+	"Chainsaw",
+	"RocketLauncher",
+	"PlasmaRifle",
+	"Shotgun",
+	"SuperShotgun",
+	"TechLamp",
+	"TechLamp2",
+	"Column",
+	"TallGreenColumn",
+	"ShortGreenColumn",
+	"TallRedColumn",
+	"ShortRedColumn",
+	"SkullColumn",
+	"HeartColumn",
+	"EvilEye",
+	"FloatingSkull",
+	"TorchTree",
+	"BlueTorch",
+	"GreenTorch",
+	"RedTorch",
+	"ShortBlueTorch",
+	"ShortGreenTorch",
+	"ShortRedTorch",
+	"Slalagtite",
+	"TechPillar",
+	"CandleStick",
+	"Candelabra",
+	"BloodyTwitch",
+	"Meat2",
+	"Meat3",
+	"Meat4",
+	"Meat5",
+	"NonsolidMeat2",
+	"NonsolidMeat4",
+	"NonsolidMeat3",
+	"NonsolidMeat5",
+	"NonsolidTwitch",
+	"DeadCacodemon",
+	"DeadMarine",
+	"DeadZombieMan",
+	"DeadDemon",
+	"DeadLostSoul",
+	"DeadDoomImp",
+	"DeadShotgunGuy",
+	"GibbedMarine",
+	"GibbedMarineExtra",
+	"HeadsOnAStick",
+	"Gibs",
+	"HeadOnAStick",
+	"HeadCandles",
+	"DeadStick",
+	"LiveStick",
+	"BigTree",
+	"BurningBarrel",
+	"HangNoGuts",
+	"HangBNoBrain",
+	"HangTLookingDown",
+	"HangTSkull",
+	"HangTLookingUp",
+	"HangTNoBrain",
+	"ColonGibs",
+	"SmallBloodPool",
+	"BrainStem",
+	"PointPusher",
+	"PointPuller",
+};
+
+static const PClass * ActorTypes[countof(ActorNames_init)];
+
+//==========================================================================
+//
+// Some functions that take care of the major differences between the class
+// based actor system from ZDoom and Doom's index based one
+//
+//==========================================================================
+
+//==========================================================================
+//
+// Gets an actor class
+// Input can be either a class name, an actor variable or a Doom index
+// Doom index is only supported for the original things up to MBF
+//
+//==========================================================================
+const PClass * T_GetMobjType(svalue_t arg)
+{
+	const PClass * PClass=NULL;
+	
+	if (arg.type==svt_string)
+	{
+		PClass=PClass::FindClass(arg.string);
+
+		// invalid object to spawn
+		if(!PClass) script_error("unknown object type: %s\n", arg.string.GetChars()); 
+	}
+	else if (arg.type==svt_mobj)
+	{
+		AActor * mo = MobjForSvalue(arg);
+		if (mo) PClass = mo->GetClass();
+	}
+	else
+	{
+		int objtype = intvalue(arg);
+		if (objtype>=0 && objtype<countof(ActorTypes)) PClass=ActorTypes[objtype];
+		else PClass=NULL;
+
+		// invalid object to spawn
+		if(!PClass) script_error("unknown object type: %i\n", objtype); 
+	}
+	return PClass;
+}
+
+//==========================================================================
+//
+// Gets a player index
+// Input can be either an actor variable or an index value
+//
+//==========================================================================
+static int T_GetPlayerNum(const svalue_t &arg)
+{
+	int playernum;
+	if(arg.type == svt_mobj)
+	{
+		if(!MobjForSvalue(arg) || !arg.value.mobj->player)
+		{
+			// I prefer this not to make an error.
+			// This way a player function used for a non-player
+			// object will just do nothing
+			//script_error("mobj not a player!\n");
+			return -1;
+		}
+		playernum = arg.value.mobj->player - players;
+	}
+	else
+		playernum = intvalue(arg);
+	
+	if(playernum < 0 || playernum > MAXPLAYERS)
+	{
+		return -1;
+	}
+	if(!playeringame[playernum]) // no error, just return -1
+	{
+		t_return.type = svt_int;
+		t_return.value.i = -1;
+		return -1;
+	}
+	return playernum;
+}
+
+//==========================================================================
+//
+// Finds a sector from a tag. This has been extended to allow looking for
+// sectors directly by passing a negative value
+//
+//==========================================================================
+int T_FindSectorFromTag(int tagnum,int startsector)
+{
+	if (tagnum<=0)
+	{
+		if (startsector<0)
+		{
+			if (tagnum==-32768) return 0;
+			if (-tagnum<numsectors) return -tagnum;
+		}
+		return -1;
+	}
+	return P_FindSectorFromTag(tagnum,startsector);
+}
+
+
+//==========================================================================
+//
+// Get an ammo type
+// Input can be either a class name or a Doom index
+// Doom index is only supported for the 4 original ammo types
+//
+//==========================================================================
+static const PClass * T_GetAmmo(const svalue_t &t)
+{
+	const char * p;
+
+	if (t.type==svt_string)
+	{
+		p=stringvalue(t);
+	}
+	else	
+	{
+		// backwards compatibility with Legacy.
+		// allow only Doom's standard types here!
+		static const char * DefAmmo[]={"Clip","Shell","Cell","RocketAmmo"};
+		int ammonum = intvalue(t);
+		if(ammonum < 0 || ammonum >= 4)	
+		{
+			script_error("ammo number out of range: %i", ammonum);
+			return NULL;
+		}
+		p=DefAmmo[ammonum];
+	}
+	const PClass * am=PClass::FindClass(p);
+	if (!am->IsDescendantOf(RUNTIME_CLASS(AAmmo)))
+	{
+		script_error("unknown ammo type : %s", p);
+		return NULL;
+	}
+	return am;
+
+}
+
+//==========================================================================
+//
+// Finds a sound in the sound table and adds a new entry if it isn't defined
+// It's too bad that this is necessary but FS doesn't know about this kind
+// of sound management.
+//
+//==========================================================================
+static int T_FindSound(const char * name)
+{
+	char buffer[40];
+	int so=S_FindSound(name);
+
+	if (so>0) return so;
+
+	// Now it gets dirty!
+
+	if (gameinfo.gametype & GAME_DoomStrife)
+	{
+		sprintf(buffer, "DS%.35s", name);
+		if (Wads.CheckNumForName(buffer, ns_sounds)<0) strcpy(buffer, name);
+	}
+	else
+	{
+		strcpy(buffer, name);
+		if (Wads.CheckNumForName(buffer, ns_sounds)<0) sprintf(buffer, "DS%.35s", name);
+	}
+	
+	so=S_AddSound(name, buffer);
+	S_HashSounds();
+	return so;
+}
+
+
+//==========================================================================
+//
+// Creates a string out of a print argument list. This version does not
+// have any length restrictions like the original FS versions had.
+//
+//==========================================================================
+static FString T_GetFormatString(int startarg)
+{
+	FString fmt="";
+	for(int i=startarg; i<t_argc; i++) fmt += stringvalue(t_argv[i]);
+	return fmt;
+}
+
+static bool T_CheckArgs(int cnt)
+{
+	if (t_argc<cnt)
+	{
+		script_error("Insufficient parameters for '%s'\n", t_func);
+		return false;
+	}
+	return true;
+}
 //==========================================================================
 
 //FUNCTIONS
@@ -91,41 +444,12 @@ CVAR(Bool, fs_forcecompatible, false, CVAR_ARCHIVE|CVAR_SERVERINFO)
 
 //==========================================================================
 //
-// Creates a string out of a print argument list. This version does not
-// have any length restrictions like the original FS versions had.
-//
-//==========================================================================
-FString DFraggleThinker::GetFormatString(int startarg)
-{
-	FString fmt="";
-	for(int i=startarg; i<t_argc; i++) fmt += stringvalue(t_argv[i]);
-	return fmt;
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-bool DFraggleThinker::CheckArgs(int cnt)
-{
-	if (t_argc<cnt)
-	{
-		script_error("Insufficient parameters for '%s'\n", t_func);
-		return false;
-	}
-	return true;
-}
-
-
-//==========================================================================
-//
 // prints some text to the console and the notify buffer
 //
 //==========================================================================
-void DFraggleThinker::SF_Print()
+void SF_Print(void)
 {
-	Printf(PRINT_HIGH, "%s\n", GetFormatString(0).GetChars());
+	Printf(PRINT_HIGH, "%s\n", T_GetFormatString(0).GetChars());
 }
 
 
@@ -134,10 +458,49 @@ void DFraggleThinker::SF_Print()
 // return a random number from 0 to 255
 //
 //==========================================================================
-void DFraggleThinker::SF_Rnd()
+void SF_Rnd(void)
 {
 	t_return.type = svt_int;
 	t_return.value.i = pr_script();
+}
+
+//==========================================================================
+//
+// looping section. using the rover, find the highest level
+// loop we are currently in and return the section_t for it.
+//
+//==========================================================================
+
+section_t *looping_section(void)
+{
+	section_t *best = NULL;         // highest level loop we're in
+	// that has been found so far
+	int n;
+	
+	// check thru all the hashchains
+	
+	for(n=0; n<SECTIONSLOTS; n++)
+    {
+		section_t *current = current_script->sections[n];
+		
+		// check all the sections in this hashchain
+		while(current)
+		{
+			// a loop?
+			
+			if(current->type == st_loop)
+				// check to see if it's a loop that we're inside
+				if(rover >= current->start && rover <= current->end)
+				{
+					// a higher nesting level than the best one so far?
+					if(!best || (current->start > best->start))
+						best = current;     // save it
+				}
+				current = current->next;
+		}
+    }
+	
+	return best;    // return the best one found
 }
 
 //==========================================================================
@@ -146,7 +509,7 @@ void DFraggleThinker::SF_Rnd()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Continue()
+void SF_Continue(void)
 {
 	section_t *section;
 	
@@ -165,7 +528,7 @@ void DFraggleThinker::SF_Continue()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Break()
+void SF_Break(void)
 {
 	section_t *section;
 	
@@ -184,9 +547,9 @@ void DFraggleThinker::SF_Break()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Goto()
+void SF_Goto(void)
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		// check argument is a labelptr
 		
@@ -207,7 +570,7 @@ void DFraggleThinker::SF_Goto()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Return()
+void SF_Return(void)
 {
 	killscript = true;      // kill the script
 }
@@ -218,15 +581,15 @@ void DFraggleThinker::SF_Return()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Include()
+void SF_Include(void)
 {
 	char tempstr[12];
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		if(t_argv[0].type == svt_string)
 		{
-			strncpy(tempstr, t_argv[0].value.s, 8);
+			strncpy(tempstr, t_argv[0].string, 8);
 			tempstr[8]=0;
 		}
 		else
@@ -242,7 +605,7 @@ void DFraggleThinker::SF_Include()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Input()
+void SF_Input(void)
 {
 	Printf(PRINT_BOLD,"input() function not available in doom\n");
 }
@@ -253,7 +616,7 @@ void DFraggleThinker::SF_Input()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Beep()
+void SF_Beep(void)
 {
 	S_Sound(CHAN_AUTO, "misc/chat", 1.0f, ATTN_IDLE);
 }
@@ -264,7 +627,7 @@ void DFraggleThinker::SF_Beep()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Clock()
+void SF_Clock(void)
 {
 	t_return.type = svt_int;
 	t_return.value.i = (gametic*100)/TICRATE;
@@ -278,7 +641,7 @@ void DFraggleThinker::SF_Clock()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_ExitLevel()
+void SF_ExitLevel(void)
 {
 	G_ExitLevel(0, false);
 }
@@ -289,12 +652,12 @@ void DFraggleThinker::SF_ExitLevel()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Tip()
+void SF_Tip(void)
 {
 	if (t_argc>0 && current_script->trigger &&
 		current_script->trigger->CheckLocalView(consoleplayer)) 
 	{
-		C_MidPrint(GetFormatString(0).GetChars());
+		C_MidPrint(T_GetFormatString(0).GetChars());
 	}
 }
 
@@ -308,13 +671,13 @@ void DFraggleThinker::SF_Tip()
 
 EXTERN_CVAR(Float, con_midtime)
 
-void DFraggleThinker::SF_TimedTip()
+void SF_TimedTip(void)
 {
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		float saved = con_midtime;
 		con_midtime = intvalue(t_argv[0])/100.0f;
-		C_MidPrint(GetFormatString(1).GetChars());
+		C_MidPrint(T_GetFormatString(1).GetChars());
 		con_midtime=saved;
 	}
 }
@@ -326,14 +689,14 @@ void DFraggleThinker::SF_TimedTip()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_PlayerTip()
+void SF_PlayerTip(void)
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		int plnum = T_GetPlayerNum(t_argv[0]);
 		if (plnum!=-1 && players[plnum].mo->CheckLocalView(consoleplayer)) 
 		{
-			C_MidPrint(GetFormatString(1).GetChars());
+			C_MidPrint(T_GetFormatString(1).GetChars());
 		}
 	}
 }
@@ -344,12 +707,12 @@ void DFraggleThinker::SF_PlayerTip()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Message()
+void SF_Message(void)
 {
 	if (t_argc>0 && current_script->trigger &&
 		current_script->trigger->CheckLocalView(consoleplayer))
 	{
-		Printf(PRINT_HIGH, "%s\n", GetFormatString(0).GetChars());
+		Printf(PRINT_HIGH, "%s\n", T_GetFormatString(0).GetChars());
 	}
 }
 
@@ -359,14 +722,14 @@ void DFraggleThinker::SF_Message()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_PlayerMsg()
+void SF_PlayerMsg(void)
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		int plnum = T_GetPlayerNum(t_argv[0]);
 		if (plnum!=-1 && players[plnum].mo->CheckLocalView(consoleplayer)) 
 		{
-			Printf(PRINT_HIGH, "%s\n", GetFormatString(1).GetChars());
+			Printf(PRINT_HIGH, "%s\n", T_GetFormatString(1).GetChars());
 		}
 	}
 }
@@ -377,14 +740,17 @@ void DFraggleThinker::SF_PlayerMsg()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_PlayerInGame()
+void SF_PlayerInGame(void)
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		int plnum = T_GetPlayerNum(t_argv[0]);
 
-		t_return.type = svt_int;
-		t_return.value.i = plnum!=-1;
+		if (plnum!=-1)
+		{
+			t_return.type = svt_int;
+			t_return.value.i = playeringame[plnum];
+		}
 	}
 }
 
@@ -394,7 +760,7 @@ void DFraggleThinker::SF_PlayerInGame()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_PlayerName()
+void SF_PlayerName(void)
 {
 	int plnum;
 	
@@ -411,7 +777,7 @@ void DFraggleThinker::SF_PlayerName()
 	if(plnum !=-1)
 	{
 		t_return.type = svt_string;
-		t_return.value.s = players[plnum].userinfo.netname;
+		t_return.string = players[plnum].userinfo.netname;
 	}
 	else
 	{
@@ -425,7 +791,7 @@ void DFraggleThinker::SF_PlayerName()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_PlayerObj()
+void SF_PlayerObj(void)
 {
 	int plnum;
 
@@ -450,6 +816,13 @@ void DFraggleThinker::SF_PlayerObj()
 	}
 }
 
+extern void SF_StartScript();      // in t_script.c
+extern void SF_ScriptRunning();
+extern void SF_Wait();
+extern void SF_TagWait();
+extern void SF_ScriptWait();
+extern void SF_ScriptWaitPre();    // haleyjd: new wait types
+
 /*********** Mobj code ***************/
 
 //==========================================================================
@@ -458,7 +831,7 @@ void DFraggleThinker::SF_PlayerObj()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Player()
+void SF_Player(void)
 {
 	AActor *mo = t_argc ? MobjForSvalue(t_argv[0]) : current_script->trigger;
 	
@@ -482,13 +855,13 @@ void DFraggleThinker::SF_Player()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Spawn()
+void SF_Spawn(void)
 {
 	int x, y, z;
 	const PClass *PClass;
 	angle_t angle = 0;
 	
-	if (CheckArgs(3))
+	if (T_CheckArgs(3))
 	{
 		if (!(PClass=T_GetMobjType(t_argv[0]))) return;
 		
@@ -542,9 +915,9 @@ void DFraggleThinker::SF_Spawn()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_RemoveObj()
+void SF_RemoveObj(void)
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		AActor * mo = MobjForSvalue(t_argv[0]);
 		if(mo)  // nullptr check
@@ -562,7 +935,7 @@ void DFraggleThinker::SF_RemoveObj()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_KillObj()
+void SF_KillObj(void)
 {
 	AActor *mo;
 	
@@ -587,7 +960,7 @@ void DFraggleThinker::SF_KillObj()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_ObjX()
+void SF_ObjX(void)
 {
 	AActor *mo = t_argc ? MobjForSvalue(t_argv[0]) : current_script->trigger;
 	
@@ -601,7 +974,7 @@ void DFraggleThinker::SF_ObjX()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_ObjY()
+void SF_ObjY(void)
 {
 	AActor *mo = t_argc ? MobjForSvalue(t_argv[0]) : current_script->trigger;
 	
@@ -615,7 +988,7 @@ void DFraggleThinker::SF_ObjY()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_ObjZ()
+void SF_ObjZ(void)
 {
 	AActor *mo = t_argc ? MobjForSvalue(t_argv[0]) : current_script->trigger;
 	
@@ -630,7 +1003,7 @@ void DFraggleThinker::SF_ObjZ()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_ObjAngle()
+void SF_ObjAngle(void)
 {
 	AActor *mo = t_argc ? MobjForSvalue(t_argv[0]) : current_script->trigger;
 	
@@ -646,12 +1019,12 @@ void DFraggleThinker::SF_ObjAngle()
 //==========================================================================
 
 // teleport: object, sector_tag
-void DFraggleThinker::SF_Teleport()
+void SF_Teleport(void)
 {
 	int tag;
 	AActor *mo;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		if(t_argc == 1)    // 1 argument: sector tag
 		{
@@ -675,12 +1048,12 @@ void DFraggleThinker::SF_Teleport()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_SilentTeleport()
+void SF_SilentTeleport(void)
 {
 	int tag;
 	AActor *mo;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		if(t_argc == 1)    // 1 argument: sector tag
 		{
@@ -704,12 +1077,12 @@ void DFraggleThinker::SF_SilentTeleport()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_DamageObj()
+void SF_DamageObj(void)
 {
 	AActor *mo;
 	int damageamount;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		if(t_argc == 1)    // 1 argument: damage trigger by amount
 		{
@@ -734,7 +1107,7 @@ void DFraggleThinker::SF_DamageObj()
 //==========================================================================
 
 // the tag number of the sector the thing is in
-void DFraggleThinker::SF_ObjSector()
+void SF_ObjSector(void)
 {
 	// use trigger object if not specified
 	AActor *mo = t_argc ? MobjForSvalue(t_argv[0]) : current_script->trigger;
@@ -750,7 +1123,7 @@ void DFraggleThinker::SF_ObjSector()
 //==========================================================================
 
 // the health number of an object
-void DFraggleThinker::SF_ObjHealth()
+void SF_ObjHealth(void)
 {
 	// use trigger object if not specified
 	AActor *mo = t_argc ? MobjForSvalue(t_argv[0]) : current_script->trigger;
@@ -765,12 +1138,12 @@ void DFraggleThinker::SF_ObjHealth()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_ObjFlag()
+void SF_ObjFlag(void)
 {
 	AActor *mo;
 	int flagnum;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		if(t_argc == 1)         // use trigger, 1st is flag
 		{
@@ -813,9 +1186,9 @@ void DFraggleThinker::SF_ObjFlag()
 //==========================================================================
 
 // apply momentum to a thing
-void DFraggleThinker::SF_PushThing()
+void SF_PushThing(void)
 {
-	if (CheckArgs(3))
+	if (T_CheckArgs(3))
 	{
 		AActor * mo = MobjForSvalue(t_argv[0]);
 		if(!mo) return;
@@ -834,9 +1207,9 @@ void DFraggleThinker::SF_PushThing()
 //==========================================================================
 
 
-void DFraggleThinker::SF_ReactionTime()
+void SF_ReactionTime(void)
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		AActor *mo = MobjForSvalue(t_argv[0]);
 	
@@ -857,12 +1230,12 @@ void DFraggleThinker::SF_ReactionTime()
 //==========================================================================
 
 // Sets a mobj's Target! >:)
-void DFraggleThinker::SF_MobjTarget()
+void SF_MobjTarget(void)
 {
 	AActor*  mo;
 	AActor*  target;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		mo = MobjForSvalue(t_argv[0]);
 		if(t_argc > 1)
@@ -887,11 +1260,11 @@ void DFraggleThinker::SF_MobjTarget()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_MobjMomx()
+void SF_MobjMomx(void)
 {
 	AActor*   mo;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		mo = MobjForSvalue(t_argv[0]);
 		if(t_argc > 1)
@@ -911,11 +1284,11 @@ void DFraggleThinker::SF_MobjMomx()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_MobjMomy()
+void SF_MobjMomy(void)
 {
 	AActor*   mo;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		mo = MobjForSvalue(t_argv[0]);
 		if(t_argc > 1)
@@ -935,11 +1308,11 @@ void DFraggleThinker::SF_MobjMomy()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_MobjMomz()
+void SF_MobjMomz(void)
 {
 	AActor*   mo;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		mo = MobjForSvalue(t_argv[0]);
 		if(t_argc > 1)
@@ -962,9 +1335,9 @@ void DFraggleThinker::SF_MobjMomz()
 
 /****************** Trig *********************/
 
-void DFraggleThinker::SF_PointToAngle()
+void SF_PointToAngle(void)
 {
-	if (CheckArgs(4))
+	if (T_CheckArgs(4))
 	{
 		fixed_t x1 = fixedvalue(t_argv[0]);
 		fixed_t y1 = fixedvalue(t_argv[1]);
@@ -985,9 +1358,9 @@ void DFraggleThinker::SF_PointToAngle()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_PointToDist()
+void SF_PointToDist(void)
 {
-	if (CheckArgs(4))
+	if (T_CheckArgs(4))
 	{
 		// Doing this in floating point is actually faster with modern computers!
 		float x = floatvalue(t_argv[2]) - floatvalue(t_argv[0]);
@@ -1009,13 +1382,13 @@ void DFraggleThinker::SF_PointToDist()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_SetCamera()
+void SF_SetCamera(void)
 {
 	angle_t angle;
 	player_t * player;
 	AActor * newcamera;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		player=current_script->trigger->player;
 		if (!player) player=&players[0];
@@ -1051,7 +1424,7 @@ void DFraggleThinker::SF_SetCamera()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_ClearCamera()
+void SF_ClearCamera(void)
 {
 	player_t * player;
 	player=current_script->trigger->player;
@@ -1078,11 +1451,11 @@ void DFraggleThinker::SF_ClearCamera()
 //==========================================================================
 
 // start sound from thing
-void DFraggleThinker::SF_StartSound()
+void SF_StartSound(void)
 {
 	AActor *mo;
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		mo = MobjForSvalue(t_argv[0]);
 		
@@ -1100,12 +1473,12 @@ void DFraggleThinker::SF_StartSound()
 //==========================================================================
 
 // start sound from sector
-void DFraggleThinker::SF_StartSectorSound()
+void SF_StartSectorSound(void)
 {
 	sector_t *sector;
 	int tagnum;
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		tagnum = intvalue(t_argv[0]);
 		
@@ -1148,14 +1521,14 @@ public:
 //==========================================================================
 
 // floor height of sector
-void DFraggleThinker::SF_FloorHeight()
+void SF_FloorHeight(void)
 {
 	int tagnum;
 	int secnum;
 	fixed_t dest;
 	int returnval = 1; // haleyjd: SoM's fixes
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		tagnum = intvalue(t_argv[0]);
 		
@@ -1230,13 +1603,13 @@ public:
 //
 //==========================================================================
 
-void DFraggleThinker::SF_MoveFloor()
+void SF_MoveFloor(void)
 {
 	int secnum = -1;
 	sector_t *sec;
 	int tagnum, platspeed = 1, destheight, crush;
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		tagnum = intvalue(t_argv[0]);
 		destheight = intvalue(t_argv[1]) * FRACUNIT;
@@ -1287,14 +1660,14 @@ public:
 //==========================================================================
 
 // ceiling height of sector
-void DFraggleThinker::SF_CeilingHeight()
+void SF_CeilingHeight(void)
 {
 	fixed_t dest;
 	int secnum;
 	int tagnum;
 	int returnval = 1;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		tagnum = intvalue(t_argv[0]);
 		
@@ -1380,7 +1753,7 @@ public:
 //
 //==========================================================================
 
-void DFraggleThinker::SF_MoveCeiling()
+void SF_MoveCeiling(void)
 {
 	int secnum = -1;
 	sector_t *sec;
@@ -1388,7 +1761,7 @@ void DFraggleThinker::SF_MoveCeiling()
 	int crush;
 	int silent;
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		tagnum = intvalue(t_argv[0]);
 		destheight = intvalue(t_argv[1]) * FRACUNIT;
@@ -1414,13 +1787,13 @@ void DFraggleThinker::SF_MoveCeiling()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_LightLevel()
+void SF_LightLevel(void)
 {
 	sector_t *sector;
 	int secnum;
 	int tagnum;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		tagnum = intvalue(t_argv[0]);
 		
@@ -1452,6 +1825,93 @@ void DFraggleThinker::SF_LightLevel()
 }
 
 
+
+//==========================================================================
+//
+// Simple light fade - locks lightingdata. For SF_FadeLight
+//
+//==========================================================================
+class DLightLevel : public DLighting
+{
+	DECLARE_CLASS (DLightLevel, DLighting)
+
+	unsigned char destlevel;
+	unsigned char speed;
+
+	DLightLevel() {}
+
+public:
+
+	DLightLevel(sector_t * s,int destlevel,int speed);
+	void	Serialize (FArchive &arc);
+	void		Tick ();
+	void		Destroy() { Super::Destroy(); m_Sector->lightingdata=NULL; }
+};
+
+
+
+IMPLEMENT_CLASS (DLightLevel)
+
+void DLightLevel::Serialize (FArchive &arc)
+{
+	Super::Serialize (arc);
+	arc << destlevel << speed;
+	if (arc.IsLoading()) m_Sector->lightingdata=this;
+}
+
+
+//==========================================================================
+// sf 13/10/99:
+//
+// T_LightFade()
+//
+// Just fade the light level in a sector to a new level
+//
+//==========================================================================
+
+void DLightLevel::Tick()
+{
+	Super::Tick();
+	if(m_Sector->lightlevel < destlevel)
+	{
+		// increase the lightlevel
+		if(m_Sector->lightlevel + speed >= destlevel)
+		{
+			// stop changing light level
+			m_Sector->lightlevel = destlevel;    // set to dest lightlevel
+			Destroy();
+		}
+		else
+		{
+			m_Sector->lightlevel = m_Sector->lightlevel+speed;
+		}
+	}
+	else
+	{
+        // decrease lightlevel
+		if(m_Sector->lightlevel - speed <= destlevel)
+		{
+			// stop changing light level
+			m_Sector->lightlevel = destlevel;    // set to dest lightlevel
+			Destroy();
+		}
+		else
+		{
+			m_Sector->lightlevel = m_Sector->lightlevel-speed;
+		}
+	}
+}
+
+//==========================================================================
+//
+//==========================================================================
+DLightLevel::DLightLevel(sector_t * s,int _destlevel,int _speed) : DLighting(s)
+{
+	destlevel=_destlevel;
+	speed=_speed;
+	s->lightingdata=this;
+}
+
 //==========================================================================
 // sf 13/10/99:
 //
@@ -1460,12 +1920,12 @@ void DFraggleThinker::SF_LightLevel()
 // Fade all the lights in sectors with a particular tag to a new value
 //
 //==========================================================================
-void DFraggleThinker::SF_FadeLight()
+void SF_FadeLight(void)
 {
 	int sectag, destlevel, speed = 1;
 	int i;
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		sectag = intvalue(t_argv[0]);
 		destlevel = intvalue(t_argv[1]);
@@ -1478,18 +1938,12 @@ void DFraggleThinker::SF_FadeLight()
 	}
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void DFraggleThinker::SF_FloorTexture()
+void SF_FloorTexture(void)
 {
 	int tagnum, secnum;
 	sector_t *sector;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		tagnum = intvalue(t_argv[0]);
 		
@@ -1504,7 +1958,7 @@ void DFraggleThinker::SF_FloorTexture()
 		if(t_argc > 1)
 		{
 			int i = -1;
-			int picnum = TexMan.GetTexture(t_argv[1].value.s, FTexture::TEX_Flat, FTextureManager::TEXMAN_Overridable);
+			int picnum = TexMan.GetTexture(t_argv[1].string, FTexture::TEX_Flat, FTextureManager::TEXMAN_Overridable);
 			
 			// set all sectors with tag
 			while ((i = T_FindSectorFromTag(tagnum, i)) >= 0)
@@ -1516,7 +1970,7 @@ void DFraggleThinker::SF_FloorTexture()
 		
 		t_return.type = svt_string;
 		FTexture * tex = TexMan[sector->floorpic];
-		t_return.value.s = tex? tex->Name : NULL;
+		t_return.string = tex? tex->Name : "";
 	}
 }
 
@@ -1526,7 +1980,7 @@ void DFraggleThinker::SF_FloorTexture()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_SectorColormap()
+void SF_SectorColormap(void)
 {
 	// This doesn't work properly and it never will.
 	// Whatever was done here originally, it is incompatible 
@@ -1573,12 +2027,12 @@ void DFraggleThinker::SF_SectorColormap()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_CeilingTexture()
+void SF_CeilingTexture(void)
 {
 	int tagnum, secnum;
 	sector_t *sector;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		tagnum = intvalue(t_argv[0]);
 		
@@ -1593,7 +2047,7 @@ void DFraggleThinker::SF_CeilingTexture()
 		if(t_argc > 1)
 		{
 			int i = -1;
-			int picnum = TexMan.GetTexture(t_argv[1].value.s, FTexture::TEX_Flat, FTextureManager::TEXMAN_Overridable);
+			int picnum = TexMan.GetTexture(t_argv[1].string, FTexture::TEX_Flat, FTextureManager::TEXMAN_Overridable);
 			
 			// set all sectors with tag
 			while ((i = T_FindSectorFromTag(tagnum, i)) >= 0)
@@ -1604,7 +2058,7 @@ void DFraggleThinker::SF_CeilingTexture()
 		
 		t_return.type = svt_string;
 		FTexture * tex = TexMan[sector->ceilingpic];
-		t_return.value.s = tex? tex->Name : NULL;
+		t_return.string = tex? tex->Name : "";
 	}
 }
 
@@ -1614,37 +2068,30 @@ void DFraggleThinker::SF_CeilingTexture()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_ChangeHubLevel()
+void SF_ChangeHubLevel(void)
 {
 	I_Error("FS hub system permanently disabled\n");
 }
 
-//==========================================================================
-//
 // for start map: start new game on a particular skill
-//
-//==========================================================================
-
-void DFraggleThinker::SF_StartSkill()
+void SF_StartSkill(void)
 {
 	I_Error("startskill is not supported by this implementation!\n");
 }
 
-//==========================================================================
+//////////////////////////////////////////////////////////////////////////
 //
 // Doors
 //
+
 // opendoor(sectag, [delay], [speed])
-//
-//==========================================================================
 
-
-void DFraggleThinker::SF_OpenDoor()
+void SF_OpenDoor(void)
 {
 	int speed, wait_time;
 	int sectag;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		// got sector tag
 		sectag = intvalue(t_argv[0]);
@@ -1668,12 +2115,12 @@ void DFraggleThinker::SF_OpenDoor()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_CloseDoor()
+void SF_CloseDoor(void)
 {
 	int speed;
 	int sectag;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		// got sector tag
 		sectag = intvalue(t_argv[0]);
@@ -1694,9 +2141,9 @@ void DFraggleThinker::SF_CloseDoor()
 //==========================================================================
 
 // run console cmd
-void DFraggleThinker::SF_RunCommand()
+void SF_RunCommand(void)
 {
-	FS_EmulateCmd(GetFormatString(0).LockBuffer());
+	FS_EmulateCmd(T_GetFormatString(0).LockBuffer());
 }
 
 //==========================================================================
@@ -1708,9 +2155,9 @@ void DFraggleThinker::SF_RunCommand()
 // any linedef type
 extern void P_TranslateLineDef (line_t *ld, maplinedef_t *mld);
 
-void DFraggleThinker::SF_LineTrigger()
+void SF_LineTrigger()
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		line_t line;
 		maplinedef_t mld;
@@ -1727,9 +2174,31 @@ void DFraggleThinker::SF_LineTrigger()
 //
 //
 //==========================================================================
-void DFraggleThinker::SF_ChangeMusic()
+bool FS_ChangeMusic(const char * string)
 {
-	if (CheckArgs(1))
+	char buffer[40];
+
+	if (Wads.CheckNumForName(string, ns_music)<0 || !S_ChangeMusic(string,true))
+	{
+		// Retry with O_ prepended to the music name, then with D_
+		sprintf(buffer, "O_%s", string);
+		if (Wads.CheckNumForName(buffer, ns_music)<0 || !S_ChangeMusic(buffer,true))
+		{
+			sprintf(buffer, "D_%s", string);
+			if (Wads.CheckNumForName(buffer, ns_music)<0) 
+			{
+				S_ChangeMusic(NULL, 0);
+				return false;
+			}
+			else S_ChangeMusic(buffer,true);
+		}
+	}
+	return true;
+}
+
+void SF_ChangeMusic(void)
+{
+	if (T_CheckArgs(1))
 	{
 		FS_ChangeMusic(stringvalue(t_argv[0]));
 	}
@@ -1755,7 +2224,7 @@ SF_SetLineBlocking()
   
 	setlineblocking(tag, [1|0]);
 */
-void DFraggleThinker::SF_SetLineBlocking()
+void SF_SetLineBlocking(void)
 {
 	line_t *line;
 	int blocking;
@@ -1763,7 +2232,7 @@ void DFraggleThinker::SF_SetLineBlocking()
 	int tag;
 	static unsigned short blocks[]={0,ML_BLOCKING,ML_BLOCKEVERYTHING};
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		blocking=intvalue(t_argv[1]);
 		if (blocking>=0 && blocking<=2) 
@@ -1786,14 +2255,14 @@ void DFraggleThinker::SF_SetLineBlocking()
 
 // similar, but monster blocking
 
-void DFraggleThinker::SF_SetLineMonsterBlocking()
+void SF_SetLineMonsterBlocking(void)
 {
 	line_t *line;
 	int blocking;
 	int searcher = -1;
 	int tag;
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		blocking = intvalue(t_argv[1]) ? ML_BLOCKMONSTERS : 0;
 		
@@ -1817,7 +2286,7 @@ SF_SetLineTexture
 */
 
 
-void DFraggleThinker::SF_SetLineTexture()
+void SF_SetLineTexture(void)
 {
 	line_t *line;
 	int tag;
@@ -1827,7 +2296,7 @@ void DFraggleThinker::SF_SetLineTexture()
 	int texturenum;
 	int searcher;
 	
-	if (CheckArgs(4))
+	if (T_CheckArgs(4))
 	{
 		tag = intvalue(t_argv[0]);
 
@@ -1878,7 +2347,7 @@ void DFraggleThinker::SF_SetLineTexture()
 		else // and an improved legacy version
 		{ 
 			int i = -1; 
-			int picnum = TexMan.GetTexture(t_argv[1].value.s, FTexture::TEX_Wall, FTextureManager::TEXMAN_Overridable); 
+			int picnum = TexMan.GetTexture(t_argv[1].string, FTexture::TEX_Wall, FTextureManager::TEXMAN_Overridable); 
 			side = !!intvalue(t_argv[2]); 
 			int sections = intvalue(t_argv[3]); 
 			
@@ -1906,11 +2375,11 @@ void DFraggleThinker::SF_SetLineTexture()
 //==========================================================================
 
 // SoM: Max, Min, Abs math functions.
-void DFraggleThinker::SF_Max()
+void SF_Max(void)
 {
 	fixed_t n1, n2;
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		n1 = fixedvalue(t_argv[0]);
 		n2 = fixedvalue(t_argv[1]);
@@ -1927,11 +2396,11 @@ void DFraggleThinker::SF_Max()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Min()
+void SF_Min(void)
 {
 	fixed_t   n1, n2;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		n1 = fixedvalue(t_argv[0]);
 		n2 = fixedvalue(t_argv[1]);
@@ -1948,11 +2417,11 @@ void DFraggleThinker::SF_Min()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Abs()
+void SF_Abs(void)
 {
 	fixed_t   n1;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		n1 = fixedvalue(t_argv[0]);
 		
@@ -1969,7 +2438,7 @@ SF_Gameskill, SF_Gamemode
   variable already.
 */
 
-void DFraggleThinker::SF_Gameskill()
+void SF_Gameskill(void)
 {
 	t_return.type = svt_int;
 	t_return.value.i = G_SkillProperty(SKILLP_ACSReturn) + 1;  // +1 for the user skill value
@@ -1981,7 +2450,7 @@ void DFraggleThinker::SF_Gameskill()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Gamemode()
+void SF_Gamemode(void)
 {
 	t_return.type = svt_int;   
 	if(!multiplayer)
@@ -2003,7 +2472,7 @@ SF_IsPlayerObj()
   exceptions related to calling player functions on non-player
   objects.
 */
-void DFraggleThinker::SF_IsPlayerObj()
+void SF_IsPlayerObj(void)
 {
 	AActor *mo;
 	
@@ -2018,13 +2487,151 @@ void DFraggleThinker::SF_IsPlayerObj()
 	t_return.value.i = (mo && mo->player) ? 1 : 0;
 }
 
+//============================================================================
+//
+// Since FraggleScript is rather hard coded to the original inventory
+// handling of Doom this is rather messy.
+//
+//============================================================================
+
+
+//============================================================================
+//
+// DoGiveInv
+//
+// Gives an item to a single actor.
+//
+//============================================================================
+
+static void FS_GiveInventory (AActor *actor, const char * type, int amount)
+{
+	if (amount <= 0)
+	{
+		return;
+	}
+	if (strcmp (type, "Armor") == 0)
+	{
+		type = "BasicArmorPickup";
+	}
+	const PClass * info = PClass::FindClass (type);
+	if (info == NULL || !info->IsDescendantOf (RUNTIME_CLASS(AInventory)))
+	{
+		Printf ("Unknown inventory item: %s\n", type);
+		return;
+	}
+
+	AWeapon *savedPendingWeap = actor->player != NULL? actor->player->PendingWeapon : NULL;
+	bool hadweap = actor->player != NULL ? actor->player->ReadyWeapon != NULL : true;
+
+	AInventory *item = static_cast<AInventory *>(Spawn (info, 0,0,0, NO_REPLACE));
+
+	// This shouldn't count for the item statistics!
+	if (item->flags&MF_COUNTITEM) 
+	{
+		level.total_items--;
+		item->flags&=~MF_COUNTITEM;
+	}
+	if (info->IsDescendantOf (RUNTIME_CLASS(ABasicArmorPickup)) ||
+		info->IsDescendantOf (RUNTIME_CLASS(ABasicArmorBonus)))
+	{
+		static_cast<ABasicArmorPickup*>(item)->SaveAmount *= amount;
+	}
+	else
+	{
+		item->Amount = amount;
+	}
+	if (!item->TryPickup (actor))
+	{
+		item->Destroy ();
+	}
+	// If the item was a weapon, don't bring it up automatically
+	// unless the player was not already using a weapon.
+	if (savedPendingWeap != NULL && hadweap)
+	{
+		actor->player->PendingWeapon = savedPendingWeap;
+	}
+}
+
+//============================================================================
+//
+// DoTakeInv
+//
+// Takes an item from a single actor.
+//
+//============================================================================
+
+static void FS_TakeInventory (AActor *actor, const char * type, int amount)
+{
+	if (strcmp (type, "Armor") == 0)
+	{
+		type = "BasicArmor";
+	}
+	if (amount <= 0)
+	{
+		return;
+	}
+	const PClass * info = PClass::FindClass (type);
+	if (info == NULL)
+	{
+		return;
+	}
+
+	AInventory *item = actor->FindInventory (info);
+	if (item != NULL)
+	{
+		item->Amount -= amount;
+		if (item->Amount <= 0)
+		{
+			// If it's not ammo, destroy it. Ammo needs to stick around, even
+			// when it's zero for the benefit of the weapons that use it and 
+			// to maintain the maximum ammo amounts a backpack might have given.
+			if (item->GetClass()->ParentClass != RUNTIME_CLASS(AAmmo))
+			{
+				item->Destroy ();
+			}
+			else
+			{
+				item->Amount = 0;
+			}
+		}
+	}
+}
+
+//============================================================================
+//
+// CheckInventory
+//
+// Returns how much of a particular item an actor has.
+//
+//============================================================================
+
+static int FS_CheckInventory (AActor *activator, const char *type)
+{
+	if (activator == NULL)
+		return 0;
+
+	if (strcmp (type, "Armor") == 0)
+	{
+		type = "BasicArmor";
+	}
+	else if (strcmp (type, "Health") == 0)
+	{
+		return activator->health;
+	}
+
+	const PClass *info = PClass::FindClass (type);
+	AInventory *item = activator->FindInventory (info);
+	return item ? item->Amount : 0;
+}
+
+
 //==========================================================================
 //
 //
 //
 //==========================================================================
 
-void DFraggleThinker::SF_PlayerKeys()
+void SF_PlayerKeys(void)
 {
 	// This function is just kept for backwards compatibility and intentionally limited to thr standard keys!
 	// Use Give/Take/CheckInventory instead!
@@ -2032,7 +2639,7 @@ void DFraggleThinker::SF_PlayerKeys()
 	int  playernum, keynum, givetake;
 	const char * keyname;
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		playernum=T_GetPlayerNum(t_argv[0]);
 		if (playernum==-1) return;
@@ -2068,14 +2675,14 @@ void DFraggleThinker::SF_PlayerKeys()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_PlayerAmmo()
+void SF_PlayerAmmo(void)
 {
 	// This function is just kept for backwards compatibility and intentionally limited!
 	// Use Give/Take/CheckInventory instead!
 	int playernum, amount;
 	const PClass * ammotype;
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		playernum=T_GetPlayerNum(t_argv[0]);
 		if (playernum==-1) return;
@@ -2106,12 +2713,12 @@ void DFraggleThinker::SF_PlayerAmmo()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_MaxPlayerAmmo()
+void SF_MaxPlayerAmmo()
 {
 	int playernum, amount;
 	const PClass * ammotype;
 
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		playernum=T_GetPlayerNum(t_argv[0]);
 		if (playernum==-1) return;
@@ -2161,7 +2768,7 @@ void DFraggleThinker::SF_MaxPlayerAmmo()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_PlayerWeapon()
+void SF_PlayerWeapon()
 {
 	static const char * const WeaponNames[]={
 		"Fist", "Pistol", "Shotgun", "Chaingun", "RocketLauncher", 
@@ -2174,7 +2781,7 @@ void DFraggleThinker::SF_PlayerWeapon()
     int weaponnum;
     int newweapon;
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		playernum=T_GetPlayerNum(t_argv[0]);
 		weaponnum = intvalue(t_argv[1]);
@@ -2240,7 +2847,7 @@ void DFraggleThinker::SF_PlayerWeapon()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_PlayerSelectedWeapon()
+void SF_PlayerSelectedWeapon()
 {
 	int playernum;
 	int weaponnum;
@@ -2252,7 +2859,7 @@ void DFraggleThinker::SF_PlayerSelectedWeapon()
 		"PlasmaRifle", "BFG9000", "Chainsaw", "SuperShotgun" };
 
 
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		playernum=T_GetPlayerNum(t_argv[0]);
 
@@ -2293,11 +2900,11 @@ void DFraggleThinker::SF_PlayerSelectedWeapon()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_GiveInventory()
+void SF_GiveInventory(void)
 {
 	int  playernum, count;
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		playernum=T_GetPlayerNum(t_argv[0]);
 		if (playernum==-1) return;
@@ -2316,11 +2923,11 @@ void DFraggleThinker::SF_GiveInventory()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_TakeInventory()
+void SF_TakeInventory(void)
 {
 	int  playernum, count;
 
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		playernum=T_GetPlayerNum(t_argv[0]);
 		if (playernum==-1) return;
@@ -2339,11 +2946,11 @@ void DFraggleThinker::SF_TakeInventory()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_CheckInventory()
+void SF_CheckInventory(void)
 {
 	int  playernum;
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		playernum=T_GetPlayerNum(t_argv[0]);
 		if (playernum==-1) 
@@ -2362,9 +2969,9 @@ void DFraggleThinker::SF_CheckInventory()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_SetWeapon()
+void SF_SetWeapon()
 {
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		int playernum=T_GetPlayerNum(t_argv[0]);
 		if (playernum!=-1) 
@@ -2405,7 +3012,7 @@ void DFraggleThinker::SF_SetWeapon()
 // movecamera(camera, targetobj, targetheight, movespeed, targetangle, anglespeed)
 //
 
-void DFraggleThinker::SF_MoveCamera()
+void SF_MoveCamera(void)
 {
 	fixed_t    x, y, z;  
 	fixed_t    xdist, ydist, zdist, xydist, movespeed;
@@ -2424,7 +3031,7 @@ void DFraggleThinker::SF_MoveCamera()
 	
 	angledir = moved = 0;
 
-	if (CheckArgs(6))
+	if (T_CheckArgs(6))
 	{
 		cam = MobjForSvalue(t_argv[0]);
 
@@ -2577,7 +3184,7 @@ void DFraggleThinker::SF_MoveCamera()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_ObjAwaken()
+void SF_ObjAwaken(void)
 {
    AActor *mo;
 
@@ -2600,9 +3207,9 @@ void DFraggleThinker::SF_ObjAwaken()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_AmbientSound()
+void SF_AmbientSound(void)
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		S_SoundID(CHAN_AUTO, T_FindSound(stringvalue(t_argv[0])), 1, ATTN_NORM);
 	}
@@ -2617,7 +3224,7 @@ void DFraggleThinker::SF_AmbientSound()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_ExitSecret()
+void SF_ExitSecret(void)
 {
 	G_ExitLevel(0, false);
 }
@@ -2631,38 +3238,36 @@ void DFraggleThinker::SF_ExitSecret()
 
 // Type forcing functions -- useful with arrays et al
 
-void DFraggleThinker::SF_MobjValue()
+void SF_MobjValue(void)
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		t_return.type = svt_mobj;
 		t_return.value.mobj = MobjForSvalue(t_argv[0]);
 	}
 }
 
-void DFraggleThinker::SF_StringValue()
+void SF_StringValue(void)
 {  
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		t_return.type = svt_string;
-		t_return.value.s = strdup(stringvalue(t_argv[0]));
-		// this cannot be handled in any sensible way - yuck!
-		levelpointers.Push(t_return.value.s);
+		t_return.string = t_argv[0].type == svt_string? t_argv[0].string : stringvalue(t_argv[0]);
 	}
 }
 
-void DFraggleThinker::SF_IntValue()
+void SF_IntValue(void)
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		t_return.type = svt_int;
 		t_return.value.i = intvalue(t_argv[0]);
 	}
 }
 
-void DFraggleThinker::SF_FixedValue()
+void SF_FixedValue(void)
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		t_return.type = svt_fixed;
 		t_return.value.f = fixedvalue(t_argv[0]);
@@ -2676,13 +3281,13 @@ void DFraggleThinker::SF_FixedValue()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_SpawnExplosion()
+void SF_SpawnExplosion()
 {
 	fixed_t   x, y, z;
 	AActor*   spawn;
 	const PClass * PClass;
 	
-	if (CheckArgs(3))
+	if (T_CheckArgs(3))
 	{
 		if (!(PClass=T_GetMobjType(t_argv[0]))) return;
 		
@@ -2713,13 +3318,13 @@ void DFraggleThinker::SF_SpawnExplosion()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_RadiusAttack()
+void SF_RadiusAttack()
 {
     AActor *spot;
     AActor *source;
     int damage;
 
-	if (CheckArgs(3))
+	if (T_CheckArgs(3))
 	{
 		spot = MobjForSvalue(t_argv[0]);
 		source = MobjForSvalue(t_argv[1]);
@@ -2738,11 +3343,11 @@ void DFraggleThinker::SF_RadiusAttack()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_SetObjPosition()
+void SF_SetObjPosition()
 {
 	AActor* mobj;
 
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		mobj = MobjForSvalue(t_argv[0]);
 
@@ -2764,7 +3369,7 @@ void DFraggleThinker::SF_SetObjPosition()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_TestLocation()
+void SF_TestLocation()
 {
     AActor *mo = t_argc ? MobjForSvalue(t_argv[0]) : current_script->trigger;
 
@@ -2781,7 +3386,7 @@ void DFraggleThinker::SF_TestLocation()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_HealObj()  //no pain sound
+void SF_HealObj()  //no pain sound
 {
 	AActor *mo = t_argc ? MobjForSvalue(t_argv[0]) : current_script->trigger;
 
@@ -2808,7 +3413,7 @@ void DFraggleThinker::SF_HealObj()  //no pain sound
 //
 //==========================================================================
 
-void DFraggleThinker::SF_ObjDead()
+void SF_ObjDead()
 {
 	AActor *mo = t_argc ? MobjForSvalue(t_argv[0]) : current_script->trigger;
 	
@@ -2825,13 +3430,13 @@ void DFraggleThinker::SF_ObjDead()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_SpawnMissile()
+void SF_SpawnMissile()
 {
     AActor *mobj;
     AActor *target;
 	const PClass * PClass;
 
-	if (CheckArgs(3))
+	if (T_CheckArgs(3))
 	{
 		if (!(PClass=T_GetMobjType(t_argv[2]))) return;
 
@@ -2847,12 +3452,12 @@ void DFraggleThinker::SF_SpawnMissile()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_MapThingNumExist()
+void SF_MapThingNumExist()
 {
 
     int intval;
 
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		intval = intvalue(t_argv[0]);
 
@@ -2875,7 +3480,7 @@ void DFraggleThinker::SF_MapThingNumExist()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_MapThings()
+void SF_MapThings()
 {
     t_return.type = svt_int;
     t_return.value.i = SpawnedThings.Size();
@@ -2888,12 +3493,12 @@ void DFraggleThinker::SF_MapThings()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_ObjState()
+void SF_ObjState()
 {
 	int state;
 	AActor	*mo;
 
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		if(t_argc == 1)
 		{
@@ -2932,13 +3537,13 @@ void DFraggleThinker::SF_ObjState()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_LineFlag()
+void SF_LineFlag()
 {
 	line_t*  line;
 	int      linenum;
 	int      flagnum;
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		linenum = intvalue(t_argv[0]);
 		if(linenum < 0 || linenum > numlines)
@@ -2975,12 +3580,12 @@ void DFraggleThinker::SF_LineFlag()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_PlayerAddFrag()
+void SF_PlayerAddFrag()
 {
 	int playernum1;
 	int playernum2;
 
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		if (t_argc == 1)
 		{
@@ -3011,17 +3616,17 @@ void DFraggleThinker::SF_PlayerAddFrag()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_SkinColor()
+void SF_SkinColor()
 {
 	// Ignoring it for now.
 }
 
-void DFraggleThinker::SF_PlayDemo()
+void SF_PlayDemo()
 { 
 	// Ignoring it for now.
 }
 
-void DFraggleThinker::SF_CheckCVar()
+void SF_CheckCVar()
 {
 	// can't be done so return 0.
 }
@@ -3031,12 +3636,12 @@ void DFraggleThinker::SF_CheckCVar()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Resurrect()
+void SF_Resurrect()
 {
 
 	AActor *mo;
 
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		mo = MobjForSvalue(t_argv[0]);
 
@@ -3060,12 +3665,12 @@ void DFraggleThinker::SF_Resurrect()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_LineAttack()
+void SF_LineAttack()
 {
 	AActor	*mo;
 	int		damage, angle, slope;
 
-	if (CheckArgs(3))
+	if (T_CheckArgs(3))
 	{
 		mo = MobjForSvalue(t_argv[0]);
 		damage = intvalue(t_argv[2]);
@@ -3084,12 +3689,12 @@ void DFraggleThinker::SF_LineAttack()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_ObjType()
+void SF_ObjType()
 {
 	// use trigger object if not specified
 	AActor *mo = t_argc ? MobjForSvalue(t_argv[0]) : current_script->trigger;
 
-	for(int i=0;ActorTypes[i];i++) if (mo->GetClass() == ActorTypes[i])
+	for(int i=0;i<countof(ActorTypes);i++) if (mo->GetClass() == ActorTypes[i])
 	{
 		t_return.type = svt_int;
 		t_return.value.i = i;
@@ -3112,9 +3717,9 @@ inline fixed_t double2fixed(double t)
 
 
 
-void DFraggleThinker::SF_Sin()
+void SF_Sin()
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		t_return.type = svt_fixed;
 		t_return.value.f = double2fixed(sin(floatvalue(t_argv[0])));
@@ -3122,9 +3727,9 @@ void DFraggleThinker::SF_Sin()
 }
 
 
-void DFraggleThinker::SF_ASin()
+void SF_ASin()
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		t_return.type = svt_fixed;
 		t_return.value.f = double2fixed(asin(floatvalue(t_argv[0])));
@@ -3132,9 +3737,9 @@ void DFraggleThinker::SF_ASin()
 }
 
 
-void DFraggleThinker::SF_Cos()
+void SF_Cos()
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		t_return.type = svt_fixed;
 		t_return.value.f = double2fixed(cos(floatvalue(t_argv[0])));
@@ -3142,9 +3747,9 @@ void DFraggleThinker::SF_Cos()
 }
 
 
-void DFraggleThinker::SF_ACos()
+void SF_ACos()
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		t_return.type = svt_fixed;
 		t_return.value.f = double2fixed(acos(floatvalue(t_argv[0])));
@@ -3152,9 +3757,9 @@ void DFraggleThinker::SF_ACos()
 }
 
 
-void DFraggleThinker::SF_Tan()
+void SF_Tan()
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		t_return.type = svt_fixed;
 		t_return.value.f = double2fixed(tan(floatvalue(t_argv[0])));
@@ -3162,9 +3767,9 @@ void DFraggleThinker::SF_Tan()
 }
 
 
-void DFraggleThinker::SF_ATan()
+void SF_ATan()
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		t_return.type = svt_fixed;
 		t_return.value.f = double2fixed(atan(floatvalue(t_argv[0])));
@@ -3172,18 +3777,18 @@ void DFraggleThinker::SF_ATan()
 }
 
 
-void DFraggleThinker::SF_Exp()
+void SF_Exp()
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		t_return.type = svt_fixed;
 		t_return.value.f = double2fixed(exp(floatvalue(t_argv[0])));
 	}
 }
 
-void DFraggleThinker::SF_Log()
+void SF_Log()
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		t_return.type = svt_fixed;
 		t_return.value.f = double2fixed(log(floatvalue(t_argv[0])));
@@ -3191,9 +3796,9 @@ void DFraggleThinker::SF_Log()
 }
 
 
-void DFraggleThinker::SF_Sqrt()
+void SF_Sqrt()
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		t_return.type = svt_fixed;
 		t_return.value.f = double2fixed(sqrt(floatvalue(t_argv[0])));
@@ -3201,9 +3806,9 @@ void DFraggleThinker::SF_Sqrt()
 }
 
 
-void DFraggleThinker::SF_Floor()
+void SF_Floor()
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		t_return.type = svt_fixed;
 		t_return.value.f = fixedvalue(t_argv[0]) & 0xffFF0000;
@@ -3211,9 +3816,9 @@ void DFraggleThinker::SF_Floor()
 }
 
 
-void DFraggleThinker::SF_Pow()
+void SF_Pow()
 {
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		t_return.type = svt_fixed;
 		t_return.value.f = double2fixed(pow(floatvalue(t_argv[0]), floatvalue(t_argv[1])));
@@ -3232,9 +3837,9 @@ int HU_DeleteFSPic(unsigned int handle);
 int HU_ModifyFSPic(unsigned int handle, int lumpnum, int xpos, int ypos);
 int HU_FSDisplay(unsigned int handle, bool newval);
 
-void DFraggleThinker::SF_NewHUPic()
+void SF_NewHUPic()
 {
-	if (CheckArgs(3))
+	if (T_CheckArgs(3))
 	{
 		t_return.type = svt_int;
 		t_return.value.i = HU_GetFSPic(
@@ -3243,16 +3848,16 @@ void DFraggleThinker::SF_NewHUPic()
 	}
 }
 
-void DFraggleThinker::SF_DeleteHUPic()
+void SF_DeleteHUPic()
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 	    if (HU_DeleteFSPic(intvalue(t_argv[0])) == -1)
 		    script_error("deletehupic: Invalid sfpic handle: %i\n", intvalue(t_argv[0]));
 	}
 }
 
-void DFraggleThinker::SF_ModifyHUPic()
+void SF_ModifyHUPic()
 {
     if (t_argc != 4)
     {
@@ -3269,7 +3874,7 @@ void DFraggleThinker::SF_ModifyHUPic()
     return;
 }
 
-void DFraggleThinker::SF_SetHUPicDisplay()
+void SF_SetHUPicDisplay()
 {
     if (t_argc != 2)
     {
@@ -3288,7 +3893,7 @@ void DFraggleThinker::SF_SetHUPicDisplay()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_SetCorona()
+void SF_SetCorona(void)
 {
 	if(t_argc != 3)
 	{
@@ -3349,12 +3954,12 @@ void DFraggleThinker::SF_SetCorona()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_Ls()
+void SF_Ls()
 {
 	int args[5]={0,0,0,0,0};
 	int spc;
 
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		spc=intvalue(t_argv[0]);
 		for(int i=0;i<5;i++)
@@ -3373,7 +3978,7 @@ void DFraggleThinker::SF_Ls()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_LevelNum()
+void SF_LevelNum()
 {
 	t_return.type = svt_int;
 	t_return.value.f = level.levelnum;
@@ -3386,11 +3991,11 @@ void DFraggleThinker::SF_LevelNum()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_MobjRadius()
+void SF_MobjRadius(void)
 {
 	AActor*   mo;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		mo = MobjForSvalue(t_argv[0]);
 		if(t_argc > 1)
@@ -3411,11 +4016,11 @@ void DFraggleThinker::SF_MobjRadius()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_MobjHeight()
+void SF_MobjHeight(void)
 {
 	AActor*   mo;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		mo = MobjForSvalue(t_argv[0]);
 		if(t_argc > 1)
@@ -3436,7 +4041,7 @@ void DFraggleThinker::SF_MobjHeight()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_ThingCount()
+void SF_ThingCount(void)
 {
 	const PClass *pClass;
 	AActor * mo;
@@ -3444,7 +4049,7 @@ void DFraggleThinker::SF_ThingCount()
 	bool replacemented = false;
 
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		if (!(pClass=T_GetMobjType(t_argv[0]))) return;
 		// If we want to count map items we must consider actor replacement
@@ -3496,14 +4101,14 @@ again:
 //
 //==========================================================================
 
-void DFraggleThinker::SF_SetColor()
+void SF_SetColor(void)
 {
 	int tagnum, secnum;
 	int c=2;
 	int i = -1;
 	PalEntry color=0;
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		tagnum = intvalue(t_argv[0]);
 		
@@ -3542,7 +4147,7 @@ void DFraggleThinker::SF_SetColor()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_SpawnShot2()
+void SF_SpawnShot2(void)
 {
 	AActor *source = NULL;
 	const PClass * PClass;
@@ -3552,7 +4157,7 @@ void DFraggleThinker::SF_SpawnShot2()
 	// t_argv[1] = source mobj, optional, -1 to default
 	// shoots at source's angle
 	
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		if(t_argv[1].type == svt_int && t_argv[1].value.i < 0)
 			source = current_script->trigger;
@@ -3587,9 +4192,9 @@ void DFraggleThinker::SF_SpawnShot2()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_KillInSector()
+void  SF_KillInSector()
 {
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		TThinkerIterator<AActor> it;
 		AActor * mo;
@@ -3610,12 +4215,12 @@ void DFraggleThinker::SF_KillInSector()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_SectorType()
+void SF_SectorType(void)
 {
 	int tagnum, secnum;
 	sector_t *sector;
 	
-	if (CheckArgs(1))
+	if (T_CheckArgs(1))
 	{
 		tagnum = intvalue(t_argv[0]);
 		
@@ -3652,11 +4257,11 @@ void DFraggleThinker::SF_SectorType()
 //
 //==========================================================================
 
-void DFraggleThinker::SF_SetLineTrigger()
+void SF_SetLineTrigger()
 {
 	int i,id,spec,tag;
 
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		id=intvalue(t_argv[0]);
 		spec=intvalue(t_argv[1]);
@@ -3690,9 +4295,9 @@ void DFraggleThinker::SF_SetLineTrigger()
 
 void P_InitTagLists();
 
-void DFraggleThinker::SF_ChangeTag()
+void SF_ChangeTag()
 {
-	if (CheckArgs(2))
+	if (T_CheckArgs(2))
 	{
 		for (int secnum = -1; (secnum = P_FindSectorFromTag (t_argv[0].value.i, secnum)) >= 0; ) 
 		{
@@ -3713,7 +4318,7 @@ void DFraggleThinker::SF_ChangeTag()
 }
 
 
-void DFraggleThinker::SF_WallGlow()
+void SF_WallGlow()
 {
 	// Development garbage!
 }
@@ -3726,8 +4331,13 @@ void DFraggleThinker::SF_WallGlow()
 //
 static int zoom=1;	// Dummy - no longer needed!
 
-void DFraggleThinker::init_functions()
+void init_functions(void)
 {
+	for(int i=0;i<countof(ActorNames_init);i++)
+	{
+		ActorTypes[i]=PClass::FindClass(ActorNames_init[i]);
+	}
+
 	// add all the functions
 	add_game_int("consoleplayer", &consoleplayer);
 	add_game_int("displayplayer", &consoleplayer);
@@ -3736,195 +4346,195 @@ void DFraggleThinker::init_functions()
 	add_game_mobj("trigger", &trigger_obj);
 	
 	// important C-emulating stuff
-	new_function("break", &DFraggleThinker::SF_Break);
-	new_function("continue", &DFraggleThinker::SF_Continue);
-	new_function("return", &DFraggleThinker::SF_Return);
-	new_function("goto", &DFraggleThinker::SF_Goto);
-	new_function("include", &DFraggleThinker::SF_Include);
+	new_function("break", SF_Break);
+	new_function("continue", SF_Continue);
+	new_function("return", SF_Return);
+	new_function("goto", SF_Goto);
+	new_function("include", SF_Include);
 	
 	// standard FraggleScript functions
-	new_function("print", &DFraggleThinker::SF_Print);
-	new_function("rnd", &DFraggleThinker::SF_Rnd);	// Legacy uses a normal rand() call for this which is extremely dangerous.
-	new_function("prnd", &DFraggleThinker::SF_Rnd);	// I am mapping rnd and prnd to the same named RNG which should eliminate any problem
-	new_function("input", &DFraggleThinker::SF_Input);
-	new_function("beep", &DFraggleThinker::SF_Beep);
-	new_function("clock", &DFraggleThinker::SF_Clock);
-	new_function("wait", &DFraggleThinker::SF_Wait);
-	new_function("tagwait", &DFraggleThinker::SF_TagWait);
-	new_function("scriptwait", &DFraggleThinker::SF_ScriptWait);
-	new_function("startscript", &DFraggleThinker::SF_StartScript);
-	new_function("scriptrunning", &DFraggleThinker::SF_ScriptRunning);
+	new_function("print", SF_Print);
+	new_function("rnd", SF_Rnd);	// Legacy uses a normal rand() call for this which is extremely dangerous.
+	new_function("prnd", SF_Rnd);	// I am mapping rnd and prnd to the same named RNG which should eliminate any problem
+	new_function("input", SF_Input);
+	new_function("beep", SF_Beep);
+	new_function("clock", SF_Clock);
+	new_function("wait", SF_Wait);
+	new_function("tagwait", SF_TagWait);
+	new_function("scriptwait", SF_ScriptWait);
+	new_function("startscript", SF_StartScript);
+	new_function("scriptrunning", SF_ScriptRunning);
 	
 	// doom stuff
-	new_function("startskill", &DFraggleThinker::SF_StartSkill);
-	new_function("exitlevel", &DFraggleThinker::SF_ExitLevel);
-	new_function("tip", &DFraggleThinker::SF_Tip);
-	new_function("timedtip", &DFraggleThinker::SF_TimedTip);
-	new_function("message", &DFraggleThinker::SF_Message);
-	new_function("gameskill", &DFraggleThinker::SF_Gameskill);
-	new_function("gamemode", &DFraggleThinker::SF_Gamemode);
+	new_function("startskill", SF_StartSkill);
+	new_function("exitlevel", SF_ExitLevel);
+	new_function("tip", SF_Tip);
+	new_function("timedtip", SF_TimedTip);
+	new_function("message", SF_Message);
+	new_function("gameskill", SF_Gameskill);
+	new_function("gamemode", SF_Gamemode);
 	
 	// player stuff
-	new_function("playermsg", &DFraggleThinker::SF_PlayerMsg);
-	new_function("playertip", &DFraggleThinker::SF_PlayerTip);
-	new_function("playeringame", &DFraggleThinker::SF_PlayerInGame);
-	new_function("playername", &DFraggleThinker::SF_PlayerName);
-    new_function("playeraddfrag", &DFraggleThinker::SF_PlayerAddFrag);
-	new_function("playerobj", &DFraggleThinker::SF_PlayerObj);
-	new_function("isplayerobj", &DFraggleThinker::SF_IsPlayerObj);
-	new_function("isobjplayer", &DFraggleThinker::SF_IsPlayerObj);
-	new_function("skincolor", &DFraggleThinker::SF_SkinColor);
-	new_function("playerkeys", &DFraggleThinker::SF_PlayerKeys);
-	new_function("playerammo", &DFraggleThinker::SF_PlayerAmmo);
-    new_function("maxplayerammo", &DFraggleThinker::SF_MaxPlayerAmmo); 
-	new_function("playerweapon", &DFraggleThinker::SF_PlayerWeapon);
-	new_function("playerselwep", &DFraggleThinker::SF_PlayerSelectedWeapon);
+	new_function("playermsg", SF_PlayerMsg);
+	new_function("playertip", SF_PlayerTip);
+	new_function("playeringame", SF_PlayerInGame);
+	new_function("playername", SF_PlayerName);
+    new_function("playeraddfrag", SF_PlayerAddFrag);
+	new_function("playerobj", SF_PlayerObj);
+	new_function("isplayerobj", SF_IsPlayerObj);
+	new_function("isobjplayer", SF_IsPlayerObj);
+	new_function("skincolor", SF_SkinColor);
+	new_function("playerkeys", SF_PlayerKeys);
+	new_function("playerammo", SF_PlayerAmmo);
+    new_function("maxplayerammo", SF_MaxPlayerAmmo); 
+	new_function("playerweapon", SF_PlayerWeapon);
+	new_function("playerselwep", SF_PlayerSelectedWeapon);
 	
 	// mobj stuff
-	new_function("spawn", &DFraggleThinker::SF_Spawn);
-	new_function("spawnexplosion", &DFraggleThinker::SF_SpawnExplosion);
-    new_function("radiusattack", &DFraggleThinker::SF_RadiusAttack);
-	new_function("kill", &DFraggleThinker::SF_KillObj);
-	new_function("removeobj", &DFraggleThinker::SF_RemoveObj);
-	new_function("objx", &DFraggleThinker::SF_ObjX);
-	new_function("objy", &DFraggleThinker::SF_ObjY);
-	new_function("objz", &DFraggleThinker::SF_ObjZ);
-    new_function("testlocation", &DFraggleThinker::SF_TestLocation);
-	new_function("teleport", &DFraggleThinker::SF_Teleport);
-	new_function("silentteleport", &DFraggleThinker::SF_SilentTeleport);
-	new_function("damageobj", &DFraggleThinker::SF_DamageObj);
-	new_function("healobj", &DFraggleThinker::SF_HealObj);
-	new_function("player", &DFraggleThinker::SF_Player);
-	new_function("objsector", &DFraggleThinker::SF_ObjSector);
-	new_function("objflag", &DFraggleThinker::SF_ObjFlag);
-	new_function("pushobj", &DFraggleThinker::SF_PushThing);
-	new_function("pushthing", &DFraggleThinker::SF_PushThing);
-	new_function("objangle", &DFraggleThinker::SF_ObjAngle);
-	new_function("objhealth", &DFraggleThinker::SF_ObjHealth);
-	new_function("objdead", &DFraggleThinker::SF_ObjDead);
-	new_function("reactiontime", &DFraggleThinker::SF_ReactionTime);
-	new_function("objreactiontime", &DFraggleThinker::SF_ReactionTime);
-	new_function("objtarget", &DFraggleThinker::SF_MobjTarget);
-	new_function("objmomx", &DFraggleThinker::SF_MobjMomx);
-	new_function("objmomy", &DFraggleThinker::SF_MobjMomy);
-	new_function("objmomz", &DFraggleThinker::SF_MobjMomz);
+	new_function("spawn", SF_Spawn);
+	new_function("spawnexplosion", SF_SpawnExplosion);
+    new_function("radiusattack", SF_RadiusAttack);
+	new_function("kill", SF_KillObj);
+	new_function("removeobj", SF_RemoveObj);
+	new_function("objx", SF_ObjX);
+	new_function("objy", SF_ObjY);
+	new_function("objz", SF_ObjZ);
+    new_function("testlocation", SF_TestLocation);
+	new_function("teleport", SF_Teleport);
+	new_function("silentteleport", SF_SilentTeleport);
+	new_function("damageobj", SF_DamageObj);
+	new_function("healobj", SF_HealObj);
+	new_function("player", SF_Player);
+	new_function("objsector", SF_ObjSector);
+	new_function("objflag", SF_ObjFlag);
+	new_function("pushobj", SF_PushThing);
+	new_function("pushthing", SF_PushThing);
+	new_function("objangle", SF_ObjAngle);
+	new_function("objhealth", SF_ObjHealth);
+	new_function("objdead", SF_ObjDead);
+	new_function("reactiontime", SF_ReactionTime);
+	new_function("objreactiontime", SF_ReactionTime);
+	new_function("objtarget", SF_MobjTarget);
+	new_function("objmomx", SF_MobjMomx);
+	new_function("objmomy", SF_MobjMomy);
+	new_function("objmomz", SF_MobjMomz);
 
-    new_function("spawnmissile", &DFraggleThinker::SF_SpawnMissile);
-    new_function("mapthings", &DFraggleThinker::SF_MapThings);
-    new_function("objtype", &DFraggleThinker::SF_ObjType);
-    new_function("mapthingnumexist", &DFraggleThinker::SF_MapThingNumExist);
-	new_function("objstate", &DFraggleThinker::SF_ObjState);
-	new_function("resurrect", &DFraggleThinker::SF_Resurrect);
-	new_function("lineattack", &DFraggleThinker::SF_LineAttack);
-	new_function("setobjposition", &DFraggleThinker::SF_SetObjPosition);
+    new_function("spawnmissile", SF_SpawnMissile);
+    new_function("mapthings", SF_MapThings);
+    new_function("objtype", SF_ObjType);
+    new_function("mapthingnumexist", SF_MapThingNumExist);
+	new_function("objstate", SF_ObjState);
+	new_function("resurrect", SF_Resurrect);
+	new_function("lineattack", SF_LineAttack);
+	new_function("setobjposition", SF_SetObjPosition);
 
 	// sector stuff
-	new_function("floorheight", &DFraggleThinker::SF_FloorHeight);
-	new_function("floortext", &DFraggleThinker::SF_FloorTexture);
-	new_function("floortexture", &DFraggleThinker::SF_FloorTexture);   // haleyjd: alias
-	new_function("movefloor", &DFraggleThinker::SF_MoveFloor);
-	new_function("ceilheight", &DFraggleThinker::SF_CeilingHeight);
-	new_function("ceilingheight", &DFraggleThinker::SF_CeilingHeight); // haleyjd: alias
-	new_function("moveceil", &DFraggleThinker::SF_MoveCeiling);
-	new_function("moveceiling", &DFraggleThinker::SF_MoveCeiling);     // haleyjd: aliases
-	new_function("ceilingtexture", &DFraggleThinker::SF_CeilingTexture);
-	new_function("ceiltext", &DFraggleThinker::SF_CeilingTexture);  // haleyjd: wrong
-	new_function("lightlevel", &DFraggleThinker::SF_LightLevel);    // handler - was
-	new_function("fadelight", &DFraggleThinker::SF_FadeLight);      // &DFraggleThinker::SF_FloorTexture!
-	new_function("colormap", &DFraggleThinker::SF_SectorColormap);
+	new_function("floorheight", SF_FloorHeight);
+	new_function("floortext", SF_FloorTexture);
+	new_function("floortexture", SF_FloorTexture);   // haleyjd: alias
+	new_function("movefloor", SF_MoveFloor);
+	new_function("ceilheight", SF_CeilingHeight);
+	new_function("ceilingheight", SF_CeilingHeight); // haleyjd: alias
+	new_function("moveceil", SF_MoveCeiling);
+	new_function("moveceiling", SF_MoveCeiling);     // haleyjd: aliases
+	new_function("ceilingtexture", SF_CeilingTexture);
+	new_function("ceiltext", SF_CeilingTexture);  // haleyjd: wrong
+	new_function("lightlevel", SF_LightLevel);    // handler - was
+	new_function("fadelight", SF_FadeLight);      // SF_FloorTexture!
+	new_function("colormap", SF_SectorColormap);
 	
 	// cameras!
-	new_function("setcamera", &DFraggleThinker::SF_SetCamera);
-	new_function("clearcamera", &DFraggleThinker::SF_ClearCamera);
-	new_function("movecamera", &DFraggleThinker::SF_MoveCamera);
+	new_function("setcamera", SF_SetCamera);
+	new_function("clearcamera", SF_ClearCamera);
+	new_function("movecamera", SF_MoveCamera);
 	
 	// trig functions
-	new_function("pointtoangle", &DFraggleThinker::SF_PointToAngle);
-	new_function("pointtodist", &DFraggleThinker::SF_PointToDist);
+	new_function("pointtoangle", SF_PointToAngle);
+	new_function("pointtodist", SF_PointToDist);
 	
 	// sound functions
-	new_function("startsound", &DFraggleThinker::SF_StartSound);
-	new_function("startsectorsound", &DFraggleThinker::SF_StartSectorSound);
-	new_function("ambientsound", &DFraggleThinker::SF_AmbientSound);
-	new_function("startambiantsound", &DFraggleThinker::SF_AmbientSound);	// Legacy's incorrectly spelled name!
-	new_function("changemusic", &DFraggleThinker::SF_ChangeMusic);
+	new_function("startsound", SF_StartSound);
+	new_function("startsectorsound", SF_StartSectorSound);
+	new_function("ambientsound", SF_AmbientSound);
+	new_function("startambiantsound", SF_AmbientSound);	// Legacy's incorrectly spelled name!
+	new_function("changemusic", SF_ChangeMusic);
 	
 	// hubs!
-	new_function("changehublevel", &DFraggleThinker::SF_ChangeHubLevel);
+	new_function("changehublevel", SF_ChangeHubLevel);
 	
 	// doors
-	new_function("opendoor", &DFraggleThinker::SF_OpenDoor);
-	new_function("closedoor", &DFraggleThinker::SF_CloseDoor);
+	new_function("opendoor", SF_OpenDoor);
+	new_function("closedoor", SF_CloseDoor);
 
     // HU Graphics
-    new_function("newhupic", &DFraggleThinker::SF_NewHUPic);
-    new_function("createpic", &DFraggleThinker::SF_NewHUPic);
-    new_function("deletehupic", &DFraggleThinker::SF_DeleteHUPic);
-    new_function("modifyhupic", &DFraggleThinker::SF_ModifyHUPic);
-    new_function("modifypic", &DFraggleThinker::SF_ModifyHUPic);
-    new_function("sethupicdisplay", &DFraggleThinker::SF_SetHUPicDisplay);
-    new_function("setpicvisible", &DFraggleThinker::SF_SetHUPicDisplay);
+    new_function("newhupic", SF_NewHUPic);
+    new_function("createpic", SF_NewHUPic);
+    new_function("deletehupic", SF_DeleteHUPic);
+    new_function("modifyhupic", SF_ModifyHUPic);
+    new_function("modifypic", SF_ModifyHUPic);
+    new_function("sethupicdisplay", SF_SetHUPicDisplay);
+    new_function("setpicvisible", SF_SetHUPicDisplay);
 
 	//
-    new_function("playdemo", &DFraggleThinker::SF_PlayDemo);
-	new_function("runcommand", &DFraggleThinker::SF_RunCommand);
-    new_function("checkcvar", &DFraggleThinker::SF_CheckCVar);
-	new_function("setlinetexture", &DFraggleThinker::SF_SetLineTexture);
-	new_function("linetrigger", &DFraggleThinker::SF_LineTrigger);
-	new_function("lineflag", &DFraggleThinker::SF_LineFlag);
+    new_function("playdemo", SF_PlayDemo);
+	new_function("runcommand", SF_RunCommand);
+    new_function("checkcvar", SF_CheckCVar);
+	new_function("setlinetexture", SF_SetLineTexture);
+	new_function("linetrigger", SF_LineTrigger);
+	new_function("lineflag", SF_LineFlag);
 
 	//Hurdler: new math functions
-	new_function("max", &DFraggleThinker::SF_Max);
-	new_function("min", &DFraggleThinker::SF_Min);
-	new_function("abs", &DFraggleThinker::SF_Abs);
+	new_function("max", SF_Max);
+	new_function("min", SF_Min);
+	new_function("abs", SF_Abs);
 
-	new_function("sin", &DFraggleThinker::SF_Sin);
-	new_function("asin", &DFraggleThinker::SF_ASin);
-	new_function("cos", &DFraggleThinker::SF_Cos);
-	new_function("acos", &DFraggleThinker::SF_ACos);
-	new_function("tan", &DFraggleThinker::SF_Tan);
-	new_function("atan", &DFraggleThinker::SF_ATan);
-	new_function("exp", &DFraggleThinker::SF_Exp);
-	new_function("log", &DFraggleThinker::SF_Log);
-	new_function("sqrt", &DFraggleThinker::SF_Sqrt);
-	new_function("floor", &DFraggleThinker::SF_Floor);
-	new_function("pow", &DFraggleThinker::SF_Pow);
+	new_function("sin", SF_Sin);
+	new_function("asin", SF_ASin);
+	new_function("cos", SF_Cos);
+	new_function("acos", SF_ACos);
+	new_function("tan", SF_Tan);
+	new_function("atan", SF_ATan);
+	new_function("exp", SF_Exp);
+	new_function("log", SF_Log);
+	new_function("sqrt", SF_Sqrt);
+	new_function("floor", SF_Floor);
+	new_function("pow", SF_Pow);
 	
 	// Eternity extensions
-	new_function("setlineblocking", &DFraggleThinker::SF_SetLineBlocking);
-	new_function("setlinetrigger", &DFraggleThinker::SF_SetLineTrigger);
-	new_function("setlinemnblock", &DFraggleThinker::SF_SetLineMonsterBlocking);
-	new_function("scriptwaitpre", &DFraggleThinker::SF_ScriptWaitPre);
-	new_function("exitsecret", &DFraggleThinker::SF_ExitSecret);
-	new_function("objawaken", &DFraggleThinker::SF_ObjAwaken);
+	new_function("setlineblocking", SF_SetLineBlocking);
+	new_function("setlinetrigger", SF_SetLineTrigger);
+	new_function("setlinemnblock", SF_SetLineMonsterBlocking);
+	new_function("scriptwaitpre", SF_ScriptWaitPre);
+	new_function("exitsecret", SF_ExitSecret);
+	new_function("objawaken", SF_ObjAwaken);
 	
 	// forced coercion functions
-	new_function("mobjvalue", &DFraggleThinker::SF_MobjValue);
-	new_function("stringvalue", &DFraggleThinker::SF_StringValue);
-	new_function("intvalue", &DFraggleThinker::SF_IntValue);
-	new_function("fixedvalue", &DFraggleThinker::SF_FixedValue);
+	new_function("mobjvalue", SF_MobjValue);
+	new_function("stringvalue", SF_StringValue);
+	new_function("intvalue", SF_IntValue);
+	new_function("fixedvalue", SF_FixedValue);
 
 	// new for GZDoom
-	new_function("spawnshot2", &DFraggleThinker::SF_SpawnShot2);
-	new_function("setcolor", &DFraggleThinker::SF_SetColor);
-	new_function("sectortype", &DFraggleThinker::SF_SectorType);
-	new_function("wallglow", &DFraggleThinker::SF_WallGlow);
-	new_function("objradius", &DFraggleThinker::SF_MobjRadius);
-	new_function("objheight", &DFraggleThinker::SF_MobjHeight);
-	new_function("thingcount", &DFraggleThinker::SF_ThingCount);
-	new_function("killinsector", &DFraggleThinker::SF_KillInSector);
-	new_function("changetag", &DFraggleThinker::SF_ChangeTag);
-	new_function("levelnum", &DFraggleThinker::SF_LevelNum);
+	new_function("spawnshot2", SF_SpawnShot2);
+	new_function("setcolor", SF_SetColor);
+	new_function("sectortype", SF_SectorType);
+	new_function("wallglow", SF_WallGlow);
+	new_function("objradius", SF_MobjRadius);
+	new_function("objheight", SF_MobjHeight);
+	new_function("thingcount", SF_ThingCount);
+	new_function("killinsector", SF_KillInSector);
+	new_function("changetag", SF_ChangeTag);
+	new_function("levelnum", SF_LevelNum);
 
 	// new inventory
-	new_function("giveinventory", &DFraggleThinker::SF_GiveInventory);
-	new_function("takeinventory", &DFraggleThinker::SF_TakeInventory);
-	new_function("checkinventory", &DFraggleThinker::SF_CheckInventory);
-	new_function("setweapon", &DFraggleThinker::SF_SetWeapon);
+	new_function("giveinventory", SF_GiveInventory);
+	new_function("takeinventory", SF_TakeInventory);
+	new_function("checkinventory", SF_CheckInventory);
+	new_function("setweapon", SF_SetWeapon);
 
-	new_function("ls", &DFraggleThinker::SF_Ls);	// execute Hexen type line special
+	new_function("ls", SF_Ls);	// execute Hexen type line special
 
 	// Dummies - shut up warnings
-	new_function("setcorona", &DFraggleThinker::SF_SetCorona);
+	new_function("setcorona", SF_SetCorona);
 }
 
