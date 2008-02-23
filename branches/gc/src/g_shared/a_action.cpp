@@ -332,7 +332,7 @@ public:
 	DCorpsePointer (AActor *ptr);
 	void Destroy ();
 	void Serialize (FArchive &arc);
-	AActor *Corpse;
+	TObjPtr<AActor> Corpse;
 	DWORD Count;	// Only the first corpse pointer's count is valid.
 private:
 	DCorpsePointer () {}
@@ -409,6 +409,7 @@ void DCorpsePointer::Destroy ()
 
 void DCorpsePointer::Serialize (FArchive &arc)
 {
+	Super::Serialize(arc);
 	arc << Corpse << Count;
 }
 

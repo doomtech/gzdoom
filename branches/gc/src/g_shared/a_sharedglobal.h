@@ -149,7 +149,7 @@ protected:
 	float Blends[2][4];
 	int TotalTics;
 	int StartTic;
-	AActor *ForWho;
+	TObjPtr<AActor> ForWho;
 
 	void SetBlend (float time);
 	DFlashFader ();
@@ -165,7 +165,7 @@ public:
 	void Serialize (FArchive &arc);
 	void Tick ();
 
-	AActor *m_Spot;
+	TObjPtr<AActor> m_Spot;
 	fixed_t m_TremorRadius, m_DamageRadius;
 	int m_Intensity;
 	int m_Countdown;
@@ -197,7 +197,7 @@ public:
 	void Die (AActor *source, AActor *inflictor);
 	void Destroy ();
 
-	AActor *UnmorphedMe;
+	TObjPtr<AActor> UnmorphedMe;
 	int UnmorphTime;
 	DWORD FlagsSave;
 };

@@ -50,8 +50,6 @@ enum
 } readtype;
 
 
-TArray<DActorPointer*> SpawnedThings;
-static int drownflag;
 bool HasScripts;
 
 //-----------------------------------------------------------------------------
@@ -59,7 +57,7 @@ bool HasScripts;
 // Process the lump to strip all unneeded information from it
 //
 //-----------------------------------------------------------------------------
-static void ParseInfoCmd(char *line, FString &levelscript)
+static void ParseInfoCmd(char *line, FString &levelscript, int &drownflag)
 {
 	char *temp;
 	
@@ -207,6 +205,7 @@ void T_LoadLevelInfo(MapData * map)
 	int lumpsize;
 	bool fsglobal=false;
 	FString levelscript;
+	int drownflag;
 
 	// Load the script lump
 	lumpsize = map->Size(0);
@@ -242,7 +241,7 @@ void T_LoadLevelInfo(MapData * map)
 		if(*rover == '\n') // end of line
 		{
 			*rover = 0;               // make it an end of string (0)
-			ParseInfoCmd(startofline, levelscript);
+			ParseInfoCmd(startofline, levelscript, drownflag);
 			startofline = rover+1; // next line
 			*rover = '\n';            // back to end of line
 		}
@@ -250,7 +249,7 @@ void T_LoadLevelInfo(MapData * map)
     }
 	if (HasScripts) 
 	{
-		new DFraggleThinker(levelscript);
+		DFraggleThinker::ActiveThinker = new DFraggleThinker(levelscript);
 
 		if (drownflag==-1) drownflag = ((level.flags&LEVEL_HEXENFORMAT) || fsglobal);
 		if (!drownflag) level.airsupply=0;	// Legacy doesn't to water damage.
@@ -271,10 +270,11 @@ void T_LoadLevelInfo(MapData * map)
 
 void T_PrepareSpawnThing()
 {
-	if (HasScripts)
+	DFraggleThinker *th = DFraggleThinker::ActiveThinker;
+	if (th)
 	{
 		DActorPointer * acp = new DActorPointer;
-		SpawnedThings.Push(acp);
+		th->SpawnedThings.Push(acp);
 	}
 }
 
@@ -284,11 +284,12 @@ void T_PrepareSpawnThing()
 //
 //-----------------------------------------------------------------------------
 
-void T_RegisterSpawnThing(AActor * ac)
+void T_RegisterSpawnThing(AActor *ac)
 {
-	if (HasScripts)
+	DFraggleThinker *th = DFraggleThinker::ActiveThinker;
+	if (th)
 	{
-		SpawnedThings[SpawnedThings.Size()-1]->actor=ac;
+		th->SpawnedThings[SpawnedThings.Size()-1]->actor=ac;
 	}
 }
 
@@ -300,12 +301,12 @@ void T_RegisterSpawnThing(AActor * ac)
 
 void T_PreprocessScripts()
 {
-	TThinkerIterator<DFraggleThinker> it;
-	DFraggleThinker *th = it.Next();
+	DFraggleThinker *th = DFraggleThinker::ActiveThinker;
 	if (th)
 	{
 		th->PreprocessScripts();
 	}
 }
+
 
 
