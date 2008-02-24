@@ -2,6 +2,7 @@
 //----------------------------------------------------------------------------
 //
 // Copyright(C) 2000 Simon Howard
+// Copyright(C) 2002-2008 Christoph Oelckers
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,19 +18,620 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
-//--------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+//
+// FraggleScript is from SMMU which is under the GPL. Technically, 
+// therefore, combining the FraggleScript code with the non-free 
+// ZDoom code is a violation of the GPL.
+//
+// As this may be a problem for you, I hereby grant an exception to my 
+// copyright on the SMMU source (including FraggleScript). You may use 
+// any code from SMMU in GZDoom, provided that:
+//
+//    * For any binary release of the port, the source code is also made 
+//      available.
+//    * The copyright notice is kept on any file containing my code.
+//
+//
 
 #ifndef __T_SCRIPT_H__
 #define __T_SCRIPT_H__
 
 #include "p_setup.h"
-#include "t_parse.h"
-#include "t_oper.h"
-#include "t_prepro.h"
-#include "t_spec.h"
-#include "t_vari.h"
+#include "m_fixed.h"
+#include "actor.h"
 
-extern bool HasScripts;
+
+
+class DRunningScript;
+
+
+
+inline bool isop(int c)
+{
+	return !( ( (c)<='Z' && (c)>='A') || ( (c)<='z' && (c)>='a') || 
+		( (c)<='9' && (c)>='0') || ( (c)=='_') );
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+class DActorPointer : public DObject
+{
+	DECLARE_CLASS(DActorPointer, DObject)
+	HAS_OBJECT_POINTERS
+
+public:
+
+	AActor * actor;
+
+	DActorPointer()
+	{
+		actor=NULL;
+	}
+
+	void Serialize(FArchive & ar)
+	{
+		Super::Serialize(ar);
+		ar << actor;
+	}
+};
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+enum
+{
+  svt_string,
+  svt_int,
+  svt_mobj,         // a map object
+  svt_function,     // functions are stored as variables
+  svt_label,        // labels for goto calls are variables
+  svt_const,        // const
+  svt_fixed,        // haleyjd: fixed-point int - 8-17 std
+  svt_arraysweredeleted,
+  svt_pInt,         // pointer to game int
+  svt_pMobj,        // pointer to game mobj
+  svt_parraysweredeleted,
+};
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+struct svalue_t
+{
+	int type;
+	FString string;
+	union
+	{
+		int i;
+		fixed_t f;      // haleyjd: 8-17
+		AActor *mobj;
+	} value;
+
+	svalue_t()
+	{
+		type = svt_int;
+		value.i = 0;
+	}
+
+	svalue_t(const svalue_t & other)
+	{
+		type = other.type;
+		string = other.string;
+		value = other.value;
+	}
+};
+
+int intvalue(const svalue_t & v);
+fixed_t fixedvalue(const svalue_t & v);
+float floatvalue(const svalue_t & v);
+const char *stringvalue(const svalue_t & v);
+AActor *actorvalue(const svalue_t &svalue);
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+enum
+{
+	VARIABLESLOTS = 16,
+	SECTIONSLOTS = 17,
+	T_MAXTOKENS = 256,
+	TOKENLENGTH = 128,
+	MAXARGS = 128,
+	MAXSCRIPTS = 257,
+};
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+struct FParser;
+
+struct DFsVariable : public DObject
+{
+	DECLARE_CLASS(DFsVariable, DObject)
+	HAS_OBJECT_POINTERS
+
+public:
+	FString Name;
+	DFsVariable *next;       // for hashing
+
+	int type;       // vt_string or vt_int: same as in svalue_t
+	FString string;
+	AActor *actor;
+
+	union value_t
+	{
+		SDWORD i;
+		fixed_t fixed;          // haleyjd: fixed-point
+		
+		// the following are only used in the global script so we don't need to bother with them
+		// when serializing variables.
+		int *pI;                // pointer to game int
+		AActor **pMobj;         // pointer to game obj
+		void (FParser::*handler)();      // for functions
+	} value;
+
+public:
+
+	DFsVariable(const char *_name = "");
+
+	svalue_t GetValue() const;
+	void SetValue(const svalue_t &newvalue);
+	void Serialize(FArchive &ar);
+};
+
+//==========================================================================
+//
+// hash the variables for speed: this is the hashkey
+//
+//==========================================================================
+
+inline int variable_hash(const char *n)
+{
+	return 
+              (n[0]? (   ( n[0] + n[1] +   
+                   (n[1] ? n[2] +   
+				   (n[2] ? n[3]  : 0) : 0) ) % VARIABLESLOTS ) :0);
+}
+
+
+//==========================================================================
+//
+// Sections
+//
+//==========================================================================
+
+enum    // section types
+{
+	st_empty,       // empty {} braces
+	st_if,
+	st_elseif,
+	st_else,
+	st_loop,
+};
+
+struct DFsSection : public DObject
+{
+	DECLARE_CLASS(DFsSection, DObject)
+	HAS_OBJECT_POINTERS
+public:
+	int type;
+	int start_index;
+	int end_index;
+	int loop_index;
+	DFsSection *next;        // for hashing
+
+	DFsSection()
+	{
+		next = NULL;
+	}
+
+	void Serialize(FArchive &ar);
+};
+
+
+
+//==========================================================================
+//
+// Tokens
+//
+//==========================================================================
+
+enum tokentype_t
+{
+	name_,   // a name, eg 'count1' or 'frag'
+	number,
+	operator_,
+	string_,
+	unset,
+	function          // function name
+};
+
+enum    // brace types: where current_section is a { or }
+{
+	bracket_open,
+	bracket_close
+};
+
+//==========================================================================
+//
+// Errors
+//
+//==========================================================================
+
+class CFsError
+{
+public:
+	char msg[2048];
+
+	CFsError(const FString &in)
+	{
+		strncpy(msg, in, 2047);
+		msg[2047]=0;
+	}
+};
+
+class CFsTerminator
+{
+	int fill;
+};
+
+//==========================================================================
+//
+// Scripts
+//
+//==========================================================================
+
+class DFsScript : public DObject
+{
+	DECLARE_CLASS(DFsScript, DObject)
+	HAS_OBJECT_POINTERS
+
+public:
+	// script data
+
+	char *data;
+	int scriptnum;  // this script's number
+	int len;
+
+	// {} sections
+
+	DFsSection *sections[SECTIONSLOTS];
+
+	// variables:
+
+	DFsVariable *variables[VARIABLESLOTS];
+
+	// ptr to the parent script
+	// the parent script is the script above this level
+	// eg. individual linetrigger scripts are children
+	// of the levelscript, which is a child of the
+	// global_script
+	DFsScript *parent;
+
+	// haleyjd: 8-17
+	// child scripts.
+	// levelscript holds ptrs to all of the level's scripts
+	// here.
+	DFsScript *children[MAXSCRIPTS];
+
+
+	AActor *trigger;        // object which triggered this script
+
+	bool lastiftrue;     // haleyjd: whether last "if" statement was 
+	// true or false
+
+	DFsScript();
+	void Destroy();
+	void Serialize(FArchive &ar);
+
+	DFsVariable *NewVariable(const char *name, int vtype);
+	DFsVariable *VariableForName(const char *name);
+	DFsVariable *FindVariable(const char *name);
+	void ClearVariables(bool complete= false);
+	DFsVariable *NewLabel(char *labelptr);
+	char *LabelValue(const svalue_t &v);
+
+	char *SectionStart(const DFsSection *sec);
+	char *SectionEnd(const DFsSection *sec);
+	char *SectionLoop(const DFsSection *sec);
+	void ClearSections();
+	void ClearChildren();
+
+	int MakeIndex(const char *p) { return int(p-data); }
+
+	// preprocessor
+	int section_hash(const char *b) { return MakeIndex(b) % SECTIONSLOTS; }
+	DFsSection *NewSection(const char *brace);
+	DFsSection *FindSectionStart(const char *brace);
+	DFsSection *FindSectionEnd(const char *brace);
+	char *ProcessFindChar(char *data, char find);
+	void DryRunScript();
+	void Preprocess();
+	void ParseInclude(char *lumpname);
+	void ParseScript(char *rover = NULL);
+	void ParseData(char *rover, char *data, char *end);
+};
+
+//==========================================================================
+//
+// The script parser
+//
+//==========================================================================
+
+struct FParser
+{
+	struct operator_t
+	{
+		char *string;
+		svalue_t (FParser::*handler)(int, int, int); // left, mid, right
+		int direction;
+	};
+
+	enum
+	{
+		forward,
+		backward
+	};
+
+	static operator_t operators[];
+	static int num_operators;
+
+
+	char *LineStart;
+	char *Rover;
+
+	char *Tokens[T_MAXTOKENS];
+	tokentype_t TokenType[T_MAXTOKENS];
+	int NumTokens;
+	DFsScript *Script;       // the current script
+	DFsSection *Section;
+	DFsSection *PrevSection;
+	int BraceType;
+
+	int t_argc;                     // number of arguments
+	svalue_t *t_argv;               // arguments
+	svalue_t t_return;              // returned value
+	FString t_func;					// name of current function
+
+	FParser(DFsScript *scr)
+	{
+		LineStart = NULL;
+		Rover = NULL;
+		Tokens[0] = new char[scr->len];
+		NumTokens = 0;
+		Script = scr;
+		Section = PrevSection = NULL;
+		BraceType = 0;
+	}
+
+	~FParser()
+	{
+		if (Tokens[0]) delete [] Tokens[0];
+	}
+
+	void NextToken();
+	char *GetTokens(char *s);
+	void PrintTokens();
+	void ErrorMessage(FString msg);
+
+	void Run(char *rover, char *data, char *end);
+	void RunStatement();
+	int FindOperator(int start, int stop, char *value);
+	int FindOperatorBackwards(int start, int stop, char *value);
+	svalue_t SimpleEvaluate(int n);
+	void PointlessBrackets(int *start, int *stop);
+	svalue_t EvaluateExpression(int start, int stop);
+	svalue_t EvaluateFunction(int start, int stop);
+
+	svalue_t OPequals(int, int, int);           // =
+
+	svalue_t OPplus(int, int, int);             // +
+	svalue_t OPminus(int, int, int);            // -
+	svalue_t OPmultiply(int, int, int);         // *
+	svalue_t OPdivide(int, int, int);           // /
+	svalue_t OPremainder(int, int, int);        // %
+
+	svalue_t OPor(int, int, int);               // ||
+	svalue_t OPand(int, int, int);              // &&
+	svalue_t OPnot(int, int, int);              // !
+
+	svalue_t OPor_bin(int, int, int);           // |
+	svalue_t OPand_bin(int, int, int);          // &
+	svalue_t OPnot_bin(int, int, int);          // ~
+
+	svalue_t OPcmp(int, int, int);              // ==
+	svalue_t OPnotcmp(int, int, int);           // !=
+	svalue_t OPlessthan(int, int, int);         // <
+	svalue_t OPgreaterthan(int, int, int);      // >
+
+	svalue_t OPincrement(int, int, int);        // ++
+	svalue_t OPdecrement(int, int, int);        // --
+
+	svalue_t OPstructure(int, int, int);    // in t_vari.c
+
+	svalue_t OPlessthanorequal(int, int, int);     // <=
+	svalue_t OPgreaterthanorequal(int, int, int);  // >=
+
+	void spec_brace();
+	bool spec_if();
+	bool spec_elseif(bool lastif);
+	void spec_else(bool lastif);
+	void spec_for();
+	void spec_while();
+	void CreateVariable(int newvar_type, DFsScript *newvar_script, int start, int stop);
+	void ParseVarLine(int newvar_type, DFsScript *newvar_script, int start);
+	bool spec_variable();
+	void spec_script();
+
+	DFsSection *looping_section();
+	FString GetFormatString(int startarg);
+	bool CheckArgs(int cnt);
+
+	void SF_Print();
+	void SF_Rnd();
+	void SF_Continue();
+	void SF_Break();
+	void SF_Goto();
+	void SF_Return();
+	void SF_Include();
+	void SF_Input();
+	void SF_Beep();
+	void SF_Clock();
+	void SF_ExitLevel();
+	void SF_Tip();
+	void SF_TimedTip();
+	void SF_PlayerTip();
+	void SF_Message();
+	void SF_PlayerMsg();
+	void SF_PlayerInGame();
+	void SF_PlayerName();
+	void SF_PlayerObj();
+	void SF_StartScript();      // FPUKE needs to access this
+	void SF_ScriptRunning();
+	void SF_Wait();
+	void SF_TagWait();
+	void SF_ScriptWait();
+	void SF_ScriptWaitPre();    // haleyjd: new wait types
+	void SF_Player();
+	void SF_Spawn();
+	void SF_RemoveObj();
+	void SF_KillObj();
+	void SF_ObjX();
+	void SF_ObjY();
+	void SF_ObjZ();
+	void SF_ObjAngle();
+	void SF_Teleport();
+	void SF_SilentTeleport();
+	void SF_DamageObj();
+	void SF_ObjSector();
+	void SF_ObjHealth();
+	void SF_ObjFlag();
+	void SF_PushThing();
+	void SF_ReactionTime();
+	void SF_MobjTarget();
+	void SF_MobjMomx();
+	void SF_MobjMomy();
+	void SF_MobjMomz();
+	void SF_PointToAngle();
+	void SF_PointToDist();
+	void SF_SetCamera();
+	void SF_ClearCamera();
+	void SF_StartSound();
+	void SF_StartSectorSound();
+	void SF_FloorHeight();
+	void SF_MoveFloor();
+	void SF_CeilingHeight();
+	void SF_MoveCeiling();
+	void SF_LightLevel();
+	void SF_FadeLight();
+	void SF_FloorTexture();
+	void SF_SectorColormap();
+	void SF_CeilingTexture();
+	void SF_ChangeHubLevel();
+	void SF_StartSkill();
+	void SF_OpenDoor();
+	void SF_CloseDoor();
+	void SF_RunCommand();
+	void SF_LineTrigger();
+	void SF_ChangeMusic();
+	void SF_SetLineBlocking();
+	void SF_SetLineMonsterBlocking();
+	void SF_SetLineTexture();
+	void SF_Max();
+	void SF_Min();
+	void SF_Abs();
+	void SF_Gameskill();
+	void SF_Gamemode();
+	void SF_IsPlayerObj();
+	void SF_PlayerKeys();
+	void SF_PlayerAmmo();
+	void SF_MaxPlayerAmmo();
+	void SF_PlayerWeapon();
+	void SF_PlayerSelectedWeapon();
+	void SF_GiveInventory();
+	void SF_TakeInventory();
+	void SF_CheckInventory();
+	void SF_SetWeapon();
+	void SF_MoveCamera();
+	void SF_ObjAwaken();
+	void SF_AmbientSound();
+	void SF_ExitSecret();
+	void SF_MobjValue();
+	void SF_StringValue();
+	void SF_IntValue();
+	void SF_FixedValue();
+	void SF_SpawnExplosion();
+	void SF_RadiusAttack();
+	void SF_SetObjPosition();
+	void SF_TestLocation();
+	void SF_HealObj();  //no pain sound
+	void SF_ObjDead();
+	void SF_SpawnMissile();
+	void SF_MapThingNumExist();
+	void SF_MapThings();
+	void SF_ObjState();
+	void SF_LineFlag();
+	void SF_PlayerAddFrag();
+	void SF_SkinColor();
+	void SF_PlayDemo();
+	void SF_CheckCVar();
+	void SF_Resurrect();
+	void SF_LineAttack();
+	void SF_ObjType();
+	void SF_Sin();
+	void SF_ASin();
+	void SF_Cos();
+	void SF_ACos();
+	void SF_Tan();
+	void SF_ATan();
+	void SF_Exp();
+	void SF_Log();
+	void SF_Sqrt();
+	void SF_Floor();
+	void SF_Pow();
+	void SF_NewHUPic();
+	void SF_DeleteHUPic();
+	void SF_ModifyHUPic();
+	void SF_SetHUPicDisplay();
+	void SF_SetCorona();
+	void SF_Ls();
+	void SF_LevelNum();
+	void SF_MobjRadius();
+	void SF_MobjHeight();
+	void SF_ThingCount();
+	void SF_SetColor();
+	void SF_SpawnShot2();
+	void SF_KillInSector();
+	void SF_SectorType();
+	void SF_SetLineTrigger();
+	void SF_ChangeTag();
+	void SF_WallGlow();
+
+	DRunningScript *SaveCurrentScript();
+
+};
+
+//==========================================================================
+//
+// Running scripts
+//
+//==========================================================================
 
 enum waittype_e
 {
@@ -46,49 +648,67 @@ class DRunningScript : public DObject
 	HAS_OBJECT_POINTERS
 
 public:
-	DRunningScript() {}
-	script_t *script;
+	DRunningScript() ;
+	void Destroy();
+	void Serialize(FArchive &arc);
+
+	DFsScript *script;
 	
 	// where we are
-	char *savepoint;
+	int save_point;
 	
 	int wait_type;
 	int wait_data;  // data for wait: tagnum, counter, script number etc
 	
 	// saved variables
-	svariable_t *variables[VARIABLESLOTS];
+	DFsVariable *variables[VARIABLESLOTS];
 	
 	DRunningScript *prev, *next;  // for chain
 	AActor *trigger;
 };
 
-void T_Init();
-void T_ClearScripts();
+//-----------------------------------------------------------------------------
+//
+// This thinker eliminates the need to call the Fragglescript functions from the main code
+//
+//-----------------------------------------------------------------------------
+class DFraggleThinker : public DThinker
+{
+	DECLARE_CLASS(DFraggleThinker, DThinker)
+	HAS_OBJECT_POINTERS
+public:
+
+	DFsScript *LevelScript;
+	DRunningScript *RunningScripts;
+	TArray<DActorPointer*> SpawnedThings;
+
+	DFraggleThinker();
+	void Destroy();
+
+
+	void Serialize(FArchive & arc);
+	void Tick();
+	bool wait_finished(DRunningScript *script);
+
+	static DFraggleThinker *ActiveThinker;
+};
+
+//-----------------------------------------------------------------------------
+//
+// Global stuff
+//
+//-----------------------------------------------------------------------------
+
+#include "t_fs.h"
+
+void script_error(char *s, ...);
 void T_RunScript(int n,AActor *);
-void T_PreprocessScripts();
-void T_DelayedScripts();
-AActor *MobjForSvalue(const svalue_t &svalue);
-
-        // console commands
-void T_Dump();
-void T_ConsRun();
-
-extern script_t levelscript;
-
-// savegame related stuff
-void T_SerializeScripts(FArchive & ar);
-void T_FixPointers(DObject *,DObject *);
-
-void T_LoadLevelInfo(MapData * map);
-void T_PrepareSpawnThing();
-void T_RegisterSpawnThing(AActor * );
-extern TArray<DActorPointer*> SpawnedThings;
-
-extern DRunningScript runningscripts;        // t_script.c
-
-void clear_runningscripts();		      // t_script.c
-
 void FS_EmulateCmd(char * string);
+
+extern svalue_t nullvar;
+extern AActor *trigger_obj;
+extern DFsScript global_script; 
+
 
 #endif
 

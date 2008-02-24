@@ -25,86 +25,95 @@
 //
 // By Simon Howard
 //
-//----------------------------------------------------------------------------
-
-/*
-FraggleScript is from SMMU which is under the GPL. Technically, therefore, 
-combining the FraggleScript code with the non-free ZDoom code is a violation of the GPL.
-
-As this may be a problem for you, I hereby grant an exception to my copyright on the 
-SMMU source (including FraggleScript). You may use any code from SMMU in GZDoom, provided that:
-
-    * For any binary release of the port, the source code is also made available.
-    * The copyright notice is kept on any file containing my code.
-*/
+//---------------------------------------------------------------------------
+//
+// FraggleScript is from SMMU which is under the GPL. Technically, 
+// therefore, combining the FraggleScript code with the non-free 
+// ZDoom code is a violation of the GPL.
+//
+// As this may be a problem for you, I hereby grant an exception to my 
+// copyright on the SMMU source (including FraggleScript). You may use 
+// any code from SMMU in GZDoom, provided that:
+//
+//    * For any binary release of the port, the source code is also made 
+//      available.
+//    * The copyright notice is kept on any file containing my code.
+//
+//
 
 #include "t_script.h"
 
-/* includes ************************/
-
-int find_operator(int start, int stop, char *value);
-
+//==========================================================================
+//
 // ending brace found in parsing
+//
+//==========================================================================
 
-void spec_brace()
+void FParser::spec_brace()
 {
-	//  if(script_debug) C_Printf("brace\n");
-	
-	if(bracetype != bracket_close)  // only deal with closing } braces
+	if(BraceType != bracket_close)  // only deal with closing } braces
 		return;
 	
 	// if() requires nothing to be done
-	if(current_section->type == st_if || current_section->type == st_else) 
+	if(Section->type == st_if || Section->type == st_else) 
 		return;
 	
 	// if a loop, jump back to the start of the loop
-	if(current_section->type == st_loop)
+	if(Section->type == st_loop)
     {
-		rover = current_section->data.data_loop.loopstart;
+		Rover = Script->SectionLoop(Section);
 		return;
     }
 }
 
+//==========================================================================
+//
 // 'if' statement -- haleyjd: changed to bool for else/elseif
-bool spec_if()
+//
+//==========================================================================
+
+bool FParser::spec_if()
 {
 	int endtoken;
 	svalue_t eval;
 	
-	if((endtoken = find_operator(0, num_tokens-1, ")")) == -1)
+	if((endtoken = FindOperator(0, NumTokens-1, ")")) == -1)
     {
 		script_error("parse error in if statement\n");
 		return false;
     }
 	
 	// 2 to skip past the 'if' and '('
-	eval = evaluate_expression(2, endtoken-1);
+	eval = EvaluateExpression(2, endtoken-1);
 	
-	if(current_section && bracetype == bracket_open
-		&& endtoken == num_tokens-1)
+	if(Section && BraceType == bracket_open && endtoken == NumTokens-1)
     {
 		// {} braces
 		if(!intvalue(eval))       // skip to end of section
-			rover = current_section->end+1;
+			Rover = Script->SectionEnd(Section) + 1;
     }
-	else    // if() without {} braces
-		if(intvalue(eval))
-		{
-			// nothing to do ?
-			if(endtoken == num_tokens-1) return !!(intvalue(eval));
-			evaluate_expression(endtoken+1, num_tokens-1);
-		}
-		
-		return !!(intvalue(eval)); // bool-ize the integer value
+	else if(intvalue(eval)) // if() without {} braces
+	{
+		// nothing to do ?
+		if(endtoken == NumTokens-1) return !!(intvalue(eval));
+		EvaluateExpression(endtoken+1, NumTokens-1);
+	}
+	
+	return !!(intvalue(eval)); // bool-ize the integer value
 }
 
-// haleyjd: elseif
-bool spec_elseif(bool lastif)
+//==========================================================================
+//
+// 'elseif' statement
+//
+//==========================================================================
+
+bool FParser::spec_elseif(bool lastif)
 {
 	int endtoken;
 	svalue_t eval;
 	
-	if((endtoken = find_operator(0, num_tokens-1, ")")) == -1)
+	if((endtoken = FindOperator(0, NumTokens-1, ")")) == -1)
 	{
 		script_error("parse error in elseif statement\n");
 		return false;
@@ -112,68 +121,83 @@ bool spec_elseif(bool lastif)
 	
 	if(lastif)
 	{
-		rover = current_section->end+1;
+		Rover = Script->SectionEnd(Section) + 1;
 		return true;
 	}
 	// 2 to skip past the 'elseif' and '('
-	eval = evaluate_expression(2, endtoken-1);
+	eval = EvaluateExpression(2, endtoken-1);
 	
-	if(current_section && bracetype == bracket_open
-		&& endtoken == num_tokens-1)
+	if(Section && BraceType == bracket_open
+		&& endtoken == NumTokens-1)
     {
 		// {} braces
 		if(!intvalue(eval))       // skip to end of section
-			rover = current_section->end+1;
+			Rover = Script->SectionEnd(Section) + 1;
     }
-	else    // elseif() without {} braces
-		if(intvalue(eval))
-		{
-			// nothing to do ?
-			if(endtoken == num_tokens-1) return !!(intvalue(eval));
-			evaluate_expression(endtoken+1, num_tokens-1);
-		}
-		
-		return !!(intvalue(eval));
+	else if(intvalue(eval))    // elseif() without {} braces
+	{
+		// nothing to do ?
+		if(endtoken == NumTokens-1) return !!(intvalue(eval));
+		EvaluateExpression(endtoken+1, NumTokens-1);
+	}
+	
+	return !!(intvalue(eval));
 }
 
-// haleyjd: else
-void spec_else(bool lastif)
+//==========================================================================
+//
+// 'else' statement
+//
+//==========================================================================
+
+void FParser::spec_else(bool lastif)
 {
 	if(lastif)
-		rover = current_section->end+1;
+		Rover = Script->SectionEnd(Section) + 1;
 }
 
+//==========================================================================
+//
 // while() loop
-void spec_while()
+//
+//==========================================================================
+
+void FParser::spec_while()
 {
 	int endtoken;
 	svalue_t eval;
 	
-	if(!current_section)
+	if(!Section)
     {
 		script_error("no {} section given for loop\n");
 		return;
     }
 	
-	if( (endtoken = find_operator(0, num_tokens-1, ")")) == -1)
+	if( (endtoken = FindOperator(0, NumTokens-1, ")")) == -1)
     {
 		script_error("parse error in loop statement\n");
 		return;
     }
 	
-	eval = evaluate_expression(2, endtoken-1);
+	eval = EvaluateExpression(2, endtoken-1);
 	
 	// skip if no longer valid
-	if(!intvalue(eval)) rover = current_section->end+1;
+	if(!intvalue(eval)) Rover = Script->SectionEnd(Section) + 1;
 }
 
-void spec_for()                 // for() loop
+//==========================================================================
+//
+// for() loop
+//
+//==========================================================================
+
+void FParser::spec_for()
 {
 	svalue_t eval;
 	int start;
 	int comma1, comma2;     // token numbers of the seperating commas
 	
-	if(!current_section)
+	if(!Section)
     {
 		script_error("need {} delimiters for for()\n");
 		return;
@@ -185,153 +209,395 @@ void spec_for()                 // for() loop
 	
 	// find the seperating commas first
 	
-	if( (comma1 = find_operator(start,    num_tokens-1, ",")) == -1
-		|| (comma2 = find_operator(comma1+1, num_tokens-1, ",")) == -1)
+	if( (comma1 = FindOperator(start, NumTokens-1, ",")) == -1
+		|| (comma2 = FindOperator(comma1+1, NumTokens-1, ",")) == -1)
     {
 		script_error("incorrect arguments to for()\n");  // haleyjd:
 		return;                                          // said if()
     }
 	
 	// are we looping back from a previous loop?
-	if(current_section == prev_section)
+	if(Section == PrevSection)
     {
 		// do the loop 'action' (third argument)
-		evaluate_expression(comma2+1, num_tokens-2);
+		EvaluateExpression(comma2+1, NumTokens-2);
 		
 		// check if we should run the loop again (second argument)
-		eval = evaluate_expression(comma1+1, comma2-1);
+		eval = EvaluateExpression(comma1+1, comma2-1);
 		if(!intvalue(eval))
 		{
 			// stop looping
-			rover = current_section->end + 1;
+			Rover = Script->SectionEnd(Section) + 1;
 		}
     }
 	else
     {
 		// first time: starting the loop
 		// just evaluate the starting expression (first arg)
-		evaluate_expression(start, comma1-1);
+		EvaluateExpression(start, comma1-1);
     }
 }
 
-/**************************** Variable Creation ****************************/
-
-int newvar_type;
-script_t *newvar_script;
-
+//==========================================================================
+//
+// Variable Creation 
+//
 // called for each individual variable in a statement
-//  newvar_type must be set
+//
+//==========================================================================
 
-static void create_variable(int start, int stop)
+void FParser::CreateVariable(int newvar_type, DFsScript *newvar_script, int start, int stop)
 {
-	if(killscript) return;
-	
-	if(tokentype[start] != name_)
+	if(TokenType[start] != name_)
     {
-		script_error("invalid name for variable: '%s'\n", tokens[start]);
+		script_error("invalid name for variable: '%s'\n", Tokens[start]);
 		return;
     }
 	
 	// check if already exists, only checking
 	// the current script
-	if(newvar_script->VariableForName (tokens[start]))
+	if(newvar_script->VariableForName (Tokens[start]))
 	{
 		// In Eternity this was fatal and in Legacy it was ignored
 		// So make this a warning.
-		Printf("FS: redefined symbol: '%s'\n", tokens[start]);
+		Printf("FS: redefined symbol: '%s'\n", Tokens[start]);
 		return;  // already one
 	}
 	
 	// haleyjd: disallow mobj references in the hub script --
 	// they cause dangerous dangling references and are of no
 	// potential use
-	if(newvar_script == &hub_script && newvar_type == svt_mobj)
+	if(newvar_script != Script && newvar_type == svt_mobj)
 	{
 		script_error("cannot create mobj reference in hub script\n");
 		return;
 	}
 	
-	newvar_script->NewVariable (tokens[start], newvar_type);
+	newvar_script->NewVariable (Tokens[start], newvar_type);
 	
-	if(stop != start) evaluate_expression(start, stop);
+	if(stop != start) EvaluateExpression(start, stop);
 }
 
+//==========================================================================
+//
 // divide a statement (without type prefix) into individual
 // variables to create them using create_variable
+//
+//==========================================================================
 
-static void parse_var_line(int start)
+void FParser::ParseVarLine(int newvar_type, DFsScript *newvar_script, int start)
 {
 	int starttoken = start, endtoken;
 	
 	while(1)
     {
-		if(killscript) return;
-		endtoken = find_operator(starttoken, num_tokens-1, ",");
+		endtoken = FindOperator(starttoken, NumTokens-1, ",");
 		if(endtoken == -1) break;
-		create_variable(starttoken, endtoken-1);
+		CreateVariable(newvar_type, newvar_script, starttoken, endtoken-1);
 		starttoken = endtoken+1;  //start next after end of this one
     }
 	// dont forget the last one
-	create_variable(starttoken, num_tokens-1);
+	CreateVariable(newvar_type, newvar_script, starttoken, NumTokens-1);
 }
 
-bool spec_variable()
+//==========================================================================
+//
+// variable definition
+//
+//==========================================================================
+
+bool FParser::spec_variable()
 {
 	int start = 0;
 	
-	newvar_type = -1;                 // init to -1
-	newvar_script = current_script;   // use current script
+	int newvar_type = -1;                 // init to -1
+	DFsScript *newvar_script = Script;   // use current script
 	
 	// check for 'hub' keyword to make a hub variable
-	if(!strcmp(tokens[start], "hub"))
+	if(!strcmp(Tokens[start], "hub"))
 	{
-		newvar_script = &hub_script;
+		// The hub script doesn't work so it's probably safest to store the variable locally.
+		//newvar_script = &hub_script;
 		start++;  // skip first token
 	}
 	
 	// now find variable type
-	if(!strcmp(tokens[start], "const"))
+	if(!strcmp(Tokens[start], "const"))
 	{
 		newvar_type = svt_const;
 		start++;
 	}
-	else if(!strcmp(tokens[start], "string"))
+	else if(!strcmp(Tokens[start], "string"))
 	{
 		newvar_type = svt_string;
 		start++;
 	}
-	else if(!strcmp(tokens[start], "int"))
+	else if(!strcmp(Tokens[start], "int"))
 	{
 		newvar_type = svt_int;
 		start++;
 	}
-	else if(!strcmp(tokens[start], "mobj"))
+	else if(!strcmp(Tokens[start], "mobj"))
 	{
 		newvar_type = svt_mobj;
 		start++;
 	}
-	else if(!strcmp(tokens[start], "fixed") ||
-		!strcmp(tokens[start], "float"))      // haleyjd: 8-17
-	{                                             // 11/22: changed to "fixed"   
-		newvar_type = svt_fixed;                  // because this is what it is --
-		start++;                                  // will talk to SoM about it
+	else if(!strcmp(Tokens[start], "fixed") || !strcmp(Tokens[start], "float"))
+	{                                   
+		newvar_type = svt_fixed;        
+		start++;                        
 	}
-	else if(!strcmp(tokens[start], "script"))     // check for script creation
+	else if(!strcmp(Tokens[start], "script"))     // check for script creation
 	{
 		spec_script();
 		return true;       // used tokens
 	}
 	
-	// other variable types could be added: eg float
-	
 	// are we creating a new variable?
-	
 	if(newvar_type != -1)
     {
-		parse_var_line(start);
+		ParseVarLine(newvar_type, newvar_script, start);
 		return true;       // used tokens
     }
 	
 	return false; // not used: try normal parsing
 }
+
+
+//==========================================================================
+//
+// ADD SCRIPT
+//
+// when the level is first loaded, all the
+// scripts are simply stored in the levelscript.
+// before the level starts, this script is
+// preprocessed and run like any other. This allows
+// the individual scripts to be derived from the
+// levelscript. When the interpreter detects the
+// 'script' keyword this function is called
+//
+//==========================================================================
+
+void FParser::spec_script()
+{
+	int scriptnum;
+	int datasize;
+	DFsScript *newscript;
+	
+	scriptnum = 0;
+	
+	if(!Section)
+    {
+		script_error("need seperators for newscript\n");
+		return;
+    }
+	
+	// presume that the first token is "newscript"
+	
+	if(NumTokens < 2)
+    {
+		script_error("need newscript number\n");
+		return;
+    }
+	
+	scriptnum = intvalue(EvaluateExpression(1, NumTokens-1));
+	
+	if(scriptnum < 0)
+    {
+		script_error("invalid newscript number\n");
+		return;
+    }
+	
+	newscript = new DFsScript;
+	
+	// add to scripts list of parent
+	Script->children[scriptnum] = newscript;
+	
+	// copy newscript data
+	// workout newscript size: -2 to ignore { and }
+	datasize = (Section->end_index - Section->start_index - 2);
+	
+	// alloc extra 10 for safety
+	newscript->data = (char *)malloc(datasize+10);
+	
+	// copy from parent newscript (levelscript) 
+	// ignore first char which is {
+	memcpy(newscript->data, Script->SectionStart(Section) + 1, datasize);
+	
+	// tack on a 0 to end the string
+	newscript->data[datasize] = '\0';
+	
+	newscript->scriptnum = scriptnum;
+	newscript->parent = Script; // remember parent
+	
+	// preprocess the newscript now
+	newscript->Preprocess();
+    
+	// we dont want to run the newscript, only add it
+	// jump past the newscript in parsing
+	
+	Rover = Script->SectionEnd(Section) + 1;
+}
+
+//==========================================================================
+//
+// evaluate_function: once parse.c is pretty
+//      sure it has a function to run it calls
+//      this. evaluate_function makes sure that
+//      it is a function call first, then evaluates all
+//      the arguments given to the function.
+//      these are built into an argc/argv-style
+//      list. the function 'handler' is then called.
+//
+//==========================================================================
+
+svalue_t FParser::EvaluateFunction(int start, int stop)
+{
+	DFsVariable *func = NULL;
+	int startpoint, endpoint;
+	
+	// the arguments need to be built locally in case of
+	// function returns as function arguments eg
+	// print("here is a random number: ", rnd() );
+	
+	int argc;
+	svalue_t argv[MAXARGS];
+	
+	if(TokenType[start] != function || TokenType[stop] != operator_
+		|| Tokens[stop][0] != ')' )
+	{
+		script_error("misplaced closing paren\n");
+	}
+	
+	// all the functions are stored in the global script
+	else if( !(func = global_script.VariableForName (Tokens[start]))  )
+		script_error("no such function: '%s'\n",Tokens[start]);
+	
+	else if(func->type != svt_function)
+		script_error("'%s' not a function\n", Tokens[start]);
+	
+	// build the argument list
+	// use a C command-line style system rather than
+	// a system using a fixed length list
+	
+	argc = 0;
+	endpoint = start + 2;   // ignore the function name and first bracket
+	
+	while(endpoint < stop)
+    {
+		startpoint = endpoint;
+		endpoint = FindOperator(startpoint, stop-1, ",");
+		
+		// check for -1: no more ','s 
+		if(endpoint == -1)
+		{               // evaluate the last expression
+			endpoint = stop;
+		}
+		if(endpoint-1 < startpoint)
+			break;
+		
+		argv[argc] = EvaluateExpression(startpoint, endpoint-1);
+		endpoint++;    // skip the ','
+		argc++;
+    }
+	
+	// store the arguments in the global arglist
+	t_argc = argc;
+	t_argv = argv;
+	
+	// haleyjd: return values can propagate to void functions, so
+	// t_return needs to be cleared now
+	
+	t_return.type = svt_int;
+	t_return.value.i = 0;
+	
+	// now run the function
+	(this->*func->value.handler)();
+	
+	// return the returned value
+	return t_return;
+}
+
+//==========================================================================
+//
+// structure dot (.) operator
+// there are not really any structs in FraggleScript, it's
+// just a different way of calling a function that looks
+// nicer. ie
+//      a.b()  = a.b   =  b(a)
+//      a.b(c) = b(a,c)
+//
+// this function is just based on the one above
+//
+//==========================================================================
+
+svalue_t FParser::OPstructure(int start, int n, int stop)
+{
+	DFsVariable *func = NULL;
+	
+	// the arguments need to be built locally in case of
+	// function returns as function arguments eg
+	// print("here is a random number: ", rnd() );
+	
+	int argc;
+	svalue_t argv[MAXARGS];
+	
+	// all the functions are stored in the global script
+	if( !(func = global_script.VariableForName (Tokens[n+1]))  )
+		script_error("no such function: '%s'\n",Tokens[n+1]);
+	
+	else if(func->type != svt_function)
+		script_error("'%s' not a function\n", Tokens[n+1]);
+	
+	// build the argument list
+	
+	// add the left part as first arg
+	
+	argv[0] = EvaluateExpression(start, n-1);
+	argc = 1; // start on second argv
+	
+	if(stop != n+1)         // can be a.b not a.b()
+    {
+		int startpoint, endpoint;
+		
+		// ignore the function name and first bracket
+		endpoint = n + 3;
+		
+		while(endpoint < stop)
+		{
+			startpoint = endpoint;
+			endpoint = FindOperator(startpoint, stop-1, ",");
+			
+			// check for -1: no more ','s 
+			if(endpoint == -1)
+			{               // evaluate the last expression
+				endpoint = stop;
+			}
+			if(endpoint-1 < startpoint)
+				break;
+			
+			argv[argc] = EvaluateExpression(startpoint, endpoint-1);
+			endpoint++;    // skip the ','
+			argc++;
+		}
+    }
+	
+	// store the arguments in the global arglist
+	t_argc = argc;
+	t_argv = argv;
+	t_func = func->Name;
+	
+	// haleyjd: return values can propagate to void functions, so
+	// t_return needs to be cleared now
+	
+	t_return.type = svt_int;
+	t_return.value.i = 0;
+	
+	// now run the function
+	(this->*func->value.handler)();
+	
+	// return the returned value
+	return t_return;
+}
+
 
