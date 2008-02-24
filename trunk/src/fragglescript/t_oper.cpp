@@ -26,107 +26,78 @@
 //
 // By Simon Howard
 //
-//----------------------------------------------------------------------------
-
-/*
-FraggleScript is from SMMU which is under the GPL. Technically, therefore, 
-combining the FraggleScript code with the non-free ZDoom code is a violation of the GPL.
-
-As this may be a problem for you, I hereby grant an exception to my copyright on the 
-SMMU source (including FraggleScript). You may use any code from SMMU in GZDoom, provided that:
-
-    * For any binary release of the port, the source code is also made available.
-    * The copyright notice is kept on any file containing my code.
-*/
+//---------------------------------------------------------------------------
+//
+// FraggleScript is from SMMU which is under the GPL. Technically, 
+// therefore, combining the FraggleScript code with the non-free 
+// ZDoom code is a violation of the GPL.
+//
+// As this may be a problem for you, I hereby grant an exception to my 
+// copyright on the SMMU source (including FraggleScript). You may use 
+// any code from SMMU in GZDoom, provided that:
+//
+//    * For any binary release of the port, the source code is also made 
+//      available.
+//    * The copyright notice is kept on any file containing my code.
+//
+//
 
 /* includes ************************/
 #include "t_script.h"
 
 
 #define evaluate_leftnright(a, b, c) {\
-	left = evaluate_expression((a), (b)-1); \
-	right = evaluate_expression((b)+1, (c)); }\
+	left = EvaluateExpression((a), (b)-1); \
+	right = EvaluateExpression((b)+1, (c)); }\
 	
-svalue_t OPequals(int, int, int);           // =
 
-svalue_t OPplus(int, int, int);             // +
-svalue_t OPminus(int, int, int);            // -
-svalue_t OPmultiply(int, int, int);         // *
-svalue_t OPdivide(int, int, int);           // /
-svalue_t OPremainder(int, int, int);        // %
-
-svalue_t OPor(int, int, int);               // ||
-svalue_t OPand(int, int, int);              // &&
-svalue_t OPnot(int, int, int);              // !
-
-svalue_t OPor_bin(int, int, int);           // |
-svalue_t OPand_bin(int, int, int);          // &
-svalue_t OPnot_bin(int, int, int);          // ~
-
-svalue_t OPcmp(int, int, int);              // ==
-svalue_t OPnotcmp(int, int, int);           // !=
-svalue_t OPlessthan(int, int, int);         // <
-svalue_t OPgreaterthan(int, int, int);      // >
-
-svalue_t OPincrement(int, int, int);        // ++
-svalue_t OPdecrement(int, int, int);        // --
-
-svalue_t OPstructure(int, int, int);    // in t_vari.c
-
-// haleyjd: Eternity operator extensions
-// sorely missing compound comparison operators
-svalue_t OPlessthanorequal(int, int, int);     // <=
-svalue_t OPgreaterthanorequal(int, int, int);  // >=
-
-operator_t operators[]=
+FParser::operator_t FParser::operators[]=
 {
-	{"=",   OPequals,               backward},
-	{"||",  OPor,                   forward},
-	{"&&",  OPand,                  forward},
-	{"|",   OPor_bin,               forward},
-	{"&",   OPand_bin,              forward},
-	{"==",  OPcmp,                  forward},
-	{"!=",  OPnotcmp,               forward},
-	{"<",   OPlessthan,             forward},
-	{">",   OPgreaterthan,          forward},
+	{"=",   &FParser::OPequals,               backward},
+	{"||",  &FParser::OPor,                   forward},
+	{"&&",  &FParser::OPand,                  forward},
+	{"|",   &FParser::OPor_bin,               forward},
+	{"&",   &FParser::OPand_bin,              forward},
+	{"==",  &FParser::OPcmp,                  forward},
+	{"!=",  &FParser::OPnotcmp,               forward},
+	{"<",   &FParser::OPlessthan,             forward},
+	{">",   &FParser::OPgreaterthan,          forward},
+	{"<=",  &FParser::OPlessthanorequal,      forward},
+	{">=",  &FParser::OPgreaterthanorequal,   forward},
 	
-	// haleyjd: Eternity Extensions
-	{"<=",  OPlessthanorequal,      forward},
-	{">=",  OPgreaterthanorequal,   forward},
-	
-	{"+",   OPplus,                 forward},
-	{"-",   OPminus,                forward},
-	{"*",   OPmultiply,             forward},
-	{"/",   OPdivide,               forward},
-	{"%",   OPremainder,            forward},
-	{"~",   OPnot_bin,              forward}, // haleyjd
-	{"!",   OPnot,                  forward},
-	{"++",  OPincrement,            forward},
-	{"--",  OPdecrement,            forward},
-	{".",   OPstructure,            forward},
+	{"+",   &FParser::OPplus,                 forward},
+	{"-",   &FParser::OPminus,                forward},
+	{"*",   &FParser::OPmultiply,             forward},
+	{"/",   &FParser::OPdivide,               forward},
+	{"%",   &FParser::OPremainder,            forward},
+	{"~",   &FParser::OPnot_bin,              forward}, // haleyjd
+	{"!",   &FParser::OPnot,                  forward},
+	{"++",  &FParser::OPincrement,            forward},
+	{"--",  &FParser::OPdecrement,            forward},
+	{".",   &FParser::OPstructure,            forward},
 };
 
-int num_operators = sizeof(operators) / sizeof(operator_t);
+int FParser::num_operators = sizeof(FParser::operators) / sizeof(FParser::operator_t);
 
 /***************** logic *********************/
 
 // = operator
 
-svalue_t OPequals(int start, int n, int stop)
+svalue_t FParser::OPequals(int start, int n, int stop)
 {
-	svariable_t *var;
+	DFsVariable *var;
 	svalue_t evaluated;
 	
-	var = current_script->FindVariable(tokens[start]);
+	var = Script->FindVariable(Tokens[start]);
 	
 	if(var)
     {
-		evaluated = evaluate_expression(n+1, stop);
+		evaluated = EvaluateExpression(n+1, stop);
 		var->SetValue (evaluated);
     }
 	else
     {
-		script_error("unknown variable '%s'\n", tokens[start]);
+		script_error("unknown variable '%s'\n", Tokens[start]);
 		return nullvar;
     }
 	
@@ -134,7 +105,7 @@ svalue_t OPequals(int start, int n, int stop)
 }
 
 
-svalue_t OPor(int start, int n, int stop)
+svalue_t FParser::OPor(int start, int n, int stop)
 {
 	svalue_t returnvar;
 	int exprtrue = false;
@@ -142,25 +113,23 @@ svalue_t OPor(int start, int n, int stop)
 	
 	// if first is true, do not evaluate the second
 	
-	eval = evaluate_expression(start, n-1);
+	eval = EvaluateExpression(start, n-1);
 	
 	if(intvalue(eval))
 		exprtrue = true;
 	else
     {
-		eval = evaluate_expression(n+1, stop);
+		eval = EvaluateExpression(n+1, stop);
 		exprtrue = !!intvalue(eval);
     }
 	
 	returnvar.type = svt_int;
 	returnvar.value.i = exprtrue;
 	return returnvar;
-	
-	return returnvar;
 }
 
 
-svalue_t OPand(int start, int n, int stop)
+svalue_t FParser::OPand(int start, int n, int stop)
 {
 	svalue_t returnvar;
 	int exprtrue = true;
@@ -168,13 +137,13 @@ svalue_t OPand(int start, int n, int stop)
 	
 	// if first is false, do not eval second
 	
-	eval = evaluate_expression(start, n-1);
+	eval = EvaluateExpression(start, n-1);
 	
 	if(!intvalue(eval) )
 		exprtrue = false;
 	else
     {
-		eval = evaluate_expression(n+1, stop);
+		eval = EvaluateExpression(n+1, stop);
 		exprtrue = !!intvalue(eval);
     }
 	
@@ -185,7 +154,7 @@ svalue_t OPand(int start, int n, int stop)
 }
 
 // haleyjd: reformatted as per 8-17
-svalue_t OPcmp(int start, int n, int stop)
+svalue_t FParser::OPcmp(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -221,7 +190,7 @@ svalue_t OPcmp(int start, int n, int stop)
 	
 }
 
-svalue_t OPnotcmp(int start, int n, int stop)
+svalue_t FParser::OPnotcmp(int start, int n, int stop)
 {
 	svalue_t returnvar;
 	
@@ -232,7 +201,7 @@ svalue_t OPnotcmp(int start, int n, int stop)
 	return returnvar;
 }
 
-svalue_t OPlessthan(int start, int n, int stop)
+svalue_t FParser::OPlessthan(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -248,7 +217,7 @@ svalue_t OPlessthan(int start, int n, int stop)
 	return returnvar;
 }
 
-svalue_t OPgreaterthan(int start, int n, int stop)
+svalue_t FParser::OPgreaterthan(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -264,11 +233,11 @@ svalue_t OPgreaterthan(int start, int n, int stop)
 	return returnvar;
 }
 
-svalue_t OPnot(int start, int n, int stop)
+svalue_t FParser::OPnot(int start, int n, int stop)
 {
 	svalue_t right, returnvar;
 	
-	right = evaluate_expression(n+1, stop);
+	right = EvaluateExpression(n+1, stop);
 	
 	returnvar.type = svt_int;
 	returnvar.value.i = !intvalue(right);
@@ -277,7 +246,7 @@ svalue_t OPnot(int start, int n, int stop)
 
 /************** simple math ***************/
 
-svalue_t OPplus(int start, int n, int stop)
+svalue_t FParser::OPplus(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -314,7 +283,7 @@ svalue_t OPplus(int start, int n, int stop)
 	return returnvar;
 }
 
-svalue_t OPminus(int start, int n, int stop)
+svalue_t FParser::OPminus(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -323,7 +292,7 @@ svalue_t OPminus(int start, int n, int stop)
 	{
 		// kinda hack, hehe
 		left.value.i = 0; left.type = svt_int;
-		right = evaluate_expression(n+1, stop);
+		right = EvaluateExpression(n+1, stop);
 	}
 	else
 		evaluate_leftnright(start, n, stop);
@@ -343,7 +312,7 @@ svalue_t OPminus(int start, int n, int stop)
 	return returnvar;
 }
 
-svalue_t OPmultiply(int start, int n, int stop)
+svalue_t FParser::OPmultiply(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -364,7 +333,7 @@ svalue_t OPmultiply(int start, int n, int stop)
 	return returnvar;
 }
 
-svalue_t OPdivide(int start, int n, int stop)
+svalue_t FParser::OPdivide(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -399,7 +368,7 @@ svalue_t OPdivide(int start, int n, int stop)
 	return returnvar;
 }
 
-svalue_t OPremainder(int start, int n, int stop)
+svalue_t FParser::OPremainder(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	int ir;
@@ -420,7 +389,7 @@ svalue_t OPremainder(int start, int n, int stop)
 
 // binary or |
 
-svalue_t OPor_bin(int start, int n, int stop)
+svalue_t FParser::OPor_bin(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -434,7 +403,7 @@ svalue_t OPor_bin(int start, int n, int stop)
 
 // binary and &
 
-svalue_t OPand_bin(int start, int n, int stop)
+svalue_t FParser::OPand_bin(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -446,11 +415,11 @@ svalue_t OPand_bin(int start, int n, int stop)
 }
 
 // haleyjd: binary invert - ~
-svalue_t OPnot_bin(int start, int n, int stop)
+svalue_t FParser::OPnot_bin(int start, int n, int stop)
 {
 	svalue_t right, returnvar;
 	
-	right = evaluate_expression(n+1, stop);
+	right = EvaluateExpression(n+1, stop);
 	
 	returnvar.type = svt_int;
 	returnvar.value.i = ~intvalue(right);
@@ -459,23 +428,23 @@ svalue_t OPnot_bin(int start, int n, int stop)
 
 
 // ++
-svalue_t OPincrement(int start, int n, int stop)
+svalue_t FParser::OPincrement(int start, int n, int stop)
 {
 	if(start == n)          // ++n
     {
 		svalue_t value;
-		svariable_t *var;
+		DFsVariable *var;
 		
-		var = current_script->FindVariable(tokens[stop]);
+		var = Script->FindVariable(Tokens[stop]);
 		if(!var)
 		{
-			script_error("unknown variable '%s'\n", tokens[stop]);
+			script_error("unknown variable '%s'\n", Tokens[stop]);
 			return nullvar;
 		}
 		value = var->GetValue();
 		
 		// haleyjd
-		if(var->Type() != svt_fixed)
+		if(var->type != svt_fixed)
 		{
 			value.value.i = intvalue(value) + 1;
 			value.type = svt_int;
@@ -493,18 +462,18 @@ svalue_t OPincrement(int start, int n, int stop)
 	else if(stop == n)     // n++
     {
 		svalue_t origvalue, value;
-		svariable_t *var;
+		DFsVariable *var;
 		
-		var = current_script->FindVariable(tokens[start]);
+		var = Script->FindVariable(Tokens[start]);
 		if(!var)
 		{
-			script_error("unknown variable '%s'\n", tokens[start]);
+			script_error("unknown variable '%s'\n", Tokens[start]);
 			return nullvar;
 		}
 		origvalue = var->GetValue();
 		
 		// haleyjd
-		if(var->Type() != svt_fixed)
+		if(var->type != svt_fixed)
 		{
 			value.type = svt_int;
 			value.value.i = intvalue(origvalue) + 1;
@@ -525,23 +494,23 @@ svalue_t OPincrement(int start, int n, int stop)
 }
 
 // --
-svalue_t OPdecrement(int start, int n, int stop)
+svalue_t FParser::OPdecrement(int start, int n, int stop)
 {
 	if(start == n)          // ++n
     {
 		svalue_t value;
-		svariable_t *var;
+		DFsVariable *var;
 		
-		var = current_script->FindVariable(tokens[stop]);
+		var = Script->FindVariable(Tokens[stop]);
 		if(!var)
 		{
-			script_error("unknown variable '%s'\n", tokens[stop]);
+			script_error("unknown variable '%s'\n", Tokens[stop]);
 			return nullvar;
 		}
 		value = var->GetValue();
 		
 		// haleyjd
-		if(var->Type() != svt_fixed)
+		if(var->type != svt_fixed)
 		{
 			value.value.i = intvalue(value) - 1;
 			value.type = svt_int;
@@ -559,18 +528,18 @@ svalue_t OPdecrement(int start, int n, int stop)
 	else if(stop == n)   // n++
     {
 		svalue_t origvalue, value;
-		svariable_t *var;
+		DFsVariable *var;
 		
-		var = current_script->FindVariable(tokens[start]);
+		var = Script->FindVariable(Tokens[start]);
 		if(!var)
 		{
-			script_error("unknown variable '%s'\n", tokens[start]);
+			script_error("unknown variable '%s'\n", Tokens[start]);
 			return nullvar;
 		}
 		origvalue = var->GetValue();
 		
 		// haleyjd
-		if(var->Type() != svt_fixed)
+		if(var->type != svt_fixed)
 		{
 			value.type = svt_int;
 			value.value.i = intvalue(origvalue) - 1;
@@ -592,7 +561,7 @@ svalue_t OPdecrement(int start, int n, int stop)
 
 // haleyjd: Eternity extensions
 
-svalue_t OPlessthanorequal(int start, int n, int stop)
+svalue_t FParser::OPlessthanorequal(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	
@@ -607,7 +576,7 @@ svalue_t OPlessthanorequal(int start, int n, int stop)
 	return returnvar;
 }
 
-svalue_t OPgreaterthanorequal(int start, int n, int stop)
+svalue_t FParser::OPgreaterthanorequal(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
 	

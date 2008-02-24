@@ -29,7 +29,7 @@
 // 'local' and 'global' variables. This way, individual scripts cannot
 // access variables in other scripts. However, 'global' variables can
 // be made which can be accessed by all scripts. These are stored inside
-// a dedicated script_t which exists only to hold all of these global
+// a dedicated DFsScript which exists only to hold all of these global
 // variables.
 //
 // functions are also stored as variables, these are kept in the global
@@ -53,20 +53,145 @@
 //
 
 #include "t_script.h"
-
+#include "a_pickups.h"
 
 
 //==========================================================================
 //
-// returns an svalue_t holding the current
-// value of a particular variable.
+//
 //
 //==========================================================================
 
-svariable_t::svariable_t(const char * _name)
+int intvalue(const svalue_t &v)
+{
+	return (v.type == svt_string ? atoi(v.string) :       
+	v.type == svt_fixed ? (int)(v.value.f / FRACUNIT) : 
+	v.type == svt_mobj ? -1 : v.value.i );
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+fixed_t fixedvalue(const svalue_t &v)
+{
+	return (v.type == svt_fixed ? v.value.f :
+	v.type == svt_string ? (fixed_t)(atof(v.string) * FRACUNIT) :
+	v.type == svt_mobj ? -1*FRACUNIT : v.value.i * FRACUNIT );
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+float floatvalue(const svalue_t &v)
+{
+	return (float)( (v.type == svt_string ? atof(v.string) :       
+	v.type == svt_fixed ? (int)(v.value.f / (float)FRACUNIT) : 
+	v.type == svt_mobj ? -1 : v.value.i ));
+}
+
+//==========================================================================
+//
+// sf: string value of an svalue_t
+//
+//==========================================================================
+
+const char *stringvalue(const svalue_t & v)
+{
+	static char buffer[256];
+	
+	switch(v.type)
+    {
+	case svt_string:
+		return v.string;
+		
+	case svt_mobj:
+		// return the class name
+		return (const char *)v.value.mobj->GetClass()->TypeName;
+		
+	case svt_fixed:
+		{
+			double val = ((double)v.value.f) / FRACUNIT;
+			sprintf(buffer, "%g", val);
+			return buffer;
+		}
+		
+	case svt_int:
+	default:
+        sprintf(buffer, "%li", v.value.i);  // haleyjd: should be %li, not %i
+		return buffer;	
+    }
+}
+
+//==========================================================================
+//
+//
+//==========================================================================
+
+AActor *actorvalue(const svalue_t &svalue)
+{
+	int intval;
+
+	if(svalue.type == svt_mobj) 
+	{
+		// Inventory items in the player's inventory have to be considered non-present.
+		if (svalue.value.mobj != NULL && 
+			svalue.value.mobj->IsKindOf(RUNTIME_CLASS(AInventory)) && 
+			static_cast<AInventory*>(svalue.value.mobj)->Owner != NULL)
+		{
+			return NULL;
+		}
+
+		return svalue.value.mobj;
+	}
+	else
+	{
+		TArray<DActorPointer*> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
+		// this requires some creativity. We use the intvalue
+		// as the thing number of a thing in the level.
+		intval = intvalue(svalue);
+		
+		if(intval < 0 || intval >= (int)SpawnedThings.Size())
+		{ 
+			return NULL;
+		}
+		// Inventory items in the player's inventory have to be considered non-present.
+		if (SpawnedThings[intval]->actor != NULL &&
+			SpawnedThings[intval]->actor->IsKindOf(RUNTIME_CLASS(AInventory)) && 
+			static_cast<AInventory*>(SpawnedThings[intval]->actor)->Owner != NULL)
+		{
+			return NULL;
+		}
+
+		return SpawnedThings[intval]->actor;
+	}
+}
+
+//==========================================================================
+//
+//
+//==========================================================================
+
+IMPLEMENT_POINTY_CLASS(DFsVariable)
+ DECLARE_POINTER (next)
+ DECLARE_POINTER (actor)
+END_POINTERS
+
+//==========================================================================
+//
+//
+//==========================================================================
+
+DFsVariable::DFsVariable(const char * _name)
 {
 	Name=_name;
 	type=svt_int;
+	actor = NULL;
 	value.i=0;
 	next=NULL;
 }
@@ -78,19 +203,7 @@ svariable_t::svariable_t(const char * _name)
 //
 //==========================================================================
 
-svariable_t::~svariable_t()
-{
-	if (type==svt_mobj) value.acp->Destroy();
-}
-
-//==========================================================================
-//
-// returns an svalue_t holding the current
-// value of a particular variable.
-//
-//==========================================================================
-
-svalue_t svariable_t::GetValue() const
+svalue_t DFsVariable::GetValue() const
 {
 	svalue_t returnvar;
 	
@@ -107,7 +220,7 @@ svalue_t svariable_t::GetValue() const
 	else if (type == svt_mobj)
 	{
 		returnvar.type = type;
-		returnvar.value.mobj = value.acp->actor;
+		returnvar.value.mobj = actor;
 	}
 	else
     {
@@ -126,17 +239,12 @@ svalue_t svariable_t::GetValue() const
 //
 //==========================================================================
 
-void svariable_t::SetValue(const svalue_t &newvalue)
+void DFsVariable::SetValue(const svalue_t &newvalue)
 {
-	if(killscript) return;  // protect the variables when killing script
-	
 	if(type == svt_const)
     {
 		// const adapts to the value it is set to
-		ChangeType(newvalue.type);
-		
-		if(type == svt_string)   // static incase a global_script var
-			string = "";
+		type = newvalue.type;
     }
 
 	switch (type)
@@ -154,7 +262,7 @@ void svariable_t::SetValue(const svalue_t &newvalue)
 		break;
 	
 	case svt_mobj:
-		value.acp->actor = MobjForSvalue(newvalue);
+		actor = actorvalue(newvalue);
 		break;
 	
 	case svt_pInt:
@@ -162,7 +270,7 @@ void svariable_t::SetValue(const svalue_t &newvalue)
 		break;
 	
 	case svt_pMobj:
-		*value.pMobj = MobjForSvalue(newvalue);
+		*value.pMobj = actorvalue(newvalue);
 		break;
 	
 	case svt_function:
@@ -181,39 +289,18 @@ void svariable_t::SetValue(const svalue_t &newvalue)
 //
 //==========================================================================
 
-void svariable_t::Serialize(FArchive & ar)
+void DFsVariable::Serialize(FArchive & ar)
 {
-	if (!ar.IsStoring()) ChangeType(svt_int);	// Just to clear old actor pointers in it!
-
-	ar << Name << type << string;
-	
-	switch(type)        // store depending on type
-	{
-	case svt_string:
-		break;
-
-	case svt_int:
-		ar << value.i;
-		break;
-
-	case svt_mobj:
-		ar << value.acp;
-		break;
-
-	case svt_fixed:
-		ar << value.fixed;
-		break;
-	}
-	// later: ar << next;
+	Super::Serialize(ar);
+	ar << Name << type << string << actor << value.i;// << next;
 }
 
 
 //==========================================================================
 //
-// From here: variable related functions inside script_t
+// From here: variable related functions inside DFsScript
 //
 //==========================================================================
-
 //==========================================================================
 //
 // create a new variable in a particular script.
@@ -221,10 +308,10 @@ void svariable_t::Serialize(FArchive & ar)
 //
 //==========================================================================
 
-svariable_t *script_t::NewVariable(const char *name, int vtype)
+DFsVariable *DFsScript::NewVariable(const char *name, int vtype)
 {
-	svariable_t *newvar = new svariable_t(name);
-	newvar->ChangeType(vtype);
+	DFsVariable *newvar = new DFsVariable(name);
+	newvar->type = vtype;
 	
 	int n = variable_hash(name);
 	newvar->next = variables[n];
@@ -240,10 +327,10 @@ svariable_t *script_t::NewVariable(const char *name, int vtype)
 //
 //==========================================================================
 
-svariable_t *script_t::VariableForName(const char *name)
+DFsVariable *DFsScript::VariableForName(const char *name)
 {
 	int n = variable_hash(name);
-	svariable_t *current = variables[n];
+	DFsVariable *current = variables[n];
 	
 	while(current)
     {
@@ -263,10 +350,10 @@ svariable_t *script_t::VariableForName(const char *name)
 //
 //==========================================================================
 
-svariable_t *script_t::FindVariable(const char *name)
+DFsVariable *DFsScript::FindVariable(const char *name)
 {
-	svariable_t *var;
-	script_t *current = this;
+	DFsVariable *var;
+	DFsScript *current = this;
 	
 	while(current)
     {
@@ -286,10 +373,10 @@ svariable_t *script_t::FindVariable(const char *name)
 //
 //==========================================================================
 
-void script_t::ClearVariables(bool complete)
+void DFsScript::ClearVariables(bool complete)
 {
 	int i;
-	svariable_t *current, *next;
+	DFsVariable *current, *next;
 	
 	for(i=0; i<VARIABLESLOTS; i++)
     {
@@ -301,15 +388,28 @@ void script_t::ClearVariables(bool complete)
 			// labels are added before variables, during
 			// preprocessing, so will be at the end of the chain
 			// we can be sure there are no more variables to free
-			if(current->Type() == svt_label && !complete) break;
+			if(current->type == svt_label && !complete) break;
 			
 			next = current->next; // save for after freeing
 			
-			delete current;
+			current->Destroy();
 			current = next; // go to next in chain
 		}
 		// start of labels or NULL
 		variables[i] = current;
     }
 }
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+char *DFsScript::LabelValue(const svalue_t &v)
+{
+	if (v.type == svt_label) return data + v.value.i;
+	else return NULL;
+}
+
 
