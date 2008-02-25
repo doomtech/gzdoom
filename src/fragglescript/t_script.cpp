@@ -597,7 +597,7 @@ static int LS_FS_Execute (line_t *ln, AActor *it, bool backSide,
 //
 //==========================================================================
 
-void STACK_ARGS FS_Close()
+void FS_Close()
 {
 	int i;
 	DFsVariable *current, *next;
