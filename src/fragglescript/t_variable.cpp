@@ -299,7 +299,7 @@ void DFsVariable::SetValue(const svalue_t &newvalue)
 void DFsVariable::Serialize(FArchive & ar)
 {
 	Super::Serialize(ar);
-	ar << Name << type << string << actor << value.i;// << next;
+	ar << Name << type << string << actor << value.i << next;
 }
 
 
