@@ -52,9 +52,6 @@
 #include "i_system.h"
 
 
-AActor *trigger_obj;            // object which triggered script
-svalue_t nullvar;				// null var for empty return
-
 CVAR(Bool, script_debug, false, 0)
 
 /************ Divide into tokens **************/
@@ -565,9 +562,8 @@ svalue_t FParser::SimpleEvaluate(int n)
     case string_: 
 		returnvar.type = svt_string;
 		returnvar.string = Tokens[n];
-		return returnvar;
+		break;
 		
-		// haleyjd: 8-17
     case number:
 		if(strchr(Tokens[n], '.'))
 		{
@@ -579,21 +575,20 @@ svalue_t FParser::SimpleEvaluate(int n)
 			returnvar.type = svt_int;
 			returnvar.value.i = atoi(Tokens[n]);
 		}
-		return returnvar;
+		break;
 		
     case name_:   
 		var = Script->FindVariable(Tokens[n]);
 		if(!var)
 		{
 			script_error("unknown variable '%s'\n", Tokens[n]);
-			return nullvar;
 		}
-		else
-			return var->GetValue();
+		else return var->GetValue();
 		
     default: 
-		return nullvar;
+		break;
     }
+	return returnvar;
 }
 
 //==========================================================================
@@ -701,7 +696,7 @@ svalue_t FParser::EvaluateExpression(int start, int stop)
 		
 		for(i=start; i<=stop; i++) tempstr << Tokens[i] << ' ';
 		script_error("couldnt evaluate expression: %s\n",tempstr.GetChars());
-		return nullvar;
+		return svalue_t();
 	}
 }
 

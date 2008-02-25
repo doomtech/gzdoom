@@ -55,7 +55,19 @@
 #include "c_dispatch.h"
 #include "i_system.h"
 
+
+//==========================================================================
+//
+// global variables
+// These two are the last remaining ones:
+// - The global script contains static data so it must be global
+// - The trigger is referenced by a global variable. However, it is set 
+//   each time a script is started so that's not a problem.
+//
+//==========================================================================
+
 DFsScript global_script;
+AActor *trigger_obj;
 
 //==========================================================================
 //
@@ -166,6 +178,7 @@ void DFsScript::Destroy()
 	data = NULL;
 	parent = NULL;
 	trigger = NULL;
+	Super::Destroy();
 }
 
 //==========================================================================
@@ -276,6 +289,7 @@ void DRunningScript::Destroy()
 		}
 		variables[i] = NULL;
     }
+	Super::Destroy();
 }
 
 //==========================================================================
@@ -451,8 +465,6 @@ void DFraggleThinker::Tick()
 	DRunningScript *current, *next;
 	int i;
 	
-	if(!HasScripts) return;       // no level scripts
-    
 	current = RunningScripts->next;
     
 	while(current)
@@ -511,7 +523,7 @@ void T_PreprocessScripts()
 //
 //==========================================================================
 
-void T_RunScript(int snum, AActor * t_trigger)
+static bool T_RunScript(int snum, AActor * t_trigger)
 {
 	DFraggleThinker *th = DFraggleThinker::ActiveThinker;
 	if (th)
@@ -524,9 +536,9 @@ void T_RunScript(int snum, AActor * t_trigger)
 		DFsScript *script;
 		int i;
 		
-		if(snum < 0 || snum >= MAXSCRIPTS) return;
+		if(snum < 0 || snum >= MAXSCRIPTS) return false;
 		script = th->LevelScript->children[snum];
-		if(!script)	return;
+		if(!script)	return false;
 	
 		runscr = new DRunningScript();
 		runscr->script = script;
@@ -551,7 +563,9 @@ void T_RunScript(int snum, AActor * t_trigger)
 		}
 		// copy trigger
 		runscr->trigger = t_trigger;
+		return true;
 	}
+	return false;
 }
 
 //==========================================================================
@@ -566,8 +580,7 @@ static int LS_FS_Execute (line_t *ln, AActor *it, bool backSide,
 {
 	if (arg1 && ln && backSide) return false;
 	if (arg2!=0 && !P_CheckKeys(it, arg2, !!arg3)) return false;
-	T_RunScript(arg0,it);
-	return true;
+	return T_RunScript(arg0,it);
 }
 
 //==========================================================================
@@ -578,7 +591,24 @@ static int LS_FS_Execute (line_t *ln, AActor *it, bool backSide,
 
 void STACK_ARGS FS_Close()
 {
-	global_script.Destroy();
+	int i;
+	DFsVariable *current, *next;
+
+	// we have to actually delete the global variables if we don't want
+	// to get them reported as memory leaks.
+	for(i=0; i<VARIABLESLOTS; i++)
+    {
+		current = global_script.variables[i];
+		
+		while(current)
+		{
+			next = current->next; // save for after freeing
+			
+			//current->ObjectFlags |= OF_YESREALLYDELETE;
+			delete current;
+			current = next; // go to next in chain
+		}
+    }
 }
 
 AT_GAME_SET(FS_Init)
@@ -591,15 +621,11 @@ AT_GAME_SET(FS_Init)
 	atterm(FS_Close);
 }
 
-
-
-
-
-
-bool HasScripts;
-
-
-
+//==========================================================================
+//
+//
+//
+//==========================================================================
 
 CCMD(fpuke)
 {

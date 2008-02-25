@@ -140,7 +140,7 @@ AActor *actorvalue(const svalue_t &svalue);
 
 //==========================================================================
 //
-//
+// varoius defines collected in a nicer manner
 //
 //==========================================================================
 
@@ -156,7 +156,7 @@ enum
 
 //==========================================================================
 //
-//
+// One variable
 //
 //==========================================================================
 struct FParser;
@@ -277,6 +277,7 @@ enum    // brace types: where current_section is a { or }
 class CFsError
 {
 public:
+	// trying to throw strings crashes VC++ badly so we have to use a static buffer. :(
 	char msg[2048];
 
 	CFsError(const FString &in)
@@ -286,6 +287,7 @@ public:
 	}
 };
 
+// throw this object to regularly terminate a script's execution.
 class CFsTerminator
 {
 	int fill;
@@ -702,10 +704,8 @@ public:
 #include "t_fs.h"
 
 void script_error(char *s, ...);
-void T_RunScript(int n,AActor *);
 void FS_EmulateCmd(char * string);
 
-extern svalue_t nullvar;
 extern AActor *trigger_obj;
 extern DFsScript global_script; 
 
