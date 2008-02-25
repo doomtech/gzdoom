@@ -262,7 +262,7 @@ const PClass * T_GetMobjType(svalue_t arg)
 	else
 	{
 		int objtype = intvalue(arg);
-		if (objtype>=0 && objtype<countof(ActorTypes)) PClass=ActorTypes[objtype];
+		if (objtype>=0 && objtype<int(countof(ActorTypes))) PClass=ActorTypes[objtype];
 		else PClass=NULL;
 
 		// invalid object to spawn
@@ -3239,7 +3239,14 @@ void FParser::SF_StringValue(void)
 	if (CheckArgs(1))
 	{
 		t_return.type = svt_string;
-		t_return.string = t_argv[0].type == svt_string? t_argv[0].string : stringvalue(t_argv[0]);
+		if (t_argv[0].type == svt_string)
+		{
+			t_return.string = t_argv[0].string;
+		}
+		else
+		{
+			t_return.string = stringvalue(t_argv[0]);
+		}
 	}
 }
 
@@ -3449,7 +3456,7 @@ void FParser::SF_MapThingNumExist()
 	{
 		intval = intvalue(t_argv[0]);
 
-		if (intval < 0 || intval >= SpawnedThings.Size() || !SpawnedThings[intval]->actor)
+		if (intval < 0 || intval >= int(SpawnedThings.Size()) || !SpawnedThings[intval]->actor)
 		{
 			t_return.type = svt_int;
 			t_return.value.i = 0;
@@ -3684,7 +3691,7 @@ void FParser::SF_ObjType()
 	// use trigger object if not specified
 	AActor *mo = t_argc ? actorvalue(t_argv[0]) : Script->trigger;
 
-	for(int i=0;i<countof(ActorTypes);i++) if (mo->GetClass() == ActorTypes[i])
+	for(unsigned int i=0;i<countof(ActorTypes);i++) if (mo->GetClass() == ActorTypes[i])
 	{
 		t_return.type = svt_int;
 		t_return.value.i = i;
@@ -4041,7 +4048,8 @@ void FParser::SF_ThingCount(void)
 	
 	if (CheckArgs(1))
 	{
-		if (!(pClass=T_GetMobjType(t_argv[0]))) return;
+		pClass=T_GetMobjType(t_argv[0]);
+		if (!pClass) return;
 		// If we want to count map items we must consider actor replacement
 		pClass = pClass->ActorInfo->GetReplacement()->Class;
 		
@@ -4050,7 +4058,7 @@ again:
 
 		if (t_argc<2 || intvalue(t_argv[1])==0 || pClass->IsDescendantOf(RUNTIME_CLASS(AInventory)))
 		{
-			while (mo=it.Next()) 
+			while ((mo=it.Next()))
 			{
 				if (mo->IsA(pClass))
 				{
@@ -4190,7 +4198,7 @@ void  FParser::SF_KillInSector()
 		AActor * mo;
 		int tag=intvalue(t_argv[0]);
 
-		while (mo=it.Next())
+		while ((mo=it.Next()))
 		{
 			if (mo->flags3&MF3_ISMONSTER && mo->Sector->tag==tag) P_DamageMobj(mo, NULL, NULL, 1000000, NAME_Massacre);
 		}
@@ -4580,7 +4588,7 @@ inline void new_function(char *name, void (FParser::*handler)() )
 
 void init_functions(void)
 {
-	for(int i=0;i<countof(ActorNames_init);i++)
+	for(unsigned i=0;i<countof(ActorNames_init);i++)
 	{
 		ActorTypes[i]=PClass::FindClass(ActorNames_init[i]);
 	}
