@@ -1633,7 +1633,6 @@ void gl_ParseBrightmap(FScanner &sc, int deflump)
 
 	if (maplump != -1)
 	{
-		/*
 		FTexture *brightmap = FTexture::CreateTexture(maplump, tex->UseType);
 		if (!brightmap)
 		{
@@ -1643,7 +1642,6 @@ void gl_ParseBrightmap(FScanner &sc, int deflump)
 		}
 		tex->bm_info.Brightmap = brightmap;
 		brightmap->bm_info.bIsBrightmap = true;
-		*/
 	}	
 	tex->bm_info.bBrightmapDisablesFullbright = disable_fullbright;
 }
