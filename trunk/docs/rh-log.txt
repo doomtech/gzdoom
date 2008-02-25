@@ -1,4 +1,82 @@
-February 12, 2008
+February 25, 2008 (Changes by Graf Zahl)
+- Fixed: The DECORATE expression evaluator's random function could produce
+  incorrect results for ranges > 255. Changed so that FRandom's default
+  implementation is used instead.
+
+February 21, 2008
+- Fixed: DThinker::SerializeAll() did not serialize any thinkers in the
+  FreshThinkers lists. These thinkers would still be saved in the savegame if
+  there were other references to them, but they would not go in any thinker
+  lists when loading the savegame. An easy way to exercise this bug is to
+  give yourself something new with the console and then save the game right
+  away without closing the console by using the "save" command. The item
+  would be stored in the savegame thanks to its presence in the Inventory
+  list, but it wouldn't be in a thinker list when the game was reloaded
+  because it was still in the FreshThinkers list when the game was saved.
+- Fixed: PO_Busy() did not check for a NULL return from GetPolyobj().
+- Fixed two problems with printfs from the net controller stuff: one of them
+  is totally valid, and the other is GCC not being as nice as VC++.
+- Fixed: The case for defining SAVESIG when SVN_REVISION_NUMBER == 0 did not
+  work for GCC (and presumably VC++, though I never ran into that case with
+  it) because it tried to stringify something that wasn't a macro argument.
+
+February 20, 2008 (Changes by Graf Zahl)
+- Added a modified version of Karate Chris's submission for killing specific
+  monsters with the 'Kill' ccmd.
+
+February 18, 2008
+- Added vid_refreshrate cvar to override Windows' automatic refresh rate
+  selection.
+- Singleplayers maps using allowrespawn now filter respawn inventory like
+  coop games, since that's essentially what they are.
+- Fixed m_alloc.cpp compilation on Linux.
+
+February 18, 2008 (Changes by Graf Zahl)
+- Applied Blzut3's sbarinfo update #12:
+* When the drawbar code was optimized border was accidently used as how many
+  pixels to reserve from the background instead of the foreground.  I've
+  reversed how the code works (bg over fg instead of fg over bg).
+* Added armorclass to drawnumber.
+* Added an interpolateArmor variable which acts just like interpolateHealth
+  except the effect is applied to armor.
+* Added armor flag to drawgem since we can interpolate armor now.
+* Added a reverse flag to drawgem.
+* Fixed drawgem didn't allow for '|' to separate the flags.
+
+- Fixed: Menu texts for skill definitions unconditionally interpreted
+  the given text as an index into the string table.
+
+February 16, 2008
+- Fixed AInventory::PickupFlash setting with GCC.
+- Fixed: The MusicVolumes list was allocated with M_Malloc but freed with
+  delete.
+- Fixed: demobuffer was inconsistantly handled with new[]/delete[] and
+  malloc/free.
+- Added used memory tracking to M_Malloc() and M_Realloc(). This
+  necessitated the addition of an M_Free() call to track frees.
+- Removed M_Calloc since it was only used in one place, and can just as well
+  be done with an M_Malloc/memset pair.
+- Bumped DEMOGAMEVERSION for the new net controller codes.
+
+February 16, 2008 (Changes by Graf Zahl)
+- Added patch by Karate Chris:
+  - The net arbitrator can add or remove players to an access list so they 
+    can or cannot control game settings:
+  * net_addcontroller <player number> - Adds a player to the control list.
+    Only net arbitrators have access to this command.
+  * net_removecontroller <player number> - Removes a player from the control
+    list. Only net arbitrators have access to this command.
+  * net_listcontrollers - Lists the players who are able to control the game
+   settings.
+  - Fixed: The 'Printf' occurrences in the 'addplayerclass' console command
+    were all missing a '\n' at the end.
+  - Enhanced the 'playerinfo' console command so more information about each
+    setting is shown.
+- Added customizable pickup flash.
+- Added option to show shorter messages for save game and screenshot confirmation.
+  Also added this to the 'Messages' menu.
+
+February 14, 2008
 - Version bump to 2.2.0.
 - Disabled console alpha when the console is fullscreen.
 - Re-enabled maybedrawnow for the software renderer. This should be replaced
