@@ -98,7 +98,6 @@ svalue_t FParser::OPequals(int start, int n, int stop)
 	else
     {
 		script_error("unknown variable '%s'\n", Tokens[start]);
-		return nullvar;
     }
 	
 	return evaluated;
@@ -430,16 +429,16 @@ svalue_t FParser::OPnot_bin(int start, int n, int stop)
 // ++
 svalue_t FParser::OPincrement(int start, int n, int stop)
 {
+	svalue_t value;
+
 	if(start == n)          // ++n
     {
-		svalue_t value;
 		DFsVariable *var;
 		
 		var = Script->FindVariable(Tokens[stop]);
 		if(!var)
 		{
 			script_error("unknown variable '%s'\n", Tokens[stop]);
-			return nullvar;
 		}
 		value = var->GetValue();
 		
@@ -456,56 +455,53 @@ svalue_t FParser::OPincrement(int start, int n, int stop)
 			value.type = svt_fixed;
 			var->SetValue (value);
 		}
-		
-		return value;
     }
 	else if(stop == n)     // n++
     {
-		svalue_t origvalue, value;
+		svalue_t newvalue;
 		DFsVariable *var;
 		
 		var = Script->FindVariable(Tokens[start]);
 		if(!var)
 		{
 			script_error("unknown variable '%s'\n", Tokens[start]);
-			return nullvar;
 		}
-		origvalue = var->GetValue();
+		value = var->GetValue();
 		
 		// haleyjd
 		if(var->type != svt_fixed)
 		{
-			value.type = svt_int;
-			value.value.i = intvalue(origvalue) + 1;
-			var->SetValue (value);
+			newvalue.type = svt_int;
+			newvalue.value.i = intvalue(value) + 1;
+			var->SetValue (newvalue);
 		}
 		else
 		{
-			value.type = svt_fixed;
-			value.value.f = fixedvalue(origvalue) + FRACUNIT;
-			var->SetValue (value);
+			newvalue.type = svt_fixed;
+			newvalue.value.f = fixedvalue(value) + FRACUNIT;
+			var->SetValue (newvalue);
 		}
-		
-		return origvalue;
     }
-	
-	script_error("incorrect arguments to ++ operator\n");
-	return nullvar;
+	else
+	{
+		script_error("incorrect arguments to ++ operator\n");
+	}
+	return value;
 }
 
 // --
 svalue_t FParser::OPdecrement(int start, int n, int stop)
 {
+	svalue_t value;
+
 	if(start == n)          // ++n
     {
-		svalue_t value;
 		DFsVariable *var;
 		
 		var = Script->FindVariable(Tokens[stop]);
 		if(!var)
 		{
 			script_error("unknown variable '%s'\n", Tokens[stop]);
-			return nullvar;
 		}
 		value = var->GetValue();
 		
@@ -527,36 +523,37 @@ svalue_t FParser::OPdecrement(int start, int n, int stop)
     }
 	else if(stop == n)   // n++
     {
-		svalue_t origvalue, value;
+		svalue_t newvalue;
 		DFsVariable *var;
 		
 		var = Script->FindVariable(Tokens[start]);
 		if(!var)
 		{
 			script_error("unknown variable '%s'\n", Tokens[start]);
-			return nullvar;
 		}
-		origvalue = var->GetValue();
+		value = var->GetValue();
 		
 		// haleyjd
 		if(var->type != svt_fixed)
 		{
-			value.type = svt_int;
-			value.value.i = intvalue(origvalue) - 1;
-			var->SetValue (value);
+			newvalue.type = svt_int;
+			newvalue.value.i = intvalue(value) - 1;
+			var->SetValue (newvalue);
 		}
 		else
 		{
-			value.type = svt_fixed;
-			value.value.f = fixedvalue(origvalue) - FRACUNIT;
-			var->SetValue (value);
+			newvalue.type = svt_fixed;
+			newvalue.value.f = fixedvalue(value) - FRACUNIT;
+			var->SetValue (newvalue);
 		}
 		
-		return origvalue;
+		return value;
     }
-	
-	script_error("incorrect arguments to ++ operator\n");
-	return nullvar;
+	else
+	{
+		script_error("incorrect arguments to ++ operator\n");
+	}
+	return value;
 }
 
 // haleyjd: Eternity extensions

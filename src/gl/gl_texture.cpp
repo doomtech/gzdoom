@@ -867,7 +867,7 @@ int FBrightmapTexture::CopyTrueColorPixels(BYTE * buffer, int buf_width, int buf
 // The GL texture maintenance class
 //
 //===========================================================================
-TArray<FGLTexture *> * FGLTexture::gltextures;
+TArray<FGLTexture *> FGLTexture::gltextures;
 
 //===========================================================================
 //
@@ -930,9 +930,7 @@ FGLTexture::FGLTexture(FTexture * tx)
 
 	if (tex->bHasCanvas) scaley=-scaley;
 
-	if (!gltextures) 
-		gltextures = new TArray<FGLTexture *>;
-	index = gltextures->Push(this);
+	index = gltextures.Push(this);
 
 }
 
@@ -948,11 +946,11 @@ FGLTexture::~FGLTexture()
 	if (areas) delete [] areas;
 	if (hirestexture) delete hirestexture;
 
-	for(int i=0;i<gltextures->Size();i++)
+	for(unsigned i=0;i<gltextures.Size();i++)
 	{
-		if ((*gltextures)[i]==this) 
+		if (gltextures[i]==this) 
 		{
-			gltextures->Delete(i);
+			gltextures.Delete(i);
 			break;
 		}
 	}
@@ -1501,12 +1499,9 @@ const PatchTextureInfo * FGLTexture::BindPatch(int cm, int translation)
 
 void FGLTexture::FlushAll()
 {
-	if (gltextures)
+	for(int i=gltextures.Size()-1;i>=0;i--)
 	{
-		for(int i=gltextures->Size()-1;i>=0;i--)
-		{
-			(*gltextures)[i]->Clean(true);
-		}
+		gltextures[i]->Clean(true);
 	}
 }
 
@@ -1638,6 +1633,7 @@ void gl_ParseBrightmap(FScanner &sc, int deflump)
 
 	if (maplump != -1)
 	{
+		/*
 		FTexture *brightmap = FTexture::CreateTexture(maplump, tex->UseType);
 		if (!brightmap)
 		{
@@ -1647,6 +1643,7 @@ void gl_ParseBrightmap(FScanner &sc, int deflump)
 		}
 		tex->bm_info.Brightmap = brightmap;
 		brightmap->bm_info.bIsBrightmap = true;
+		*/
 	}	
 	tex->bm_info.bBrightmapDisablesFullbright = disable_fullbright;
 }
