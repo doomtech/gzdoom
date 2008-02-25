@@ -52,21 +52,9 @@ List DThinker::Thinkers[MAX_STATNUM+1];
 List DThinker::FreshThinkers[MAX_STATNUM+1];
 bool DThinker::bSerialOverride = false;
 
-void DThinker::SaveList(FArchive &arc, Node *node)
+void DThinker::SerializeAll (FArchive &arc, bool hubLoad)
 {
-	if (node->Succ != NULL)
-	{
-		do
-		{
-			DThinker *thinker = static_cast<DThinker *>(node);
-			arc << thinker;
-			node = node->Succ;
-		} while (node->Succ != NULL);
-	}
-}
-
-void DThinker::SerializeAll(FArchive &arc, bool hubLoad)
-{
+	Node *node;
 	DThinker *thinker;
 	BYTE stat;
 	int statcount;
@@ -79,21 +67,29 @@ void DThinker::SerializeAll(FArchive &arc, bool hubLoad)
 	// the thinker lists here instead of relying on the archiver to do it
 	// for us.
 
-	if (arc.IsStoring())
+	if (arc.IsStoring ())
 	{
 		for (statcount = i = 0; i <= MAX_STATNUM; i++)
 		{
-			statcount += (!Thinkers[i].IsEmpty() || !FreshThinkers[i].IsEmpty());
+			if (!Thinkers[i].IsEmpty ())
+			{
+				statcount++;
+			}
 		}
 		arc << statcount;
 		for (i = 0; i <= MAX_STATNUM; i++)
 		{
-			if (!Thinkers[i].IsEmpty() || !FreshThinkers[i].IsEmpty())
+			node = Thinkers[i].Head;
+			if (node->Succ != NULL)
 			{
 				stat = i;
 				arc << stat;
-				SaveList(arc, Thinkers[i].Head);
-				SaveList(arc, FreshThinkers[i].Head);
+				do
+				{
+					thinker = static_cast<DThinker *> (node);
+					arc << thinker;
+					node = node->Succ;
+				} while (node->Succ != NULL);
 				thinker = NULL;
 				arc << thinker;		// Save a final NULL for this list
 			}
@@ -102,9 +98,9 @@ void DThinker::SerializeAll(FArchive &arc, bool hubLoad)
 	else
 	{
 		if (hubLoad)
-			DestroyMostThinkers();
+			DestroyMostThinkers ();
 		else
-			DestroyAllThinkers();
+			DestroyAllThinkers ();
 
 		// Prevent the constructor from inserting thinkers into a list.
 		bSerialOverride = true;
@@ -117,16 +113,7 @@ void DThinker::SerializeAll(FArchive &arc, bool hubLoad)
 				arc << stat << thinker;
 				while (thinker != NULL)
 				{
-					// Thinkers with the OF_JustSpawned flag set go in the FreshThinkers
-					// list. Anything else goes in the regular Thinkers list.
-					if (thinker->ObjectFlags & OF_JustSpawned)
-					{
-						FreshThinkers[stat].AddTail(thinker);
-					}
-					else
-					{
-						Thinkers[stat].AddTail(thinker);
-					}
+					Thinkers[stat].AddTail (thinker);
 					arc << thinker;
 				}
 				statcount--;
@@ -135,7 +122,7 @@ void DThinker::SerializeAll(FArchive &arc, bool hubLoad)
 		catch (class CDoomError &)
 		{
 			bSerialOverride = false;
-			DestroyAllThinkers();
+			DestroyAllThinkers ();
 			throw;
 		}
 		bSerialOverride = false;
@@ -154,6 +141,14 @@ DThinker::DThinker (int statnum) throw()
 	if ((unsigned)statnum > MAX_STATNUM)
 	{
 		statnum = MAX_STATNUM;
+	}
+	if (FreshThinkers[statnum].TailPred->Pred != NULL)
+	{
+		GC::WriteBarrier(static_cast<DThinker*>(FreshThinkers[statnum].Tail, this));
+	}
+	else
+	{
+		GC::WriteBarrier(this);
 	}
 	FreshThinkers[statnum].AddTail (this);
 }
@@ -205,6 +200,8 @@ DThinker *DThinker::FirstThinker (int statnum)
 
 void DThinker::ChangeStatNum (int statnum)
 {
+	List *list;
+
 	if ((unsigned)statnum > MAX_STATNUM)
 	{
 		statnum = MAX_STATNUM;
@@ -212,12 +209,21 @@ void DThinker::ChangeStatNum (int statnum)
 	Remove ();
 	if ((ObjectFlags & OF_JustSpawned) && statnum >= STAT_FIRST_THINKING)
 	{
-		FreshThinkers[statnum].AddTail (this);
+		list = &FreshThinkers[statnum];
 	}
 	else
 	{
-		Thinkers[statnum].AddTail (this);
+		list = &Thinkers[statnum];
 	}
+	if (list->TailPred->Pred != NULL)
+	{
+		GC::WriteBarrier(static_cast<DThinker*>(list->Tail, this));
+	}
+	else
+	{
+		GC::WriteBarrier(this);
+	}
+	list->AddTail(this);
 }
 
 // Mark the first thinker of each list
@@ -348,6 +354,14 @@ int DThinker::TickThinkers (List *list, List *dest)
 			if (dest != NULL)
 			{ // Move thinker from this list to the destination list
 				node->Remove ();
+				if (dest->TailPred->Pred != NULL)
+				{
+					GC::WriteBarrier(static_cast<DThinker*>(dest->Tail, thinker));
+				}
+				else
+				{
+					GC::WriteBarrier(thinker);
+				}
 				dest->AddTail (node);
 			}
 			thinker->PostBeginPlay ();

@@ -41,6 +41,7 @@
 #include "r_data.h"
 #include "r_sky.h"
 #include "t_script.h"
+#include "cmdlib.h"
 
 enum
 {
@@ -50,17 +51,16 @@ enum
 } readtype;
 
 
-TArray<DActorPointer*> SpawnedThings;
 static int drownflag;
+bool HasScripts;
 
 //-----------------------------------------------------------------------------
 //
 // Process the lump to strip all unneeded information from it
 //
 //-----------------------------------------------------------------------------
-static void ParseInfoCmd(char *line)
+static void ParseInfoCmd(char *line, FString &scriptsrc)
 {
-	size_t allocsize;
 	char *temp;
 	
 	// clear any control chars
@@ -98,11 +98,7 @@ static void ParseInfoCmd(char *line)
 	
 	if (readtype==RT_SCRIPT)
 	{
-		allocsize = strlen(line) + strlen(levelscript.data) + 10;
-		levelscript.data = (char *)realloc(levelscript.data, allocsize);
-		
-		// add the new line to the current data using sprintf (ugh)
-		sprintf(levelscript.data, "%s%s\n", levelscript.data, line);
+		scriptsrc << line << '\n';
 	}
 	else if (readtype==RT_INFO)
 	{
@@ -197,95 +193,6 @@ static void ParseInfoCmd(char *line)
 
 //-----------------------------------------------------------------------------
 //
-// Garbage collection helper
-//
-//-----------------------------------------------------------------------------
-void MarkVariable(svariable_t *var)
-{
-	while (var != NULL)
-	{
-		GC::Mark(var->acp);
-		var = var->next;
-	}
-}
-
-//-----------------------------------------------------------------------------
-//
-// Garbage collection helper
-//
-//-----------------------------------------------------------------------------
-static void MarkScript(script_t *script)
-{
-	if (script != NULL)
-	{
-		for(int i=0;i<VARIABLESLOTS;i++)
-		{
-			MarkVariable(script->variables[i]);
-		}
-		for(int i=0;i<MAXSCRIPTS;i++)
-		{
-			MarkScript(script->children[i]);
-		}
-	}
-}
-
-//-----------------------------------------------------------------------------
-//
-// 
-//
-//-----------------------------------------------------------------------------
-size_t DRunningScript::PropagateMark()
-{
-	for(int i=0;i<VARIABLESLOTS;i++)
-	{
-		MarkVariable(variables[i]);
-	}
-	return Super::PropagateMark();
-}
-
-//-----------------------------------------------------------------------------
-//
-// This thinker eliminates the need to call the Fragglescript functions from the main code
-//
-//-----------------------------------------------------------------------------
-class DFraggleThinker : public DThinker
-{
-	DECLARE_CLASS(DFraggleThinker, DThinker)
-public:
-
-	DFraggleThinker() {}
-
-
-	void Serialize(FArchive & arc)
-	{
-		Super::Serialize(arc);
-		T_SerializeScripts(arc);
-	}
-
-	void Tick()
-	{
-		T_DelayedScripts();
-	}
-
-	size_t PropagateMark()
-	{
-		for(unsigned i=0;i<SpawnedThings.Size(); i++)
-		{
-			GC::Mark(SpawnedThings[i]);
-		}
-		MarkScript(&levelscript);
-		
-		DObject *foo = &runningscripts;
-		GC::Mark(foo);
-		return Super::PropagateMark();
-	}
-
-};
-
-IMPLEMENT_CLASS(DFraggleThinker)
-
-//-----------------------------------------------------------------------------
-//
 // Loads the scripts for the current map
 // Initializes all FS data
 //
@@ -298,24 +205,11 @@ void T_LoadLevelInfo(MapData * map)
 	char *startofline;
 	int lumpsize;
 	bool fsglobal=false;
+	FString scriptsrc;
 
 	// Global initializazion if not done yet.
 	static bool done=false;
 					
-	if (!done)
-	{
-		T_Init();
-		done=true;
-	}
-
-	// Clear the old data
-	for(unsigned int i=0;i<SpawnedThings.Size();i++)
-	{
-		SpawnedThings[i]->Destroy();
-	}
-	SpawnedThings.Clear();
-	T_ClearScripts();
-	
 	// Load the script lump
 	lumpsize = map->Size(0);
 	if (lumpsize==0)
@@ -350,7 +244,7 @@ void T_LoadLevelInfo(MapData * map)
 		if(*rover == '\n') // end of line
 		{
 			*rover = 0;               // make it an end of string (0)
-			ParseInfoCmd(startofline);
+			ParseInfoCmd(startofline, scriptsrc);
 			startofline = rover+1; // next line
 			*rover = '\n';            // back to end of line
 		}
@@ -359,6 +253,7 @@ void T_LoadLevelInfo(MapData * map)
 	if (HasScripts) 
 	{
 		new DFraggleThinker;
+		DFraggleThinker::ActiveThinker->LevelScript->data = copystring(scriptsrc.GetChars());
 
 		if (drownflag==-1) drownflag = ((level.flags&LEVEL_HEXENFORMAT) || fsglobal);
 		if (!drownflag) level.airsupply=0;	// Legacy doesn't to water damage.
@@ -379,10 +274,10 @@ void T_LoadLevelInfo(MapData * map)
 
 void T_PrepareSpawnThing()
 {
-	if (HasScripts)
+	if (DFraggleThinker::ActiveThinker)
 	{
 		DActorPointer * acp = new DActorPointer;
-		SpawnedThings.Push(acp);
+		DFraggleThinker::ActiveThinker->SpawnedThings.Push(acp);
 	}
 }
 
@@ -394,8 +289,9 @@ void T_PrepareSpawnThing()
 
 void T_RegisterSpawnThing(AActor * ac)
 {
-	if (HasScripts)
+	if (DFraggleThinker::ActiveThinker)
 	{
+		TArray<DActorPointer*> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
 		SpawnedThings[SpawnedThings.Size()-1]->actor=ac;
 	}
 }
