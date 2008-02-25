@@ -123,7 +123,7 @@ const char *stringvalue(const svalue_t & v)
 		
 	case svt_int:
 	default:
-        sprintf(buffer, "%li", v.value.i);  // haleyjd: should be %li, not %i
+        sprintf(buffer, "%i", v.value.i);
 		return buffer;	
     }
 }
@@ -254,7 +254,14 @@ void DFsVariable::SetValue(const svalue_t &newvalue)
 		break;
 
 	case svt_string:
-		string = newvalue.type == svt_string? newvalue.string : stringvalue(newvalue);
+		if (newvalue.type == svt_string)
+		{
+			string = newvalue.string;
+		}
+		else
+		{
+			string = stringvalue(newvalue);
+		}
 		break;
 
 	case svt_fixed:
@@ -358,7 +365,7 @@ DFsVariable *DFsScript::FindVariable(const char *name)
 	while(current)
     {
 		// check this script
-		if (var = current->VariableForName(name))
+		if ((var = current->VariableForName(name)))
 			return var;
 		current = current->parent;    // try the parent of this one
     }

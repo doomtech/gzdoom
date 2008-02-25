@@ -700,7 +700,7 @@ svalue_t FParser::EvaluateExpression(int start, int stop)
 		FString tempstr;
 		
 		for(i=start; i<=stop; i++) tempstr << Tokens[i] << ' ';
-		script_error("couldnt evaluate expression: %s\n",tempstr);
+		script_error("couldnt evaluate expression: %s\n",tempstr.GetChars());
 		return nullvar;
 	}
 }
