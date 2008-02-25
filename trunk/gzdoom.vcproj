@@ -10109,10 +10109,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\fragglescript\t_func.h"
-				>
-			</File>
-			<File
 				RelativePath=".\src\fragglescript\t_load.cpp"
 				>
 			</File>
@@ -10121,27 +10117,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\fragglescript\t_oper.h"
-				>
-			</File>
-			<File
 				RelativePath=".\src\fragglescript\t_parse.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\fragglescript\t_parse.h"
-				>
-			</File>
-			<File
 				RelativePath=".\src\fragglescript\t_prepro.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\fragglescript\t_prepro.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\fragglescript\t_saveg.cpp"
 				>
 			</File>
 			<File
@@ -10157,23 +10137,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\fragglescript\t_spec.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\fragglescript\t_vari.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\fragglescript\t_vari.h"
-				>
-			</File>
-			<File
 				RelativePath=".\src\fragglescript\t_variable.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\fragglescript\t_variable.h"
 				>
 			</File>
 		</Filter>
