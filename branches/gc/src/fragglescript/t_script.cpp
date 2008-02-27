@@ -54,6 +54,7 @@
 #include "p_spec.h"
 #include "c_dispatch.h"
 #include "i_system.h"
+#include "doomerrors.h"
 
 
 //==========================================================================
@@ -220,14 +221,21 @@ void DFsScript::ParseScript(char *position)
 	// check for valid position
 	if(position < data || position > data+len)
     {
-		script_error("parse_script: trying to continue from point outside script!\n");
+		Printf("script %d: trying to continue from point outside script!\n", scriptnum);
 		return;
     }
 	
 	trigger_obj = trigger;  // set trigger
 	
-	FParser parse(this);
-	parse.Run(position, data, data + len);
+	try
+	{
+		FParser parse(this);
+		parse.Run(position, data, data + len);
+	}
+	catch (CRecoverableError &err)
+	{
+		Printf ("%s\n", err.GetMessage());
+	}
 	
 	// dont clear global vars!
 	if(scriptnum != -1) ClearVariables();        // free variables
@@ -589,7 +597,7 @@ static int LS_FS_Execute (line_t *ln, AActor *it, bool backSide,
 //
 //==========================================================================
 
-void STACK_ARGS FS_Close()
+void FS_Close()
 {
 	int i;
 	DFsVariable *current, *next;
