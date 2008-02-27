@@ -163,7 +163,7 @@ AActor *actorvalue(const svalue_t &svalue)
 		// Inventory items in the player's inventory have to be considered non-present.
 		if (SpawnedThings[intval]->actor != NULL &&
 			SpawnedThings[intval]->actor->IsKindOf(RUNTIME_CLASS(AInventory)) && 
-			static_cast<AInventory*>(SpawnedThings[intval]->actor)->Owner != NULL)
+			barrier_cast<AInventory*>(SpawnedThings[intval]->actor)->Owner != NULL)
 		{
 			return NULL;
 		}
@@ -203,7 +203,7 @@ DFsVariable::DFsVariable(const char * _name)
 //
 //==========================================================================
 
-svalue_t DFsVariable::GetValue() const
+svalue_t DFsVariable::GetValue()
 {
 	svalue_t returnvar;
 	
@@ -323,6 +323,7 @@ DFsVariable *DFsScript::NewVariable(const char *name, int vtype)
 	int n = variable_hash(name);
 	newvar->next = variables[n];
 	variables[n] = newvar;
+	GC::WriteBarrier(this, newvar);
 	return newvar;
 }
 

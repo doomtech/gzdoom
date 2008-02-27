@@ -51,6 +51,12 @@
 	right = EvaluateExpression((b)+1, (c)); }\
 	
 
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
 FParser::operator_t FParser::operators[]=
 {
 	{"=",   &FParser::OPequals,               backward},
@@ -81,7 +87,11 @@ int FParser::num_operators = sizeof(FParser::operators) / sizeof(FParser::operat
 
 /***************** logic *********************/
 
-// = operator
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
 
 svalue_t FParser::OPequals(int start, int n, int stop)
 {
@@ -103,6 +113,12 @@ svalue_t FParser::OPequals(int start, int n, int stop)
 	return evaluated;
 }
 
+
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
 
 svalue_t FParser::OPor(int start, int n, int stop)
 {
@@ -128,6 +144,12 @@ svalue_t FParser::OPor(int start, int n, int stop)
 }
 
 
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
 svalue_t FParser::OPand(int start, int n, int stop)
 {
 	svalue_t returnvar;
@@ -152,7 +174,12 @@ svalue_t FParser::OPand(int start, int n, int stop)
 	return returnvar;
 }
 
-// haleyjd: reformatted as per 8-17
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
 svalue_t FParser::OPcmp(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
@@ -189,6 +216,12 @@ svalue_t FParser::OPcmp(int start, int n, int stop)
 	
 }
 
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
 svalue_t FParser::OPnotcmp(int start, int n, int stop)
 {
 	svalue_t returnvar;
@@ -199,6 +232,12 @@ svalue_t FParser::OPnotcmp(int start, int n, int stop)
 	
 	return returnvar;
 }
+
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
 
 svalue_t FParser::OPlessthan(int start, int n, int stop)
 {
@@ -216,6 +255,12 @@ svalue_t FParser::OPlessthan(int start, int n, int stop)
 	return returnvar;
 }
 
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
 svalue_t FParser::OPgreaterthan(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
@@ -232,6 +277,12 @@ svalue_t FParser::OPgreaterthan(int start, int n, int stop)
 	return returnvar;
 }
 
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
 svalue_t FParser::OPnot(int start, int n, int stop)
 {
 	svalue_t right, returnvar;
@@ -243,7 +294,11 @@ svalue_t FParser::OPnot(int start, int n, int stop)
 	return returnvar;
 }
 
-/************** simple math ***************/
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
 
 svalue_t FParser::OPplus(int start, int n, int stop)
 {
@@ -282,6 +337,12 @@ svalue_t FParser::OPplus(int start, int n, int stop)
 	return returnvar;
 }
 
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
 svalue_t FParser::OPminus(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
@@ -311,6 +372,12 @@ svalue_t FParser::OPminus(int start, int n, int stop)
 	return returnvar;
 }
 
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
 svalue_t FParser::OPmultiply(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
@@ -331,6 +398,12 @@ svalue_t FParser::OPmultiply(int start, int n, int stop)
 	
 	return returnvar;
 }
+
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
 
 svalue_t FParser::OPdivide(int start, int n, int stop)
 {
@@ -367,6 +440,12 @@ svalue_t FParser::OPdivide(int start, int n, int stop)
 	return returnvar;
 }
 
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
 svalue_t FParser::OPremainder(int start, int n, int stop)
 {
 	svalue_t left, right, returnvar;
@@ -386,7 +465,11 @@ svalue_t FParser::OPremainder(int start, int n, int stop)
 
 /********** binary operators **************/
 
-// binary or |
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
 
 svalue_t FParser::OPor_bin(int start, int n, int stop)
 {
@@ -400,7 +483,11 @@ svalue_t FParser::OPor_bin(int start, int n, int stop)
 }
 
 
-// binary and &
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
 
 svalue_t FParser::OPand_bin(int start, int n, int stop)
 {
@@ -413,7 +500,12 @@ svalue_t FParser::OPand_bin(int start, int n, int stop)
 	return returnvar;
 }
 
-// haleyjd: binary invert - ~
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
 svalue_t FParser::OPnot_bin(int start, int n, int stop)
 {
 	svalue_t right, returnvar;
@@ -426,7 +518,12 @@ svalue_t FParser::OPnot_bin(int start, int n, int stop)
 }
 
 
-// ++
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
 svalue_t FParser::OPincrement(int start, int n, int stop)
 {
 	svalue_t value;
@@ -489,7 +586,12 @@ svalue_t FParser::OPincrement(int start, int n, int stop)
 	return value;
 }
 
-// --
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
 svalue_t FParser::OPdecrement(int start, int n, int stop)
 {
 	svalue_t value;
@@ -556,7 +658,11 @@ svalue_t FParser::OPdecrement(int start, int n, int stop)
 	return value;
 }
 
-// haleyjd: Eternity extensions
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
 
 svalue_t FParser::OPlessthanorequal(int start, int n, int stop)
 {
@@ -572,6 +678,12 @@ svalue_t FParser::OPlessthanorequal(int start, int n, int stop)
 		returnvar.value.i = (intvalue(left) <= intvalue(right));
 	return returnvar;
 }
+
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
 
 svalue_t FParser::OPgreaterthanorequal(int start, int n, int stop)
 {

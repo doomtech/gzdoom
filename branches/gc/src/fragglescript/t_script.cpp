@@ -488,7 +488,12 @@ void DFraggleThinker::Tick()
 			
 			// unhook from chain 
 			current->prev->next = current->next;
-			if(current->next) current->next->prev = current->prev;
+			GC::WriteBarrier(current->prev, current->next);
+			if(current->next) 
+			{
+				current->next->prev = current->prev;
+				GC::WriteBarrier(current->next, current->prev);
+			}
 			next = current->next;   // save before freeing
 			
 			// continue the script
@@ -500,6 +505,22 @@ void DFraggleThinker::Tick()
 		else
 			next = current->next;
 		current = next;   // continue to next in chain
+	}
+}
+
+
+//==========================================================================
+//
+// We have to mark the SpawnedThings array manually because it's not
+// in the list of declared pointers.
+//
+//==========================================================================
+
+size_t DFraggleThinker::PropagateMark()
+{
+	for(unsigned i=0;i<SpawnedThings.Size();i++)
+	{
+		GC::Mark(&SpawnedThings[i]);
 	}
 }
 
@@ -555,8 +576,12 @@ static bool T_RunScript(int snum, AActor * t_trigger)
 		runscr->next = th->RunningScripts->next;
 		runscr->prev = th->RunningScripts;
 		runscr->prev->next = runscr;
+		GC::WriteBarrier(runscr->prev, runscr);
 		if(runscr->next)
+		{
 			runscr->next->prev = runscr;
+			GC::WriteBarrier(runscr->next, runscr);
+		}
 	
 		// save the script variables 
 		for(i=0; i<VARIABLESLOTS; i++)
@@ -612,7 +637,7 @@ void FS_Close()
 		{
 			next = current->next; // save for after freeing
 			
-			//current->ObjectFlags |= OF_YESREALLYDELETE;
+			current->ObjectFlags |= OF_YesReallyDelete;
 			delete current;
 			current = next; // go to next in chain
 		}
