@@ -3213,7 +3213,7 @@ void FParser::SF_AmbientSound(void)
 
 void FParser::SF_ExitSecret(void)
 {
-	G_ExitLevel(0, false);
+	G_SecretExitLevel(0);
 }
 
 

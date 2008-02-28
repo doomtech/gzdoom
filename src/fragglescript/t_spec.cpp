@@ -77,6 +77,7 @@ bool FParser::spec_if()
 	int endtoken;
 	svalue_t eval;
 	
+	
 	if((endtoken = FindOperator(0, NumTokens-1, ")")) == -1)
     {
 		script_error("parse error in if statement\n");
@@ -84,22 +85,23 @@ bool FParser::spec_if()
     }
 	
 	// 2 to skip past the 'if' and '('
-	eval = EvaluateExpression(2, endtoken-1);
+	EvaluateExpression(eval, 2, endtoken-1);
+	bool ifresult = !!intvalue(eval);
 	
 	if(Section && BraceType == bracket_open && endtoken == NumTokens-1)
     {
 		// {} braces
-		if(!intvalue(eval))       // skip to end of section
+		if(!ifresult)       // skip to end of section
 			Rover = Script->SectionEnd(Section) + 1;
     }
-	else if(intvalue(eval)) // if() without {} braces
+	else if(ifresult) // if() without {} braces
 	{
 		// nothing to do ?
-		if(endtoken == NumTokens-1) return !!(intvalue(eval));
-		EvaluateExpression(endtoken+1, NumTokens-1);
+		if(endtoken != NumTokens-1)
+			EvaluateExpression(eval, endtoken+1, NumTokens-1);
 	}
 	
-	return !!(intvalue(eval)); // bool-ize the integer value
+	return ifresult;
 }
 
 //==========================================================================
@@ -125,23 +127,24 @@ bool FParser::spec_elseif(bool lastif)
 		return true;
 	}
 	// 2 to skip past the 'elseif' and '('
-	eval = EvaluateExpression(2, endtoken-1);
+	EvaluateExpression(eval, 2, endtoken-1);
+	bool ifresult = !!intvalue(eval);
 	
 	if(Section && BraceType == bracket_open
 		&& endtoken == NumTokens-1)
     {
 		// {} braces
-		if(!intvalue(eval))       // skip to end of section
+		if(!ifresult)       // skip to end of section
 			Rover = Script->SectionEnd(Section) + 1;
     }
-	else if(intvalue(eval))    // elseif() without {} braces
+	else if(ifresult)    // elseif() without {} braces
 	{
 		// nothing to do ?
-		if(endtoken == NumTokens-1) return !!(intvalue(eval));
-		EvaluateExpression(endtoken+1, NumTokens-1);
+		if(endtoken != NumTokens-1)
+			EvaluateExpression(eval, endtoken+1, NumTokens-1);
 	}
 	
-	return !!(intvalue(eval));
+	return ifresult;
 }
 
 //==========================================================================
@@ -179,7 +182,7 @@ void FParser::spec_while()
 		return;
     }
 	
-	eval = EvaluateExpression(2, endtoken-1);
+	EvaluateExpression(eval, 2, endtoken-1);
 	
 	// skip if no longer valid
 	if(!intvalue(eval)) Rover = Script->SectionEnd(Section) + 1;
@@ -220,10 +223,10 @@ void FParser::spec_for()
 	if(Section == PrevSection)
     {
 		// do the loop 'action' (third argument)
-		EvaluateExpression(comma2+1, NumTokens-2);
+		EvaluateExpression(eval, comma2+1, NumTokens-2);
 		
 		// check if we should run the loop again (second argument)
-		eval = EvaluateExpression(comma1+1, comma2-1);
+		EvaluateExpression(eval, comma1+1, comma2-1);
 		if(!intvalue(eval))
 		{
 			// stop looping
@@ -234,7 +237,7 @@ void FParser::spec_for()
     {
 		// first time: starting the loop
 		// just evaluate the starting expression (first arg)
-		EvaluateExpression(start, comma1-1);
+		EvaluateExpression(eval, start, comma1-1);
     }
 }
 
@@ -275,7 +278,11 @@ void FParser::CreateVariable(int newvar_type, DFsScript *newvar_script, int star
 	
 	newvar_script->NewVariable (Tokens[start], newvar_type);
 	
-	if(stop != start) EvaluateExpression(start, stop);
+	if(stop != start) 
+	{
+		svalue_t scratch;
+		EvaluateExpression(scratch, start, stop);
+	}
 }
 
 //==========================================================================
@@ -400,7 +407,9 @@ void FParser::spec_script()
 		return;
     }
 	
-	scriptnum = intvalue(EvaluateExpression(1, NumTokens-1));
+	svalue_t result;
+	EvaluateExpression(result, 1, NumTokens-1);
+	scriptnum = intvalue(result);
 	
 	if(scriptnum < 0)
     {
@@ -451,7 +460,7 @@ void FParser::spec_script()
 //
 //==========================================================================
 
-svalue_t FParser::EvaluateFunction(int start, int stop)
+void FParser::EvaluateFunction(svalue_t &result, int start, int stop)
 {
 	DFsVariable *func = NULL;
 	int startpoint, endpoint;
@@ -496,7 +505,7 @@ svalue_t FParser::EvaluateFunction(int start, int stop)
 		if(endpoint-1 < startpoint)
 			break;
 		
-		argv[argc] = EvaluateExpression(startpoint, endpoint-1);
+		EvaluateExpression(argv[argc], startpoint, endpoint-1);
 		endpoint++;    // skip the ','
 		argc++;
     }
@@ -515,7 +524,7 @@ svalue_t FParser::EvaluateFunction(int start, int stop)
 	(this->*func->value.handler)();
 	
 	// return the returned value
-	return t_return;
+	result = t_return;
 }
 
 //==========================================================================
@@ -531,7 +540,7 @@ svalue_t FParser::EvaluateFunction(int start, int stop)
 //
 //==========================================================================
 
-svalue_t FParser::OPstructure(int start, int n, int stop)
+void FParser::OPstructure(svalue_t &result, int start, int n, int stop)
 {
 	DFsVariable *func = NULL;
 	
@@ -553,7 +562,7 @@ svalue_t FParser::OPstructure(int start, int n, int stop)
 	
 	// add the left part as first arg
 	
-	argv[0] = EvaluateExpression(start, n-1);
+	EvaluateExpression(argv[0], start, n-1);
 	argc = 1; // start on second argv
 	
 	if(stop != n+1)         // can be a.b not a.b()
@@ -576,7 +585,7 @@ svalue_t FParser::OPstructure(int start, int n, int stop)
 			if(endpoint-1 < startpoint)
 				break;
 			
-			argv[argc] = EvaluateExpression(startpoint, endpoint-1);
+			EvaluateExpression(argv[argc], startpoint, endpoint-1);
 			endpoint++;    // skip the ','
 			argc++;
 		}
@@ -597,7 +606,7 @@ svalue_t FParser::OPstructure(int start, int n, int stop)
 	(this->*func->value.handler)();
 	
 	// return the returned value
-	return t_return;
+	result = t_return;
 }
 
 
