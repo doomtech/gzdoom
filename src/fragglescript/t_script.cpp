@@ -67,7 +67,7 @@
 //
 //==========================================================================
 
-DFsScript global_script;
+DFsScript *global_script;
 AActor *trigger_obj;
 
 //==========================================================================
@@ -192,14 +192,14 @@ void DFsScript::Serialize(FArchive &arc)
 {
 	Super::Serialize(arc);
 	// don't save a reference to the global script
-	if (parent == &global_script) parent = NULL;
+	if (parent == global_script) parent = NULL;
 
 	arc << data << scriptnum << len << parent << trigger << lastiftrue;
 	for(int i=0; i< SECTIONSLOTS; i++) arc << sections[i];
 	for(int i=0; i< VARIABLESLOTS; i++) arc << variables[i];
 	for(int i=0; i< MAXSCRIPTS; i++) arc << children[i];
 
-	if (parent == NULL) parent = &global_script;
+	if (parent == NULL) parent = global_script;
 }
 
 //==========================================================================
@@ -320,10 +320,6 @@ void DRunningScript::Serialize(FArchive &arc)
 // The main thinker
 //
 //==========================================================================
-IMPLEMENT_POINTY_CLASS(DActorPointer)
-	DECLARE_POINTER(actor)
-END_POINTERS
-
 IMPLEMENT_POINTY_CLASS(DFraggleThinker)
 	DECLARE_POINTER(RunningScripts)
 	DECLARE_POINTER(LevelScript)
@@ -348,7 +344,7 @@ DFraggleThinker::DFraggleThinker()
 		ActiveThinker = this;
 		RunningScripts = new DRunningScript;
 		LevelScript = new DFsScript;
-		LevelScript->parent = &global_script;
+		LevelScript->parent = global_script;
 	}
 }
 
@@ -520,8 +516,9 @@ size_t DFraggleThinker::PropagateMark()
 {
 	for(unsigned i=0;i<SpawnedThings.Size();i++)
 	{
-		GC::Mark(&SpawnedThings[i]);
+		GC::Mark(SpawnedThings[i]);
 	}
+	return Super::PropagateMark();
 }
 
 //==========================================================================
@@ -631,7 +628,7 @@ void FS_Close()
 	// to get them reported as memory leaks.
 	for(i=0; i<VARIABLESLOTS; i++)
     {
-		current = global_script.variables[i];
+		current = global_script->variables[i];
 		
 		while(current)
 		{
@@ -642,6 +639,9 @@ void FS_Close()
 			current = next; // go to next in chain
 		}
     }
+	GC::DelSoftRoot(global_script);
+	global_script->ObjectFlags |= OF_YesReallyDelete;
+	delete global_script;
 }
 
 AT_GAME_SET(FS_Init)
@@ -650,6 +650,8 @@ AT_GAME_SET(FS_Init)
 
 	// I'd rather link the special here than make another source file depend on FS!
 	LineSpecials[54]=LS_FS_Execute;
+	global_script = new DFsScript;
+	GC::AddSoftRoot(global_script);
 	init_functions();
 	atterm(FS_Close);
 }

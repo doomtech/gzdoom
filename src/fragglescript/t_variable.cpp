@@ -151,7 +151,7 @@ AActor *actorvalue(const svalue_t &svalue)
 	}
 	else
 	{
-		TArray<DActorPointer*> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
+		TArray<TObjPtr<AActor>> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
 		// this requires some creativity. We use the intvalue
 		// as the thing number of a thing in the level.
 		intval = intvalue(svalue);
@@ -161,14 +161,14 @@ AActor *actorvalue(const svalue_t &svalue)
 			return NULL;
 		}
 		// Inventory items in the player's inventory have to be considered non-present.
-		if (SpawnedThings[intval]->actor != NULL &&
-			SpawnedThings[intval]->actor->IsKindOf(RUNTIME_CLASS(AInventory)) && 
-			barrier_cast<AInventory*>(SpawnedThings[intval]->actor)->Owner != NULL)
+		if (SpawnedThings[intval] != NULL &&
+			SpawnedThings[intval]->IsKindOf(RUNTIME_CLASS(AInventory)) && 
+			barrier_cast<AInventory*>(SpawnedThings[intval])->Owner != NULL)
 		{
 			return NULL;
 		}
 
-		return SpawnedThings[intval]->actor;
+		return SpawnedThings[intval];
 	}
 }
 

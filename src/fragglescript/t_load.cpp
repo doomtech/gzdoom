@@ -268,16 +268,13 @@ void T_LoadLevelInfo(MapData * map)
 // If no actor is spawned it will remain NULL, otherwise T_RegisterSpawnThing
 // will be called to set it
 //
-// This uses a DActorPointer so that it is subject to automatic pointer cleanup
-//
 //-----------------------------------------------------------------------------
 
 void T_PrepareSpawnThing()
 {
 	if (DFraggleThinker::ActiveThinker)
 	{
-		DActorPointer * acp = new DActorPointer;
-		DFraggleThinker::ActiveThinker->SpawnedThings.Push(acp);
+		DFraggleThinker::ActiveThinker->SpawnedThings.Push(NULL);
 	}
 }
 
@@ -291,7 +288,7 @@ void T_RegisterSpawnThing(AActor * ac)
 {
 	if (DFraggleThinker::ActiveThinker)
 	{
-		TArray<DActorPointer*> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
-		SpawnedThings[SpawnedThings.Size()-1]->actor=ac;
+		TArray<TObjPtr<AActor>> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
+		SpawnedThings[SpawnedThings.Size()-1] = ac;
 	}
 }

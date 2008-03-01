@@ -24,6 +24,7 @@ struct F3DFloor;
 class DBaseDecal : public DThinker
 {
 	DECLARE_CLASS (DBaseDecal, DThinker)
+	HAS_OBJECT_POINTERS
 public:
 	DBaseDecal ();
 	DBaseDecal (fixed_t z);

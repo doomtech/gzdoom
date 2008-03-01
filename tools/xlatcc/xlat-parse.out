@@ -1,4 +1,4 @@
- State 0:
+State 0:
           main ::= * translation_unit
      (12) translation_unit ::= *
           translation_unit ::= * translation_unit external_declaration
@@ -39,6 +39,7 @@ State 1:
           linetype_declaration ::= * exp EQUALS exp COMMA SYM LPAREN special_args RPAREN
           boom_declaration ::= * LBRACKET exp RBRACKET LPAREN exp COMMA exp RPAREN LBRACE boom_body RBRACE
 
+                             $ reduce 0
                          MINUS shift  30
                            NUM shift  157
                         SYMNUM shift  152
@@ -60,7 +61,6 @@ State 1:
               boom_declaration shift  146
            special_declaration shift  145
                      enum_open shift  16
-                     {default} reduce 0
 
 State 2:
           exp ::= * NUM
@@ -2620,3 +2620,71 @@ State 173:
 
                      {default} reduce 56
 
+----------------------------------------------------
+Symbols:
+    0: $:
+    1: OR
+    2: XOR
+    3: AND
+    4: MINUS
+    5: PLUS
+    6: MULTIPLY
+    7: DIVIDE
+    8: NEG
+    9: NUM
+   10: SYMNUM
+   11: LPAREN
+   12: RPAREN
+   13: NOP
+   14: PRINT
+   15: COMMA
+   16: STRING
+   17: ENDL
+   18: DEFINE
+   19: SYM
+   20: INCLUDE
+   21: RBRACE
+   22: ENUM
+   23: LBRACE
+   24: EQUALS
+   25: SPECIAL
+   26: SEMICOLON
+   27: COLON
+   28: LBRACKET
+   29: RBRACKET
+   30: FLAGS
+   31: ARG2
+   32: ARG3
+   33: ARG4
+   34: ARG5
+   35: OR_EQUAL
+   36: TAG
+   37: LINEID
+   38: error:
+   39: exp: MINUS NUM SYMNUM LPAREN
+   40: special_args: <lambda> MINUS NUM SYMNUM LPAREN TAG LINEID
+   41: list_val: MINUS NUM SYMNUM LPAREN
+   42: arg_list: MINUS NUM SYMNUM LPAREN
+   43: boom_args: MINUS NUM SYMNUM LPAREN
+   44: boom_op: EQUALS OR_EQUAL
+   45: boom_selector: FLAGS ARG2 ARG3 ARG4 ARG5
+   46: boom_line: FLAGS ARG2 ARG3 ARG4 ARG5
+   47: boom_body: <lambda> FLAGS ARG2 ARG3 ARG4 ARG5
+   48: maybe_argcount: <lambda> MINUS NUM SYMNUM LPAREN
+   49: main: MINUS NUM SYMNUM LPAREN NOP PRINT DEFINE INCLUDE ENUM SPECIAL LBRACKET
+   50: translation_unit: <lambda> MINUS NUM SYMNUM LPAREN NOP PRINT DEFINE INCLUDE ENUM SPECIAL LBRACKET
+   51: external_declaration: MINUS NUM SYMNUM LPAREN NOP PRINT DEFINE INCLUDE ENUM SPECIAL LBRACKET
+   52: define_statement: DEFINE
+   53: include_statement: INCLUDE
+   54: print_statement: PRINT
+   55: enum_statement: ENUM
+   56: linetype_declaration: MINUS NUM SYMNUM LPAREN
+   57: boom_declaration: LBRACKET
+   58: special_declaration: SPECIAL
+   59: print_list: <lambda> MINUS NUM SYMNUM LPAREN STRING ENDL
+   60: print_item: MINUS NUM SYMNUM LPAREN STRING ENDL
+   61: enum_open: ENUM
+   62: enum_list: <lambda> SYM
+   63: single_enum: SYM
+   64: special_list: MINUS NUM SYMNUM LPAREN
+   65: special_def: MINUS NUM SYMNUM LPAREN
