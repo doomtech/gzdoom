@@ -707,7 +707,7 @@ void script_error(char *s, ...);
 void FS_EmulateCmd(char * string);
 
 extern AActor *trigger_obj;
-extern DFsScript global_script; 
+extern DFsScript *global_script; 
 
 
 #endif
