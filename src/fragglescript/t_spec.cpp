@@ -479,7 +479,7 @@ void FParser::EvaluateFunction(svalue_t &result, int start, int stop)
 	}
 	
 	// all the functions are stored in the global script
-	else if( !(func = global_script.VariableForName (Tokens[start]))  )
+	else if( !(func = global_script->VariableForName (Tokens[start]))  )
 		script_error("no such function: '%s'\n",Tokens[start]);
 	
 	else if(func->type != svt_function)
@@ -552,7 +552,7 @@ void FParser::OPstructure(svalue_t &result, int start, int n, int stop)
 	svalue_t argv[MAXARGS];
 	
 	// all the functions are stored in the global script
-	if( !(func = global_script.VariableForName (Tokens[n+1]))  )
+	if( !(func = global_script->VariableForName (Tokens[n+1]))  )
 		script_error("no such function: '%s'\n",Tokens[n+1]);
 	
 	else if(func->type != svt_function)

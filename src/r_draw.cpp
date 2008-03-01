@@ -80,7 +80,6 @@ int				detailyshift;		// [RH] Y shift for vertical detail level
 extern "C" void STACK_ARGS DoubleHoriz_MMX (int height, int width, BYTE *dest, int pitch);
 extern "C" void STACK_ARGS DoubleHorizVert_MMX (int height, int width, BYTE *dest, int pitch);
 extern "C" void STACK_ARGS DoubleVert_ASM (int height, int width, BYTE *dest, int pitch);
-extern "C" void R_SetupShadedCol();
 #endif
 
 // [RH] Pointers to the different column drawers.
@@ -2271,7 +2270,6 @@ ESPSResult R_SetPatchStyle (FRenderStyle style, fixed_t alpha, int translation, 
 		{
 			dc_colormap += fixedlightlev;
 		}
-		R_SetupShadedCol();
 		return r_columnmethod ? DoDraw1 : DoDraw0;
 	}
 
@@ -2299,8 +2297,11 @@ ESPSResult R_SetPatchStyle (FRenderStyle style, fixed_t alpha, int translation, 
 		dc_colormap = identitymap;
 	}
 
-	return R_SetBlendFunc (style.BlendOp, fglevel, bglevel, style.Flags) ?
-		(r_columnmethod ? DoDraw1 : DoDraw0) : DontDraw;
+	if (!R_SetBlendFunc (style.BlendOp, fglevel, bglevel, style.Flags))
+	{
+		return DontDraw;
+	}
+	return r_columnmethod ? DoDraw1 : DoDraw0;
 }
 
 void R_FinishSetPatchStyle ()
