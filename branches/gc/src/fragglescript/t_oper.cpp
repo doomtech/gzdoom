@@ -47,8 +47,8 @@
 
 
 #define evaluate_leftnright(a, b, c) {\
-	left = EvaluateExpression((a), (b)-1); \
-	right = EvaluateExpression((b)+1, (c)); }\
+	EvaluateExpression(left, (a), (b)-1); \
+	EvaluateExpression(right, (b)+1, (c)); }\
 	
 
 //-----------------------------------------------------------------------------
@@ -93,24 +93,21 @@ int FParser::num_operators = sizeof(FParser::operators) / sizeof(FParser::operat
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPequals(int start, int n, int stop)
+void FParser::OPequals(svalue_t &result, int start, int n, int stop)
 {
 	DFsVariable *var;
-	svalue_t evaluated;
 	
 	var = Script->FindVariable(Tokens[start]);
 	
 	if(var)
     {
-		evaluated = EvaluateExpression(n+1, stop);
-		var->SetValue (evaluated);
+		EvaluateExpression(result, n+1, stop);
+		var->SetValue (result);
     }
 	else
     {
 		script_error("unknown variable '%s'\n", Tokens[start]);
     }
-	
-	return evaluated;
 }
 
 
@@ -120,27 +117,24 @@ svalue_t FParser::OPequals(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPor(int start, int n, int stop)
+void FParser::OPor(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t returnvar;
 	int exprtrue = false;
-	svalue_t eval;
 	
 	// if first is true, do not evaluate the second
 	
-	eval = EvaluateExpression(start, n-1);
+	EvaluateExpression(result, start, n-1);
 	
-	if(intvalue(eval))
+	if(intvalue(result))
 		exprtrue = true;
 	else
     {
-		eval = EvaluateExpression(n+1, stop);
-		exprtrue = !!intvalue(eval);
+		EvaluateExpression(result, n+1, stop);
+		exprtrue = !!intvalue(result);
     }
 	
-	returnvar.type = svt_int;
-	returnvar.value.i = exprtrue;
-	return returnvar;
+	result.type = svt_int;
+	result.value.i = exprtrue;
 }
 
 
@@ -150,28 +144,23 @@ svalue_t FParser::OPor(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPand(int start, int n, int stop)
+void FParser::OPand(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t returnvar;
 	int exprtrue = true;
-	svalue_t eval;
-	
 	// if first is false, do not eval second
 	
-	eval = EvaluateExpression(start, n-1);
+	EvaluateExpression(result, start, n-1);
 	
-	if(!intvalue(eval) )
+	if(!intvalue(result) )
 		exprtrue = false;
 	else
     {
-		eval = EvaluateExpression(n+1, stop);
-		exprtrue = !!intvalue(eval);
+		EvaluateExpression(result, n+1, stop);
+		exprtrue = !!intvalue(result);
     }
 	
-	returnvar.type = svt_int;
-	returnvar.value.i = exprtrue;
-	
-	return returnvar;
+	result.type = svt_int;
+	result.value.i = exprtrue;
 }
 
 //-----------------------------------------------------------------------------
@@ -180,18 +169,18 @@ svalue_t FParser::OPand(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPcmp(int start, int n, int stop)
+void FParser::OPcmp(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t left, right, returnvar;
+	svalue_t left, right;
 	
 	evaluate_leftnright(start, n, stop);
 	
-	returnvar.type = svt_int;        // always an int returned
+	result.type = svt_int;        // always an int returned
 	
 	if(left.type == svt_string && right.type == svt_string)
 	{
-		returnvar.value.i = !strcmp(left.string, right.string);
-		return returnvar;
+		result.value.i = !strcmp(left.string, right.string);
+		return;
 	}
 	
 	// haleyjd: direct mobj comparison when both are mobj
@@ -200,20 +189,17 @@ svalue_t FParser::OPcmp(int start, int n, int stop)
 		// we can safely assume reference equivalency for
 		// AActor's in all cases since they are static for the
 		// duration of a level
-		returnvar.value.i = (left.value.mobj == right.value.mobj);
-		return returnvar;
+		result.value.i = (left.value.mobj == right.value.mobj);
+		return;
 	}
 	
 	if(left.type == svt_fixed || right.type == svt_fixed)
 	{
-		returnvar.value.i = (fixedvalue(left) == fixedvalue(right));
-		return returnvar;
+		result.value.i = (fixedvalue(left) == fixedvalue(right));
+		return;
 	}
 	
-	returnvar.value.i = (intvalue(left) == intvalue(right));
-	
-	return returnvar;
-	
+	result.value.i = (intvalue(left) == intvalue(right));
 }
 
 //-----------------------------------------------------------------------------
@@ -222,15 +208,11 @@ svalue_t FParser::OPcmp(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPnotcmp(int start, int n, int stop)
+void FParser::OPnotcmp(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t returnvar;
-	
-	returnvar = OPcmp(start, n, stop);
-	returnvar.type = svt_int;
-	returnvar.value.i = !returnvar.value.i;
-	
-	return returnvar;
+	OPcmp(result, start, n, stop);
+	result.type = svt_int;
+	result.value.i = !result.value.i;
 }
 
 //-----------------------------------------------------------------------------
@@ -239,20 +221,19 @@ svalue_t FParser::OPnotcmp(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPlessthan(int start, int n, int stop)
+void FParser::OPlessthan(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t left, right, returnvar;
+	svalue_t left, right;
 	
 	evaluate_leftnright(start, n, stop);
-	returnvar.type = svt_int;
+	result.type = svt_int;
 	
 	// haleyjd: 8-17
 	if(left.type == svt_fixed || right.type == svt_fixed)
-		returnvar.value.i = (fixedvalue(left) < fixedvalue(right));
+		result.value.i = (fixedvalue(left) < fixedvalue(right));
 	else
-		returnvar.value.i = (intvalue(left) < intvalue(right));
+		result.value.i = (intvalue(left) < intvalue(right));
 	
-	return returnvar;
 }
 
 //-----------------------------------------------------------------------------
@@ -261,20 +242,18 @@ svalue_t FParser::OPlessthan(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPgreaterthan(int start, int n, int stop)
+void FParser::OPgreaterthan(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t left, right, returnvar;
+	svalue_t left, right;
 	
 	evaluate_leftnright(start, n, stop);
 	
 	// haleyjd: 8-17
-	returnvar.type = svt_int;
+	result.type = svt_int;
 	if(left.type == svt_fixed || right.type == svt_fixed)
-		returnvar.value.i = (fixedvalue(left) > fixedvalue(right));
+		result.value.i = (fixedvalue(left) > fixedvalue(right));
 	else
-		returnvar.value.i = (intvalue(left) > intvalue(right));
-	
-	return returnvar;
+		result.value.i = (intvalue(left) > intvalue(right));
 }
 
 //-----------------------------------------------------------------------------
@@ -283,15 +262,12 @@ svalue_t FParser::OPgreaterthan(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPnot(int start, int n, int stop)
+void FParser::OPnot(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t right, returnvar;
+	EvaluateExpression(result, n+1, stop);
 	
-	right = EvaluateExpression(n+1, stop);
-	
-	returnvar.type = svt_int;
-	returnvar.value.i = !intvalue(right);
-	return returnvar;
+	result.value.i = !intvalue(result);
+	result.type = svt_int;
 }
 
 //-----------------------------------------------------------------------------
@@ -300,9 +276,9 @@ svalue_t FParser::OPnot(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPplus(int start, int n, int stop)
+void FParser::OPplus(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t left, right, returnvar;
+	svalue_t left, right;
 	
 	evaluate_leftnright(start, n, stop);
 	
@@ -310,31 +286,29 @@ svalue_t FParser::OPplus(int start, int n, int stop)
     {
       	if (right.type == svt_string)
 		{
-			returnvar.string.Format("%s%s", left.string.GetChars(), right.string.GetChars());
+			result.string.Format("%s%s", left.string.GetChars(), right.string.GetChars());
 		}
       	else if (right.type == svt_fixed)
 		{
-			returnvar.string.Format("%s%4.4f", left.string.GetChars(), floatvalue(right));
+			result.string.Format("%s%4.4f", left.string.GetChars(), floatvalue(right));
 		}
       	else
 		{
-	  		returnvar.string.Format("%s%i", left.string.GetChars(), intvalue(right));
+	  		result.string.Format("%s%i", left.string.GetChars(), intvalue(right));
 		}
-      	returnvar.type = svt_string;
+      	result.type = svt_string;
     }
 	// haleyjd: 8-17
 	else if(left.type == svt_fixed || right.type == svt_fixed)
 	{
-		returnvar.type = svt_fixed;
-		returnvar.value.f = fixedvalue(left) + fixedvalue(right);
+		result.type = svt_fixed;
+		result.value.f = fixedvalue(left) + fixedvalue(right);
 	}
 	else
 	{
-		returnvar.type = svt_int;
-		returnvar.value.i = intvalue(left) + intvalue(right);
+		result.type = svt_int;
+		result.value.i = intvalue(left) + intvalue(right);
 	}
-	
-	return returnvar;
 }
 
 //-----------------------------------------------------------------------------
@@ -343,33 +317,32 @@ svalue_t FParser::OPplus(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPminus(int start, int n, int stop)
+void FParser::OPminus(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t left, right, returnvar;
+	svalue_t left, right;
 	
 	// do they mean minus as in '-1' rather than '2-1'?
 	if(start == n)
 	{
 		// kinda hack, hehe
-		left.value.i = 0; left.type = svt_int;
-		right = EvaluateExpression(n+1, stop);
+		EvaluateExpression(right, n+1, stop);
 	}
 	else
+	{
 		evaluate_leftnright(start, n, stop);
+	}
 	
 	// haleyjd: 8-17
 	if(left.type == svt_fixed || right.type == svt_fixed)
 	{
-		returnvar.type = svt_fixed;
-		returnvar.value.f = fixedvalue(left) - fixedvalue(right);
+		result.type = svt_fixed;
+		result.value.f = fixedvalue(left) - fixedvalue(right);
 	}
 	else
 	{
-		returnvar.type = svt_int;
-		returnvar.value.i = intvalue(left) - intvalue(right);
+		result.type = svt_int;
+		result.value.i = intvalue(left) - intvalue(right);
 	}
-	
-	return returnvar;
 }
 
 //-----------------------------------------------------------------------------
@@ -378,25 +351,23 @@ svalue_t FParser::OPminus(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPmultiply(int start, int n, int stop)
+void FParser::OPmultiply(svalue_t &result,int start, int n, int stop)
 {
-	svalue_t left, right, returnvar;
+	svalue_t left, right;
 	
 	evaluate_leftnright(start, n, stop);
 	
 	// haleyjd: 8-17
 	if(left.type == svt_fixed || right.type == svt_fixed)
 	{
-		returnvar.type = svt_fixed;
-		returnvar.value.f = FixedMul(fixedvalue(left), fixedvalue(right));
+		result.type = svt_fixed;
+		result.value.f = FixedMul(fixedvalue(left), fixedvalue(right));
 	}
 	else
 	{
-		returnvar.type = svt_int;
-		returnvar.value.i = intvalue(left) * intvalue(right);
+		result.type = svt_int;
+		result.value.i = intvalue(left) * intvalue(right);
 	}
-	
-	return returnvar;
 }
 
 //-----------------------------------------------------------------------------
@@ -405,9 +376,9 @@ svalue_t FParser::OPmultiply(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPdivide(int start, int n, int stop)
+void FParser::OPdivide(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t left, right, returnvar;
+	svalue_t left, right;
 	
 	evaluate_leftnright(start, n, stop);
 	
@@ -420,8 +391,8 @@ svalue_t FParser::OPdivide(int start, int n, int stop)
 			script_error("divide by zero\n");
 		else
 		{
-			returnvar.type = svt_fixed;
-			returnvar.value.f = FixedDiv(fixedvalue(left), fr);
+			result.type = svt_fixed;
+			result.value.f = FixedDiv(fixedvalue(left), fr);
 		}
 	}
 	else
@@ -432,12 +403,10 @@ svalue_t FParser::OPdivide(int start, int n, int stop)
 			script_error("divide by zero\n");
 		else
 		{
-			returnvar.type = svt_int;
-			returnvar.value.i = intvalue(left) / ir;
+			result.type = svt_int;
+			result.value.i = intvalue(left) / ir;
 		}
 	}
-	
-	return returnvar;
 }
 
 //-----------------------------------------------------------------------------
@@ -446,9 +415,9 @@ svalue_t FParser::OPdivide(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPremainder(int start, int n, int stop)
+void FParser::OPremainder(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t left, right, returnvar;
+	svalue_t left, right;
 	int ir;
 	
 	evaluate_leftnright(start, n, stop);
@@ -457,10 +426,9 @@ svalue_t FParser::OPremainder(int start, int n, int stop)
 		script_error("divide by zero\n");
 	else
     {
-		returnvar.type = svt_int;
-		returnvar.value.i = intvalue(left) % ir;
+		result.type = svt_int;
+		result.value.i = intvalue(left) % ir;
     }
-	return returnvar;
 }
 
 /********** binary operators **************/
@@ -471,15 +439,14 @@ svalue_t FParser::OPremainder(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPor_bin(int start, int n, int stop)
+void FParser::OPor_bin(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t left, right, returnvar;
+	svalue_t left, right;
 	
 	evaluate_leftnright(start, n, stop);
 	
-	returnvar.type = svt_int;
-	returnvar.value.i = intvalue(left) | intvalue(right);
-	return returnvar;
+	result.type = svt_int;
+	result.value.i = intvalue(left) | intvalue(right);
 }
 
 
@@ -489,15 +456,14 @@ svalue_t FParser::OPor_bin(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPand_bin(int start, int n, int stop)
+void FParser::OPand_bin(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t left, right, returnvar;
+	svalue_t left, right;
 	
 	evaluate_leftnright(start, n, stop);
 	
-	returnvar.type = svt_int;
-	returnvar.value.i = intvalue(left) & intvalue(right);
-	return returnvar;
+	result.type = svt_int;
+	result.value.i = intvalue(left) & intvalue(right);
 }
 
 //-----------------------------------------------------------------------------
@@ -506,15 +472,12 @@ svalue_t FParser::OPand_bin(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPnot_bin(int start, int n, int stop)
+void FParser::OPnot_bin(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t right, returnvar;
+	EvaluateExpression(result, n+1, stop);
 	
-	right = EvaluateExpression(n+1, stop);
-	
-	returnvar.type = svt_int;
-	returnvar.value.i = ~intvalue(right);
-	return returnvar;
+	result.value.i = ~intvalue(result);
+	result.type = svt_int;
 }
 
 
@@ -524,10 +487,8 @@ svalue_t FParser::OPnot_bin(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPincrement(int start, int n, int stop)
+void FParser::OPincrement(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t value;
-
 	if(start == n)          // ++n
     {
 		DFsVariable *var;
@@ -537,20 +498,20 @@ svalue_t FParser::OPincrement(int start, int n, int stop)
 		{
 			script_error("unknown variable '%s'\n", Tokens[stop]);
 		}
-		value = var->GetValue();
+		result = var->GetValue();
 		
 		// haleyjd
 		if(var->type != svt_fixed)
 		{
-			value.value.i = intvalue(value) + 1;
-			value.type = svt_int;
-			var->SetValue (value);
+			result.value.i = intvalue(result) + 1;
+			result.type = svt_int;
+			var->SetValue (result);
 		}
 		else
 		{
-			value.value.f = fixedvalue(value) + FRACUNIT;
-			value.type = svt_fixed;
-			var->SetValue (value);
+			result.value.f = fixedvalue(result) + FRACUNIT;
+			result.type = svt_fixed;
+			var->SetValue (result);
 		}
     }
 	else if(stop == n)     // n++
@@ -563,19 +524,19 @@ svalue_t FParser::OPincrement(int start, int n, int stop)
 		{
 			script_error("unknown variable '%s'\n", Tokens[start]);
 		}
-		value = var->GetValue();
+		result = var->GetValue();
 		
 		// haleyjd
 		if(var->type != svt_fixed)
 		{
 			newvalue.type = svt_int;
-			newvalue.value.i = intvalue(value) + 1;
+			newvalue.value.i = intvalue(result) + 1;
 			var->SetValue (newvalue);
 		}
 		else
 		{
 			newvalue.type = svt_fixed;
-			newvalue.value.f = fixedvalue(value) + FRACUNIT;
+			newvalue.value.f = fixedvalue(result) + FRACUNIT;
 			var->SetValue (newvalue);
 		}
     }
@@ -583,7 +544,6 @@ svalue_t FParser::OPincrement(int start, int n, int stop)
 	{
 		script_error("incorrect arguments to ++ operator\n");
 	}
-	return value;
 }
 
 //-----------------------------------------------------------------------------
@@ -592,10 +552,8 @@ svalue_t FParser::OPincrement(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPdecrement(int start, int n, int stop)
+void FParser::OPdecrement(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t value;
-
 	if(start == n)          // ++n
     {
 		DFsVariable *var;
@@ -605,23 +563,21 @@ svalue_t FParser::OPdecrement(int start, int n, int stop)
 		{
 			script_error("unknown variable '%s'\n", Tokens[stop]);
 		}
-		value = var->GetValue();
+		result = var->GetValue();
 		
 		// haleyjd
 		if(var->type != svt_fixed)
 		{
-			value.value.i = intvalue(value) - 1;
-			value.type = svt_int;
-			var->SetValue (value);
+			result.value.i = intvalue(result) - 1;
+			result.type = svt_int;
+			var->SetValue (result);
 		}
 		else
 		{
-			value.value.f = fixedvalue(value) - FRACUNIT;
-			value.type = svt_fixed;
-			var->SetValue (value);
+			result.value.f = fixedvalue(result) - FRACUNIT;
+			result.type = svt_fixed;
+			var->SetValue (result);
 		}
-		
-		return value;
     }
 	else if(stop == n)   // n++
     {
@@ -633,29 +589,26 @@ svalue_t FParser::OPdecrement(int start, int n, int stop)
 		{
 			script_error("unknown variable '%s'\n", Tokens[start]);
 		}
-		value = var->GetValue();
+		result = var->GetValue();
 		
 		// haleyjd
 		if(var->type != svt_fixed)
 		{
 			newvalue.type = svt_int;
-			newvalue.value.i = intvalue(value) - 1;
+			newvalue.value.i = intvalue(result) - 1;
 			var->SetValue (newvalue);
 		}
 		else
 		{
 			newvalue.type = svt_fixed;
-			newvalue.value.f = fixedvalue(value) - FRACUNIT;
+			newvalue.value.f = fixedvalue(result) - FRACUNIT;
 			var->SetValue (newvalue);
 		}
-		
-		return value;
     }
 	else
 	{
 		script_error("incorrect arguments to ++ operator\n");
 	}
-	return value;
 }
 
 //-----------------------------------------------------------------------------
@@ -664,19 +617,18 @@ svalue_t FParser::OPdecrement(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPlessthanorequal(int start, int n, int stop)
+void FParser::OPlessthanorequal(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t left, right, returnvar;
+	svalue_t left, right;
 	
 	evaluate_leftnright(start, n, stop);
 	
-	returnvar.type = svt_int;
+	result.type = svt_int;
 	
 	if(left.type == svt_fixed || right.type == svt_fixed)
-		returnvar.value.i = (fixedvalue(left) <= fixedvalue(right));
+		result.value.i = (fixedvalue(left) <= fixedvalue(right));
 	else
-		returnvar.value.i = (intvalue(left) <= intvalue(right));
-	return returnvar;
+		result.value.i = (intvalue(left) <= intvalue(right));
 }
 
 //-----------------------------------------------------------------------------
@@ -685,18 +637,17 @@ svalue_t FParser::OPlessthanorequal(int start, int n, int stop)
 //
 //-----------------------------------------------------------------------------
 
-svalue_t FParser::OPgreaterthanorequal(int start, int n, int stop)
+void FParser::OPgreaterthanorequal(svalue_t &result, int start, int n, int stop)
 {
-	svalue_t left, right, returnvar;
+	svalue_t left, right;
 	
 	evaluate_leftnright(start, n, stop);
 	
-	returnvar.type = svt_int;
+	result.type = svt_int;
 	
 	if(left.type == svt_fixed || right.type == svt_fixed)
-		returnvar.value.i = (fixedvalue(left) >= fixedvalue(right));
+		result.value.i = (fixedvalue(left) >= fixedvalue(right));
 	else
-		returnvar.value.i = (intvalue(left) >= intvalue(right));
-	return returnvar;
+		result.value.i = (intvalue(left) >= intvalue(right));
 }
 

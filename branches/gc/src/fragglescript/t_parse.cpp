@@ -472,7 +472,8 @@ void FParser::RunStatement()
     }
 	
 	// just a plain expression
-	EvaluateExpression(0, NumTokens-1);
+	svalue_t scratch;
+	EvaluateExpression(scratch,0, NumTokens-1);
 }
 
 /***************** Evaluating Expressions ************************/
@@ -552,9 +553,8 @@ int FParser::FindOperatorBackwards(int start, int stop, char *value)
 //
 //==========================================================================
 
-svalue_t FParser::SimpleEvaluate(int n)
+void FParser::SimpleEvaluate(svalue_t &returnvar, int n)
 {
-	svalue_t returnvar;
 	DFsVariable *var;
 	
 	switch(TokenType[n])
@@ -583,12 +583,11 @@ svalue_t FParser::SimpleEvaluate(int n)
 		{
 			script_error("unknown variable '%s'\n", Tokens[n]);
 		}
-		else return var->GetValue();
+		else returnvar = var->GetValue();
 		
     default: 
 		break;
     }
-	return returnvar;
 }
 
 //==========================================================================
@@ -650,7 +649,7 @@ void FParser::PointlessBrackets(int *start, int *stop)
 //
 //==========================================================================
 
-svalue_t FParser::EvaluateExpression(int start, int stop)
+void FParser::EvaluateExpression(svalue_t &result, int start, int stop)
 {
 	int i, n;
 	
@@ -660,7 +659,8 @@ svalue_t FParser::EvaluateExpression(int start, int stop)
 	
 	if(start == stop)       // only 1 thing to evaluate
     {
-		return SimpleEvaluate(start);
+		SimpleEvaluate(result, start);
+		return;
     }
 	
 	// go through each operator in order of precedence
@@ -683,12 +683,16 @@ svalue_t FParser::EvaluateExpression(int start, int stop)
 		if( n != -1)
 		{
 			// call the operator function and evaluate this chunk of tokens
-			return (this->*operators[i].handler)(start, n, stop);
+			(this->*operators[i].handler)(result, start, n, stop);
+			return;
 		}
     }
 	
 	if(TokenType[start] == function)
-		return EvaluateFunction(start, stop);
+	{
+		EvaluateFunction(result, start, stop);
+		return;
+	}
 	
 	// error ?
 	{        
@@ -696,7 +700,6 @@ svalue_t FParser::EvaluateExpression(int start, int stop)
 		
 		for(i=start; i<=stop; i++) tempstr << Tokens[i] << ' ';
 		script_error("couldnt evaluate expression: %s\n",tempstr.GetChars());
-		return svalue_t();
 	}
 }
 

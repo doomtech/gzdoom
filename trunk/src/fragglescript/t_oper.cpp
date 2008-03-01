@@ -81,7 +81,11 @@ int FParser::num_operators = sizeof(FParser::operators) / sizeof(FParser::operat
 
 /***************** logic *********************/
 
-// = operator
+//==========================================================================
+//
+//
+//
+//==========================================================================
 
 void FParser::OPequals(svalue_t &result, int start, int n, int stop)
 {
@@ -100,6 +104,12 @@ void FParser::OPequals(svalue_t &result, int start, int n, int stop)
     }
 }
 
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
 
 void FParser::OPor(svalue_t &result, int start, int n, int stop)
 {
@@ -122,6 +132,12 @@ void FParser::OPor(svalue_t &result, int start, int n, int stop)
 }
 
 
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 void FParser::OPand(svalue_t &result, int start, int n, int stop)
 {
 	int exprtrue = true;
@@ -141,7 +157,12 @@ void FParser::OPand(svalue_t &result, int start, int n, int stop)
 	result.value.i = exprtrue;
 }
 
-// haleyjd: reformatted as per 8-17
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 void FParser::OPcmp(svalue_t &result, int start, int n, int stop)
 {
 	svalue_t left, right;
@@ -175,12 +196,24 @@ void FParser::OPcmp(svalue_t &result, int start, int n, int stop)
 	result.value.i = (intvalue(left) == intvalue(right));
 }
 
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 void FParser::OPnotcmp(svalue_t &result, int start, int n, int stop)
 {
 	OPcmp(result, start, n, stop);
 	result.type = svt_int;
 	result.value.i = !result.value.i;
 }
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
 
 void FParser::OPlessthan(svalue_t &result, int start, int n, int stop)
 {
@@ -197,6 +230,12 @@ void FParser::OPlessthan(svalue_t &result, int start, int n, int stop)
 	
 }
 
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 void FParser::OPgreaterthan(svalue_t &result, int start, int n, int stop)
 {
 	svalue_t left, right;
@@ -211,6 +250,12 @@ void FParser::OPgreaterthan(svalue_t &result, int start, int n, int stop)
 		result.value.i = (intvalue(left) > intvalue(right));
 }
 
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 void FParser::OPnot(svalue_t &result, int start, int n, int stop)
 {
 	EvaluateExpression(result, n+1, stop);
@@ -220,6 +265,12 @@ void FParser::OPnot(svalue_t &result, int start, int n, int stop)
 }
 
 /************** simple math ***************/
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
 
 void FParser::OPplus(svalue_t &result, int start, int n, int stop)
 {
@@ -256,6 +307,12 @@ void FParser::OPplus(svalue_t &result, int start, int n, int stop)
 	}
 }
 
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 void FParser::OPminus(svalue_t &result, int start, int n, int stop)
 {
 	svalue_t left, right;
@@ -284,6 +341,12 @@ void FParser::OPminus(svalue_t &result, int start, int n, int stop)
 	}
 }
 
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 void FParser::OPmultiply(svalue_t &result,int start, int n, int stop)
 {
 	svalue_t left, right;
@@ -302,6 +365,12 @@ void FParser::OPmultiply(svalue_t &result,int start, int n, int stop)
 		result.value.i = intvalue(left) * intvalue(right);
 	}
 }
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
 
 void FParser::OPdivide(svalue_t &result, int start, int n, int stop)
 {
@@ -336,6 +405,12 @@ void FParser::OPdivide(svalue_t &result, int start, int n, int stop)
 	}
 }
 
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 void FParser::OPremainder(svalue_t &result, int start, int n, int stop)
 {
 	svalue_t left, right;
@@ -356,6 +431,12 @@ void FParser::OPremainder(svalue_t &result, int start, int n, int stop)
 
 // binary or |
 
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 void FParser::OPor_bin(svalue_t &result, int start, int n, int stop)
 {
 	svalue_t left, right;
@@ -369,6 +450,12 @@ void FParser::OPor_bin(svalue_t &result, int start, int n, int stop)
 
 // binary and &
 
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 void FParser::OPand_bin(svalue_t &result, int start, int n, int stop)
 {
 	svalue_t left, right;
@@ -379,7 +466,12 @@ void FParser::OPand_bin(svalue_t &result, int start, int n, int stop)
 	result.value.i = intvalue(left) & intvalue(right);
 }
 
-// haleyjd: binary invert - ~
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 void FParser::OPnot_bin(svalue_t &result, int start, int n, int stop)
 {
 	EvaluateExpression(result, n+1, stop);
@@ -389,7 +481,12 @@ void FParser::OPnot_bin(svalue_t &result, int start, int n, int stop)
 }
 
 
-// ++
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 void FParser::OPincrement(svalue_t &result, int start, int n, int stop)
 {
 	if(start == n)          // ++n
@@ -449,7 +546,12 @@ void FParser::OPincrement(svalue_t &result, int start, int n, int stop)
 	}
 }
 
-// --
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 void FParser::OPdecrement(svalue_t &result, int start, int n, int stop)
 {
 	if(start == n)          // ++n
@@ -509,7 +611,11 @@ void FParser::OPdecrement(svalue_t &result, int start, int n, int stop)
 	}
 }
 
-// haleyjd: Eternity extensions
+//==========================================================================
+//
+//
+//
+//==========================================================================
 
 void FParser::OPlessthanorequal(svalue_t &result, int start, int n, int stop)
 {
@@ -524,6 +630,12 @@ void FParser::OPlessthanorequal(svalue_t &result, int start, int n, int stop)
 	else
 		result.value.i = (intvalue(left) <= intvalue(right));
 }
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
 
 void FParser::OPgreaterthanorequal(svalue_t &result, int start, int n, int stop)
 {

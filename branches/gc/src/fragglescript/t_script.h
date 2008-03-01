@@ -59,33 +59,6 @@ inline bool isop(int c)
 //
 //==========================================================================
 
-class DActorPointer : public DObject
-{
-	DECLARE_CLASS(DActorPointer, DObject)
-	HAS_OBJECT_POINTERS
-
-public:
-
-	TObjPtr<AActor> actor;
-
-	DActorPointer()
-	{
-		actor=NULL;
-	}
-
-	void Serialize(FArchive & ar)
-	{
-		Super::Serialize(ar);
-		ar << actor;
-	}
-};
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
 enum
 {
   svt_string,
@@ -381,7 +354,7 @@ struct FParser
 	struct operator_t
 	{
 		char *string;
-		svalue_t (FParser::*handler)(int, int, int); // left, mid, right
+		void (FParser::*handler)(svalue_t &, int, int, int); // left, mid, right
 		int direction;
 	};
 
@@ -436,39 +409,39 @@ struct FParser
 	void RunStatement();
 	int FindOperator(int start, int stop, char *value);
 	int FindOperatorBackwards(int start, int stop, char *value);
-	svalue_t SimpleEvaluate(int n);
+	void SimpleEvaluate(svalue_t &, int n);
 	void PointlessBrackets(int *start, int *stop);
-	svalue_t EvaluateExpression(int start, int stop);
-	svalue_t EvaluateFunction(int start, int stop);
+	void EvaluateExpression(svalue_t &, int start, int stop);
+	void EvaluateFunction(svalue_t &, int start, int stop);
 
-	svalue_t OPequals(int, int, int);           // =
+	void OPequals(svalue_t &, int, int, int);           // =
 
-	svalue_t OPplus(int, int, int);             // +
-	svalue_t OPminus(int, int, int);            // -
-	svalue_t OPmultiply(int, int, int);         // *
-	svalue_t OPdivide(int, int, int);           // /
-	svalue_t OPremainder(int, int, int);        // %
+	void OPplus(svalue_t &, int, int, int);             // +
+	void OPminus(svalue_t &, int, int, int);            // -
+	void OPmultiply(svalue_t &, int, int, int);         // *
+	void OPdivide(svalue_t &, int, int, int);           // /
+	void OPremainder(svalue_t &, int, int, int);        // %
 
-	svalue_t OPor(int, int, int);               // ||
-	svalue_t OPand(int, int, int);              // &&
-	svalue_t OPnot(int, int, int);              // !
+	void OPor(svalue_t &, int, int, int);               // ||
+	void OPand(svalue_t &, int, int, int);              // &&
+	void OPnot(svalue_t &, int, int, int);              // !
 
-	svalue_t OPor_bin(int, int, int);           // |
-	svalue_t OPand_bin(int, int, int);          // &
-	svalue_t OPnot_bin(int, int, int);          // ~
+	void OPor_bin(svalue_t &, int, int, int);           // |
+	void OPand_bin(svalue_t &, int, int, int);          // &
+	void OPnot_bin(svalue_t &, int, int, int);          // ~
 
-	svalue_t OPcmp(int, int, int);              // ==
-	svalue_t OPnotcmp(int, int, int);           // !=
-	svalue_t OPlessthan(int, int, int);         // <
-	svalue_t OPgreaterthan(int, int, int);      // >
+	void OPcmp(svalue_t &, int, int, int);              // ==
+	void OPnotcmp(svalue_t &, int, int, int);           // !=
+	void OPlessthan(svalue_t &, int, int, int);         // <
+	void OPgreaterthan(svalue_t &, int, int, int);      // >
 
-	svalue_t OPincrement(int, int, int);        // ++
-	svalue_t OPdecrement(int, int, int);        // --
+	void OPincrement(svalue_t &, int, int, int);        // ++
+	void OPdecrement(svalue_t &, int, int, int);        // --
 
-	svalue_t OPstructure(int, int, int);    // in t_vari.c
+	void OPstructure(svalue_t &, int, int, int);    // in t_vari.c
 
-	svalue_t OPlessthanorequal(int, int, int);     // <=
-	svalue_t OPgreaterthanorequal(int, int, int);  // >=
+	void OPlessthanorequal(svalue_t &, int, int, int);     // <=
+	void OPgreaterthanorequal(svalue_t &, int, int, int);  // >=
 
 	void spec_brace();
 	bool spec_if();
@@ -682,7 +655,7 @@ public:
 
 	TObjPtr<DFsScript> LevelScript;
 	TObjPtr<DRunningScript> RunningScripts;
-	TArray<DActorPointer*> SpawnedThings;
+	TArray<TObjPtr<AActor>> SpawnedThings;
 
 	DFraggleThinker();
 	void Destroy();
@@ -690,6 +663,7 @@ public:
 
 	void Serialize(FArchive & arc);
 	void Tick();
+	size_t PropagateMark();
 	bool wait_finished(DRunningScript *script);
 
 	static DFraggleThinker *ActiveThinker;
@@ -707,7 +681,7 @@ void script_error(char *s, ...);
 void FS_EmulateCmd(char * string);
 
 extern AActor *trigger_obj;
-extern DFsScript global_script; 
+extern DFsScript *global_script; 
 
 
 #endif

@@ -3225,7 +3225,7 @@ void FParser::SF_AmbientSound(void)
 
 void FParser::SF_ExitSecret(void)
 {
-	G_ExitLevel(0, false);
+	G_SecretExitLevel(0);
 }
 
 
@@ -3458,7 +3458,7 @@ void FParser::SF_SpawnMissile()
 
 void FParser::SF_MapThingNumExist()
 {
-	TArray<DActorPointer*> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
+	TArray<TObjPtr<AActor>> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
 
     int intval;
 
@@ -3466,7 +3466,7 @@ void FParser::SF_MapThingNumExist()
 	{
 		intval = intvalue(t_argv[0]);
 
-		if (intval < 0 || intval >= int(SpawnedThings.Size()) || !SpawnedThings[intval]->actor)
+		if (intval < 0 || intval >= int(SpawnedThings.Size()) || !SpawnedThings[intval])
 		{
 			t_return.type = svt_int;
 			t_return.value.i = 0;
@@ -3487,7 +3487,7 @@ void FParser::SF_MapThingNumExist()
 
 void FParser::SF_MapThings()
 {
-	TArray<DActorPointer*> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
+	TArray<TObjPtr<AActor>> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
 
 	t_return.type = svt_int;
     t_return.value.i = SpawnedThings.Size();
@@ -4601,7 +4601,7 @@ static int zoom=1;	// Dummy - no longer needed!
 
 inline void new_function(char *name, void (FParser::*handler)() )
 {
-	global_script.NewVariable (name, svt_function)->value.handler = handler;
+	global_script->NewVariable (name, svt_function)->value.handler = handler;
 }
 
 void init_functions(void)
@@ -4612,11 +4612,11 @@ void init_functions(void)
 	}
 
 	// add all the functions
-	global_script.NewVariable("consoleplayer", svt_pInt)->value.pI = &consoleplayer;
-	global_script.NewVariable("displayplayer", svt_pInt)->value.pI = &consoleplayer;
-	global_script.NewVariable("zoom", svt_pInt)->value.pI = &zoom;
-	global_script.NewVariable("fov", svt_pInt)->value.pI = &zoom;
-	global_script.NewVariable("trigger", svt_pMobj)->value.pMobj = &trigger_obj;
+	global_script->NewVariable("consoleplayer", svt_pInt)->value.pI = &consoleplayer;
+	global_script->NewVariable("displayplayer", svt_pInt)->value.pI = &consoleplayer;
+	global_script->NewVariable("zoom", svt_pInt)->value.pI = &zoom;
+	global_script->NewVariable("fov", svt_pInt)->value.pI = &zoom;
+	global_script->NewVariable("trigger", svt_pMobj)->value.pMobj = &trigger_obj;
 	
 	// important C-emulating stuff
 	new_function("break", &FParser::SF_Break);
