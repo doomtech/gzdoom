@@ -173,7 +173,7 @@ int I_WaitForTicEvent (int prevtic)
 {
 	while (prevtic >= tics)
 	{
-		WaitForSingleObject (NewTicArrived, 1000/TICRATE);
+		WaitForSingleObject(NewTicArrived, 1000/TICRATE);
 	}
 
 	return tics;
