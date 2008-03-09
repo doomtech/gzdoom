@@ -3061,8 +3061,15 @@ void AActor::Tick ()
 	{
 		int respawn_monsters = G_SkillProperty(SKILLP_Respawn);
 		// check for nightmare respawn
-		if (!respawn_monsters || !(flags3 & MF3_ISMONSTER) || (flags2 & MF2_DORMANT))
-			return;
+		if (!(flags5 & MF5_ALWAYSRESPAWN))
+		{
+			if (!respawn_monsters || !(flags3 & MF3_ISMONSTER) || (flags2 & MF2_DORMANT) || (flags5 & MF5_NEVERRESPAWN))
+				return;
+
+			int limit = G_SkillProperty (SKILLP_RespawnLimit);
+			if (limit > 0 && skillrespawncount >= limit)
+				return;
+		}
 
 		movecount++;
 
@@ -3073,9 +3080,6 @@ void AActor::Tick ()
 			return;
 
 		if (pr_nightmarerespawn() > 4)
-			return;
-
-		if (G_SkillProperty (SKILLP_RespawnLimit) && (this)->skillrespawncount >= G_SkillProperty (SKILLP_RespawnLimit))
 			return;
 
 		P_NightmareRespawn (this);
@@ -3782,6 +3786,23 @@ void P_SpawnPlayer (mapthing2_t *mthing, bool tempplayer)
 		else if (state == PST_REBORN)
 		{
 			assert (oldactor != NULL);
+
+			// before relocating all pointers to the player all sound targets
+			// pointing to the old actor have to be NULLed. Otherwise all
+			// monsters who last targeted this player will wake up immediately
+			// after the player has respawned.
+			AActor *th;
+			TThinkerIterator<AActor> it;
+			while ((th = it.Next()))
+			{
+				if (th->LastHeard == oldactor) th->LastHeard = NULL;
+			}
+			for(int i = 0; i < numsectors; i++)
+			{
+				if (sectors[i].SoundTarget == oldactor) sectors[i].SoundTarget = NULL;
+			}
+
+
 			DObject::PointerSubstitution (oldactor, p->mo);
 			// PointerSubstitution() will also affect the bodyque, so undo that now.
 			for (int ii=0; ii < BODYQUESIZE; ++ii)
@@ -5039,7 +5060,7 @@ void AActor::Crash()
 		!(flags3 & MF3_CRASHED) &&
 		!(flags & MF_ICECORPSE))
 	{
-		FState * crashstate=NULL;
+		FState *crashstate = NULL;
 		
 		if (DamageType != NAME_None)
 		{
@@ -5050,7 +5071,7 @@ void AActor::Crash()
 			int gibhealth = -abs(GetClass()->Meta.GetMetaInt (AMETA_GibHealth,
 				gameinfo.gametype == GAME_Doom ? -GetDefault()->health : -GetDefault()->health/2));
 
-			if (health<gibhealth)
+			if (health < gibhealth)
 			{ // Extreme death
 				crashstate = FindState (NAME_Crash, NAME_Extreme);
 			}

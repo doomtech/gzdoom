@@ -72,13 +72,9 @@ extern void ChildSigHandler (int signum);
 
 #include <fmod.h>
 
-EXTERN_CVAR (Float, snd_midivolume)
 EXTERN_CVAR (Int, snd_samplerate)
 EXTERN_CVAR (Int, snd_mididevice)
 CVAR(Bool, snd_modplug, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-
-void Enable_FSOUND_IO_Loader ();
-void Disable_FSOUND_IO_Loader ();
 
 static bool MusicDown = true;
 
@@ -100,8 +96,18 @@ CUSTOM_CVAR (Float, snd_musicvolume, 0.3f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 		self = 0.f;
 	else if (self > 1.f)
 		self = 1.f;
-	else if (currSong != NULL && !currSong->IsMIDI ())
-		currSong->SetVolume (clamp<float> (self, 0.f, 1.f));
+	else if (GSnd != NULL)
+	{
+		// Set general music volume.
+		GSnd->SetMusicVolume(clamp<float>(self * relative_volume, 0, 1));
+
+		// For music not implemented through the digital sound system,
+		// let them know about the changed.
+		if (currSong != NULL)
+		{
+			currSong->MusicVolumeChanged();
+		}
+	}
 }
 
 MusInfo::~MusInfo ()
@@ -111,6 +117,18 @@ MusInfo::~MusInfo ()
 bool MusInfo::SetPosition (int order)
 {
 	return false;
+}
+
+void MusInfo::Update ()
+{
+}
+
+void MusInfo::MusicVolumeChanged()
+{
+}
+
+void MusInfo::TimidityVolumeChanged()
+{
 }
 
 void I_InitMusic (void)
@@ -332,12 +350,6 @@ void *I_RegisterSong (const char *filename, char * musiccache, int offset, int l
 		}
 	}
 #endif
-	// Check for FLAC format
-	else if (id == MAKE_ID('f','L','a','C'))
-	{
-		info = new FLACSong (file, musiccache, len);
-		file = NULL;
-	}
 	// Check for RDosPlay raw OPL format
 	else if (id == MAKE_ID('R','A','W','A') && len >= 12)
 	{
@@ -422,7 +434,7 @@ void *I_RegisterSong (const char *filename, char * musiccache, int offset, int l
 				unsigned char fullhead[4];
 				if (file != NULL)
 				{
-					if (fread (fullhead, 1, 4, file) != 6)
+					if (fread (fullhead, 1, 4, file) != 4)
 					{
 						fclose (file);
 						return 0;
@@ -435,7 +447,7 @@ void *I_RegisterSong (const char *filename, char * musiccache, int offset, int l
 				}
 
 				info = NULL;
-				if (fullhead[0]==0xff || !memcmp(fullhead, "ID3",3) || !memcmp(fullhead, "OggS",4))
+				if (fullhead[0]==0xff || !memcmp(fullhead, "ID3",3) || !memcmp(fullhead, "OggS",4) || !memcmp(fullhead, "fLaC",4) || !memcmp(fullhead, "RIFF",4))
 				{
 					info = new StreamSong (offset>=0? filename : musiccache, offset, len);
 					if (!info->IsValid ())
@@ -460,15 +472,7 @@ void *I_RegisterSong (const char *filename, char * musiccache, int offset, int l
 			}
 			else
 			{
-				// First try loading it as MOD, then as a stream
-				info = new MODSong (offset>=0? filename : musiccache, offset, len);
-				if (file != NULL) fclose (file);
-				file = NULL;
-				if (!info->IsValid ())
-				{
-					delete info;
-					info = new StreamSong (offset>=0? filename : musiccache, offset, len);
-				}
+				info = new StreamSong (offset >=0 ? filename : musiccache, offset, len);
 			}
 		}
 	}
@@ -500,6 +504,14 @@ void *I_RegisterCDSong (int track, int id)
 	return info;
 }
 
+void I_UpdateMusic()
+{
+	if (currSong != NULL)
+	{
+		currSong->Update();
+	}
+}
+
 // Is the song playing?
 bool I_QrySongPlaying (void *handle)
 {
@@ -520,9 +532,6 @@ void I_SetMusicVolume (float factor)
 {
 	factor = clamp<float>(factor, 0, 2.0f);
 	relative_volume = saved_relative_volume * factor;
-#ifdef _WIN32
-	snd_midivolume.Callback();
-#endif
 	snd_musicvolume.Callback();
 }
 
@@ -531,9 +540,6 @@ CCMD(testmusicvol)
 	if (argv.argc() > 1) 
 	{
 		relative_volume = (float)strtod(argv[1], NULL);
-#ifdef _WIN32
-		snd_midivolume.Callback();
-#endif
 		snd_musicvolume.Callback();
 	}
 	else

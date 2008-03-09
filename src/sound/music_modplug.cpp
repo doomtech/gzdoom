@@ -107,6 +107,12 @@ bool ModPlugSong::FillStream (SoundStream *stream, void *buf, int len, void *use
 	char *buff = (char *)buf;
 	ModPlugSong *song = (ModPlugSong *)userdata;
 
+	if (song->Data == NULL)
+	{
+		memset(buff, 0, len);
+		return true;
+	}
+
 	int read = ModPlug_Read(song->Data, buff, len);
 
 	if (read < len)

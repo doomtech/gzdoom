@@ -1931,20 +1931,16 @@ void I_GetEvent ()
 	// crashed, we will execute the APC it sent now.
 	SleepEx (0, TRUE);
 
-//	for (;;) {
-		while (PeekMessage (&mess, NULL, 0, 0, PM_REMOVE))
+	while (PeekMessage (&mess, NULL, 0, 0, PM_REMOVE))
+	{
+		if (mess.message == WM_QUIT)
+			exit (mess.wParam);
+		if (EAXEditWindow == 0 || !IsDialogMessage (EAXEditWindow, &mess))
 		{
-			if (mess.message == WM_QUIT)
-				exit (mess.wParam);
-			if (EAXEditWindow == 0 || !IsDialogMessage (EAXEditWindow, &mess))
-			{
-				TranslateMessage (&mess);
-				DispatchMessage (&mess);
-			}
+			TranslateMessage (&mess);
+			DispatchMessage (&mess);
 		}
-//		if (havefocus || netgame || gamestate != GS_LEVEL)
-//			break;
-//	}
+	}
 
 	KeyRead ();
 
