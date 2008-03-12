@@ -137,7 +137,7 @@ void I_InitMusic (void)
 
 	snd_musicvolume.Callback ();
 
-	nomusic = !!Args.CheckParm("-nomusic") || !!Args.CheckParm("-nosound");
+	nomusic = !!Args->CheckParm("-nomusic") || !!Args->CheckParm("-nosound");
 
 #ifdef _WIN32
 	I_InitMusicWin32 ();
@@ -463,7 +463,6 @@ void *I_RegisterSong (const char *filename, char * musiccache, int offset, int l
 				}
 				if (info == NULL)
 				{
-					// First try loading it as MOD, then as a stream
 					info = new ModPlugSong (file, musiccache, len);
 
 					if (file != NULL) fclose (file);
@@ -472,6 +471,11 @@ void *I_RegisterSong (const char *filename, char * musiccache, int offset, int l
 			}
 			else
 			{
+				if (file != NULL)
+				{
+					fclose (file);
+					file = NULL;
+				}
 				info = new StreamSong (offset >=0 ? filename : musiccache, offset, len);
 			}
 		}

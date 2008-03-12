@@ -421,6 +421,7 @@ void FParser::spec_script()
 	
 	// add to scripts list of parent
 	Script->children[scriptnum] = newscript;
+	GC::WriteBarrier(Script, newscript);
 	
 	// copy newscript data
 	// workout newscript size: -2 to ignore { and }

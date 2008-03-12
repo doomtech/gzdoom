@@ -37,13 +37,15 @@
 // The svnrevision.h is automatically updated to grab the revision of
 // of the current source tree so that it can be included with version numbers.
 #include "svnrevision.h"
+#include "svnrevision_gz.h"
 
 /** Lots of different version numbers **/
 
-#define DOTVERSIONSTR_NOREV "1.1.0 - 2.2.0"
+#define DOTVERSIONSTR_NOREV "1.1.0"
+#define ZDVER_STRING "2.2.0"
 
 // The version string the user actually sees.
-#define DOTVERSIONSTR DOTVERSIONSTR_NOREV " (r" SVN_REVISION_STRING ")"
+#define DOTVERSIONSTR DOTVERSIONSTR_NOREV " (r" SVN_REVISION_STRING ") / ZDoom" ZDVER_STRING " (r" ZD_SVN_REVISION_STRING ")"
 
 // The version as seen in the Windows resource
 #define RC_FILEVERSION 1,1,0,SVN_REVISION_NUMBER
@@ -59,7 +61,7 @@
 // Version stored in the ini's [LastRun] section.
 // Bump it if you made some configuration change that you want to
 // be able to migrate in FGameConfigFile::DoGlobalSetup().
-#define LASTRUNVERSION "205"
+#define LASTRUNVERSION "206"
 
 // Protocol version used in demos.
 // Bump it if you change existing DEM_ commands or add new ones.
@@ -75,7 +77,7 @@
 // SAVESIG should match SAVEVER.
 
 // MINSAVEVER is the minimum level snapshot version that can be loaded.
-#define MINSAVEVER 714
+#define MINSAVEVER 795
 
 #if SVN_REVISION_NUMBER == 0
 // This can happen if svnrevision is not updated properly (e.g. compiling while offline)
@@ -83,8 +85,9 @@
 #define MAKESAVESIG(x)	"ZDOOMSAVE" #x
 #define SAVESIG			MAKESAVESIG(SAVEVER)
 #else
-#define SAVEVER			SVN_REVISION_NUMBER
-#define SAVESIG			"ZDOOMSAVE"SVN_REVISION_STRING
+// savegame versioning is based on ZDoom revisions
+#define SAVEVER			ZD_SVN_REVISION_NUMBER
+#define SAVESIG			"ZDOOMSAVE"ZD_SVN_REVISION_STRING
 #endif
 
 // This is so that derivates can use the same savegame versions without worrying about engine compatibility

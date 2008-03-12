@@ -59,33 +59,6 @@ inline bool isop(int c)
 //
 //==========================================================================
 
-class DActorPointer : public DObject
-{
-	DECLARE_CLASS(DActorPointer, DObject)
-	HAS_OBJECT_POINTERS
-
-public:
-
-	AActor * actor;
-
-	DActorPointer()
-	{
-		actor=NULL;
-	}
-
-	void Serialize(FArchive & ar)
-	{
-		Super::Serialize(ar);
-		ar << actor;
-	}
-};
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
 enum
 {
   svt_string,
@@ -168,11 +141,11 @@ struct DFsVariable : public DObject
 
 public:
 	FString Name;
-	DFsVariable *next;       // for hashing
+	TObjPtr<DFsVariable> next;       // for hashing
 
 	int type;       // vt_string or vt_int: same as in svalue_t
 	FString string;
-	AActor *actor;
+	TObjPtr<AActor> actor;
 
 	union value_t
 	{
@@ -190,7 +163,7 @@ public:
 
 	DFsVariable(const char *_name = "");
 
-	svalue_t GetValue() const;
+	svalue_t GetValue();
 	void SetValue(const svalue_t &newvalue);
 	void Serialize(FArchive &ar);
 };
@@ -234,7 +207,7 @@ public:
 	int start_index;
 	int end_index;
 	int loop_index;
-	DFsSection *next;        // for hashing
+	TObjPtr<DFsSection> next;        // for hashing
 
 	DFsSection()
 	{
@@ -313,27 +286,27 @@ public:
 
 	// {} sections
 
-	DFsSection *sections[SECTIONSLOTS];
+	TObjPtr<DFsSection> sections[SECTIONSLOTS];
 
 	// variables:
 
-	DFsVariable *variables[VARIABLESLOTS];
+	TObjPtr<DFsVariable> variables[VARIABLESLOTS];
 
 	// ptr to the parent script
 	// the parent script is the script above this level
 	// eg. individual linetrigger scripts are children
 	// of the levelscript, which is a child of the
 	// global_script
-	DFsScript *parent;
+	TObjPtr<DFsScript> parent;
 
 	// haleyjd: 8-17
 	// child scripts.
 	// levelscript holds ptrs to all of the level's scripts
 	// here.
-	DFsScript *children[MAXSCRIPTS];
+	TObjPtr<DFsScript> children[MAXSCRIPTS];
 
 
-	AActor *trigger;        // object which triggered this script
+	TObjPtr<AActor> trigger;        // object which triggered this script
 
 	bool lastiftrue;     // haleyjd: whether last "if" statement was 
 	// true or false
@@ -654,7 +627,7 @@ public:
 	void Destroy();
 	void Serialize(FArchive &arc);
 
-	DFsScript *script;
+	TObjPtr<DFsScript> script;
 	
 	// where we are
 	int save_point;
@@ -663,10 +636,10 @@ public:
 	int wait_data;  // data for wait: tagnum, counter, script number etc
 	
 	// saved variables
-	DFsVariable *variables[VARIABLESLOTS];
+	TObjPtr<DFsVariable> variables[VARIABLESLOTS];
 	
-	DRunningScript *prev, *next;  // for chain
-	AActor *trigger;
+	TObjPtr<DRunningScript> prev, next;  // for chain
+	TObjPtr<AActor> trigger;
 };
 
 //-----------------------------------------------------------------------------
@@ -680,9 +653,9 @@ class DFraggleThinker : public DThinker
 	HAS_OBJECT_POINTERS
 public:
 
-	DFsScript *LevelScript;
-	DRunningScript *RunningScripts;
-	TArray<DActorPointer*> SpawnedThings;
+	TObjPtr<DFsScript> LevelScript;
+	TObjPtr<DRunningScript> RunningScripts;
+	TArray<TObjPtr<AActor>> SpawnedThings;
 
 	DFraggleThinker();
 	void Destroy();
@@ -690,6 +663,7 @@ public:
 
 	void Serialize(FArchive & arc);
 	void Tick();
+	size_t PropagateMark();
 	bool wait_finished(DRunningScript *script);
 
 	static DFraggleThinker *ActiveThinker;

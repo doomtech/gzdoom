@@ -320,10 +320,6 @@ void DRunningScript::Serialize(FArchive &arc)
 // The main thinker
 //
 //==========================================================================
-IMPLEMENT_POINTY_CLASS(DActorPointer)
-	DECLARE_POINTER(actor)
-END_POINTERS
-
 IMPLEMENT_POINTY_CLASS(DFraggleThinker)
 	DECLARE_POINTER(RunningScripts)
 	DECLARE_POINTER(LevelScript)
@@ -373,10 +369,6 @@ void DFraggleThinker::Destroy()
 	LevelScript->Destroy();
 	LevelScript = NULL;
 
-	for(unsigned i=0; i<SpawnedThings.Size(); i++)
-	{
-		SpawnedThings[i]->Destroy();
-	}
 	SpawnedThings.Clear();
 	ActiveThinker = NULL;
 	Super::Destroy();
@@ -488,7 +480,12 @@ void DFraggleThinker::Tick()
 			
 			// unhook from chain 
 			current->prev->next = current->next;
-			if(current->next) current->next->prev = current->prev;
+			GC::WriteBarrier(current->prev, current->next);
+			if(current->next) 
+			{
+				current->next->prev = current->prev;
+				GC::WriteBarrier(current->next, current->prev);
+			}
 			next = current->next;   // save before freeing
 			
 			// continue the script
@@ -501,6 +498,23 @@ void DFraggleThinker::Tick()
 			next = current->next;
 		current = next;   // continue to next in chain
 	}
+}
+
+
+//==========================================================================
+//
+// We have to mark the SpawnedThings array manually because it's not
+// in the list of declared pointers.
+//
+//==========================================================================
+
+size_t DFraggleThinker::PropagateMark()
+{
+	for(unsigned i=0;i<SpawnedThings.Size();i++)
+	{
+		GC::Mark(SpawnedThings[i]);
+	}
+	return Super::PropagateMark();
 }
 
 //==========================================================================
@@ -555,8 +569,12 @@ static bool T_RunScript(int snum, AActor * t_trigger)
 		runscr->next = th->RunningScripts->next;
 		runscr->prev = th->RunningScripts;
 		runscr->prev->next = runscr;
+		GC::WriteBarrier(runscr->prev, runscr);
 		if(runscr->next)
+		{
 			runscr->next->prev = runscr;
+			GC::WriteBarrier(runscr->next, runscr);
+		}
 	
 		// save the script variables 
 		for(i=0; i<VARIABLESLOTS; i++)
@@ -612,11 +630,13 @@ void FS_Close()
 		{
 			next = current->next; // save for after freeing
 			
-			//current->ObjectFlags |= OF_YESREALLYDELETE;
+			current->ObjectFlags |= OF_YesReallyDelete;
 			delete current;
 			current = next; // go to next in chain
 		}
     }
+	GC::DelSoftRoot(global_script);
+	global_script->ObjectFlags |= OF_YesReallyDelete;
 	delete global_script;
 }
 
@@ -627,6 +647,7 @@ AT_GAME_SET(FS_Init)
 	// I'd rather link the special here than make another source file depend on FS!
 	LineSpecials[54]=LS_FS_Execute;
 	global_script = new DFsScript;
+	GC::AddSoftRoot(global_script);
 	init_functions();
 	atterm(FS_Close);
 }

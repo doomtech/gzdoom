@@ -154,6 +154,7 @@ DFsSection *DFsScript::NewSection(const char *brace)
 	newsec->start_index = MakeIndex(brace);
 	newsec->next = sections[n];
 	sections[n] = newsec;
+	GC::WriteBarrier(this, newsec);
 	return newsec;
 }
 
