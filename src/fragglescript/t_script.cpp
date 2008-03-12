@@ -519,6 +519,22 @@ size_t DFraggleThinker::PropagateMark()
 
 //==========================================================================
 //
+// Again we have to handle the SpawnedThings array manually because
+// it's not in the list of declared pointers.
+//
+//==========================================================================
+
+void DFraggleThinker::PointerSubstitution (DObject *old, DObject *notOld)
+{
+	Super::PointerSubstitution(old, notOld);
+	for(unsigned i=0;i<SpawnedThings.Size();i++)
+	{
+		if (SpawnedThings[i] == static_cast<AActor*>(old)) SpawnedThings[i] = static_cast<AActor*>(notOld);
+	}
+}
+
+//==========================================================================
+//
 //
 //
 //==========================================================================
