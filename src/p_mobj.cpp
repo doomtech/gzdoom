@@ -173,7 +173,7 @@ IMPLEMENT_POINTY_CLASS (AActor)
  DECLARE_POINTER (lastenemy)
  DECLARE_POINTER (tracer)
  DECLARE_POINTER (goal)
- DECLARE_POINTER (LastLook)	// This is actually a union
+ DECLARE_POINTER (LastLookActor)
  DECLARE_POINTER (Inventory)
  DECLARE_POINTER (LastHeard)
  DECLARE_POINTER (master)
@@ -242,11 +242,13 @@ void AActor::Serialize (FArchive &arc)
 	arc << TIDtoHate;
 	if (TIDtoHate == 0)
 	{
-		arc << LastLook.PlayerNumber;
+		arc << LastLookPlayerNumber;
+		LastLookActor = NULL;
 	}
 	else
 	{
-		arc << LastLook.Actor;
+		arc << LastLookActor;
+		LastLookPlayerNumber = -1;
 	}
 	arc << effects
 		<< alpha
@@ -324,10 +326,8 @@ void AActor::Serialize (FArchive &arc)
 		<< meleerange
 		<< DamageType
 		<< gravity
-		<< FastChaseStrafeCount;
-
-	if (SaveVersion >=778)
-		arc << master;
+		<< FastChaseStrafeCount
+		<< master;
 
 	if (arc.IsStoring ())
 	{
@@ -569,7 +569,8 @@ bool AActor::SetState (FState *newstate)
 			newstate->GetAction() (this);
 
 			// Check whether the called action function resulted in destroying the actor
-			if (ObjectFlags & OF_MassDestruction) return false;
+			if (ObjectFlags & OF_EuthanizeMe)
+				return false;
 		}
 		newstate = newstate->GetNextState();
 	} while (tics == 0);
@@ -716,7 +717,7 @@ void AActor::DestroyAllInventory ()
 //
 //============================================================================
 
-AInventory *AActor::FirstInv () const
+AInventory *AActor::FirstInv ()
 {
 	if (Inventory == NULL)
 	{
@@ -805,7 +806,7 @@ AInventory *AActor::DropInventory (AInventory *item)
 //
 //============================================================================
 
-AInventory *AActor::FindInventory (const PClass *type) const
+AInventory *AActor::FindInventory (const PClass *type)
 {
 	AInventory *item;
 
@@ -822,7 +823,7 @@ AInventory *AActor::FindInventory (const PClass *type) const
 	return item;
 }
 
-AInventory *AActor::FindInventory (FName type) const
+AInventory *AActor::FindInventory (FName type)
 {
 	return FindInventory(PClass::FindClass(type));
 }
@@ -882,11 +883,12 @@ bool AActor::GiveAmmo (const PClass *type, int amount)
 //
 //============================================================================
 
-void AActor::CopyFriendliness (const AActor *other, bool changeTarget)
+void AActor::CopyFriendliness (AActor *other, bool changeTarget)
 {
 	level.total_monsters -= CountsAsKill();
 	TIDtoHate = other->TIDtoHate;
-	LastLook = other->LastLook;
+	LastLookActor = other->LastLookActor;
+	LastLookPlayerNumber = other->LastLookPlayerNumber;
 	flags  = (flags & ~MF_FRIENDLY) | (other->flags & MF_FRIENDLY);
 	flags3 = (flags3 & ~(MF3_NOSIGHTCHECK | MF3_HUNTPLAYERS)) | (other->flags3 & (MF3_NOSIGHTCHECK | MF3_HUNTPLAYERS));
 	flags4 = (flags4 & ~MF4_NOHATEPLAYERS) | (other->flags4 & MF4_NOHATEPLAYERS);
@@ -1060,7 +1062,7 @@ void P_ExplodeMissile (AActor *mo, line_t *line, AActor *target)
 	if (nextstate == NULL) nextstate = mo->FindState(NAME_Death);
 	mo->SetState (nextstate);
 	
-	if (mo->ObjectFlags & OF_MassDestruction)
+	if (mo->ObjectFlags & OF_EuthanizeMe)
 	{
 		return;
 	}
@@ -2963,7 +2965,7 @@ void AActor::Tick ()
 	// Handle X and Y momemtums
 	BlockingMobj = NULL;
 	P_XYMovement (this, cummx, cummy);
-	if (ObjectFlags & OF_MassDestruction)
+	if (ObjectFlags & OF_EuthanizeMe)
 	{ // actor was destroyed
 		return;
 	}
@@ -3021,7 +3023,7 @@ void AActor::Tick ()
 			P_ZMovement (this);
 		}
 
-		if (ObjectFlags & OF_MassDestruction)
+		if (ObjectFlags & OF_EuthanizeMe)
 			return;		// actor was destroyed
 	}
 	else if (z <= floorz)
@@ -3293,7 +3295,7 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 
 	if (actor->flags3 & MF3_ISMONSTER)
 	{
-		actor->LastLook.PlayerNumber = rng() % MAXPLAYERS;
+		actor->LastLookPlayerNumber = rng() % MAXPLAYERS;
 		actor->TIDtoHate = 0;
 	}
 
@@ -3381,7 +3383,7 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 	if (!SpawningMapThing)
 	{
 		actor->BeginPlay ();
-		if (actor->ObjectFlags & OF_MassDestruction)
+		if (actor->ObjectFlags & OF_EuthanizeMe)
 		{
 			return NULL;
 		}
@@ -3500,6 +3502,15 @@ void AActor::Deactivate (AActor *activator)
 			tics = -1;
 		}
 	}
+}
+
+size_t AActor::PropagateMark()
+{
+	for (unsigned i=0; i<dynamiclights.Size(); i++)
+	{
+		GC::Mark(dynamiclights[i]);
+	}
+	return Super::PropagateMark();
 }
 
 //
@@ -4126,7 +4137,7 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 
 	mobj->angle = (DWORD)((mthing->angle * UCONST64(0x100000000)) / 360);
 	mobj->BeginPlay ();
-	if (mobj->ObjectFlags & OF_MassDestruction)
+	if (mobj->ObjectFlags & OF_EuthanizeMe)
 	{
 		return;
 	}

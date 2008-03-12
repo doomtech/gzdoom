@@ -200,11 +200,13 @@ BOOL CSoundFile::ReadMod(const BYTE *lpStream, DWORD dwMemLength)
 	if (IsMagic(s,"16CN")) m_nChannels = 16; else
 	if (IsMagic(s,"32CN")) m_nChannels = 32; else 
 	{
+		// Todo: Check the header for proper fields and let it pass if they seem to contain sensible data
+
+		m_nSamples = 15;
+
 		// don't accept any unknown magics. If we did this the code would play all garbage that's
-		// thrown at it
-		//if (s[0] || s[1] || s[2] || s[3]) 
-			return FALSE;
-		//m_nSamples = 15;
+		// thrown at it.
+		return FALSE;
 	}
 	// Load Samples
 	nErr = 0;

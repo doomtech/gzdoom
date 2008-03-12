@@ -1925,6 +1925,11 @@ void FParser::SF_FadeLight(void)
 	}
 }
 
+//==========================================================================
+//
+//
+//
+//==========================================================================
 void FParser::SF_FloorTexture(void)
 {
 	int tagnum, secnum;
@@ -2066,12 +2071,13 @@ void FParser::SF_StartSkill(void)
 	I_Error("startskill is not supported by this implementation!\n");
 }
 
-//////////////////////////////////////////////////////////////////////////
+//==========================================================================
 //
 // Doors
 //
-
 // opendoor(sectag, [delay], [speed])
+//
+//==========================================================================
 
 void FParser::SF_OpenDoor(void)
 {
@@ -2204,13 +2210,13 @@ inline line_t * P_FindLine(int tag,int * searchPosition)
 	return *searchPosition>=0? &lines[*searchPosition]:NULL;
 }
 
-/*
-FParser::SF_SetLineBlocking()
-
-  Sets a line blocking or unblocking
-  
-	setlineblocking(tag, [1|0]);
-*/
+//==========================================================================
+//
+// FParser::SF_SetLineBlocking()
+//
+//  Sets a line blocking or unblocking
+//
+//==========================================================================
 void FParser::SF_SetLineBlocking(void)
 {
 	line_t *line;
@@ -2236,11 +2242,9 @@ void FParser::SF_SetLineBlocking(void)
 
 //==========================================================================
 //
-//
+// similar, but monster blocking
 //
 //==========================================================================
-
-// similar, but monster blocking
 
 void FParser::SF_SetLineMonsterBlocking(void)
 {
@@ -2261,17 +2265,19 @@ void FParser::SF_SetLineMonsterBlocking(void)
 	}
 }
 
-/*
-FParser::SF_SetLineTexture
 
-  #2 in a not-so-long line of ACS-inspired functions
-  This one is *much* needed, IMO
-  
-	Eternity: setlinetexture(tag, side, position, texture)
-	Legacy:	  setlinetexture(tag, texture, side, sections)
 
-*/
-
+//==========================================================================
+//
+//FParser::SF_SetLineTexture
+//
+//  #2 in a not-so-long line of ACS-inspired functions
+//  This one is *much* needed, IMO
+//  
+//	Eternity: setlinetexture(tag, side, position, texture)
+//	Legacy:	  setlinetexture(tag, texture, side, sections)
+//
+//==========================================================================
 
 void FParser::SF_SetLineTexture(void)
 {
@@ -2357,11 +2363,10 @@ void FParser::SF_SetLineTexture(void)
 
 //==========================================================================
 //
-//
+// SoM: Max, Min, Abs math functions.
 //
 //==========================================================================
 
-// SoM: Max, Min, Abs math functions.
 void FParser::SF_Max(void)
 {
 	fixed_t n1, n2;
@@ -2417,13 +2422,15 @@ void FParser::SF_Abs(void)
 	}
 }
 
-/* 
-FParser::SF_Gameskill, FParser::SF_Gamemode
-
-  Access functions are more elegant for these than variables, 
-  especially for the game mode, which doesn't exist as a numeric 
-  variable already.
-*/
+//==========================================================================
+// 
+// FParser::SF_Gameskill, FParser::SF_Gamemode
+//
+//  Access functions are more elegant for these than variables, 
+//  especially for the game mode, which doesn't exist as a numeric 
+//  variable already.
+//
+//==========================================================================
 
 void FParser::SF_Gameskill(void)
 {
@@ -2452,13 +2459,16 @@ void FParser::SF_Gamemode(void)
 		t_return.value.i = 2; // deathmatch
 }
 
-/*
-FParser::SF_IsPlayerObj()
+//==========================================================================
+//
+// FParser::SF_IsPlayerObj()
+//
+//  A function suggested by SoM to help the script coder prevent
+//  exceptions related to calling player functions on non-player
+//  objects.
+//
+//==========================================================================
 
-  A function suggested by SoM to help the script coder prevent
-  exceptions related to calling player functions on non-player
-  objects.
-*/
 void FParser::SF_IsPlayerObj(void)
 {
 	AActor *mo;
@@ -2475,6 +2485,11 @@ void FParser::SF_IsPlayerObj(void)
 }
 
 //============================================================================
+//
+// Inventory stuff - mostly new to GZDoom
+//
+// all the original functions are still supported but they have not
+// been expanded from their original and are limited as a result
 //
 // Since FraggleScript is rather hard coded to the original inventory
 // handling of Doom this is rather messy.
@@ -2614,14 +2629,14 @@ static int FS_CheckInventory (AActor *activator, const char *type)
 
 //==========================================================================
 //
-//
+// This function is just kept for backwards compatibility 
+// and intentionally limited to thr standard keys!
+// Use Give/Take/CheckInventory instead!
 //
 //==========================================================================
 
 void FParser::SF_PlayerKeys(void)
 {
-	// This function is just kept for backwards compatibility and intentionally limited to thr standard keys!
-	// Use Give/Take/CheckInventory instead!
 	static const char * const DoomKeys[]={"BlueCard", "YellowCard", "RedCard", "BlueSkull", "YellowSkull", "RedSkull"};
 	int  playernum, keynum, givetake;
 	const char * keyname;
@@ -2658,14 +2673,13 @@ void FParser::SF_PlayerKeys(void)
 
 //==========================================================================
 //
-//
+// This function is just kept for backwards compatibility and intentionally limited!
+// Use Give/Take/CheckInventory instead!
 //
 //==========================================================================
 
 void FParser::SF_PlayerAmmo(void)
 {
-	// This function is just kept for backwards compatibility and intentionally limited!
-	// Use Give/Take/CheckInventory instead!
 	int playernum, amount;
 	const PClass * ammotype;
 	
@@ -2751,7 +2765,9 @@ void FParser::SF_MaxPlayerAmmo()
 
 //==========================================================================
 //
-//
+// This function is just kept for backwards compatibility and 
+// intentionally limited to the standard weapons!
+// Use Give/Take/CheckInventory instead!
 //
 //==========================================================================
 
@@ -2762,8 +2778,6 @@ void FParser::SF_PlayerWeapon()
 		"PlasmaRifle", "BFG9000", "Chainsaw", "SuperShotgun" };
 
 
-	// This function is just kept for backwards compatibility and intentionally limited to the standard weapons!
-	// Use Give/Take/CheckInventory instead!
     int playernum;
     int weaponnum;
     int newweapon;
@@ -2830,7 +2844,8 @@ void FParser::SF_PlayerWeapon()
 
 //==========================================================================
 //
-//
+// This function is just kept for backwards compatibility and 
+// intentionally limited to the standard weapons!
 //
 //==========================================================================
 
@@ -2839,7 +2854,6 @@ void FParser::SF_PlayerSelectedWeapon()
 	int playernum;
 	int weaponnum;
 
-	// This function is just kept for backwards compatibility and intentionally limited to the standard weapons!
 
 	static const char * const WeaponNames[]={
 		"Fist", "Pistol", "Shotgun", "Chaingun", "RocketLauncher", 
@@ -2991,13 +3005,11 @@ void FParser::SF_SetWeapon()
 	}
 }
 
-// removed FParser::SF_PlayerMaxAmmo
-
-
-
+//==========================================================================
 //
 // movecamera(camera, targetobj, targetheight, movespeed, targetangle, anglespeed)
 //
+//==========================================================================
 
 void FParser::SF_MoveCamera(void)
 {
@@ -3219,11 +3231,9 @@ void FParser::SF_ExitSecret(void)
 
 //==========================================================================
 //
-//
+// Type forcing functions -- useful with arrays et al
 //
 //==========================================================================
-
-// Type forcing functions -- useful with arrays et al
 
 void FParser::SF_MobjValue(void)
 {
@@ -3448,7 +3458,7 @@ void FParser::SF_SpawnMissile()
 
 void FParser::SF_MapThingNumExist()
 {
-	TArray<DActorPointer*> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
+	TArray<TObjPtr<AActor>> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
 
     int intval;
 
@@ -3456,7 +3466,7 @@ void FParser::SF_MapThingNumExist()
 	{
 		intval = intvalue(t_argv[0]);
 
-		if (intval < 0 || intval >= int(SpawnedThings.Size()) || !SpawnedThings[intval]->actor)
+		if (intval < 0 || intval >= int(SpawnedThings.Size()) || !SpawnedThings[intval])
 		{
 			t_return.type = svt_int;
 			t_return.value.i = 0;
@@ -3477,7 +3487,7 @@ void FParser::SF_MapThingNumExist()
 
 void FParser::SF_MapThings()
 {
-	TArray<DActorPointer*> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
+	TArray<TObjPtr<AActor>> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
 
 	t_return.type = svt_int;
     t_return.value.i = SpawnedThings.Size();
@@ -4330,7 +4340,7 @@ void FParser::SF_WallGlow()
 
 //==========================================================================
 //
-// Spawns a projectile at a map spot
+//
 //
 //==========================================================================
 
@@ -4354,8 +4364,12 @@ DRunningScript *FParser::SaveCurrentScript()
 		runscr->next = th->RunningScripts->next;
 		runscr->prev = th->RunningScripts;
 		runscr->prev->next = runscr;
+		GC::WriteBarrier(runscr->prev, runscr);
 		if(runscr->next)
+		{
 			runscr->next->prev = runscr;
+			GC::WriteBarrier(runscr->next, runscr);
+		}
 		
 		// save the script variables 
 		for(i=0; i<VARIABLESLOTS; i++)
@@ -4516,8 +4530,12 @@ void FParser::SF_StartScript()
 		runscr->next = th->RunningScripts->next;
 		runscr->prev = th->RunningScripts;
 		runscr->prev->next = runscr;
+		GC::WriteBarrier(runscr->prev, runscr);
 		if(runscr->next)
+		{
 			runscr->next->prev = runscr;
+			GC::WriteBarrier(runscr->next, runscr);
+		}
 		
 		// save the script variables 
 		for(i=0; i<VARIABLESLOTS; i++)

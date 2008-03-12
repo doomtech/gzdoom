@@ -28,6 +28,8 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				Description="Checking svnrevision.h..."
+				CommandLine="&quot;$(OutDir)\updaterevision.exe&quot; src src/svnrevision_gz.h"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -54,7 +56,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="src\win32,src\sound,src,zlib,src\g_shared,src\g_doom,src\g_raven,src\g_heretic,src\g_hexen,src\g_strife;flac;jpeg-6b"
+				AdditionalIncludeDirectories="src\win32,src\sound,src,zlib,src\g_shared,src\g_doom,src\g_raven,src\g_heretic,src\g_hexen,src\g_strife;flac;jpeg-6b;snes_spc\snes_spc"
 				PreprocessorDefinitions="NDEBUG,WIN32,_WIN32,_WINDOWS,USEASM,HAVE_STRUPR,HAVE_FILELENGTH,SILENT_INSTANT_FLOORS"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -146,6 +148,8 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				Description="Checking svnrevision.h..."
+				CommandLine="$(OutDir)\updaterevision.exe src src/svnrevision_gz.h"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -168,7 +172,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="&quot;  /I /fmod/api/inc&quot;  &quot;  /I /fmod/api/inc&quot;  &quot;  /I /fmod/api/inc&quot;  &quot;  /I /fmod/api/inc&quot; "
 				Optimization="0"
-				AdditionalIncludeDirectories="src\win32;src\sound;src;zlib;src\g_shared;src\g_doom;src\g_raven;src\g_heretic;src\g_hexen;src\g_strife;flac;jpeg-6b"
+				AdditionalIncludeDirectories="src\win32;src\sound;src;zlib;src\g_shared;src\g_doom;src\g_raven;src\g_heretic;src\g_hexen;src\g_strife;flac;jpeg-6b;snes_spc\snes_spc"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WIN32,_WINDOWS,USEASM,_CRTDBG_MAP_ALLOC,HAVE_STRUPR,HAVE_FILELENGTH"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
@@ -1400,6 +1404,10 @@
 						AdditionalOptions="&quot;  /I /fmod/api/inc&quot;  &quot;  /I /fmod/api/inc&quot;  &quot;  /I /fmod/api/inc&quot;  &quot;  /I /fmod/api/inc&quot;  &quot;  /I /fmod/api/inc&quot;  &quot;  /I /fmod/api/inc&quot;  &quot;  /I /fmod/api/inc&quot;  &quot;  /I /fmod/api/inc&quot; "
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\src\dobjgc.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\src\dobjtype.cpp"
