@@ -431,45 +431,9 @@ void *I_RegisterSong (const char *filename, char * musiccache, int offset, int l
 		{
 			if (snd_modplug)
 			{
-				unsigned char fullhead[4];
-				if (file != NULL)
-				{
-					if (fread (fullhead, 1, 4, file) != 4)
-					{
-						fclose (file);
-						return 0;
-					}
-					fseek (file, -4, SEEK_CUR);
-				}
-				else
-				{
-					memcpy(fullhead, musiccache, 4);
-				}
-
-				info = NULL;
-				if (fullhead[0]==0xff || !memcmp(fullhead, "ID3",3) || !memcmp(fullhead, "OggS",4) || !memcmp(fullhead, "fLaC",4) || !memcmp(fullhead, "RIFF",4))
-				{
-					info = new StreamSong (offset>=0? filename : musiccache, offset, len);
-					if (!info->IsValid ())
-					{
-						if (info != NULL) delete info;
-						info = NULL;
-					}
-					else
-					{
-						if (file != NULL) fclose (file);
-						file = NULL;
-					}
-				}
-				if (info == NULL)
-				{
-					info = new ModPlugSong (file, musiccache, len);
-
-					if (file != NULL) fclose (file);
-					file = NULL;
-				}
+				info = ModPlugSong::Create(file, musiccache, len);
 			}
-			else
+			if (info == NULL)
 			{
 				if (file != NULL)
 				{
