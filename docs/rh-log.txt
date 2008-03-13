@@ -1,4 +1,26 @@
+March 13, 2008 (Changes by Graf Zahl)
+- Fixed: Pointer substitution changed the pointers for the thinker ring list
+  resulting in a freeze.
+
+March 12, 2008
+- Fixed: DACSThinker::ActiveThinker was missing a read barrier.
+- Loading a save game now initiates a collection.
+- Added a finalization cost to the sweep stage.
+- Fixed: D_dehacked.cpp/PatchThing() allocated an actor on the stack.
+- Changed the sentinels in the thinker lists into a proper thinker. The old
+  way wasn't playing well with the write barriers.
+- Fixed: DFrameBuffer::WriteSavePic needs to fix the canvas in place while
+  using it.
+- Fixed: The sound system was updated every frame, which is a complete waste
+  of time. Doing it only once each tic is quite sufficient, since nothing
+  really moves between tics, even if the display makes it look otherwise.
+
 March 12, 2008 (Changes by Graf Zahl)
+- Fixed: The SimpleCanvas in FCanvasTexture must be declared as a soft
+  root to the garbage collector.
+- Changed DObject's pointer substitution so that the pointers inside an
+  object are handled by a virtual function. This allows subclasses to
+  implement their own handling if they need it.
 - Bumped the minimum savegame version because the current version crashes
   each time an old savegame is loaded.
 

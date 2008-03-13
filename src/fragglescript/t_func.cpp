@@ -4346,45 +4346,13 @@ void FParser::SF_WallGlow()
 
 DRunningScript *FParser::SaveCurrentScript()
 {
-	DRunningScript *runscr;
-	int i;
-
 	DFraggleThinker *th = DFraggleThinker::ActiveThinker;
 	if (th)
 	{
-		runscr = new DRunningScript();
-		runscr->script = Script;
-		runscr->save_point = Script->MakeIndex(Rover);
-		
-		// leave to other functions to set wait_type: default to wt_none
-		runscr->wait_type = wt_none;
-		
+		DRunningScript *runscr = new DRunningScript(Script, Script->MakeIndex(Rover));
+
 		// hook into chain at start
-		
-		runscr->next = th->RunningScripts->next;
-		runscr->prev = th->RunningScripts;
-		runscr->prev->next = runscr;
-		GC::WriteBarrier(runscr->prev, runscr);
-		if(runscr->next)
-		{
-			runscr->next->prev = runscr;
-			GC::WriteBarrier(runscr->next, runscr);
-		}
-		
-		// save the script variables 
-		for(i=0; i<VARIABLESLOTS; i++)
-		{
-			runscr->variables[i] = Script->variables[i];
-			
-			// remove all the variables from the script variable list
-			// to prevent them being removed when the script stops
-			
-			while(Script->variables[i] &&
-				Script->variables[i]->type != svt_label)
-				Script->variables[i] =
-				Script->variables[i]->next;
-		}
-		runscr->trigger = Script->trigger;      // save trigger
+		th->AddRunningScript(runscr);
 		return runscr;
 	}
 	return NULL;
@@ -4490,17 +4458,13 @@ void FParser::SF_ScriptWaitPre()
 
 void FParser::SF_StartScript()
 {
-	DRunningScript *runscr;
-	DFsScript *script;
-	int i, snum;
-	
 	if(t_argc != 1)
     {
 		script_error("incorrect arguments to function\n");
 		return;
     }
 	
-	snum = intvalue(t_argv[0]);
+	int snum = intvalue(t_argv[0]);
 
 	if(snum < 0 || snum >= MAXSCRIPTS)
 	{
@@ -4512,46 +4476,16 @@ void FParser::SF_StartScript()
 	if (th)
 	{
 
-		script = th->LevelScript->children[snum];
+		DFsScript *script = th->LevelScript->children[snum];
 	
 		if(!script)
 		{
 			script_error("script %i not defined\n", snum);
 		}
 		
-		runscr = new  DRunningScript();
-		runscr->script = script;
-		runscr->save_point = 0; // start at beginning
-		runscr->wait_type = wt_none;      // start straight away
-		
+		DRunningScript *runscr = new DRunningScript(script, 0);
 		// hook into chain at start
-		
-		// haleyjd: restructured
-		runscr->next = th->RunningScripts->next;
-		runscr->prev = th->RunningScripts;
-		runscr->prev->next = runscr;
-		GC::WriteBarrier(runscr->prev, runscr);
-		if(runscr->next)
-		{
-			runscr->next->prev = runscr;
-			GC::WriteBarrier(runscr->next, runscr);
-		}
-		
-		// save the script variables 
-		for(i=0; i<VARIABLESLOTS; i++)
-		{
-			runscr->variables[i] = script->variables[i];
-			
-			// in case we are starting another Script:
-			// remove all the variables from the script variable list
-			// we only start with the basic labels
-			while(runscr->variables[i] &&
-				runscr->variables[i]->type != svt_label)
-				runscr->variables[i] =
-				runscr->variables[i]->next;
-		}
-		// copy trigger
-		runscr->trigger = Script->trigger;
+		th->AddRunningScript(runscr);
 	}
 }
 
