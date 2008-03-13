@@ -623,7 +623,7 @@ class DRunningScript : public DObject
 	HAS_OBJECT_POINTERS
 
 public:
-	DRunningScript() ;
+	DRunningScript(DFsScript *owner = NULL, int index = 0) ;
 	void Destroy();
 	void Serialize(FArchive &arc);
 
@@ -666,8 +666,9 @@ public:
 	size_t PropagateMark();
 	void PointerSubstitution (DObject *old, DObject *notOld);
 	bool wait_finished(DRunningScript *script);
+	void AddRunningScript(DRunningScript *runscr);
 
-	static DFraggleThinker *ActiveThinker;
+	static TObjPtr<DFraggleThinker> ActiveThinker;
 };
 
 //-----------------------------------------------------------------------------

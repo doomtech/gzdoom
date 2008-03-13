@@ -263,14 +263,48 @@ END_POINTERS
 //
 //==========================================================================
 
-DRunningScript::DRunningScript() 
+DRunningScript::DRunningScript(DFsScript *owner, int index) 
 {
 	prev = next = NULL;
-	trigger = NULL;
-	script = NULL;
-	save_point = 0;
-	wait_type = wait_data = 0;
-	for(int i=0; i< VARIABLESLOTS; i++) variables[i] = NULL;
+	script = owner;
+	GC::WriteBarrier(this, script);
+	save_point = index;
+	wait_type = wt_none;
+	wait_data = 0;
+
+	if (owner == NULL)
+	{
+		for(int i=0; i< VARIABLESLOTS; i++) variables[i] = NULL;
+		trigger = NULL;
+	}
+	else
+	{
+		// save the script variables 
+		for(int i=0; i<VARIABLESLOTS; i++)
+		{
+			variables[i] = owner->variables[i];
+			
+			if (index == 0)	// we are starting another Script:
+			{
+				// remove all the variables from the script variable list
+				// we only start with the basic labels
+				while(variables[i] && variables[i]->type != svt_label)
+					variables[i] = variables[i]->next;
+			}
+			else // a script is being halted
+			{
+				// remove all the variables from the script variable list
+				// to prevent them being removed when the script stops
+				while(owner->variables[i] && owner->variables[i]->type != svt_label)
+					owner->variables[i] = owner->variables[i]->next;
+
+				GC::WriteBarrier(owner, owner->variables[i]);
+			}
+
+			GC::WriteBarrier(this, variables[i]);
+		}
+		trigger = owner->trigger;
+	}
 }
 
 //==========================================================================
@@ -325,7 +359,7 @@ IMPLEMENT_POINTY_CLASS(DFraggleThinker)
 	DECLARE_POINTER(LevelScript)
 END_POINTERS
 
-DFraggleThinker *DFraggleThinker::ActiveThinker;
+TObjPtr<DFraggleThinker> DFraggleThinker::ActiveThinker;
 
 //==========================================================================
 //
@@ -345,6 +379,8 @@ DFraggleThinker::DFraggleThinker()
 		RunningScripts = new DRunningScript;
 		LevelScript = new DFsScript;
 		LevelScript->parent = global_script;
+		GC::WriteBarrier(this, RunningScripts);
+		GC::WriteBarrier(this, LevelScript);
 	}
 }
 
@@ -535,6 +571,30 @@ void DFraggleThinker::PointerSubstitution (DObject *old, DObject *notOld)
 
 //==========================================================================
 //
+// Adds a running script to the list of running scripts
+//
+//==========================================================================
+
+void DFraggleThinker::AddRunningScript(DRunningScript *runscr)
+{
+	runscr->next = RunningScripts->next;
+	GC::WriteBarrier(runscr, RunningScripts->next);
+
+	runscr->prev = RunningScripts;
+	GC::WriteBarrier(runscr, RunningScripts);
+
+	runscr->prev->next = runscr;
+	GC::WriteBarrier(runscr->prev, runscr);
+
+	if(runscr->next)
+	{
+		runscr->next->prev = runscr;
+		GC::WriteBarrier(runscr->next, runscr);
+	}
+}
+
+//==========================================================================
+//
 //
 //
 //==========================================================================
@@ -570,41 +630,14 @@ static bool T_RunScript(int snum, AActor * t_trigger)
 		// Better queue it for execution for the next time
 		// the runningscripts are checked.
 
-		DRunningScript *runscr;
-		DFsScript *script;
-		int i;
-		
 		if(snum < 0 || snum >= MAXSCRIPTS) return false;
-		script = th->LevelScript->children[snum];
+
+		DFsScript *script = th->LevelScript->children[snum];
 		if(!script)	return false;
 	
-		runscr = new DRunningScript();
-		runscr->script = script;
-		runscr->save_point = 0; // start at beginning
-		runscr->wait_type = wt_none;      // start straight away
-		runscr->next = th->RunningScripts->next;
-		runscr->prev = th->RunningScripts;
-		runscr->prev->next = runscr;
-		GC::WriteBarrier(runscr->prev, runscr);
-		if(runscr->next)
-		{
-			runscr->next->prev = runscr;
-			GC::WriteBarrier(runscr->next, runscr);
-		}
-	
-		// save the script variables 
-		for(i=0; i<VARIABLESLOTS; i++)
-		{
-			runscr->variables[i] = script->variables[i];
-			
-			// in case we are starting another current_script:
-			// remove all the variables from the script variable list
-			// we only start with the basic labels
-			while(runscr->variables[i] && runscr->variables[i]->type != svt_label)
-				runscr->variables[i] = runscr->variables[i]->next;
-		}
-		// copy trigger
-		runscr->trigger = t_trigger;
+		DRunningScript *runscr = new DRunningScript(script, 0);
+		// hook into chain at start
+		th->AddRunningScript(runscr);
 		return true;
 	}
 	return false;
