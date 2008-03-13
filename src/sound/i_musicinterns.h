@@ -312,8 +312,9 @@ protected:
 
 class ModPlugSong : public StreamSong
 {
+
 public:
-	ModPlugSong (FILE *file, char * musiccache, int length);
+	static ModPlugSong *Create(FILE *file, char *musiccache, int length);
 	~ModPlugSong ();
 	bool IsPlaying ();
 	bool SetPosition (int order);
@@ -321,6 +322,7 @@ public:
 
 protected:
 	static bool FillStream (SoundStream *stream, void *buff, int len, void *userdata);
+	ModPlugSong (ModPlugFile *dat);
 
 	ModPlugFile * Data;
 	int order;
