@@ -664,7 +664,7 @@ public:
 	void Serialize(FArchive & arc);
 	void Tick();
 	size_t PropagateMark();
-	void PointerSubstitution (DObject *old, DObject *notOld);
+	size_t PointerSubstitution (DObject *old, DObject *notOld);
 	bool wait_finished(DRunningScript *script);
 	void AddRunningScript(DRunningScript *runscr);
 
