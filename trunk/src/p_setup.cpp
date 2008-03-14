@@ -1525,7 +1525,7 @@ enum
 	THING_CopyCeilingPlane = 9511,
 	THING_VavoomFloor=1500,
 	THING_VavoomCeiling=1501,
-	THING_VertexFloorZ=1505,
+	THING_VertexFloorZ=1504,
 	THING_VertexCeilingZ=1505,
 };
 
