@@ -1,3 +1,17 @@
+March 14, 2008 (Changes by Graf Zahl)
+- fixed: A_PainShootSkull was missing a NULL pointer check for the spawn type.
+- implemented Vavoom's vertex height things (1504, 1505) that can explicitly
+  define slopes for triangular sectors. The height is specified as the thing's
+  z-coordinate.
+
+March 13, 2008
+- Fixed: When returning to a hub map, inventory belonging to the temporary
+  copies of the players stored in the archive would be destroyed and break
+  apart the STAT_INVENTORY thinker list. Now they aren't destroyed while
+  loading the archive but are unlinked from the inventory list instead, so
+  the garbage collector will get them later.
+- Changed pointer substitution to return the number of pointers changed.
+
 March 13, 2008 (Changes by Graf Zahl)
 - Fixed: Pointer substitution changed the pointers for the thinker ring list
   resulting in a freeze.
@@ -7,7 +21,7 @@ March 12, 2008
 - Loading a save game now initiates a collection.
 - Added a finalization cost to the sweep stage.
 - Fixed: D_dehacked.cpp/PatchThing() allocated an actor on the stack.
-- Changed the sentinels in the thinker lists into a proper thinker. The old
+- Changed the sentinels in the thinker lists into proper thinkers. The old
   way wasn't playing well with the write barriers.
 - Fixed: DFrameBuffer::WriteSavePic needs to fix the canvas in place while
   using it.
