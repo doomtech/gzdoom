@@ -81,7 +81,7 @@ public:
 
 	static DThinker *FirstThinker (int statnum);
 
-private:
+protected:
 	enum no_link_type { NO_LINK };
 	DThinker(no_link_type) throw();
 	static void DestroyThinkersInList (FThinkerList &list);
