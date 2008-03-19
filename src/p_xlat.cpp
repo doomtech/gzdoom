@@ -108,8 +108,11 @@ void P_TranslateLineDef (line_t *ld, maplinedef_t *mld)
 				flags &= 0x1FF;
 			}
 		}
+		if (flags & ML_3DMIDTEX_ETERNITY)
+		{
+			flags |= ML_3DMIDTEX;
+		}
 		passthrough = (flags & ML_PASSUSE_BOOM);
-		if (flags&ML_3DMIDTEX_ETERNITY) flags|=ML_3DMIDTEX;
 	}
 	flags = flags & 0xFFFF81FF;	// Ignore flags unknown to DOOM
 

@@ -461,6 +461,7 @@ void GLFlat::ProcessSector(sector_t * frontsector, subsector_t * sub)
 
 	// Get the real sector for this one.
 	sector=&sectors[frontsector->sectornum];	
+	extsector_t::xfloor &x = sector->e->XFloor;
 	this->sub=NULL;
 
 	gl_drawinfo->ss_renderflags[sub-subsectors]|=SSRF_PROCESSED;
@@ -495,10 +496,10 @@ void GLFlat::ProcessSector(sector_t * frontsector, subsector_t * sub)
 			ceiling=false;
 			renderflags=SSRF_RENDERFLOOR;
 
-			if (sector->e->ffloors.Size())
+			if (x.ffloors.Size())
 			{
 				light = P_GetPlaneLight(sector, &frontsector->floorplane, false);
-				if (!(sector->FloorFlags&SECF_ABSLIGHTING) || light!=&sector->e->lightlist[0])	
+				if (!(sector->FloorFlags&SECF_ABSLIGHTING) || light!=&x.lightlist[0])	
 					lightlevel = *light->p_lightlevel;
 
 				Colormap.CopyLightColor(*light->p_extra_colormap);
@@ -534,7 +535,7 @@ void GLFlat::ProcessSector(sector_t * frontsector, subsector_t * sub)
 			ceiling=true;
 			renderflags=SSRF_RENDERCEILING;
 
-			if (sector->e->ffloors.Size())
+			if (x.ffloors.Size())
 			{
 				light = P_GetPlaneLight(sector, &sector->ceilingplane, true);
 
@@ -555,7 +556,7 @@ void GLFlat::ProcessSector(sector_t * frontsector, subsector_t * sub)
 	//
 
 	stack=false;
-	if (sector->e->ffloors.Size())
+	if (x.ffloors.Size())
 	{
 		player_t * player=players[consoleplayer].camera->player;
 
@@ -575,9 +576,9 @@ void GLFlat::ProcessSector(sector_t * frontsector, subsector_t * sub)
 			// is no longer necessary.
 
 			ceiling=true;
-			for(k=0;k<sector->e->ffloors.Size();k++)
+			for(k=0;k<x.ffloors.Size();k++)
 			{
-				rover=sector->e->ffloors[k];
+				rover=x.ffloors[k];
 				
 				if ((rover->flags&(FF_EXISTS|FF_RENDERPLANES))==(FF_EXISTS|FF_RENDERPLANES))
 				{
@@ -632,9 +633,9 @@ void GLFlat::ProcessSector(sector_t * frontsector, subsector_t * sub)
 			}
 				  
 			ceiling=false;
-			for(k=sector->e->ffloors.Size()-1;k>=0;k--)
+			for(k=x.ffloors.Size()-1;k>=0;k--)
 			{
-				rover=sector->e->ffloors[k];
+				rover=x.ffloors[k];
 				
 				if ((rover->flags&(FF_EXISTS|FF_RENDERPLANES))==(FF_EXISTS|FF_RENDERPLANES))
 				{

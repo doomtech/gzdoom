@@ -1084,8 +1084,13 @@ void P_LoadSectors (MapData * map)
 	map->Read(ML_SECTORS, msp);
 	ms = (mapsector_t*)msp;
 	ss = sectors;
+	
+	// Extended properties
+	sectors[0].e = new extsector_t[numsectors];
+
 	for (i = 0; i < numsectors; i++, ss++, ms++)
 	{
+		ss->e = &sectors[0].e[i];
 		ss->floortexz = LittleShort(ms->floorheight)<<FRACBITS;
 		ss->floorplane.d = -ss->floortexz;
 		ss->floorplane.c = FRACUNIT;
@@ -1141,8 +1146,10 @@ void P_LoadSectors (MapData * map)
 		// killough 8/28/98: initialize all sectors to normal friction
 		ss->friction = ORIG_FRICTION;
 		ss->movefactor = ORIG_FRICTION_FACTOR;
+
+		// This is so that R_FakeFlat copies can still retrieve the sector's index.
+		ss->sectornum = i;
 	}
-	P_CreateExtSectors();
 	delete[] msp;
 }
 
@@ -2013,6 +2020,7 @@ void P_LoadLineDefs (MapData * map)
 		P_SaveLineSpecial (ld);
 		if (level.flags & LEVEL_CLIPMIDTEX) ld->flags |= ML_CLIP_MIDTEX;
 		if (level.flags & LEVEL_WRAPMIDTEX) ld->flags |= ML_WRAP_MIDTEX;
+		if (level.flags & LEVEL_CHECKSWITCHRANGE) ld->flags |= ML_CHECKSWITCHRANGE;
 	}
 	delete[] mldf;
 }
@@ -2089,6 +2097,7 @@ void P_LoadLineDefs2 (MapData * map)
 		P_SaveLineSpecial (ld);
 		if (level.flags & LEVEL_CLIPMIDTEX) ld->flags |= ML_CLIP_MIDTEX;
 		if (level.flags & LEVEL_WRAPMIDTEX) ld->flags |= ML_WRAP_MIDTEX;
+		if (level.flags & LEVEL_CHECKSWITCHRANGE) ld->flags |= ML_CHECKSWITCHRANGE;
 	}
 	delete[] mldf;
 }
@@ -3410,7 +3419,7 @@ void P_FreeLevelData ()
 	level.total_monsters = level.total_items = level.total_secrets =
 		level.killed_monsters = level.found_items = level.found_secrets =
 		wminfo.maxfrags = 0;
-	P_CleanExtSectors();
+		
 	FBehavior::StaticUnloadModules ();
 	if (vertexes != NULL)
 	{
@@ -3424,6 +3433,7 @@ void P_FreeLevelData ()
 	}
 	if (sectors != NULL)
 	{
+		delete[] sectors[0].e;
 		delete[] sectors;
 		sectors = NULL;
 		numsectors = 0;	// needed for the pointer cleanup code
@@ -3855,9 +3865,6 @@ void P_SetupLevel (char *lumpname, int position)
 		delete[] buildthings;
 	}
 	delete map;
-
-	// Reordered the spawning of specials due to the needs of the 
-	// OpenGL renderer!
 
 	// set up world state
 	P_SpawnSpecials ();

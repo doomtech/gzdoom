@@ -376,11 +376,13 @@ CVAR (Flag, sv_monsterrespawn,	dmflags, DF_MONSTERS_RESPAWN);
 CVAR (Flag, sv_itemrespawn,		dmflags, DF_ITEMS_RESPAWN);
 CVAR (Flag, sv_fastmonsters,	dmflags, DF_FAST_MONSTERS);
 CVAR (Flag, sv_nojump,			dmflags, DF_NO_JUMP);
+CVAR (Flag, sv_allowjump,		dmflags, DF_YES_JUMP);
 CVAR (Flag, sv_nofreelook,		dmflags, DF_NO_FREELOOK);
 CVAR (Flag, sv_respawnsuper,	dmflags, DF_RESPAWN_SUPER);
 CVAR (Flag, sv_nofov,			dmflags, DF_NO_FOV);
 CVAR (Flag, sv_noweaponspawn,	dmflags, DF_NO_COOP_WEAPON_SPAWN);
 CVAR (Flag, sv_nocrouch,		dmflags, DF_NO_CROUCH);
+CVAR (Flag, sv_allowcrouch,		dmflags, DF_YES_CROUCH);
 
 //==========================================================================
 //
@@ -2437,14 +2439,9 @@ void D_DoomMain (void)
 	StartScreen->LoadingStatus ("Init game engine", 0x3f);
 	P_Init ();
 
+
 	//SBarInfo support.
-	if(Wads.CheckNumForName("SBARINFO") != -1)
-	{
-		Printf ("ParseSBarInfo: Loading custom status bar definition.\n");
-		SBarInfoScript = new SBarInfo(Wads.GetNumForName("SBARINFO")); //load last SBARINFO lump to avoid clashes
-		atterm(FreeSBarInfoScript);
-	}
-	//end most of the SBarInfo stuff
+	SBarInfo::Load();
 
 	Printf ("D_CheckNetGame: Checking network game status.\n");
 	StartScreen->LoadingStatus ("Checking network game status.", 0x3f);

@@ -419,16 +419,7 @@ void DFraggleThinker::Destroy()
 void DFraggleThinker::Serialize(FArchive &arc)
 {
 	Super::Serialize(arc);
-	arc << LevelScript << RunningScripts;
-
-	int count = SpawnedThings.Size ();
-	arc << count;
-	if (arc.IsLoading()) SpawnedThings.Resize(count);
-	for(int i=0;i<count;i++)
-	{
-		arc << SpawnedThings[i];
-	}
-
+	arc << LevelScript << RunningScripts << SpawnedThings;
 }
 
 //==========================================================================

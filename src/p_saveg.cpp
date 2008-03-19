@@ -333,6 +333,8 @@ void P_SerializeWorld (FArchive &arc)
 			<< sec->FloorSkyBox << sec->CeilingSkyBox
 			<< sec->ZoneNumber
 			<< sec->oldspecial;
+
+		sec->e->Serialize(arc);
 		if (arc.IsStoring ())
 		{
 			arc << sec->ColorMap->Color
@@ -407,6 +409,13 @@ void P_SerializeWorld (FArchive &arc)
 	}
 }
 
+void extsector_t::Serialize(FArchive &arc)
+{
+	arc << Midtex.Floor.AttachedLines 
+		<< Midtex.Floor.AttachedSectors
+		<< Midtex.Ceiling.AttachedLines
+		<< Midtex.Ceiling.AttachedSectors;
+}
 
 //
 // Thinkers
