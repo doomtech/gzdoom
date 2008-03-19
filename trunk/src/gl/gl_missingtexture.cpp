@@ -185,7 +185,7 @@ void GLDrawInfo::AddLowerMissingTexture(seg_t * seg, fixed_t backheight)
 	}
 
 	// Ignore FF_FIX's because they are designed to abuse missing textures
-	if (seg->backsector->e->ffloors.Size() && seg->backsector->e->ffloors[0]->flags&FF_FIX)
+	if (seg->backsector->e->XFloor.ffloors.Size() && seg->backsector->e->XFloor.ffloors[0]->flags&FF_FIX)
 	{
 		unclock(totalms);
 		return;

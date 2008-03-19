@@ -349,7 +349,7 @@ static void PrepareTransparentDoors(sector_t * sector)
 	if (sector->subsectorcount==0) return;
 
 	sector->transdoorheight=sector->floortexz;
-	sector->transdoor= !(sector->e->ffloors.Size() || sector->heightsec || sector->floorplane.a || sector->floorplane.b);
+	sector->transdoor= !(sector->e->XFloor.ffloors.Size() || sector->heightsec || sector->floorplane.a || sector->floorplane.b);
 
 	if (sector->transdoor)
 	{

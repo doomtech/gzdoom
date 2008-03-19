@@ -172,9 +172,9 @@ void gl_DrawPlayerSprites(sector_t * viewsector)
 		lightlevel = gl_CheckSpriteGlow(viewsector->floorpic, lightlevel, playermo->z-playermo->floorz);
 
 		// calculate colormap for weapon sprites
-		if (viewsector->e->ffloors.Size() && !gl_nocoloredspritelighting)
+		if (viewsector->e->XFloor.ffloors.Size() && !gl_nocoloredspritelighting)
 		{
-			TArray<lightlist_t> & lightlist = viewsector->e->lightlist;
+			TArray<lightlist_t> & lightlist = viewsector->e->XFloor.lightlist;
 			for(i=0;i<lightlist.Size();i++)
 			{
 				int lightbottom;

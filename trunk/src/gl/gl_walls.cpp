@@ -263,7 +263,7 @@ void GLWall::SplitWall(sector_t * frontsector, bool translucent)
 	float maplightbottomleft;
 	float maplightbottomright;
 	int i;
-	TArray<lightlist_t> & lightlist=frontsector->e->lightlist;
+	TArray<lightlist_t> & lightlist=frontsector->e->XFloor.lightlist;
 
 	if (glseg.x1==glseg.x2 && glseg.y1==glseg.y2)
 	{
@@ -475,7 +475,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 			hi.lightlevel=GetCeilingLight(fs);
 			hi.colormap=fs->ColorMap;
 
-			if (fs->e->ffloors.Size())
+			if (fs->e->XFloor.ffloors.Size())
 			{
 				light = P_GetPlaneLight(fs, &fs->ceilingplane, true);
 
@@ -505,7 +505,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 			hi.lightlevel=GetFloorLight(fs);
 			hi.colormap=fs->ColorMap;
 
-			if (fs->e->ffloors.Size())
+			if (fs->e->XFloor.ffloors.Size())
 			{
 				light = P_GetPlaneLight(fs, &fs->floorplane, false);
 
@@ -682,7 +682,7 @@ void GLWall::DoTexture(int _type,seg_t * seg,int peg,
 
 	// Add this wall to the render list
 	sector_t * sec = sub? sub->sector : seg->frontsector;
-	if (sec->e->lightlist.Size()==0 || gl_fixedcolormap) PutWall(false);
+	if (sec->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) PutWall(false);
 	else SplitWall(sec, false);
 	glseg=glsave;
 }
@@ -951,7 +951,7 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 				// Draw the stuff
 				//
 				//
-				if (realfront->e->lightlist.Size()==0 || gl_fixedcolormap) split.PutWall(translucent);
+				if (realfront->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) split.PutWall(translucent);
 				else split.SplitWall(realfront, translucent);
 
 				t=1;
@@ -965,7 +965,7 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 			// Draw the stuff without splitting
 			//
 			//
-			if (realfront->e->lightlist.Size()==0 || gl_fixedcolormap) PutWall(translucent);
+			if (realfront->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) PutWall(translucent);
 			else SplitWall(realfront, translucent);
 		}
 		alpha=1.0f;
@@ -1062,7 +1062,7 @@ void GLWall::BuildFFBlock(seg_t * seg, F3DFloor * rover,
 	}
 	
 	sector_t * sec = sub? sub->sector : seg->frontsector;
-	if (sec->e->lightlist.Size()==0 || gl_fixedcolormap) PutWall(translucent);
+	if (sec->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) PutWall(translucent);
 	else SplitWall(sec, translucent);
 	alpha=1.0f;
 	lightlevel = savelight;
@@ -1078,7 +1078,7 @@ void GLWall::InverseFloors(seg_t * seg, sector_t * frontsector,
 						   fixed_t topleft, fixed_t topright, 
 						   fixed_t bottomleft, fixed_t bottomright)
 {
-	TArray<F3DFloor *> & frontffloors=frontsector->e->ffloors;
+	TArray<F3DFloor *> & frontffloors=frontsector->e->XFloor.ffloors;
 
 	for(int i=0;i<frontffloors.Size();i++)
 	{
@@ -1146,7 +1146,7 @@ void GLWall::ClipFFloors(seg_t * seg, F3DFloor * ffloor, sector_t * frontsector,
 						 fixed_t topleft, fixed_t topright, 
 						 fixed_t bottomleft, fixed_t bottomright)
 {
-	TArray<F3DFloor *> & frontffloors=frontsector->e->ffloors;
+	TArray<F3DFloor *> & frontffloors=frontsector->e->XFloor.ffloors;
 
 	int flags=ffloor->flags&FF_SWIMMABLE|FF_TRANSLUCENT;
 
@@ -1236,7 +1236,7 @@ void GLWall::DoFFloorBlocks(seg_t * seg,sector_t * frontsector,sector_t * backse
 							fixed_t bch1, fixed_t bch2, fixed_t bfh1, fixed_t bfh2)
 
 {
-	TArray<F3DFloor *> & backffloors=backsector->e->ffloors;
+	TArray<F3DFloor *> & backffloors=backsector->e->XFloor.ffloors;
 	fixed_t topleft, topright, bottomleft, bottomright;
 	bool renderedsomething=false;
 
@@ -1325,7 +1325,7 @@ void GLWall::DoFFloorBlocks(seg_t * seg,sector_t * frontsector,sector_t * backse
 	}
 
 	// draw all inverse floors below the lowest one
-	if (frontsector->e->ffloors.Size() > 0)
+	if (frontsector->e->XFloor.ffloors.Size() > 0)
 	{
 		if (topleft>bottomleft || topright>bottomright)
 			InverseFloors(seg, frontsector, topleft, topright, bottomleft, bottomright);
@@ -1578,7 +1578,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 			DoMidTexture(seg, drawfogboundary, realfront, realback, fch1, fch2, ffh1, ffh2, bch1, bch2, bfh1, bfh2);
 		}
 
-		if (backsector->e->ffloors.Size() || frontsector->e->ffloors.Size()) 
+		if (backsector->e->XFloor.ffloors.Size() || frontsector->e->XFloor.ffloors.Size()) 
 		{
 			DoFFloorBlocks(seg,frontsector,backsector, fch1, fch2, ffh1, ffh2, bch1, bch2, bfh1, bfh2);
 		}

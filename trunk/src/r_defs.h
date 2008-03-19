@@ -185,10 +185,22 @@ struct secplane_t
 		d = d - FixedMul (hdiff, c);
 	}
 
+	// Moves a plane up/down by hdiff units
+	fixed_t GetChangedHeight (fixed_t hdiff)
+	{
+		return d - FixedMul (hdiff, c);
+	}
+
 	// Returns how much this plane's height would change if d were set to oldd
 	fixed_t HeightDiff (fixed_t oldd) const
 	{
 		return FixedMul (oldd - d, ic);
+	}
+
+	// Returns how much this plane's height would change if d were set to oldd
+	fixed_t HeightDiff (fixed_t oldd, fixed_t newd) const
+	{
+		return FixedMul (oldd - newd, ic);
 	}
 
 	fixed_t PointToDist (fixed_t x, fixed_t y, fixed_t z) const
@@ -256,6 +268,43 @@ struct FExtraLight
 
 	void InsertLight (const secplane_t &plane, line_s *line, int type);
 };
+
+// this substructure contains a few sector properties that are stored in dynamic arrays
+// These must not be copied by R_FakeFlat etc. or bad things will happen.
+struct line_s;
+struct sector_t;
+
+struct extsector_t
+{
+	// 3DMIDTEX information
+	struct midtex
+	{
+		struct plane
+		{
+			TArray<sector_t *> AttachedSectors;		// all sectors containing 3dMidtex lines attached to this sector
+			TArray<line_s *> AttachedLines;			// all 3dMidtex lines attached to this sector
+		} Floor, Ceiling;
+	} Midtex;
+
+	// linked sectors
+	/*
+	struct linked
+	{
+		TArray<FLinkedSector> Sectors;
+	} Linked;
+	*/
+
+	// Extrafloor stuff
+	struct xfloor
+	{
+		TDeletingArray<F3DFloor *>		ffloors;		// 3D floors in this sector
+		TArray<lightlist_t>				lightlist;		// 3D light list
+		TArray<sector_t*>				attached;		// 3D floors attached to this sector
+	} XFloor;
+	
+	void Serialize(FArchive &arc);
+};
+
 
 struct sector_t
 {
