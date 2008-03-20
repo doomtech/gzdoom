@@ -274,6 +274,13 @@ struct FExtraLight
 struct line_s;
 struct sector_t;
 
+struct FLinkedSector
+{
+	sector_t *Sector;
+	int Type;
+};
+
+
 struct extsector_t
 {
 	// 3DMIDTEX information
@@ -286,15 +293,14 @@ struct extsector_t
 		} Floor, Ceiling;
 	} Midtex;
 
-	// linked sectors
-	/*
+	// Linked sector information
 	struct linked
 	{
-		TArray<FLinkedSector> Sectors;
+		struct plane
+		{
+			TArray<FLinkedSector> Sectors;
+		} Floor, Ceiling;
 	} Linked;
-	*/
-
-	// Extrafloor stuff
 	struct xfloor
 	{
 		TDeletingArray<F3DFloor *>		ffloors;		// 3D floors in this sector
@@ -309,6 +315,7 @@ struct extsector_t
 struct sector_t
 {
 	// Member functions
+	bool IsLinked(sector_t *other, bool ceiling) const;
 	fixed_t FindLowestFloorSurrounding (vertex_t **v) const;
 	fixed_t FindHighestFloorSurrounding (vertex_t **v) const;
 	fixed_t FindNextHighestFloor (vertex_t **v) const;
