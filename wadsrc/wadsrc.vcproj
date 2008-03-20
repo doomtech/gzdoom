@@ -48,8 +48,8 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad XLATCC=..\tools\xlatcc\xlatcc DEHSUPP=..\tools\dehsupp\dehsupp NOLOGO=/nologo andcopy"
-				ReBuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad NOLOGO=/nologo XLATCC=..\tools\xlatcc\xlatcc DEHSUPP=..\tools\dehsupp\dehsupp nrebuild"
+				BuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad DEHSUPP=..\tools\dehsupp\dehsupp NOLOGO=/nologo andcopy"
+				ReBuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad NOLOGO=/nologo DEHSUPP=..\tools\dehsupp\dehsupp nrebuild"
 				CleanCommandLine="del wadmake gzdoom.pk3"
 				Output="gzdoom.pk3"
 				PreprocessorDefinitions=""
@@ -90,8 +90,8 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad XLATCC=..\tools\xlatcc\xlatcc DEHSUPP=..\tools\dehsupp\dehsupp NOLOGO=/nologo"
-				ReBuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad NOLOGO=/nologo XLATCC=..\tools\xlatcc\xlatcc DEHSUPP=..\tools\dehsupp\dehsupp nrebuild"
+				BuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad DEHSUPP=..\tools\dehsupp\dehsupp NOLOGO=/nologo"
+				ReBuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad NOLOGO=/nologo DEHSUPP=..\tools\dehsupp\dehsupp nrebuild"
 				CleanCommandLine="del wadmake gzdoom.pk3"
 				Output="gzdoom.pk3"
 				PreprocessorDefinitions=""
@@ -167,6 +167,10 @@
 			</File>
 			<File
 				RelativePath=".\x11r6rgb.txt"
+				>
+			</File>
+			<File
+				RelativePath=".\xhairs.txt"
 				>
 			</File>
 			<Filter
@@ -445,6 +449,10 @@
 					</File>
 					<File
 						RelativePath=".\decorate\doom\doomplayer.txt"
+						>
+					</File>
+					<File
+						RelativePath=".\decorate\doom\doomweapons.txt"
 						>
 					</File>
 					<File
