@@ -690,7 +690,7 @@ AT_GAME_SET(FS_Init)
 	void init_functions();
 
 	// I'd rather link the special here than make another source file depend on FS!
-	LineSpecials[54]=LS_FS_Execute;
+	LineSpecials[FS_Execute]=LS_FS_Execute;
 	global_script = new DFsScript;
 	GC::AddSoftRoot(global_script);
 	init_functions();
