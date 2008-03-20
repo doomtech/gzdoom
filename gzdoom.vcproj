@@ -794,6 +794,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\p_linkedsectors.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\p_lnspec.cpp"
 				>
 			</File>
