@@ -1,4 +1,3 @@
-#include "gl_pch.h"
 /*
 ** gl_vertex.cpp
 **
@@ -38,6 +37,7 @@
 
 
 
+#include "gl/gl_include.h"
 #include "gl/gl_struct.h"
 #include "gl/gl_renderstruct.h"
 #include "gl/gl_portal.h"

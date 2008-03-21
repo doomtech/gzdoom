@@ -1,4 +1,3 @@
-#include "gl_pch.h"
 /*
 ** gl_scene.cpp
 ** manages the rendering of the player's view
@@ -37,6 +36,7 @@
 **
 */
 
+#include "gl/gl_include.h"
 #include "gi.h"
 #include "m_png.h"
 #include "st_stuff.h"

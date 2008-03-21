@@ -1,5 +1,3 @@
-#include "gl_pch.h"
-
 /*
 ** gl_cycler.cpp
 ** Implements the cycler for dynamic lights and texture shaders.
@@ -34,6 +32,7 @@
 **---------------------------------------------------------------------------
 **
 */
+#include "gl/gl_include.h"
 #include "gl/gl_cycler.h"
 
 //==========================================================================

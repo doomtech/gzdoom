@@ -1,5 +1,3 @@
-#include "gl_pch.h"
-
 /*
 ** a_dynlight.cpp
 ** Implements actors representing dynamic lights (hardware independent)
@@ -35,6 +33,7 @@
 **
 */
 
+#include "gl/gl_include.h"
 #include "templates.h"
 #include "m_random.h"
 #include "r_main.h"

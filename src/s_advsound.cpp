@@ -1858,9 +1858,9 @@ void AAmbientSound::Activate (AActor *activator)
 
 	if (!bActive)
 	{
-		if (!(amb->type & 3) && !amb->periodmin)
+		if ((amb->type & 3) == 0 && amb->periodmin == 0)
 		{
-			int sndnum = S_FindSound (amb->sound);
+			int sndnum = S_FindSound(amb->sound);
 			if (sndnum == 0)
 			{
 				Destroy ();

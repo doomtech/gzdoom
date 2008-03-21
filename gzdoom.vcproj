@@ -3743,386 +3743,66 @@
 			<File
 				RelativePath=".\src\gl\a_dynlight.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gfxfuncs.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_bsp.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_clipper.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_cycler.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_data.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_decal.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_drawinfo.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_dynlight.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_fakeflat.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_flats.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_framebuffer.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_geometric.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_glow.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_hirestex.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_light.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_menu.cpp"
@@ -4131,342 +3811,58 @@
 			<File
 				RelativePath=".\src\gl\gl_missinglines.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_missingtexture.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_models.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_models_md2.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_models_md3.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_nodes.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\gl\gl_pch.cpp"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath=".\src\gl\gl_portal.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_scene.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_shader.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_sky.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_skydome.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_sprite.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_swshaders.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_texture.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_translate.cpp"
@@ -4475,98 +3871,18 @@
 			<File
 				RelativePath=".\src\gl\gl_vertex.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_walls.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_walls_draw.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_weapon.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_wipe.cpp"
@@ -4575,26 +3891,6 @@
 			<File
 				RelativePath=".\src\gl\gltexture.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pch.pch"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-						PrecompiledHeaderThrough="gl_pch.h"
-						PrecompiledHeaderFile="gl_pchd.pch"
-					/>
-				</FileConfiguration>
 			</File>
 			<Filter
 				Name="GL Header"
@@ -4629,6 +3925,10 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\gl_glow.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\gl_include.h"
 					>
 				</File>
 				<File

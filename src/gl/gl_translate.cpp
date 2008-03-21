@@ -1,4 +1,3 @@
-#include "gl_pch.h"
 /*
 ** gl_translate.cpp
 ** GL-related translation stuff

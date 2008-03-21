@@ -62,8 +62,7 @@
 #define O_BINARY 0
 #endif
 
-#define SELECT_ATTEN(a)			((a)==ATTN_NONE ? 0 : (a)==ATTN_SURROUND ? -1 : \
-								 (a)==ATTN_STATIC ? 3 : 1)
+#define SELECT_ATTEN(a)			((a)==ATTN_NONE ? 0 : (a)==ATTN_STATIC ? 3 : 1)
 #ifndef FIXED2FLOAT
 #define FIXED2FLOAT(f)			(((float)(f))/(float)65536)
 #endif

@@ -1,4 +1,3 @@
-#include "gl_pch.h"
 /*
 ** Hires texture management
 **
@@ -35,6 +34,7 @@
 **---------------------------------------------------------------------------
 **
 */
+#include "gl/gl_include.h"
 #include "w_wad.h"
 #include "m_png.h"
 #include "r_draw.h"

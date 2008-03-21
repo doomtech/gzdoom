@@ -1,4 +1,3 @@
-#include "gl_pch.h"
 /*
 ** gfxfuncs.cpp
 ** True color graphics functions
@@ -40,6 +39,7 @@
 #include "m_swap.h"
 #include "m_png.h"
 #include "m_crc32.h"
+#include "templates.h"
 
 //===========================================================================
 //
@@ -73,13 +73,13 @@ PalEntry averageColor(const unsigned long *data, int size, bool maxout)
 	g = g/size;
 	b = b/size;
 
-	int maxv=max(max(r,g),b);
+	int maxv=MAX(MAX(r,g),b);
 
 	if(maxv && maxout)
 	{
-		r *= 255.0f / maxv;
-		g *= 255.0f / maxv;
-		b *= 255.0f / maxv;
+		r = Scale(r, 255, maxv);
+		g = Scale(g, 255, maxv);
+		b = Scale(b, 255, maxv);
 	}
 	return PalEntry(r,g,b);
 }

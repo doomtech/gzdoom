@@ -1874,9 +1874,11 @@ void FActiveInterpolation::CopyInterpToOld ()
 		oldipos[0] = ((sector_t*)Address)->ceiling_xoffs;
 		oldipos[1] = ((sector_t*)Address)->ceiling_yoffs;
 		break;
-	case INTERP_WallPanning:
-		oldipos[0] = ((side_t*)Address)->rowoffset;
-		oldipos[1] = ((side_t*)Address)->textureoffset;
+	case INTERP_WallPanning_Top:
+	case INTERP_WallPanning_Mid:
+	case INTERP_WallPanning_Bottom:
+		oldipos[0] = ((side_t*)Address)->GetTextureYOffset(Type - INTERP_WallPanning_Top);
+		oldipos[1] = ((side_t*)Address)->GetTextureXOffset(Type - INTERP_WallPanning_Top);
 		break;
 	}
 }
@@ -1888,12 +1890,10 @@ void FActiveInterpolation::CopyBakToInterp ()
 	case INTERP_SectorFloor:
 		((sector_t*)Address)->floorplane.d = bakipos[0];
 		((sector_t*)Address)->floortexz = bakipos[1];
-		P_RecalculateAttached3DFloors((sector_t*)Address);
 		break;
 	case INTERP_SectorCeiling:
 		((sector_t*)Address)->ceilingplane.d = bakipos[0];
 		((sector_t*)Address)->ceilingtexz = bakipos[1];
-		P_RecalculateAttached3DFloors((sector_t*)Address);
 		break;
 	case INTERP_Vertex:
 		((vertex_t*)Address)->x = bakipos[0];
@@ -1907,9 +1907,11 @@ void FActiveInterpolation::CopyBakToInterp ()
 		((sector_t*)Address)->ceiling_xoffs = bakipos[0];
 		((sector_t*)Address)->ceiling_yoffs = bakipos[1];
 		break;
-	case INTERP_WallPanning:
-		((side_t*)Address)->rowoffset = bakipos[0];
-		((side_t*)Address)->textureoffset = bakipos[1];
+	case INTERP_WallPanning_Top:
+	case INTERP_WallPanning_Mid:
+	case INTERP_WallPanning_Bottom:
+		((side_t*)Address)->SetTextureYOffset(Type - INTERP_WallPanning_Top, bakipos[0]);
+		((side_t*)Address)->SetTextureXOffset(Type - INTERP_WallPanning_Top, bakipos[1]);
 		break;
 	}
 }
@@ -1917,19 +1919,17 @@ void FActiveInterpolation::CopyBakToInterp ()
 void FActiveInterpolation::DoAnInterpolation (fixed_t smoothratio)
 {
 	fixed_t *adr1, *adr2, pos;
-	bool recalc=false;
+	int v1, v2;
 
 	switch (Type)
 	{
 	case INTERP_SectorFloor:
 		adr1 = &((sector_t*)Address)->floorplane.d;
 		adr2 = &((sector_t*)Address)->floortexz;
-		recalc=true;
 		break;
 	case INTERP_SectorCeiling:
 		adr1 = &((sector_t*)Address)->ceilingplane.d;
 		adr2 = &((sector_t*)Address)->ceilingtexz;
-		recalc=true;
 		break;
 	case INTERP_Vertex:
 		adr1 = &((vertex_t*)Address)->x;
@@ -1943,9 +1943,13 @@ void FActiveInterpolation::DoAnInterpolation (fixed_t smoothratio)
 		adr1 = &((sector_t*)Address)->ceiling_xoffs;
 		adr2 = &((sector_t*)Address)->ceiling_yoffs;
 		break;
-	case INTERP_WallPanning:
-		adr1 = &((side_t*)Address)->rowoffset;
-		adr2 = &((side_t*)Address)->textureoffset;
+	case INTERP_WallPanning_Top:
+	case INTERP_WallPanning_Mid:
+	case INTERP_WallPanning_Bottom:
+		v1 = ((side_t*)Address)->GetTextureYOffset(Type - INTERP_WallPanning_Top);
+		v2 = ((side_t*)Address)->GetTextureXOffset(Type - INTERP_WallPanning_Top);
+		adr1 = &v1;
+		adr2 = &v2;
 		break;
 	default:
 		return;
@@ -1957,7 +1961,18 @@ void FActiveInterpolation::DoAnInterpolation (fixed_t smoothratio)
 	pos = bakipos[1] = *adr2;
 	*adr2 = oldipos[1] + FixedMul (pos - oldipos[1], smoothratio);
 
-	if (recalc) P_RecalculateAttached3DFloors((sector_t*)Address);
+	switch (Type)
+	{
+	case INTERP_WallPanning_Top:
+	case INTERP_WallPanning_Mid:
+	case INTERP_WallPanning_Bottom:
+		((side_t*)Address)->SetTextureYOffset(Type - INTERP_WallPanning_Top, v1);
+		((side_t*)Address)->SetTextureXOffset(Type - INTERP_WallPanning_Top, v2);
+		break;
+	default:
+		return;
+	}
+
 }
 
 size_t FActiveInterpolation::HashKey (EInterpType type, void *interptr)
@@ -2200,7 +2215,10 @@ FArchive &operator << (FArchive &arc, FActiveInterpolation *&interp)
 		switch (type)
 		{
 		case INTERP_Vertex:			arc << ptr.vert;	break;
-		case INTERP_WallPanning:	arc << ptr.side;	break;
+		case INTERP_WallPanning_Top:	
+		case INTERP_WallPanning_Mid:	
+		case INTERP_WallPanning_Bottom:	
+									arc << ptr.side;	break;
 		default:					arc << ptr.sect;	break;
 		}
 	}
@@ -2212,7 +2230,10 @@ FArchive &operator << (FArchive &arc, FActiveInterpolation *&interp)
 		switch (type)
 		{
 		case INTERP_Vertex:			arc << ptr.vert;	break;
-		case INTERP_WallPanning:	arc << ptr.side;	break;
+		case INTERP_WallPanning_Top:	
+		case INTERP_WallPanning_Mid:	
+		case INTERP_WallPanning_Bottom:	
+									arc << ptr.side;	break;
 		default:					arc << ptr.sect;	break;
 		}
 		interp->Address = ptr.ptr;

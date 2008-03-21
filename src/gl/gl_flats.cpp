@@ -1,4 +1,3 @@
-#include "gl_pch.h"
 /*
 ** gl_flat.cpp
 ** Flat rendering
@@ -37,6 +36,7 @@
 **
 */
 
+#include "gl/gl_include.h"
 #include "a_sharedglobal.h"
 #include "gl/gl_renderstruct.h"
 #include "gl/gl_functions.h"

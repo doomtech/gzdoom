@@ -1,5 +1,3 @@
-#include "gl_pch.h"
-
 /*
 ** gl_weapon.cpp
 ** Weapon sprite drawing
@@ -37,6 +35,7 @@
 **---------------------------------------------------------------------------
 **
 */
+#include "gl/gl_include.h"
 #include "sbar.h"
 #include "gl/gl_struct.h"
 #include "gl/gl_glow.h"

@@ -1,4 +1,3 @@
-#include "gl_pch.h"
 /*
 ** gl_models.cpp
 **
@@ -38,6 +37,7 @@
 **
 */
 
+#include "gl/gl_include.h"
 #include "w_wad.h"
 #include "cmdlib.h"
 #include "sc_man.h"
