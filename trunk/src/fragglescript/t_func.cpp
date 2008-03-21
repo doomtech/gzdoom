@@ -2322,17 +2322,9 @@ void FParser::SF_SetLineTexture(void)
 				if(line->sidenum[side]!=NO_SIDE)
 				{
 					side_t * sided=&sides[line->sidenum[side]];
-					switch(position)
+					if (position >=0 && position <=2)
 					{
-					case 0:
-						sided->toptexture=texturenum;
-						break;
-					case 1:
-						sided->midtexture=texturenum;
-						break;
-					case 2:
-						sided->bottomtexture=texturenum;
-						break;
+						sided->SetTexture(position, texturenum);
 					}
 				}
 			}
@@ -2351,9 +2343,9 @@ void FParser::SF_SetLineTexture(void)
 				{ 
 					side_t * sided=&sides[lines[i].sidenum[side]];
 
-					if(sections & 1) sided->toptexture = picnum;
-					if(sections & 2) sided->midtexture = picnum;
-					if(sections & 4) sided->bottomtexture = picnum;
+					if(sections & 1) sided->SetTexture(side_t::top, picnum);
+					if(sections & 2) sided->SetTexture(side_t::mid, picnum);
+					if(sections & 4) sided->SetTexture(side_t::bottom, picnum);
 				} 
 			} 
 		} 

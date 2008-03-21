@@ -198,9 +198,9 @@ static int P_Set3DFloor(line_t * line, int param,int param2, int alpha)
 			if (param2&32) flags|=FF_LOWERTEXTURE;
 			if (param2&64) flags|=FF_ADDITIVETRANS|FF_TRANSLUCENT;
 			if (param2&512) flags|=FF_FADEWALLS;
-			if (sides[line->sidenum[0]].toptexture<0 && alpha<255)
+			if (sides[line->sidenum[0]].GetTexture(side_t::top)<0 && alpha<255)
 			{
-				alpha=clamp(-sides[line->sidenum[0]].toptexture, 0, 255);
+				alpha=clamp(-sides[line->sidenum[0]].GetTexture(side_t::top), 0, 255);
 			}
 			if (alpha==0) flags&=~(FF_RENDERALL|FF_BOTHPLANES|FF_ALLSIDES);
 			else if (alpha!=255) flags|=FF_TRANSLUCENT;
@@ -209,7 +209,7 @@ static int P_Set3DFloor(line_t * line, int param,int param2, int alpha)
 		P_Add3DFloor(ss, sec, line, flags, alpha);
 	}
 	// To be 100% safe this should be done even if the alpha by texture value isn't used.
-	if (sides[line->sidenum[0]].toptexture<0) sides[line->sidenum[0]].toptexture=0;
+	if (sides[line->sidenum[0]].GetTexture(side_t::top)<0) sides[line->sidenum[0]].SetTexture(side_t::top, 0);
 	return 1;
 }
 

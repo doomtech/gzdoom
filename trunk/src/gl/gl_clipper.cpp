@@ -1,4 +1,3 @@
-#include "gl_pch.h"
 /*
 *
 ** gl_clipper.cpp
@@ -36,6 +35,7 @@
 **
 */
 
+#include "gl/gl_include.h"
 #include "r_main.h"
 #include "gl/gl_clipper.h"
 #include "gl/gl_values.h"

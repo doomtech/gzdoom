@@ -1,4 +1,3 @@
-#include "gl_pch.h"
 /*
 ** gl_light.cpp
 ** Light level / fog management / dynamic lights
@@ -37,6 +36,7 @@
 **
 */
 
+#include "gl/gl_include.h"
 #include "c_dispatch.h"
 #include "p_local.h"
 #include "vectors.h"

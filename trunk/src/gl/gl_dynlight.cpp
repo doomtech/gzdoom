@@ -1,5 +1,3 @@
-#include "gl_pch.h"
-
 /*
 ** gl_dynlight.cpp
 ** Light definitions for actors.
@@ -40,6 +38,7 @@
 */
 
 
+#include "gl/gl_include.h"
 #include "a_doomglobal.h"
 #include "c_cvars.h"
 #include "c_dispatch.h"

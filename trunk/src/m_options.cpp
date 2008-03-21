@@ -1159,7 +1159,7 @@ static value_t SampleRates[] =
 	{ 32000.f, "32000 Hz" },
 	{ 44100.f, "44100 Hz" },
 	{ 48000.f, "48000 Hz" },
-	{ 65535.f, "65535 Hz" }
+	{ 96000.f, "96000 Hz" }
 };
 
 static value_t BufferSizes[] =

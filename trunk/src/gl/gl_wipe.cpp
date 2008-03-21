@@ -1,4 +1,3 @@
-#include "gl_pch.h"
 /*
 ** gl_wipe.cpp
 ** Screen wipe stuff
@@ -37,6 +36,7 @@
 **
 */
 
+#include "gl/gl_include.h"
 #include "files.h"
 #include "f_wipe.h"
 #include "m_random.h"

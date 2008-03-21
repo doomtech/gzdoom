@@ -56,7 +56,7 @@ struct F3DFloor
 	fixed_t				delta;
 	
 	int					flags;
-	line_s*				master;
+	line_t*				master;
 	
 	sector_t *			model;
 	sector_t *			target;
@@ -92,9 +92,8 @@ lightlist_t * P_GetPlaneLight(sector_t * , secplane_t * plane, bool underside);
 void P_SpawnSpecials2( void );
 
 struct FLineOpening;
-struct line_s;
 
-void P_LineOpening_XFloors (FLineOpening &open, AActor * thing, const line_s *linedef, 
+void P_LineOpening_XFloors (FLineOpening &open, AActor * thing, const line_t *linedef, 
 							fixed_t x, fixed_t y, fixed_t refx, fixed_t refy);
 
 

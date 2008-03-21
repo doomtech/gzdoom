@@ -1,6 +1,3 @@
-#include "gl_pch.h"
-
-
 /*
 ** gl_glow.cpp
 ** Glowing flats like Doomsday
@@ -40,6 +37,7 @@
 **
 */
 
+#include "gl/gl_include.h"
 #include "w_wad.h"
 #include "sc_man.h"
 

@@ -1,5 +1,3 @@
-#include "gl_pch.h"
-
 /*
 ** gl_sprite.cpp
 ** Sprite/Particle rendering
@@ -37,6 +35,7 @@
 **---------------------------------------------------------------------------
 **
 */
+#include "gl/gl_include.h"
 #include "p_local.h"
 #include "r_translate.h"
 #include "gl/gl_struct.h"

@@ -1,5 +1,3 @@
-#include "gl_pch.h"
-
 /*
 ** gl_data.cpp
 ** Maintenance data for GL renderer (mostly to handle rendering hacks)
@@ -38,6 +36,7 @@
 **
 */
 
+#include "gl/gl_include.h"
 #include "i_system.h"
 #include "p_local.h"
 #include "p_lnspec.h"
@@ -378,8 +377,8 @@ static void PrepareTransparentDoors(sector_t * sector)
 					sector->transdoor=false;
 					return;
 				}
-				if (sides[sector->lines[i]->sidenum[1-side]].toptexture==0) notextures++;
-				if (sides[sector->lines[i]->sidenum[1-side]].bottomtexture==0) nobtextures++;
+				if (sides[sector->lines[i]->sidenum[1-side]].GetTexture(side_t::top) == 0) notextures++;
+				if (sides[sector->lines[i]->sidenum[1-side]].GetTexture(side_t::bottom) == 0) nobtextures++;
 			}
 		}
 		if (selfref+notextures==sector->linecount || sector->ceilingpic==skyflatnum)

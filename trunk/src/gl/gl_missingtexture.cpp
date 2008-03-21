@@ -1,4 +1,3 @@
-#include "gl_pch.h"
 /*
 ** gl_missingtexture.cpp
 ** Handles missing upper and lower textures and self referencing sector hacks
@@ -36,6 +35,7 @@
 **---------------------------------------------------------------------------
 **
 */
+#include "gl/gl_include.h"
 #include "a_sharedglobal.h"
 #include "r_main.h"
 #include "gl/gl_struct.h"
@@ -265,7 +265,7 @@ bool GLDrawInfo::DoOneSectorUpper(subsector_t * subsec, fixed_t planez)
 			if (sec->ceilingtexz==planez) 
 			{
 				// If there's a texture abort
-				FTexture * tex = TexMan[seg->sidedef->toptexture];
+				FTexture * tex = TexMan[seg->sidedef->GetTexture(side_t::top)];
 				if (!tex || tex->UseType==FTexture::TEX_Null) continue;
 				else return false;
 			}
@@ -323,7 +323,7 @@ bool GLDrawInfo::DoOneSectorLower(subsector_t * subsec, fixed_t planez)
 			if (sec->floortexz==planez) 
 			{
 				// If there's a texture abort
-				FTexture * tex = TexMan[seg->sidedef->bottomtexture];
+				FTexture * tex = TexMan[seg->sidedef->GetTexture(side_t::bottom)];
 				if (!tex || tex->UseType==FTexture::TEX_Null) continue;
 				else return false;
 			}

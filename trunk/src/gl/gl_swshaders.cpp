@@ -1,4 +1,3 @@
-#include "gl_pch.h"
 #if 0
 /*
 ** gl_shaders.cpp
@@ -34,6 +33,7 @@
 **
 */
 
+#include "gl/gl_include.h"
 #include "c_cvars.h"
 #include "c_dispatch.h"
 #include "gl/gl_swshaders.h"
