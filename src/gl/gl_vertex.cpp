@@ -212,10 +212,11 @@ void gl_InitVertexData()
 			for(k=0;k<2;k++)
 			{
 				sector_t * sec = k==0? line->frontsector : line->backsector;
-				extsector_t::xfloor &x = sec->e->XFloor;
 
 				if (sec)
 				{
+					extsector_t::xfloor &x = sec->e->XFloor;
+
 					AddToVertex(sec, vt_sectorlists[v-vertexes]);
 					if (sec->heightsec) AddToVertex(sec->heightsec, vt_sectorlists[v-vertexes]);
 
