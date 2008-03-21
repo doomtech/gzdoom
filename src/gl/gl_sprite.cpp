@@ -97,7 +97,8 @@ void GLSprite::Draw(int pass)
 
 		gl_SetRenderStyle(RenderStyle, false, 
 			// The rest of the needed checks are done inside gl_SetRenderStyle
-			trans > 1.f - FLT_EPSILON && gl_usecolorblending && actor && (actor->renderflags & RF_FULLBRIGHT));
+			trans > 1.f - FLT_EPSILON && gl_usecolorblending && actor && (actor->renderflags & RF_FULLBRIGHT) &&
+			gltexture && !gltexture->GetTransparent());
 
 		if (hw_styleflags == STYLEHW_NoAlphaTest)
 		{
