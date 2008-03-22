@@ -283,6 +283,12 @@ struct FLinkedSector
 
 struct extsector_t
 {
+	// Boom sector transfer information
+	struct fakefloor
+	{
+		TArray<sector_t *> Sectors;
+	} FakeFloor;
+
 	// 3DMIDTEX information
 	struct midtex
 	{
@@ -544,7 +550,7 @@ struct side_t
 	}
 	void StopInterpolation(int position)
 	{
-		setinterpolation(EInterpType(INTERP_WallPanning_Top+position), this);
+		stopinterpolation(EInterpType(INTERP_WallPanning_Top+position), this);
 	}
 	//For GL
 	FLightNode * lighthead[2];				// all blended lights that may affect this wall
