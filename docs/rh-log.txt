@@ -1,3 +1,106 @@
+March 22, 2008 (Changes by Graf Zahl)
+- Changed DEHSUPP loader so that it reads the text file directly. As a result
+  the DEHSUPP compiler is gone now. Unlike XLATCC I'm using FScanner though.
+  A fully featured parser seems like overkill for this simple text file.
+- Added Line_SetTextureOffset special.
+- Added 'allowprotection' keyword to terrain definitions to allow damaging
+  flats that don't damage players with a radiation suit.
+- Fixed: SNDINFO rolloff setting for Strife was missing.
+- Added more options to Light_ForceLightning: Setting the first arg to 0
+  will behave as before, setting it to 1 will create exactly one lighting
+  and setting it to 2 will terminate lightning for the current level
+  completely. And it will also work on maps that don't have lightning set
+  in MAPINFO now.
+- Added: Sector movement that causes deep water to change its height now
+  will trigger associated sector actions and adjust the actor's water level.
+- Fixed: The serializer for side_t::part never read the texture information
+  from a savegame.
+- Fixed: side_t::StopInterpolation called setinterpolation instead of
+  stopinterpolation. Also moved the clearinterpolation call in 
+  P_SetupLevel after the P_FreeLevelData to make absolutely sure that
+  nothing in there can leave an interpolator behind by accident.
+- Applied Linux fixes by Jim.
+SBARINFO update by Blzut3:
+- Fixed: the playerclass command needed a null pointer check to prevent
+  crashing on respawn.
+- Fixed: Mug Shot states were not reset on respawn.
+- Removed keepoffsets flag since apparently it was keeping the offsets by
+  default.  The means that the only thing not affected by the offsets was using
+  nullimage as a background.  Since I wasn't able to get a result I liked I'm
+  going to say that if you want a black background with high res positioning
+  you will have to create your own bar image.  Maybe I'll fix it some other
+  time.
+- Added: monospacefonts variable which allows for all of the fonts to be
+  monospaced by a specified character (from their fontset of corse).
+- Made SBarInfo recognize the bar names for the Strife popups but they don't
+  do anything beyond that.  The names are: popuplog, popupkeys, and popupstatus.
+- Started converting the drawing routine to be more flexable towards high
+  resolution status bars.  (Only did one call so far.)
+  
+March 21, 2008
+- Fixed: Actor-less sounds that aren't played on CHAN_AUTO should still be
+  subject to channel overriding.
+- Re-added priority selection based on sound usage.
+- Reduced the number of virtual channels to match the number of real
+  channels.
+- Added customizable rolloff, including Doom's standard linear gain rolloff.
+  SNDINFO commands are:
+    $rolloff <sound> <min distance> <max distance>          -- linear gain (like Doom)
+    $rolloff <sound> linear <min distance> <max distance>   -- linear volume
+    $rolloff <sound> log <min distance> <rolloff factor>    -- logarithmic
+    $rolloff <sound> custom <min distance> <max distance>   -- use SNDCURVE lump
+  Anything closer than min distance is full volume and anything further than
+  max distance is inaudible. Logarithmic rolloff does not have a maximum
+  distance; it has a scalar that controls how quickly the volume drops off
+  instead.
+
+March 21, 2008 (Changes by Graf Zahl)
+- Disabled scrolling of 3DMIDTEX textures. Due to the special needs this 
+  cannot work properly.
+- Added new Scroll_Wall special to allow more control over wall scrolling.
+  Since it uses fixed point parameters it can only be used in scripts though.
+- Added flags parameters to all wall scroller specials that didn't use
+  all 5 args.
+- Separated scrolling of the 3 different texture parts of a sidedef.
+  While doing this I did some more restructuring of the sidedef structure
+  and changed it so that all state changes to sidedefs that affect rendering 
+  have to be made with access functions. This is not of much use to the
+  software renderer but it allows far easier caching of rendering data
+  for OpenGL because the only place I need to check is in the access functions.
+- Added Karate Chris's ThingCountSector submission.
+- Made texture indices in FSwitchDef full integers. Since that required
+  some data restructuring I also eliminated the MAX_FRAMES limit of 128
+  per switch.
+
+March 20, 2008
+- Removed some debug output from SBarInfo::ParseSBarInfo().
+- Fixed: Heretic linetype translations included the wrong file.
+- Removed all 2D sound positioning code from s_sound.cpp. Everything uses
+  FMOD's 3D engine now.
+- Removed all the channel selection code from s_sound.cpp. FMOD has code to
+  handle this sort of thing, so let's use it.
+- Replaced S_StopSoundID() with S_CheckSingular(). There is no longer a limit
+  on the number of copies of a particular sound that can be playing at once,
+  aside from Strife's special singular sounds. (Sorry, Heretic and Hexen.)
+  Consequently, the SNDINFO $limit command is now ignored.
+- Removed ATTN_SURROUND, since FMOD Ex doesn't exactly support it, and it
+  only worked as intended on stereo speakers anyway.
+- Cleaned out ancient crud from i_sound.cpp.
+
+March 20, 2008 (Changes by Graf Zahl)
+- Fixed: A_CustomMissile with aimmode 2 ignored spawnofs_xy.
+- Changed savegame versioning so that the written version is never lower
+  than the minmum one reported as compatible. 
+- Added mirrored movement modes for linked sectors.
+- Added Eternity-style initialization for linked sectors as a new subtype
+  of Static_Init.
+- Added linked sectors. The control sector determines how they move but if
+  any one of the linked sectors is blocked, movement for all linked sectors
+  will be affected. This will allow lifts consisting out of more than one
+  sector without the risk of breaking them if only one of the sectors is
+  blocked.
+- Fixed: A_Mushroom created an actor on the stack.
+
 March 19, 2008
 - Fixed: lempar.c needs to specify the __cdecl calling convention for malloc
   and free under VC++.
