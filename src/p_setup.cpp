@@ -3585,7 +3585,6 @@ void P_SetupLevel (char *lumpname, int position)
 
 	wminfo.partime = 180;
 
-	clearinterpolations();	// [RH] Nothing to interpolate on a fresh level.
 	FCanvasTextureInfo::EmptyList ();
 	R_FreePastViewers ();
 
@@ -3626,6 +3625,7 @@ void P_SetupLevel (char *lumpname, int position)
 
 	// Free all level data from the previous map
 	P_FreeLevelData ();
+	clearinterpolations();	// [RH] Nothing to interpolate on a fresh level.
 
 	MapData * map = P_OpenMapData(lumpname);
 	if (map == NULL)
