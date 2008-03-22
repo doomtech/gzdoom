@@ -48,8 +48,8 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad DEHSUPP=..\tools\dehsupp\dehsupp NOLOGO=/nologo andcopy"
-				ReBuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad NOLOGO=/nologo DEHSUPP=..\tools\dehsupp\dehsupp nrebuild"
+				BuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad NOLOGO=/nologo andcopy"
+				ReBuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad NOLOGO=/nologo nrebuild"
 				CleanCommandLine="del wadmake gzdoom.pk3"
 				Output="gzdoom.pk3"
 				PreprocessorDefinitions=""
@@ -90,8 +90,8 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad DEHSUPP=..\tools\dehsupp\dehsupp NOLOGO=/nologo"
-				ReBuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad NOLOGO=/nologo DEHSUPP=..\tools\dehsupp\dehsupp nrebuild"
+				BuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad NOLOGO=/nologo"
+				ReBuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad NOLOGO=/nologo nrebuild"
 				CleanCommandLine="del wadmake gzdoom.pk3"
 				Output="gzdoom.pk3"
 				PreprocessorDefinitions=""
@@ -177,15 +177,15 @@
 				Name="Map Translators"
 				>
 				<File
-					RelativePath=".\xlat\doomxlat.txt"
+					RelativePath=".\xlat\doom.txt"
 					>
 				</File>
 				<File
-					RelativePath=".\xlat\hereticxlat.txt"
+					RelativePath=".\xlat\heretic.txt"
 					>
 				</File>
 				<File
-					RelativePath=".\xlat\strifexlat.txt"
+					RelativePath=".\xlat\strife.txt"
 					>
 				</File>
 				<Filter
