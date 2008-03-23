@@ -42,24 +42,35 @@
 #include "r_sky.h"
 #include "t_script.h"
 #include "cmdlib.h"
+#include "p_lnspec.h"
+#include "gi.h"
+#include "xlat/xlat.h"
 
-enum
+
+class FScriptLoader
 {
-  RT_SCRIPT,
-  RT_INFO,
-  RT_OTHER,
-} readtype;
+	enum
+	{
+	  RT_SCRIPT,
+	  RT_INFO,
+	  RT_OTHER,
+	} readtype;
 
 
-static int drownflag;
-bool HasScripts;
+	int drownflag;
+	bool HasScripts;
+
+	void ParseInfoCmd(char *line, FString &scriptsrc);
+public:
+	bool ParseInfo(MapData * map);
+};
 
 //-----------------------------------------------------------------------------
 //
 // Process the lump to strip all unneeded information from it
 //
 //-----------------------------------------------------------------------------
-static void ParseInfoCmd(char *line, FString &scriptsrc)
+void FScriptLoader::ParseInfoCmd(char *line, FString &scriptsrc)
 {
 	char *temp;
 	
@@ -198,7 +209,7 @@ static void ParseInfoCmd(char *line, FString &scriptsrc)
 //
 //-----------------------------------------------------------------------------
 
-void T_LoadLevelInfo(MapData * map)
+bool FScriptLoader::ParseInfo(MapData * map)
 {
 	char *lump;
 	char *rover;
@@ -216,9 +227,9 @@ void T_LoadLevelInfo(MapData * map)
 	{
 		// Try a global FS lump
 		int lumpnum=Wads.CheckNumForName("FSGLOBAL");
-		if (lumpnum<0) return;
+		if (lumpnum<0) return false;
 		lumpsize=Wads.LumpLength(lumpnum);
-		if (lumpsize==0) return;
+		if (lumpsize==0) return false;
 		fsglobal=true;
 		lump=new char[lumpsize+3];
 		Wads.ReadLump(lumpnum,lump);
@@ -259,6 +270,35 @@ void T_LoadLevelInfo(MapData * map)
 		if (!drownflag) level.airsupply=0;	// Legacy doesn't to water damage.
 	}
 	delete lump;
+	return HasScripts;
+}
+
+//-----------------------------------------------------------------------------
+//
+// Starts the level info parser
+// and patches the global linedef translation table
+//
+//-----------------------------------------------------------------------------
+
+void T_LoadScripts(MapData *map)
+{
+	FScriptLoader parser;
+
+	bool HasScripts = parser.ParseInfo(map);
+
+	// Hack for Legacy compatibility: Since 272 is normally an MBF sky transfer we have to patch it.
+	// It could be done with an additional translator but that would be sub-optimal for the user.
+	// To handle this the default translator defines the proper Legacy type at index 270.
+	// This code then then swaps 270 and 272 - but only if this is either Doom or Heretic and 
+	// the default translator is being used.
+	// Custom translators will not be patched.
+	if ((gameinfo.gametype == GAME_Doom || gameinfo.gametype == GAME_Heretic) && level.info->translator == NULL &&
+		!((level.flags&LEVEL_HEXENFORMAT)) && SimpleLineTranslations[272 - 2*HasScripts].special == FS_Execute)
+	{
+		FLineTrans t = SimpleLineTranslations[270];
+		SimpleLineTranslations[270] = SimpleLineTranslations[272];
+		SimpleLineTranslations[272] = t;
+	}
 }
 
 

@@ -204,7 +204,7 @@ public:
 	void DoPickupSpecial (AActor *toucher);
 private:
 	const PClass *DetermineType ();
-	TObjPtr<AInventory> RealPickup;
+	AInventory *RealPickup;
 };
 
 IMPLEMENT_POINTY_CLASS (ADehackedPickup)

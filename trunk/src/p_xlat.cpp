@@ -46,7 +46,6 @@
 #include "sc_man.h"
 #include "cmdlib.h"
 #include "xlat/xlat.h"
-#include "fragglescript/t_fs.h"
 
 // define names for the TriggerType field of the general linedefs
 
@@ -69,11 +68,6 @@ void P_TranslateLineDef (line_t *ld, maplinedef_t *mld)
 	short tag = LittleShort(mld->tag);
 	DWORD flags = LittleShort(mld->flags);
 	INTBOOL passthrough;
-
-	// Legacy compatibility hack:
-	// Line type 272 is a sky transfer in ZDoom but a script activator in Legacy
-	// So if there are FraggleScripts I am swapping the 2 types.
-	if (HasScripts && (special==272 || special==270)) special=542-special;
 
 	if (flags & ML_TRANSLUCENT_STRIFE)
 	{
@@ -106,7 +100,7 @@ void P_TranslateLineDef (line_t *ld, maplinedef_t *mld)
 		}
 		passthrough = (flags & ML_PASSUSE_BOOM);
 	}
-	flags = flags & 0xFFFF81FF;	// Ignore flags unknown to DOOM
+	flags = flags & 0xFFFF01FF;	// Ignore flags unknown to DOOM
 
 	// For purposes of maintaining BOOM compatibility, each
 	// line also needs to have its ID set to the same as its tag.
@@ -332,140 +326,28 @@ void P_TranslateTeleportThings ()
 	}
 }
 
-static short sectortables[2][256];
-static int boommask=0, boomshift=0;
-static bool secparsed;
-
-void P_ReadSectorSpecials()
-{
-	secparsed=true;
-	for(int i=0;i<256;i++)
-	{
-		sectortables[0][i]=-1;
-		sectortables[1][i]=i;
-	}
-	
-	int lastlump=0, lump;
-
-	lastlump = 0;
-	while ((lump = Wads.FindLump ("SECTORX", &lastlump)) != -1)
-	{
-		FScanner sc(lump, "SECTORX");
-		sc.SetCMode(true);
-		while (sc.GetString())
-		{
-			if (sc.Compare("IFDOOM"))
-			{
-				sc.MustGetStringName("{");
-				if (gameinfo.gametype != GAME_Doom)
-				{
-					do
-					{
-						if (!sc.GetString())
-						{
-							sc.ScriptError("Unexpected end of file");
-						}
-					}
-					while (!sc.Compare("}"));
-				}
-			}
-			else if (sc.Compare("IFHERETIC"))
-			{
-				sc.MustGetStringName("{");
-				if (gameinfo.gametype != GAME_Heretic)
-				{
-					do
-					{
-						if (!sc.GetString())
-						{
-							sc.ScriptError("Unexpected end of file");
-						}
-					}
-					while (!sc.Compare("}"));
-				}
-			}
-			else if (sc.Compare("IFSTRIFE"))
-			{
-				sc.MustGetStringName("{");
-				if (gameinfo.gametype != GAME_Strife)
-				{
-					do
-					{
-						if (!sc.GetString())
-						{
-							sc.ScriptError("Unexpected end of file");
-						}
-					}
-					while (!sc.Compare("}"));
-				}
-			}
-			else if (sc.Compare("}"))
-			{
-				// ignore
-			}
-			else if (sc.Compare("BOOMMASK"))
-			{
-				sc.MustGetNumber();
-				boommask = sc.Number;
-				sc.MustGetStringName(",");
-				sc.MustGetNumber();
-				boomshift = sc.Number;
-			}
-			else if (sc.Compare("["))
-			{
-				int start;
-				int end;
-				
-				sc.MustGetNumber();
-				start = sc.Number;
-				sc.MustGetStringName(",");
-				sc.MustGetNumber();
-				end = sc.Number;
-				sc.MustGetStringName("]");
-				sc.MustGetStringName(":");
-				sc.MustGetNumber();
-				for(int j = start; j <= end; j++)
-				{
-					sectortables[!!boommask][j]=sc.Number + j - start;
-				}
-			}
-			else if (IsNum(sc.String))
-			{
-				int start;
-				
-				start = atoi(sc.String);
-				sc.MustGetStringName(":");
-				sc.MustGetNumber();
-				sectortables[!!boommask][start] = sc.Number;
-			}
-			else
-			{
-				sc.ScriptError(NULL);
-			}
-		}
-	}
-}
-
 int P_TranslateSectorSpecial (int special)
 {
-	int high;
+	int mask = 0;
 
-	// Allow any supported sector special by or-ing 0x8000 to it in Doom format maps
-	// That's for those who like to mess around with existing maps. ;)
-	if (special & 0x8000)
+	for(unsigned i = 0; i < SectorMasks.Size(); i++)
 	{
-		return special & 0x7fff;
+		int newmask = special & SectorMasks[i].mask;
+		if (newmask)
+		{
+			special &= ~newmask;
+			if (SectorMasks[i].op == 1) newmask <<= SectorMasks[i].shift;
+			else if (SectorMasks[i].op == -1) newmask >>= SectorMasks[i].shift;
+			else if (SectorMasks[i].op == 0 && SectorMasks[i].shift ==1) newmask = 0;
+			mask |= newmask;
+		}
 	}
 	
-	if (!secparsed) P_ReadSectorSpecials();
-	
-	if (special>=0 && special<=255)
+	if (special>=0 && special<SectorTranslations.Size())
 	{
-		if (sectortables[0][special]>=0) return sectortables[0][special];
+		if (SectorTranslations[special].bitmask_allowed && mask) special = 0;
+		else special = SectorTranslations[special].newtype;
 	}
-	high = (special & boommask) << boomshift;
-	special &= (~boommask) & 255;
-	
-	return sectortables[1][special] | high;
+	return special | mask;
 }
 

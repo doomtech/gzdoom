@@ -702,6 +702,7 @@ static void S_StartSound (fixed_t *pt, AActor *mover, int channel,
 		}
 	}
 
+#if 0
 	if (sfx->lumpnum == sfx_empty)
 	{
 		basepriority = -1000;
@@ -734,6 +735,16 @@ static void S_StartSound (fixed_t *pt, AActor *mover, int channel,
 		if (dist == 0)
 			basepriority += 30;
 	}
+#else
+	if (attenuation <= 0 || mover == players[consoleplayer].camera)
+	{
+		basepriority = 40;
+	}
+	else
+	{
+		basepriority = 0;
+	}
+#endif
 	priority = basepriority * (PRIORITY_MAX_ADJUST - (dist/DIST_ADJUST));
 
 	if (pt != NULL && !S_StopSoundID (sound_id, priority, sfx->MaxChannels, sfx->bSingular, x, y))
