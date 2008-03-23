@@ -66,6 +66,7 @@ sbarinfo.txt				sbarinfo.txt
 ========
 # Doom map format translators
 
+xlat/base.txt				xlat/base.txt
 xlat/doom.txt				xlat/doom.txt
 xlat/heretic.txt			xlat/heretic.txt
 xlat/strife.txt				xlat/strife.txt
