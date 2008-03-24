@@ -296,7 +296,7 @@ void S_Init ()
 		// fit our sound system's volume levels. Also, FMOD's volumes
 		// are linear, whereas we want the "dumb" logarithmic volumes
 		// for our "2D" sounds.
-		for (i = 0; i < S_CLIPPING_DIST; ++i)
+		for (i = 0; i < MAX_SND_DIST; ++i)
 		{
 			SoundCurve[i] = (powf(10.f, (lumpmem[i] / 127.f)) - 1.f) / 9.f;
 		}
@@ -702,12 +702,12 @@ static void S_StartSound (fixed_t *pt, AActor *mover, int channel,
 		}
 	}
 
-#if 0
 	if (sfx->lumpnum == sfx_empty)
 	{
 		basepriority = -1000;
 		return;
 	}
+#if 0
 	else if (attenuation <= 0)
 	{
 		basepriority = 200;
