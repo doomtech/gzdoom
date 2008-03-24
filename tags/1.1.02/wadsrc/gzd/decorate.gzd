@@ -1,0 +1,16 @@
+ACTOR RocketSmokeTrail
+{
+	RenderStyle Translucent
+	Alpha 0.4
+	+NOBLOCKMAP +NOCLIP +NOGRAVITY
+	States
+	{
+	Spawn:
+		RSMK ABCDE 5
+		Stop
+	}
+}
+
+ACTOR FS_Mapspot : Mapspot 5004
+{
+}
