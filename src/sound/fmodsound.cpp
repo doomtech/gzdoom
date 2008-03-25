@@ -64,7 +64,11 @@ extern HWND Window;
 #define PITCH(freq,pitch) (snd_pitched ? ((freq)*(pitch))/128.f : float(freq))
 
 // Just some extra for music and whatever
-#define NUM_EXTRA_SOFTWARE_CHANNELS		8
+#define NUM_EXTRA_SOFTWARE_CHANNELS		1
+
+#define FIXED2FLOAT(x)				((x)/65536.f)
+
+#define MAX_CHANNELS				256
 
 #define ERRCHECK(x)
 
@@ -90,8 +94,6 @@ static const char *Enum_NameForNum(const FEnumList *list, int num);
 
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
-extern int MAX_SND_DIST;
-
 EXTERN_CVAR (String, snd_output)
 EXTERN_CVAR (Float, snd_musicvolume)
 EXTERN_CVAR (Int, snd_buffersize)
@@ -104,7 +106,6 @@ EXTERN_CVAR (Int, snd_channels)
 ReverbContainer *ForcedEnvironment;
 
 CVAR (Int, snd_driver, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-CVAR (Bool, snd_3d, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (Bool, snd_waterreverb, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (String, snd_resampler, "Linear", CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (String, snd_speakermode, "Auto", CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
@@ -113,9 +114,13 @@ CVAR (Bool, snd_dspnet, false, 0)
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
-static const int S_CLIPPING_DIST = 1200;
-static const int S_CLOSE_DIST = 160;
 static const ReverbContainer *PrevEnvironment;
+
+// The rolloff callback is called during FMOD::Sound::play, so we need this
+// global variable to contain the sound info during that time for the
+// callback.
+static sfxinfo_t *GSfxInfo;
+static float GDistScale;
 
 // In the below lists, duplicate entries are for user selection. When
 // queried, only the first one for the particular value is shown.
@@ -159,6 +164,8 @@ static const FEnumList SpeakerModeNames[] =
 	{ "1",						FMOD_SPEAKERMODE_MONO },
 	{ "2",						FMOD_SPEAKERMODE_STEREO },
 	{ "4",						FMOD_SPEAKERMODE_QUAD },
+	{ "Headphones",				9001 },
+	{ "HRTF",					9001 },
 	{ NULL, 0 }
 };
 
@@ -244,9 +251,11 @@ class FMODStreamCapsule : public SoundStream
 {
 public:
 	FMODStreamCapsule(FMOD::Sound *stream, FMODSoundRenderer *owner)
-		: Owner(owner), Stream(stream), Channel(NULL), DSP(NULL),
+		: Owner(owner), Stream(NULL), Channel(NULL), DSP(NULL),
 		  UserData(NULL), Callback(NULL)
-	{}
+	{
+		SetStream(stream);
+	}
 
 	FMODStreamCapsule(void *udata, SoundStreamCallback callback, FMODSoundRenderer *owner)
 		: Owner(owner), Stream(NULL), Channel(NULL), DSP(NULL),
@@ -263,7 +272,15 @@ public:
 
 	void SetStream(FMOD::Sound *stream)
 	{
+		float frequency;
+
 		Stream = stream;
+
+		// As this interface is for music, make it super-high priority.
+		if (FMOD_OK == stream->getDefaults(&frequency, NULL, NULL, NULL))
+		{
+			stream->setDefaults(frequency, 1, 0, 0);
+		}
 	}
 
 	bool Play(bool looping, float volume, bool normalize)
@@ -277,15 +294,14 @@ public:
 			return false;
 		}
 		Channel->setChannelGroup(Owner->MusicGroup);
+		Channel->setSpeakerMix(1, 1, 1, 1, 1, 1, 1, 1);
 		Channel->setVolume(volume);
-		if (Owner->Sound3D)
-		{ // Ensure reverb is disabled when using 3D sound.
-			FMOD_REVERB_CHANNELPROPERTIES reverb;
-			if (FMOD_OK == Channel->getReverbProperties(&reverb))
-			{
-				reverb.Room = -10000;
-				Channel->setReverbProperties(&reverb);
-			}
+		// Ensure reverb is disabled.
+		FMOD_REVERB_CHANNELPROPERTIES reverb;
+		if (FMOD_OK == Channel->getReverbProperties(&reverb))
+		{
+			reverb.Room = -10000;
+			Channel->setReverbProperties(&reverb);
 		}
 		if (normalize)
 		{ // Attach a normalizer DSP unit to the channel.
@@ -402,7 +418,7 @@ private:
 
 FMODSoundRenderer::FMODSoundRenderer()
 {
-	Init();
+	InitSuccess = Init();
 }
 
 FMODSoundRenderer::~FMODSoundRenderer()
@@ -412,8 +428,14 @@ FMODSoundRenderer::~FMODSoundRenderer()
 
 bool FMODSoundRenderer::IsValid()
 {
-	return Sys != NULL;
+	return InitSuccess;
 }
+
+//==========================================================================
+//
+// FMODSoundRenderer :: Init
+//
+//==========================================================================
 
 bool FMODSoundRenderer::Init()
 {
@@ -426,8 +448,6 @@ bool FMODSoundRenderer::Init()
 
 	int eval;
 
-	ChannelMap = NULL;
-	NumChannels = 0;
 	SFXPaused = false;
 	MusicGroup = NULL;
 	SfxGroup = NULL;
@@ -445,8 +465,10 @@ bool FMODSoundRenderer::Init()
 
 	if (version < FMOD_VERSION)
 	{
-		Printf ("Error! You are using an old version of FMOD %08x.\n"
-				"This program requires %08x\n", version, FMOD_VERSION);
+		Printf (" "TEXTCOLOR_ORANGE"Error! You are using an old version of FMOD (%x.%02x.%02x).\n"
+				" "TEXTCOLOR_ORANGE"This program requires version %x.%02x.%02x\n",
+				version >> 16, (version >> 8) & 255, version & 255,
+				FMOD_VERSION >> 16, (FMOD_VERSION >> 8) & 255, FMOD_VERSION & 255);
 		return false;
 	}
 
@@ -459,7 +481,7 @@ bool FMODSoundRenderer::Init()
 	{
 		speakermode = FMOD_SPEAKERMODE(eval);
 	}
-	result = Sys->setSpeakerMode(speakermode);
+	result = Sys->setSpeakerMode(speakermode < 9000 ? speakermode : FMOD_SPEAKERMODE_STEREO);
 	ERRCHECK(result);
 
 	// Set software format
@@ -529,18 +551,22 @@ bool FMODSoundRenderer::Init()
 	}
 
 	// Try to init
-	initflags = FMOD_INIT_NORMAL | FMOD_INIT_SOFTWARE_HRTF;
+	initflags = FMOD_INIT_NORMAL;
+	if (speakermode > 9000)
+	{
+		initflags |= FMOD_INIT_SOFTWARE_HRTF;
+	}
 	if (snd_dspnet)
 	{
 		initflags |= FMOD_INIT_ENABLE_DSPNET;
 	}
-	result = Sys->init(100, initflags, 0);
+	result = Sys->init(snd_channels + NUM_EXTRA_SOFTWARE_CHANNELS, initflags, 0);
 	if (result == FMOD_ERR_OUTPUT_CREATEBUFFER)
 	{ // The speaker mode selected isn't supported by this soundcard. Switch it back to stereo.
 		result = Sys->setSpeakerMode(FMOD_SPEAKERMODE_STEREO);
 		ERRCHECK(result);
 
-		result = Sys->init(100, FMOD_INIT_NORMAL, 0);
+		result = Sys->init(snd_channels + NUM_EXTRA_SOFTWARE_CHANNELS, initflags, 0);
 		ERRCHECK(result);
 	}
 	if (result != FMOD_OK)
@@ -563,38 +589,25 @@ bool FMODSoundRenderer::Init()
 
 	result = SPC_CreateCodec(Sys);
 
-	if (snd_3d)
-	{
-		float rolloff_factor;
-
-		Sound3D = true;
-		if (gameinfo.gametype == GAME_Doom || gameinfo.gametype == GAME_Strife)
-		{ 
-			rolloff_factor = 1.7f;
-		}
-		else if (gameinfo.gametype == GAME_Heretic)
-		{
-			rolloff_factor = 1.24f;
-		}
-		else
-		{
-			rolloff_factor = 0.96f;
-		}
-		Sys->set3DSettings(1.f, 100.f, rolloff_factor);
-	}
-	else
-	{
-		Sound3D = false;
-	}
+	Sys->set3DSettings(0.5f, 96.f, 1.f);
+	Sys->set3DRolloffCallback(RolloffCallback);
 	snd_sfxvolume.Callback ();
 	return true;
 }
+
+//==========================================================================
+//
+// FMODSoundRenderer :: Shutdown
+//
+//==========================================================================
 
 void FMODSoundRenderer::Shutdown()
 {
 	if (Sys != NULL)
 	{
 		unsigned int i;
+
+		S_StopAllChannels();
 
 		if (MusicGroup != NULL)
 		{
@@ -611,15 +624,9 @@ void FMODSoundRenderer::Shutdown()
 			SfxGroup->release();
 			SfxGroup = NULL;
 		}
-		if (ChannelMap)
-		{
-			delete[] ChannelMap;
-			ChannelMap = NULL;
-		}
-		NumChannels = 0;
 
 		// Free all loaded samples
-		for (i = 0; i < S_sfx.Size (); i++)
+		for (i = 0; i < S_sfx.Size(); i++)
 		{
 			if (S_sfx[i].data != NULL)
 			{
@@ -632,6 +639,12 @@ void FMODSoundRenderer::Shutdown()
 		Sys = NULL;
 	}
 }
+
+//==========================================================================
+//
+// FMODSoundRenderer :: PrintStatus
+//
+//==========================================================================
 
 void FMODSoundRenderer::PrintStatus()
 {
@@ -675,8 +688,13 @@ void FMODSoundRenderer::PrintStatus()
 		Printf (TEXTCOLOR_LIGHTBLUE "Software mixer channels: "TEXTCOLOR_GREEN"%d\n", numoutputchannels);
 		Printf (TEXTCOLOR_LIGHTBLUE "Software mixer resampler: "TEXTCOLOR_GREEN"%s\n", Enum_NameForNum(ResamplerNames, resampler));
 	}
-	Printf("Using 3D sound: "TEXTCOLOR_GREEN"%s\n", Sound3D ? "yes" : "no");
 }
+
+//==========================================================================
+//
+// FMODSoundRenderer :: DumpDriverCaps
+//
+//==========================================================================
 
 void FMODSoundRenderer::DumpDriverCaps(FMOD_CAPS caps, int minfrequency, int maxfrequency)
 {
@@ -708,6 +726,12 @@ void FMODSoundRenderer::DumpDriverCaps(FMOD_CAPS caps, int minfrequency, int max
 	if (caps & FMOD_CAPS_REVERB_LIMITED)			Printf("TEXTCOLOR_OLIVE    Limited reverb\n");
 }
 
+//==========================================================================
+//
+// FMODSoundRenderer :: PrintDriversList
+//
+//==========================================================================
+
 void FMODSoundRenderer::PrintDriversList()
 {
 	int numdrivers;
@@ -726,6 +750,12 @@ void FMODSoundRenderer::PrintDriversList()
 	}
 }
 
+//==========================================================================
+//
+// FMODSoundRenderer :: GatherStats
+//
+//==========================================================================
+
 FString FMODSoundRenderer::GatherStats()
 {
 	int channels;
@@ -742,11 +772,23 @@ FString FMODSoundRenderer::GatherStats()
 	return out;
 }
 
+//==========================================================================
+//
+// FMODSoundRenderer :: MovieDisableSound
+//
+//==========================================================================
+
 void FMODSoundRenderer::MovieDisableSound()
 {
 	I_ShutdownMusic();
 	Shutdown();
 }
+
+//==========================================================================
+//
+// FMODSoundRenderer :: MovieResumeSound
+//
+//==========================================================================
 
 void FMODSoundRenderer::MovieResumeSound()
 {
@@ -755,34 +797,35 @@ void FMODSoundRenderer::MovieResumeSound()
 	S_RestartMusic();
 }
 
+//==========================================================================
+//
+// FMODSoundRenderer :: SetSfxVolume
+//
+//==========================================================================
+
 void FMODSoundRenderer::SetSfxVolume(float volume)
 {
 	SfxGroup->setVolume(volume);
 }
+
+//==========================================================================
+//
+// FMODSoundRenderer :: SetMusicVolume
+//
+//==========================================================================
 
 void FMODSoundRenderer::SetMusicVolume(float volume)
 {
 	MusicGroup->setVolume(volume);
 }
 
-int FMODSoundRenderer::GetNumChannels()
-{
-	int chancount;
-
-	if (FMOD_OK == Sys->getSoftwareChannels(&chancount))
-	{
-		chancount = MIN<int>(snd_channels, chancount - NUM_EXTRA_SOFTWARE_CHANNELS);
-	}
-
-	ChannelMap = new ChanMap[chancount];
-	for (int i = 0; i < chancount; i++)
-	{
-		ChannelMap[i].soundID = -1;
-	}
-
-	NumChannels = chancount;
-	return chancount;
-}
+//==========================================================================
+//
+// FMODSoundRenderer :: CreateStream
+//
+// Creates a streaming sound that receives PCM data through a callback.
+//
+//==========================================================================
 
 SoundStream *FMODSoundRenderer::CreateStream (SoundStreamCallback callback, int buffbytes, int flags, int samplerate, void *userdata)
 {
@@ -836,6 +879,14 @@ SoundStream *FMODSoundRenderer::CreateStream (SoundStreamCallback callback, int 
 	return capsule;
 }
 
+//==========================================================================
+//
+// FMODSoundRenderer :: OpenStream
+//
+// Creates a streaming sound from a file on disk.
+//
+//==========================================================================
+
 SoundStream *FMODSoundRenderer::OpenStream(const char *filename_or_data, int flags, int offset, int length)
 {
 	FMOD_MODE mode;
@@ -862,121 +913,224 @@ SoundStream *FMODSoundRenderer::OpenStream(const char *filename_or_data, int fla
 	return NULL;
 }
 
+//==========================================================================
 //
-// vol range is 0-255
-// sep range is 0-255, -1 for surround, -2 for full vol middle
+// FMODSoundRenderer :: StartSound
 //
-long FMODSoundRenderer::StartSound(sfxinfo_t *sfx, float vol, float sep, int pitch, int channel, bool looping, bool pausable)
-{
-	if (!ChannelMap)
-		return 0;
+//==========================================================================
 
+FSoundChan *FMODSoundRenderer::StartSound(sfxinfo_t *sfx, float vol, int pitch, int chanflags)
+{
 	int id = int(sfx - &S_sfx[0]);
 	FMOD_RESULT result;
 	FMOD_MODE mode;
 	FMOD::Channel *chan;
 	float freq;
 
-	freq = PITCH(sfx->frequency, pitch);
+	if (FMOD_OK == ((FMOD::Sound *)sfx->data)->getDefaults(&freq, NULL, NULL, NULL))
+	{
+		freq = PITCH(freq, pitch);
+	}
+	else
+	{
+		freq = 0;
+	}
 
+	GSfxInfo = sfx;
 	result = Sys->playSound(FMOD_CHANNEL_FREE, (FMOD::Sound *)sfx->data, true, &chan);
 	if (FMOD_OK == result)
 	{
 		result = chan->getMode(&mode);
 
-		if (Sound3D)
-		{ // Make 2D sounds head relative.
-			FMOD_VECTOR zero = { 0, 0, 0 };
-			mode = (mode & ~FMOD_3D_WORLDRELATIVE) | (FMOD_3D_HEADRELATIVE);
-			chan->set3DAttributes(&zero, &zero);
-		}
-		if (looping)
+		if (result != FMOD_OK)
 		{
-			mode |= FMOD_LOOP_NORMAL;
+			assert(0);
+			mode = FMOD_SOFTWARE;
 		}
-		if (result == FMOD_OK)
+		mode = (mode & ~FMOD_3D) | FMOD_2D;
+		if (chanflags & CHAN_LOOP)
 		{
-			chan->setMode(mode);
+			mode = (mode & ~FMOD_LOOP_OFF) | FMOD_LOOP_NORMAL;
 		}
-		
-		chan->setChannelGroup((pausable && !SFXPaused) ? PausableSfx : SfxGroup);
-		chan->setFrequency(freq);
+		chan->setMode(mode);
+		chan->setChannelGroup((!(chanflags & CHAN_NOPAUSE) && !SFXPaused) ? PausableSfx : SfxGroup);
+		if (freq != 0)
+		{
+			chan->setFrequency(freq);
+		}
 		chan->setVolume(vol);
-		chan->setPan(sep);
-
 		chan->setPaused(false);
-		ChannelMap[channel].channelID = chan;
-		ChannelMap[channel].soundID = id;
-		ChannelMap[channel].bIsLooping = looping;
-		return channel + 1;
+		return CommonChannelSetup(chan);
 	}
 
 	DPrintf ("Sound %s failed to play: %d\n", sfx->name.GetChars(), result);
 	return 0;
 }
 
-long FMODSoundRenderer::StartSound3D(sfxinfo_t *sfx, float vol, int pitch, int channel,
-	bool looping, float pos[3], float vel[3], bool pausable)
-{
-	if (!Sound3D || !ChannelMap)
-		return 0;
+//==========================================================================
+//
+// FMODSoundRenderer :: StartSound3D
+//
+//==========================================================================
 
+FSoundChan *FMODSoundRenderer::StartSound3D(sfxinfo_t *sfx, float vol, float distscale,
+	int pitch, int priority, float pos[3], float vel[3], int chanflags)
+{
 	int id = int(sfx - &S_sfx[0]);
 	FMOD_RESULT result;
 	FMOD_MODE mode;
 	FMOD::Channel *chan;
 	float freq;
+	float def_freq, def_vol, def_pan;
+	int def_priority;
 
-	freq = PITCH(sfx->frequency, pitch);
+	if (FMOD_OK == ((FMOD::Sound *)sfx->data)->getDefaults(&def_freq, &def_vol, &def_pan, &def_priority))
+	{
+		freq = PITCH(def_freq, pitch);
+		// Change the sound's default priority before playing it.
+		((FMOD::Sound *)sfx->data)->setDefaults(def_freq, def_vol, def_pan, clamp(def_priority - priority, 1, 256));
+	}
+	else
+	{
+		freq = 0;
+		def_priority = -1;
+	}
 
+	// Play it.
+	GSfxInfo = sfx;
+	GDistScale = distscale;
 	result = Sys->playSound(FMOD_CHANNEL_FREE, (FMOD::Sound *)sfx->data, true, &chan);
+
+	// Then set the priority back.
+	if (def_priority >= 0)
+	{
+		((FMOD::Sound *)sfx->data)->setDefaults(def_freq, def_vol, def_pan, def_priority);
+	}
+
 	if (FMOD_OK == result)
 	{
-		if (looping)
+		result = chan->getMode(&mode);
+		if (result != FMOD_OK)
 		{
-			result = chan->getMode(&mode);
-			if (result == FMOD_OK)
-			{
-				mode |= FMOD_LOOP_NORMAL;
-				chan->setMode(mode);
-			}
+			mode = FMOD_3D | FMOD_SOFTWARE;
 		}
-		chan->setChannelGroup((pausable && !SFXPaused) ? PausableSfx : SfxGroup);
-		chan->setFrequency(freq);
+		if (chanflags & CHAN_LOOP)
+		{
+			mode = (mode & ~FMOD_LOOP_OFF) | FMOD_LOOP_NORMAL;
+		}
+		mode = SetChanHeadSettings(chan, sfx, pos, chanflags, mode);
+		chan->setMode(mode);
+		chan->setChannelGroup((!(chanflags & CHAN_NOPAUSE) && !SFXPaused) ? PausableSfx : SfxGroup);
+		if (freq != 0)
+		{
+			chan->setFrequency(freq);
+		}
 		chan->setVolume(vol);
 		chan->set3DAttributes((FMOD_VECTOR *)pos, (FMOD_VECTOR *)vel);
 		chan->setPaused(false);
-		ChannelMap[channel].channelID = chan;
-		ChannelMap[channel].soundID = id;
-		ChannelMap[channel].bIsLooping = looping;
-		return channel + 1;
+		FSoundChan *schan = CommonChannelSetup(chan);
+		schan->DistanceScale = distscale;
+		return schan;
 	}
 
 	DPrintf ("Sound %s failed to play: %d\n", sfx->name.GetChars(), result);
 	return 0;
 }
 
-void FMODSoundRenderer::StopSound(long handle)
+//==========================================================================
+//
+// FMODSound :: SetChanHeadSettings
+//
+// If this sound is played at the same coordinates as the listener, make
+// it head relative. Also, area sounds should use no 3D panning if close
+// enough to the listener.
+//
+//==========================================================================
+
+FMOD_MODE FMODSoundRenderer::SetChanHeadSettings(FMOD::Channel *chan, sfxinfo_t *sfx, float pos[3], int chanflags, FMOD_MODE oldmode) const
 {
-	if (!handle || !ChannelMap)
+	if (players[consoleplayer].camera == NULL)
+	{
+		return oldmode;
+	}
+	double cpos[3];
+	cpos[0] = FIXED2FLOAT(players[consoleplayer].camera->x);
+	cpos[2] = FIXED2FLOAT(players[consoleplayer].camera->y);
+	cpos[1] = FIXED2FLOAT(players[consoleplayer].camera->z);
+	if (chanflags & CHAN_AREA)
+	{
+		const double interp_range = 512.0;
+		double dx = cpos[0] - pos[0], dy = cpos[1] - pos[1], dz = cpos[2] - pos[2];
+		double min_dist = sfx->MinDistance == 0 ? (S_MinDistance == 0 ? 200 : S_MinDistance) : sfx->MinDistance;
+		double dist_sqr = dx*dx + dy*dy + dz*dz;
+		float level, old_level;
+
+		if (dist_sqr <= min_dist*min_dist)
+		{ // Within min distance: No 3D panning.
+			level = 0;
+		}
+		else if (dist_sqr <= (min_dist + interp_range) * (min_dist + interp_range))
+		{ // Within interp_range units of min distance: Interpolate between none and full 3D panning.
+			level = float(1 - (min_dist + interp_range - sqrt(dist_sqr)) / interp_range);
+		}
+		else
+		{ // Beyond 256 units of min distance: Normal 3D panning.
+			level = 1;
+		}
+		if (chan->get3DPanLevel(&old_level) == FMOD_OK && old_level != level)
+		{ // Only set it if it's different.
+			chan->set3DPanLevel(level);
+		}
+		return oldmode;
+	}
+	else if (cpos[0] == pos[0] && cpos[1] == pos[1] && cpos[2] == pos[2])
+	{
+		pos[2] = pos[1] = pos[0] = 0;
+		return (oldmode & ~FMOD_3D_WORLDRELATIVE) | FMOD_3D_HEADRELATIVE;
+	}
+	return (oldmode & ~FMOD_3D_HEADRELATIVE) | FMOD_3D_WORLDRELATIVE;
+}
+
+//==========================================================================
+//
+// FMODSoundRenderer :: CommonChannelSetup
+//
+// Assign an end callback to the channel and allocates a game channel for
+// it.
+//
+//==========================================================================
+
+FSoundChan *FMODSoundRenderer::CommonChannelSetup(FMOD::Channel *chan) const
+{
+	FSoundChan *schan = S_GetChannel(chan);
+	chan->setUserData(schan);
+	chan->setCallback(FMOD_CHANNEL_CALLBACKTYPE_END, ChannelEndCallback, 0);
+	GSfxInfo = NULL;
+	return schan;
+}
+
+//==========================================================================
+//
+// FMODSoundRenderer :: StopSound
+//
+//==========================================================================
+
+void FMODSoundRenderer::StopSound(FSoundChan *chan)
+{
+	if (chan == NULL)
 		return;
 
-	handle--;
-	if (ChannelMap[handle].soundID != -1)
+	if (chan->SysChannel != NULL)
 	{
-		ChannelMap[handle].channelID->stop();
-		ChannelMap[handle].soundID = -1;
+		((FMOD::Channel *)chan->SysChannel)->stop();
 	}
 }
 
-void FMODSoundRenderer::StopAllChannels()
-{
-	for (int i = 1; i <= NumChannels; ++i)
-	{
-		StopSound(i);
-	}
-}
-
+//==========================================================================
+//
+// FMODSoundRenderer :: SetSfxPaused
+//
+//==========================================================================
 
 void FMODSoundRenderer::SetSfxPaused(bool paused)
 {
@@ -987,118 +1141,128 @@ void FMODSoundRenderer::SetSfxPaused(bool paused)
 	}
 }
 
-bool FMODSoundRenderer::IsPlayingSound(long handle)
-{
-	if (!handle || !ChannelMap)
-		return false;
+//==========================================================================
+//
+// FMODSoundRenderer :: UpdateSoundParams3D
+//
+//==========================================================================
 
-	handle--;
-	if (ChannelMap[handle].channelID != NULL)
+void FMODSoundRenderer::UpdateSoundParams3D(FSoundChan *chan, float pos[3], float vel[3])
+{
+	if (chan == NULL || chan->SysChannel == NULL)
+		return;
+
+	FMOD::Channel *fchan = (FMOD::Channel *)chan->SysChannel;
+	FMOD_MODE oldmode, mode;
+
+	if (fchan->getMode(&oldmode) != FMOD_OK)
 	{
-		bool is;
-
-		if (FMOD_OK == ChannelMap[handle].channelID->isPlaying(&is))
-		{
-			return is;
-		}
+		oldmode = FMOD_3D | FMOD_SOFTWARE;
 	}
-	return false;
+	mode = SetChanHeadSettings(fchan, chan->SfxInfo, pos, chan->ChanFlags, oldmode);
+	if (mode != oldmode)
+	{ // Only set the mode if it changed.
+		fchan->setMode(mode);
+	}
+	fchan->set3DAttributes((FMOD_VECTOR *)pos, (FMOD_VECTOR *)vel);
 }
 
-void FMODSoundRenderer::UpdateSoundParams(long handle, float vol, float sep, int pitch)
-{
-	if (!handle || !ChannelMap)
-		return;
-
-	handle--;
-	if (ChannelMap[handle].soundID == -1 || ChannelMap[handle].channelID == NULL)
-		return;
-
-	float freq = PITCH(S_sfx[ChannelMap[handle].soundID].frequency, pitch);
-	FMOD::Channel *chan = ChannelMap[handle].channelID;
-
-	chan->setPan(sep);
-	chan->setVolume(vol);
-	chan->setFrequency(freq);
-}
-
-void FMODSoundRenderer::UpdateSoundParams3D(long handle, float pos[3], float vel[3])
-{
-	if (!handle || !ChannelMap)
-		return;
-
-	handle--;
-	if (ChannelMap[handle].soundID == -1 || ChannelMap[handle].channelID == NULL)
-		return;
-
-	ChannelMap[handle].channelID->set3DAttributes((FMOD_VECTOR *)pos, (FMOD_VECTOR *)vel);
-}
+//==========================================================================
+//
+// FMODSoundRenderer :: ResetEnvironment
+//
+//==========================================================================
 
 void FMODSoundRenderer::ResetEnvironment()
 {
 	PrevEnvironment = NULL;
 }
 
-void FMODSoundRenderer::UpdateListener(AActor *listener)
+//==========================================================================
+//
+// FMODSoundRenderer :: UpdateListener
+//
+//==========================================================================
+
+void FMODSoundRenderer::UpdateListener()
 {
+	AActor *listener = players[consoleplayer].camera;
 	float angle;
 	FMOD_VECTOR pos, vel;
 	FMOD_VECTOR forward;
 	FMOD_VECTOR up;
 
-	if(Sound3D && ChannelMap)
+	if (listener == NULL)
 	{
-		vel.x = listener->momx * (TICRATE/65536.f);
-		vel.y = listener->momz * (TICRATE/65536.f);
-		vel.z = listener->momy * (TICRATE/65536.f);
-		pos.x = listener->x / 65536.f;
-		pos.y = listener->z / 65536.f;
-		pos.z = listener->y / 65536.f;
+		return;
+	}
 
-		angle = (float)(listener->angle) * ((float)PI / 2147483648.f);
+	vel.x = listener->momx * (TICRATE/65536.f);
+	vel.y = listener->momz * (TICRATE/65536.f);
+	vel.z = listener->momy * (TICRATE/65536.f);
+	pos.x = listener->x / 65536.f;
+	pos.y = listener->z / 65536.f;
+	pos.z = listener->y / 65536.f;
 
-		forward.x = cosf(angle);
-		forward.y = 0;
-		forward.z = sinf(angle);
+	angle = (float)(listener->angle) * ((float)PI / 2147483648.f);
 
-		up.x = 0;
-		up.y = 1;
-		up.z = 0;
+	forward.x = cosf(angle);
+	forward.y = 0;
+	forward.z = sinf(angle);
 
-		Sys->set3DListenerAttributes(0, &pos, &vel, &forward, &up);
+	up.x = 0;
+	up.y = 1;
+	up.z = 0;
 
-		bool underwater = false;
-		const ReverbContainer *env;
+	Sys->set3DListenerAttributes(0, &pos, &vel, &forward, &up);
 
-		if (ForcedEnvironment)
+	bool underwater = false;
+	const ReverbContainer *env;
+
+	if (ForcedEnvironment)
+	{
+		env = ForcedEnvironment;
+	}
+	else
+	{
+		underwater = (listener->waterlevel == 3 && snd_waterreverb);
+		assert (zones != NULL);
+		env = zones[listener->Sector->ZoneNumber].Environment;
+		if (env == NULL)
 		{
-			env = ForcedEnvironment;
+			env = DefaultEnvironments[0];
 		}
-		else
+		if (env == DefaultEnvironments[0] && underwater)
 		{
-			underwater = (listener->waterlevel == 3 && snd_waterreverb);
-			assert (zones != NULL);
-			env = zones[listener->Sector->ZoneNumber].Environment;
-			if (env == NULL)
-			{
-				env = DefaultEnvironments[0];
-			}
-			if (env == DefaultEnvironments[0] && underwater)
-			{
-				env = DefaultEnvironments[22];
-			}
-		}
-		if (env != PrevEnvironment || env->Modified)
-		{
-			DPrintf ("Reverb Environment %s\n", env->Name);
-			const_cast<ReverbContainer*>(env)->Modified = false;
-			Sys->setReverbProperties((FMOD_REVERB_PROPERTIES *)(&env->Properties));
-			PausableSfx->setPitch(underwater ? 0.64171f : 1);
-			PrevEnvironment = env;
+			env = DefaultEnvironments[22];
 		}
 	}
+	if (env != PrevEnvironment || env->Modified)
+	{
+		DPrintf ("Reverb Environment %s\n", env->Name);
+		const_cast<ReverbContainer*>(env)->Modified = false;
+		Sys->setReverbProperties((FMOD_REVERB_PROPERTIES *)(&env->Properties));
+		PausableSfx->setPitch(underwater ? 0.64171f : 1);
+		PrevEnvironment = env;
+	}
+}
+
+//==========================================================================
+//
+// FMODSoundRenderer :: UpdateSounds
+//
+//==========================================================================
+
+void FMODSoundRenderer::UpdateSounds()
+{
 	Sys->update();
 }
+
+//==========================================================================
+//
+// FMODSoundRenderer :: LoadSound
+//
+//==========================================================================
 
 void FMODSoundRenderer::LoadSound(sfxinfo_t *sfx)
 {
@@ -1108,6 +1272,12 @@ void FMODSoundRenderer::LoadSound(sfxinfo_t *sfx)
 		getsfx(sfx);
 	}
 }
+
+//==========================================================================
+//
+// FMODSoundRenderer :: UnloadSound
+//
+//==========================================================================
 
 void FMODSoundRenderer::UnloadSound(sfxinfo_t *sfx)
 {
@@ -1119,6 +1289,36 @@ void FMODSoundRenderer::UnloadSound(sfxinfo_t *sfx)
 	}
 }
 
+//==========================================================================
+//
+// FMODSoundRenderer :: GetMSLength
+//
+//==========================================================================
+
+unsigned int FMODSoundRenderer::GetMSLength(sfxinfo_t *sfx)
+{
+	if (sfx->data == NULL)
+	{
+		LoadSound(sfx);
+	}
+	if (sfx->data != NULL)
+	{
+		unsigned int length;
+
+		if (((FMOD::Sound *)sfx->data)->getLength(&length, FMOD_TIMEUNIT_MS) == FMOD_OK)
+		{
+			return length;
+		}
+	}
+	return 0;	// Don't know.
+}
+
+//==========================================================================
+//
+// FMODSoundRenderer :: DoLoad
+//
+//==========================================================================
+
 void FMODSoundRenderer::DoLoad(void **slot, sfxinfo_t *sfx)
 {
 	BYTE *sfxdata;
@@ -1129,8 +1329,24 @@ void FMODSoundRenderer::DoLoad(void **slot, sfxinfo_t *sfx)
 	FMOD_MODE samplemode;
 	FMOD_CREATESOUNDEXINFO exinfo = { sizeof(exinfo), };
 	FMOD::Sound *sample;
+	int rolloff;
+	float mindist, maxdist;
 
-	samplemode = (Sound3D ? FMOD_3D : FMOD_2D) | FMOD_OPENMEMORY | FMOD_SOFTWARE;
+	samplemode = FMOD_3D | FMOD_OPENMEMORY | FMOD_SOFTWARE;
+
+	if (sfx->MaxDistance == 0)
+	{
+		mindist = S_MinDistance;
+		maxdist = S_MaxDistanceOrRolloffFactor;
+		rolloff = S_RolloffType;
+	}
+	else
+	{
+		mindist = sfx->MinDistance;
+		maxdist = sfx->MaxDistance;
+		rolloff = sfx->RolloffType;
+	}
+
 	sfxdata = NULL;
 
 	errcount = 0;
@@ -1163,25 +1379,26 @@ void FMODSoundRenderer::DoLoad(void **slot, sfxinfo_t *sfx)
 		if (sfx->bLoadRAW ||
 			(((BYTE *)sfxdata)[0] == 3 && ((BYTE *)sfxdata)[1] == 0 && len <= size - 8))
 		{
+			int frequency;
+
 			if (sfx->bLoadRAW)
 			{
 				len = Wads.LumpLength (sfx->lumpnum);
-				sfx->frequency = (sfx->bForce22050 ? 22050 : 11025);
+				frequency = (sfx->bForce22050 ? 22050 : 11025);
 			}
 			else
 			{
-				sfx->frequency = ((WORD *)sfxdata)[1];
-				if (sfx->frequency == 0)
+				frequency = ((WORD *)sfxdata)[1];
+				if (frequency == 0)
 				{
-					sfx->frequency = 11025;
+					frequency = 11025;
 				}
 				sfxstart = sfxdata + 8;
 			}
-			sfx->length = len;
 
 			exinfo.length = len;
 			exinfo.numchannels = 1;
-			exinfo.defaultfrequency = sfx->frequency;
+			exinfo.defaultfrequency = frequency;
 			exinfo.format = FMOD_SOUND_FORMAT_PCM8;
 
 			samplemode |= FMOD_OPENRAW;
@@ -1210,44 +1427,17 @@ void FMODSoundRenderer::DoLoad(void **slot, sfxinfo_t *sfx)
 			continue;
 		}
 		*slot = sample;
-		// Get frequency and length for sounds FMOD handled for us.
-		if (!(samplemode & FMOD_OPENRAW))
-		{
-			float freq;
-
-			result = sample->getDefaults(&freq, NULL, NULL, NULL);
-			if (result != FMOD_OK)
-			{
-				DPrintf("Failed getting default sound frequency, assuming 11025Hz\n");
-				freq = 11025;
-			}
-			sfx->frequency = (unsigned int)freq;
-
-			result = sample->getLength(&sfx->length, FMOD_TIMEUNIT_PCM);
-			if (result != FMOD_OK)
-			{
-				DPrintf("Failed getting sample length\n");
-			}
-		}
-
-		// Get sample length in milliseconds. I think this is only used for ambient sounds?
-		if (FMOD_OK != sample->getLength(&sfx->ms, FMOD_TIMEUNIT_MS))
-		{
-			sfx->ms = (sfx->length * 1000) / sfx->frequency;
-		}
 		break;
 	}
 
-	if (sfx->data)
+	if (sample != NULL)
 	{
-		DPrintf ("[%d Hz %d samples]\n", sfx->frequency, sfx->length);
-
-		if (Sound3D)
+		if (rolloff == ROLLOFF_Log)
 		{
-			// Match s_sound.cpp min distance.
-			// Max distance is irrelevant.
-			sample->set3DMinMaxDistance(float(S_CLOSE_DIST), float(MAX_SND_DIST)*2);
+			maxdist = 10000.f;
 		}
+		sample->set3DMinMaxDistance(mindist, maxdist);
+		sample->setUserData(sfx);
 	}
 
 	if (sfxdata != NULL)
@@ -1256,29 +1446,136 @@ void FMODSoundRenderer::DoLoad(void **slot, sfxinfo_t *sfx)
 	}
 }
 
+//==========================================================================
+//
+// FMODSoundRenderer :: getsfx
+//
+// Get the sound data from the WAD and register it with sound library
+//
+//==========================================================================
+
 void FMODSoundRenderer::getsfx(sfxinfo_t *sfx)
 {
 	unsigned int i;
 
-	// Get the sound data from the WAD and register it with sound library
-
 	// If the sound doesn't exist, replace it with the empty sound.
 	if (sfx->lumpnum == -1)
 	{
-		sfx->lumpnum = Wads.GetNumForName ("dsempty", ns_sounds);
+		sfx->lumpnum = Wads.GetNumForName("dsempty", ns_sounds);
 	}
 	
 	// See if there is another sound already initialized with this lump. If so,
 	// then set this one up as a link, and don't load the sound again.
-	for (i = 0; i < S_sfx.Size (); i++)
+	for (i = 0; i < S_sfx.Size(); i++)
 	{
 		if (S_sfx[i].data && S_sfx[i].link == sfxinfo_t::NO_LINK && S_sfx[i].lumpnum == sfx->lumpnum)
 		{
 			DPrintf ("Linked to %s (%d)\n", S_sfx[i].name.GetChars(), i);
 			sfx->link = i;
-			sfx->ms = S_sfx[i].ms;
 			return;
 		}
 	}
-	DoLoad (&sfx->data, sfx);
+	DoLoad(&sfx->data, sfx);
+}
+
+//==========================================================================
+//
+// FMODSoundRenderer :: ChannelEndCallback							static
+//
+// Called when the channel finishes playing.
+//
+//==========================================================================
+
+FMOD_RESULT F_CALLBACK FMODSoundRenderer::ChannelEndCallback
+	(FMOD_CHANNEL *channel, FMOD_CHANNEL_CALLBACKTYPE type,
+	 int cmd, unsigned int data1, unsigned int data2)
+{
+	assert(type == FMOD_CHANNEL_CALLBACKTYPE_END);
+	FMOD::Channel *chan = (FMOD::Channel *)channel;
+	FSoundChan *schan;
+
+	if (chan->getUserData((void **)&schan) == FMOD_OK && schan != NULL)
+	{
+		S_ReturnChannel(schan);
+	}
+	return FMOD_OK;
+}
+
+
+//==========================================================================
+//
+// FMODSoundRenderer :: RolloffCallback								static
+//
+// Calculates a volume for the sound based on distance.
+//
+//==========================================================================
+
+float F_CALLBACK FMODSoundRenderer::RolloffCallback(FMOD_CHANNEL *channel, float distance)
+{
+	FMOD::Channel *chan = (FMOD::Channel *)channel;
+	FSoundChan *schan;
+	// Defaults for Doom.
+	int type = ROLLOFF_Doom;
+	sfxinfo_t *sfx;
+	float min;
+	float max;
+	float factor;
+	float volume;
+
+	type = S_RolloffType;
+	factor = S_MaxDistanceOrRolloffFactor;
+	min = S_MinDistance;
+	max = S_MaxDistanceOrRolloffFactor;
+
+	if (GSfxInfo != NULL)
+	{
+		sfx = GSfxInfo;
+		distance *= GDistScale;
+	}
+	else if (chan->getUserData((void **)&schan) == FMOD_OK && schan != NULL)
+	{
+		sfx = schan->SfxInfo;
+		distance *= schan->DistanceScale;
+	}
+	else
+	{
+		return 0;
+	}
+	if (sfx == NULL)
+	{
+		return 0;
+	}
+
+	if (sfx->MaxDistance == 0)
+	{
+		type = sfx->RolloffType;
+		factor = sfx->RolloffFactor;
+	}
+	chan->get3DMinMaxDistance(&min, &max);
+
+	if (distance <= min)
+	{
+		return 1;
+	}
+	if (type == ROLLOFF_Log)
+	{ // Logarithmic rolloff has no max distance where it goes silent.
+		return min / (min + factor * (distance - min));
+	}
+	if (distance >= max)
+	{
+		return 0;
+	}
+	volume = (max - distance) / (max - min);
+	if (type == ROLLOFF_Custom && S_SoundCurve != NULL)
+	{
+		volume = S_SoundCurve[int(S_SoundCurveSize * (1 - volume))] / 127.f;
+	}
+	if (type == ROLLOFF_Linear)
+	{
+		return volume;
+	}
+	else
+	{
+		return (powf(10.f, volume) - 1.f) / 9.f;
+	}
 }

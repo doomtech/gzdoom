@@ -32,15 +32,19 @@ class FScanner;
 //
 struct sfxinfo_t
 {
-	FString		name;					// [RH] Sound name defined in SNDINFO
-	short 		lumpnum;				// lump number of sfx
-
-	BYTE		PitchMask;
-	BYTE		MaxChannels;
-
 	// Next field is for use by the system sound interface.
 	// A non-null data means the sound has been loaded.
-	void*		data;
+	void	   *data;
+
+	FString		name;					// [RH] Sound name defined in SNDINFO
+	int 		lumpnum;				// lump number of sfx
+
+	unsigned int next, index;			// [RH] For hashing
+//	unsigned int frequency;				// [RH] Preferred playback rate
+	float		Volume;
+
+	BYTE		PitchMask;
+	BYTE		NearLimit;				// 0 means unlimited
 
 	WORD		bRandomHeader:1;
 	WORD		bPlayerReserve:1;
@@ -52,19 +56,57 @@ struct sfxinfo_t
 	WORD		bUsed:1;
 	WORD		bSingular:1;
 	WORD		bTentative:1;
+	WORD		RolloffType:2;
 
 	WORD		link;
-
 	enum { NO_LINK = 0xffff };
 
-	unsigned int ms;					// [RH] length of sfx in milliseconds
-	unsigned int next, index;			// [RH] For hashing
-	unsigned int frequency;				// [RH] Preferred playback rate
-	unsigned int length;				// [RH] Length of the sound in samples
+	float		MinDistance;
+	union		{ float MaxDistance, RolloffFactor; };
+};
+
+// Rolloff types
+enum
+{
+	ROLLOFF_Doom,		// Linear rolloff with a logarithmic volume scale
+	ROLLOFF_Linear,		// Linear rolloff with a linear volume scale
+	ROLLOFF_Log,		// Logarithmic rolloff (standard hardware type)
+	ROLLOFF_Custom		// Lookup volume from SNDCURVE
 };
 
 // the complete set of sound effects
 extern TArray<sfxinfo_t> S_sfx;
+
+// Default rolloff information.
+extern int S_RolloffType;
+extern float S_MinDistance;
+extern float S_MaxDistanceOrRolloffFactor;
+extern BYTE *S_SoundCurve;
+extern int S_SoundCurveSize;
+
+// Information about one playing sound.
+struct FSoundChan
+{
+	void		*SysChannel;// Channel information from the system interface.
+	FSoundChan	*NextChan;	// Next channel in this list.
+	FSoundChan **PrevChan;	// Previous channel in this list.
+	AActor		*Mover;		// Used for velocity.
+	fixed_t		*Pt;		// Origin of sound.
+	sfxinfo_t	*SfxInfo;	// Sound information.
+	fixed_t		X,Y,Z;		// Origin if Mover is NULL.
+	int			SoundID;	// Sound ID of playing sound
+	int			OrgID;		// Sound ID of sound used to start this channel
+	float		Volume;
+	float		DistanceScale;
+	BYTE		EntChannel;	// Actor's sound channel.
+	int			ChanFlags;
+};
+
+FSoundChan *S_GetChannel(void *syschan);
+void S_ReturnChannel(FSoundChan *chan);
+
+void S_LinkChannel(FSoundChan *chan, FSoundChan **head);
+void S_UnlinkChannel(FSoundChan *chan);
 
 // Initializes sound stuff, including volume
 // Sets channels, SFX and music volume,
@@ -90,14 +132,10 @@ void S_Sound (int channel, const char *name, float volume, int attenuation);
 void S_Sound (AActor *ent, int channel, const char *name, float volume, int attenuation);
 void S_Sound (fixed_t *pt, int channel, const char *name, float volume, int attenuation);
 void S_Sound (fixed_t x, fixed_t y, int channel, const char *name, float volume, int attenuation);
-void S_LoopedSound (AActor *ent, int channel, const char *name, float volume, int attenuation);
-void S_LoopedSound (fixed_t *pt, int channel, const char *name, float volume, int attenuation);
 void S_SoundID (int channel, int sfxid, float volume, int attenuation);
 void S_SoundID (AActor *ent, int channel, int sfxid, float volume, int attenuation);
 void S_SoundID (fixed_t *pt, int channel, int sfxid, float volume, int attenuation);
 void S_SoundID (fixed_t x, fixed_t y, fixed_t z, int channel, int sfxid, float volume, int attenuation);
-void S_LoopedSoundID (AActor *ent, int channel, int sfxid, float volume, int attenuation);
-void S_LoopedSoundID (fixed_t *pt, int channel, int sfxid, float volume, int attenuation);
 
 // sound channels
 // channel 0 never willingly overrides
@@ -108,7 +146,7 @@ void S_LoopedSoundID (fixed_t *pt, int channel, int sfxid, float volume, int att
 // CHAN_VOICE is for oof, sight, or other voice sounds
 // CHAN_ITEM is for small things and item pickup
 // CHAN_BODY is for generic body sounds
-// CHAN_PICKUP is can optionally be set as a local sound only for "compatibility"
+// CHAN_PICKUP can optionally be set as a local sound only for "compatibility"
 
 #define CHAN_AUTO				0
 #define CHAN_WEAPON				1
@@ -120,6 +158,10 @@ void S_LoopedSoundID (fixed_t *pt, int channel, int sfxid, float volume, int att
 #define CHAN_IMMOBILE			16
 #define CHAN_MAYBE_LOCAL		32
 #define CHAN_NOPAUSE			64	// do not pause this sound in menus
+#define CHAN_AREA				128	// Sound plays from all around within MinDistance
+#define CHAN_LOOP				256
+#define CHAN_IS3D				1	// internal flag
+
 #define CHAN_PICKUP				(CHAN_ITEM|CHAN_MAYBE_LOCAL)
 
 // sound attenuation values
@@ -131,9 +173,8 @@ void S_LoopedSoundID (fixed_t *pt, int channel, int sfxid, float volume, int att
 int S_PickReplacement (int refid);
 void S_CacheRandomSound (sfxinfo_t *sfx);
 
-// [RH] From Hexen.
-//		Prevents too many of the same sound from playing simultaneously.
-bool S_StopSoundID (int sound_id, int priority, int limit, bool singular, fixed_t x, fixed_t y);
+// Checks if a copy of this sound is already playing.
+bool S_CheckSingular (int sound_id);
 
 // Stops a sound emanating from one of an entity's channels
 void S_StopSound (AActor *ent, int channel);
