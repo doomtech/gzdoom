@@ -20,7 +20,6 @@
 #include "c_cvars.h"
 #include "mus2midi.h"
 #include "i_sound.h"
-#include "modplug/modplug.h"
 
 void I_InitMusicWin32 ();
 void I_ShutdownMusicWin32 ();
@@ -45,6 +44,7 @@ public:
 	virtual bool IsValid () const = 0;
 	virtual bool SetPosition (int order);
 	virtual void Update();
+	virtual FString GetStats();
 
 	enum EState
 	{
@@ -243,6 +243,7 @@ public:
 	bool IsMIDI () const { return false; }
 	bool IsValid () const { return m_Stream != NULL; }
 	bool SetPosition (int order);
+	FString GetStats();
 
 protected:
 	StreamSong () : m_Stream(NULL), m_LastPos(0) {}
@@ -288,25 +289,6 @@ protected:
 	static const char EventName[];
 #endif
 };
-
-class ModPlugSong : public StreamSong
-{
-
-public:
-	static ModPlugSong *Create(FILE *file, char *musiccache, int length);
-	~ModPlugSong ();
-	bool IsPlaying ();
-	bool SetPosition (int order);
-	void Play(bool);
-
-protected:
-	static bool FillStream (SoundStream *stream, void *buff, int len, void *userdata);
-	ModPlugSong (ModPlugFile *dat);
-
-	ModPlugFile * Data;
-	int order;
-};
-
 
 // MUS file played by a software OPL2 synth and streamed through FMOD -------
 

@@ -692,7 +692,7 @@ CCMD(listlights)
 	ADynamicLight * dl;
 	TThinkerIterator<ADynamicLight> it;
 
-	while (dl=it.Next())
+	while ((dl=it.Next()))
 	{
 		walls=0;
 		sectors=0;

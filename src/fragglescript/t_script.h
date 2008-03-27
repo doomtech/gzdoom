@@ -655,7 +655,7 @@ public:
 
 	TObjPtr<DFsScript> LevelScript;
 	TObjPtr<DRunningScript> RunningScripts;
-	TArray<TObjPtr<AActor>> SpawnedThings;
+	TArray<TObjPtr<AActor> > SpawnedThings;
 
 	DFraggleThinker();
 	void Destroy();

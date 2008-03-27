@@ -769,7 +769,7 @@ public:
 
 	enum { S_NULL = 2, S_GENERICFREEZEDEATH = 3 };
 
-	TArray<TObjPtr<AActor>>		dynamiclights;
+	TArray<TObjPtr<AActor> >		dynamiclights;
 	void *				lightassociations;
 	bool				hasmodel;
 	subsector_s *		subsector;
