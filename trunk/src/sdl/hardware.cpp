@@ -152,7 +152,7 @@ void I_InitGraphics ()
 	} 
 	gl_disabled = gl_nogl;
 #endif
-	val.Bool = !!Args.CheckParm ("-devparm");
+	val.Bool = !!Args->CheckParm ("-devparm");
 	ticker.SetGenericRepDefault (val, CVAR_Bool);
 
 #ifndef NO_GL

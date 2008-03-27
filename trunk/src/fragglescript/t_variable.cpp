@@ -133,7 +133,7 @@ const char *stringvalue(const svalue_t & v)
 //
 //==========================================================================
 
-AActor *actorvalue(const svalue_t &svalue)
+AActor* actorvalue(const svalue_t &svalue)
 {
 	int intval;
 
@@ -151,7 +151,7 @@ AActor *actorvalue(const svalue_t &svalue)
 	}
 	else
 	{
-		TArray<TObjPtr<AActor>> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
+		TArray<TObjPtr<AActor> > &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
 		// this requires some creativity. We use the intvalue
 		// as the thing number of a thing in the level.
 		intval = intvalue(svalue);

@@ -476,7 +476,7 @@ DFsSection *FParser::looping_section()
 	SDWORD rover_index = Script->MakeIndex(Rover);
 	
 	for(n=0; n<SECTIONSLOTS; n++)
-    {
+	{
 		DFsSection *current = Script->sections[n];
 		
 		// check all the sections in this hashchain
@@ -494,7 +494,7 @@ DFsSection *FParser::looping_section()
 				}
 				current = current->next;
 		}
-    }
+	}
 	
 	return best;    // return the best one found
 }
@@ -510,10 +510,10 @@ void FParser::SF_Continue(void)
 	DFsSection *section;
 	
 	if(!(section = looping_section()) )       // no loop found
-    {
+	{
 		script_error("continue() not in loop\n");
 		return;
-    }
+	}
 	
 	Rover = Script->SectionEnd(section);      // jump to the closing brace
 }
@@ -529,10 +529,10 @@ void FParser::SF_Break(void)
 	DFsSection *section;
 	
 	if(!(section = looping_section()) )
-    {
+	{
 		script_error("break() not in loop\n");
 		return;
-    }
+	}
 	
 	Rover = Script->SectionEnd(section) + 1;   // jump out of the loop
 }
@@ -761,12 +761,12 @@ void FParser::SF_PlayerName(void)
 	int plnum;
 	
 	if(!t_argc)
-    {
+	{
 		player_t *pl=NULL;
 		if (Script->trigger) pl = Script->trigger->player;
 		if(pl) plnum = pl - players;
 		else plnum=-1;
-    }
+	}
 	else
 		plnum = T_GetPlayerNum(t_argv[0]);
 	
@@ -820,8 +820,17 @@ void FParser::SF_PlayerObj(void)
 
 void FParser::SF_Player(void)
 {
-	AActor *mo = t_argc ? actorvalue(t_argv[0]) : Script->trigger;
-	
+	// use trigger object if not specified
+	AActor *mo;
+	if(t_argc)
+	{
+		mo = actorvalue(t_argv[0]);
+	}
+	else
+	{
+		mo = Script->trigger;
+	}
+
 	t_return.type = svt_int;
 	
 	if(mo && mo->player) // haleyjd: added mo->player
@@ -924,11 +933,17 @@ void FParser::SF_RemoveObj(void)
 
 void FParser::SF_KillObj(void)
 {
+	// use trigger object if not specified
 	AActor *mo;
-	
-	if(t_argc) mo = actorvalue(t_argv[0]);
-	else mo = Script->trigger;  // default to trigger object
-	
+	if(t_argc)
+	{
+		mo = actorvalue(t_argv[0]);
+	}
+	else
+	{
+		mo = Script->trigger;  // default to trigger object
+	}
+
 	if(mo) 
 	{
 		// ensure the thing can be killed
@@ -949,8 +964,17 @@ void FParser::SF_KillObj(void)
 
 void FParser::SF_ObjX(void)
 {
-	AActor *mo = t_argc ? actorvalue(t_argv[0]) : Script->trigger;
-	
+	// use trigger object if not specified
+	AActor *mo;
+	if(t_argc)
+	{
+		mo = actorvalue(t_argv[0]);
+	}
+	else
+	{
+		mo = Script->trigger;
+	}
+
 	t_return.type = svt_fixed;           // haleyjd: SoM's fixed-point fix
 	t_return.value.f = mo ? mo->x : 0;   // null ptr check
 }
@@ -963,8 +987,17 @@ void FParser::SF_ObjX(void)
 
 void FParser::SF_ObjY(void)
 {
-	AActor *mo = t_argc ? actorvalue(t_argv[0]) : Script->trigger;
-	
+	// use trigger object if not specified
+	AActor *mo;
+	if(t_argc)
+	{
+		mo = actorvalue(t_argv[0]);
+	}
+	else
+	{
+		mo = Script->trigger;
+	}
+
 	t_return.type = svt_fixed;         // haleyjd
 	t_return.value.f = mo ? mo->y : 0; // null ptr check
 }
@@ -977,8 +1010,17 @@ void FParser::SF_ObjY(void)
 
 void FParser::SF_ObjZ(void)
 {
-	AActor *mo = t_argc ? actorvalue(t_argv[0]) : Script->trigger;
-	
+	// use trigger object if not specified
+	AActor *mo;
+	if(t_argc)
+	{
+		mo = actorvalue(t_argv[0]);
+	}
+	else
+	{
+		mo = Script->trigger;	
+	}
+
 	t_return.type = svt_fixed;         // haleyjd
 	t_return.value.f = mo ? mo->z : 0; // null ptr check
 }
@@ -992,8 +1034,17 @@ void FParser::SF_ObjZ(void)
 
 void FParser::SF_ObjAngle(void)
 {
-	AActor *mo = t_argc ? actorvalue(t_argv[0]) : Script->trigger;
-	
+	// use trigger object if not specified
+	AActor *mo;
+	if(t_argc)
+	{
+		mo = actorvalue(t_argv[0]);
+	}
+	else
+	{
+		mo = Script->trigger;
+	}
+
 	t_return.type = svt_fixed; // haleyjd: fixed-point -- SoM again :)
 	t_return.value.f = mo ? (fixed_t)AngleToFixed(mo->angle) : 0;   // null ptr check
 }
@@ -1097,8 +1148,16 @@ void FParser::SF_DamageObj(void)
 void FParser::SF_ObjSector(void)
 {
 	// use trigger object if not specified
-	AActor *mo = t_argc ? actorvalue(t_argv[0]) : Script->trigger;
-	
+	AActor *mo;
+	if(t_argc)
+	{
+		mo = actorvalue(t_argv[0]);
+	}
+	else
+	{
+		mo = Script->trigger;
+	}
+
 	t_return.type = svt_int;
 	t_return.value.i = mo ? mo->Sector->tag : 0; // nullptr check
 }
@@ -1113,8 +1172,16 @@ void FParser::SF_ObjSector(void)
 void FParser::SF_ObjHealth(void)
 {
 	// use trigger object if not specified
-	AActor *mo = t_argc ? actorvalue(t_argv[0]) : Script->trigger;
-	
+	AActor *mo;
+	if(t_argc)
+	{
+		mo = actorvalue(t_argv[0]);
+	}
+	else
+	{
+		mo = Script->trigger;
+	}
+
 	t_return.type = svt_int;
 	t_return.value.i = mo ? mo->health : 0;
 }
@@ -1155,7 +1222,7 @@ void FParser::SF_ObjFlag(void)
 				
 				// make the new flag
 				mo->flags |= (!!intvalue(t_argv[2])) << flagnum;
-			}     
+			}  
 		}
 		t_return.type = svt_int;  
 		if (mo && flagnum<26)
@@ -1352,7 +1419,7 @@ void FParser::SF_PointToDist(void)
 		// Doing this in floating point is actually faster with modern computers!
 		float x = floatvalue(t_argv[2]) - floatvalue(t_argv[0]);
 		float y = floatvalue(t_argv[3]) - floatvalue(t_argv[1]);
-	    
+   
 		t_return.type = svt_fixed;
 		t_return.value.f = (fixed_t)(sqrtf(x*x+y*y)*65536.f);
 	}
@@ -1875,7 +1942,7 @@ void DLightLevel::Tick()
 	}
 	else
 	{
-        // decrease lightlevel
+		// decrease lightlevel
 		if(m_Sector->lightlevel - speed <= destlevel)
 		{
 			// stop changing light level
@@ -1987,7 +2054,7 @@ void FParser::SF_SectorColormap(void)
 	int i = -1;
 
 	if(t_argc<2)
-    { script_error("insufficient arguments to function\n"); return; }
+	{ script_error("insufficient arguments to function\n"); return; }
 	
 	tagnum = intvalue(t_argv[0]);
 	
@@ -1995,7 +2062,7 @@ void FParser::SF_SectorColormap(void)
 	secnum = T_FindSectorFromTag(tagnum, -1);
 	
 	if(secnum < 0)
-    { script_error("sector not found with tagnum %i\n", tagnum); return;}
+	{ script_error("sector not found with tagnum %i\n", tagnum); return;}
 	
 	sector = &sectors[secnum];
 
@@ -2463,15 +2530,17 @@ void FParser::SF_Gamemode(void)
 
 void FParser::SF_IsPlayerObj(void)
 {
+	// use trigger object if not specified
 	AActor *mo;
-	
-	if(!t_argc)
+	if(t_argc)
+	{
+		mo = actorvalue(t_argv[0]);
+	}
+	else
 	{
 		mo = Script->trigger;
 	}
-	else
-		mo = actorvalue(t_argv[0]);
-	
+
 	t_return.type = svt_int;
 	t_return.value.i = (mo && mo->player) ? 1 : 0;
 }
@@ -2770,9 +2839,9 @@ void FParser::SF_PlayerWeapon()
 		"PlasmaRifle", "BFG9000", "Chainsaw", "SuperShotgun" };
 
 
-    int playernum;
-    int weaponnum;
-    int newweapon;
+	int playernum;
+	int weaponnum;
+	int newweapon;
 	
 	if (CheckArgs(2))
 	{
@@ -3014,7 +3083,7 @@ void FParser::SF_MoveCamera(void)
 	// I have to use floats for the math where angles are divided 
 	// by fixed values.  
 	double     fangledist, fanglestep, fmovestep;
-	int	     angledir;  
+	int        angledir;  
 	AActor*    target;
 	int        moved;
 	int        quad1, quad2;
@@ -3177,17 +3246,21 @@ void FParser::SF_MoveCamera(void)
 
 void FParser::SF_ObjAwaken(void)
 {
-   AActor *mo;
+	// use trigger object if not specified
+	AActor *mo;
+	if(t_argc)
+   	{
+		mo = actorvalue(t_argv[0]);
+	}
+	else
+	{
+		mo = Script->trigger;
+	}
 
-   if(!t_argc)
-      mo = Script->trigger;
-   else
-      mo = actorvalue(t_argv[0]);
-
-   if(mo)
-   {
-	   mo->Activate(Script->trigger);
-   }
+	if(mo)
+	{
+		mo->Activate(Script->trigger);
+	}
 }
 
 //==========================================================================
@@ -3316,9 +3389,9 @@ void FParser::SF_SpawnExplosion()
 
 void FParser::SF_RadiusAttack()
 {
-    AActor *spot;
-    AActor *source;
-    int damage;
+	AActor *spot;
+	AActor *source;
+	int damage;
 
 	if (CheckArgs(3))
 	{
@@ -3367,13 +3440,22 @@ void FParser::SF_SetObjPosition()
 
 void FParser::SF_TestLocation()
 {
-    AActor *mo = t_argc ? actorvalue(t_argv[0]) : Script->trigger;
-
-    if (mo)
+	// use trigger object if not specified
+	AActor *mo;
+	if(t_argc)
 	{
-       t_return.type = svt_int;
-       t_return.value.f = !!P_TestMobjLocation(mo);
-    }
+		mo = actorvalue(t_argv[0]);
+	}
+	else
+	{
+		mo = Script->trigger;
+	}
+
+	if (mo)
+	{
+		t_return.type = svt_int;
+		t_return.value.f = !!P_TestMobjLocation(mo);
+	}
 }
 
 //==========================================================================
@@ -3384,7 +3466,16 @@ void FParser::SF_TestLocation()
 
 void FParser::SF_HealObj()  //no pain sound
 {
-	AActor *mo = t_argc ? actorvalue(t_argv[0]) : Script->trigger;
+	// use trigger object if not specified
+	AActor *mo;
+	if(t_argc)
+	{
+		mo = actorvalue(t_argv[0]);
+	}
+	else
+	{
+		mo = Script->trigger;
+	}
 
 	if(t_argc < 2)
 	{
@@ -3411,8 +3502,17 @@ void FParser::SF_HealObj()  //no pain sound
 
 void FParser::SF_ObjDead()
 {
-	AActor *mo = t_argc ? actorvalue(t_argv[0]) : Script->trigger;
-	
+	// use trigger object if not specified
+	AActor *mo;
+	if(t_argc)
+	{
+		mo = actorvalue(t_argv[0]);
+	}
+	else
+	{
+		mo = Script->trigger;
+	}
+
 	t_return.type = svt_int;
 	if(mo && (mo->health <= 0 || mo->flags&MF_CORPSE))
 		t_return.value.i = 1;
@@ -3428,8 +3528,8 @@ void FParser::SF_ObjDead()
 
 void FParser::SF_SpawnMissile()
 {
-    AActor *mobj;
-    AActor *target;
+	AActor *mobj;
+	AActor *target;
 	const PClass * PClass;
 
 	if (CheckArgs(3))
@@ -3450,9 +3550,9 @@ void FParser::SF_SpawnMissile()
 
 void FParser::SF_MapThingNumExist()
 {
-	TArray<TObjPtr<AActor>> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
+	TArray<TObjPtr<AActor> > &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
 
-    int intval;
+	int intval;
 
 	if (CheckArgs(1))
 	{
@@ -3479,10 +3579,10 @@ void FParser::SF_MapThingNumExist()
 
 void FParser::SF_MapThings()
 {
-	TArray<TObjPtr<AActor>> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
+	TArray<TObjPtr<AActor> > &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
 
 	t_return.type = svt_int;
-    t_return.value.i = SpawnedThings.Size();
+	t_return.value.i = SpawnedThings.Size();
 }
 
 
@@ -3495,7 +3595,7 @@ void FParser::SF_MapThings()
 void FParser::SF_ObjState()
 {
 	int state;
-	AActor	*mo;
+	AActor *mo = NULL;
 
 	if (CheckArgs(1))
 	{
@@ -3691,7 +3791,15 @@ void FParser::SF_LineAttack()
 void FParser::SF_ObjType()
 {
 	// use trigger object if not specified
-	AActor *mo = t_argc ? actorvalue(t_argv[0]) : Script->trigger;
+	AActor *mo;
+	if(t_argc)
+	{
+		mo = actorvalue(t_argv[0]);
+	}
+	else
+	{
+		mo = Script->trigger;
+	}
 
 	for(unsigned int i=0;i<countof(ActorTypes);i++) if (mo->GetClass() == ActorTypes[i])
 	{
@@ -3851,38 +3959,38 @@ void FParser::SF_DeleteHUPic()
 {
 	if (CheckArgs(1))
 	{
-	    if (HU_DeleteFSPic(intvalue(t_argv[0])) == -1)
-		    script_error("deletehupic: Invalid sfpic handle: %i\n", intvalue(t_argv[0]));
+		if (HU_DeleteFSPic(intvalue(t_argv[0])) == -1)
+			script_error("deletehupic: Invalid sfpic handle: %i\n", intvalue(t_argv[0]));
 	}
 }
 
 void FParser::SF_ModifyHUPic()
 {
-    if (t_argc != 4)
-    {
-        script_error("modifyhupic: invalid number of arguments\n");
-        return;
-    }
+	if (t_argc != 4)
+	{
+		script_error("modifyhupic: invalid number of arguments\n");
+		return;
+	}
 
-    if (HU_ModifyFSPic(intvalue(t_argv[0]), 
+	if (HU_ModifyFSPic(intvalue(t_argv[0]), 
 			TexMan.GetTexture(stringvalue(t_argv[0]), FTexture::TEX_MiscPatch, FTextureManager::TEXMAN_TryAny),
 			intvalue(t_argv[2]), intvalue(t_argv[3])) == -1)
 	{
-        script_error("modifyhypic: invalid sfpic handle %i\n", intvalue(t_argv[0]));
+		script_error("modifyhypic: invalid sfpic handle %i\n", intvalue(t_argv[0]));
 	}
-    return;
+	return;
 }
 
 void FParser::SF_SetHUPicDisplay()
 {
-    if (t_argc != 2)
-    {
-        script_error("sethupicdisplay: invalud number of arguments\n");
-        return;
-    }
+	if (t_argc != 2)
+	{
+		script_error("sethupicdisplay: invalud number of arguments\n");
+		return;
+	}
 
-    if (HU_FSDisplay(intvalue(t_argv[0]), intvalue(t_argv[1]) > 0 ? 1 : 0) == -1)
-        script_error("sethupicdisplay: invalid pic handle %i\n", intvalue(t_argv[0]));
+	if (HU_FSDisplay(intvalue(t_argv[0]), intvalue(t_argv[1]) > 0 ? 1 : 0) == -1)
+		script_error("sethupicdisplay: invalid pic handle %i\n", intvalue(t_argv[0]));
 }
 
 
@@ -3900,47 +4008,47 @@ void FParser::SF_SetCorona(void)
 		return;
 	}
 	
-    int num = t_argv[0].value.i;    // which corona we want to modify
-    int what = t_argv[1].value.i;   // what we want to modify (type, color, offset,...)
-    int ival = t_argv[2].value.i;   // the value of what we modify
-    double fval = ((double) t_argv[2].value.f / FRACUNIT);
+	int num = t_argv[0].value.i;    // which corona we want to modify
+	int what = t_argv[1].value.i;   // what we want to modify (type, color, offset,...)
+	int ival = t_argv[2].value.i;   // the value of what we modify
+	double fval = ((double) t_argv[2].value.f / FRACUNIT);
 
   	/*
-    switch (what)
-    {
-        case 0:
-            lspr[num].type = ival;
-            break;
-        case 1:
-            lspr[num].light_xoffset = fval;
-            break;
-        case 2:
-            lspr[num].light_yoffset = fval;
-            break;
-        case 3:
-            if (t_argv[2].type == svt_string)
-                lspr[num].corona_color = String2Hex(t_argv[2].value.s);
-            else
-                memcpy(&lspr[num].corona_color, &ival, sizeof(int));
-            break;
-        case 4:
-            lspr[num].corona_radius = fval;
-            break;
-        case 5:
-            if (t_argv[2].type == svt_string)
-                lspr[num].dynamic_color = String2Hex(t_argv[2].value.s);
-            else
-                memcpy(&lspr[num].dynamic_color, &ival, sizeof(int));
-            break;
-        case 6:
-            lspr[num].dynamic_radius = fval;
-            lspr[num].dynamic_sqrradius = sqrt(lspr[num].dynamic_radius);
-            break;
-        default:
-            CONS_Printf("Error in setcorona\n");
-            break;
-    }
-    */
+	switch (what)
+	{
+		case 0:
+			lspr[num].type = ival;
+			break;
+		case 1:
+			lspr[num].light_xoffset = fval;
+			break;
+		case 2:
+			lspr[num].light_yoffset = fval;
+			break;
+		case 3:
+			if (t_argv[2].type == svt_string)
+				lspr[num].corona_color = String2Hex(t_argv[2].value.s);
+			else
+				memcpy(&lspr[num].corona_color, &ival, sizeof(int));
+			break;
+		case 4:
+			lspr[num].corona_radius = fval;
+			break;
+		case 5:
+			if (t_argv[2].type == svt_string)
+				lspr[num].dynamic_color = String2Hex(t_argv[2].value.s);
+			else
+				memcpy(&lspr[num].dynamic_color, &ival, sizeof(int));
+			break;
+		case 6:
+			lspr[num].dynamic_radius = fval;
+			lspr[num].dynamic_sqrradius = sqrt(lspr[num].dynamic_radius);
+			break;
+		default:
+			CONS_Printf("Error in setcorona\n");
+			break;
+	}
+	*/
 
 	// no use for this!
 	t_return.type = svt_int;
@@ -4074,7 +4182,7 @@ again:
 		}
 		else
 		{
-			while (mo=it.Next())
+			while ((mo=it.Next()))
 			{
 				if (mo->IsA(pClass) && mo->health>0) count++;
 			}
@@ -4361,10 +4469,10 @@ void FParser::SF_Wait()
 	DRunningScript *runscr;
 	
 	if(t_argc != 1)
-    {
+	{
 		script_error("incorrect arguments to function\n");
 		return;
-    }
+	}
 	
 	runscr = SaveCurrentScript();
 	
@@ -4385,10 +4493,10 @@ void FParser::SF_TagWait()
 	DRunningScript *runscr;
 	
 	if(t_argc != 1)
-    {
+	{
 		script_error("incorrect arguments to function\n");
 		return;
-    }
+	}
 	
 	runscr = SaveCurrentScript();
 	
@@ -4408,10 +4516,10 @@ void FParser::SF_ScriptWait()
 	DRunningScript *runscr;
 	
 	if(t_argc != 1)
-    {
+	{
 		script_error("insufficient arguments to function\n");
 		return;
-    }
+	}
 	
 	runscr = SaveCurrentScript();
 	
@@ -4451,10 +4559,10 @@ void FParser::SF_ScriptWaitPre()
 void FParser::SF_StartScript()
 {
 	if(t_argc != 1)
-    {
+	{
 		script_error("incorrect arguments to function\n");
 		return;
-    }
+	}
 	
 	int snum = intvalue(t_argv[0]);
 
@@ -4493,15 +4601,15 @@ void FParser::SF_ScriptRunning()
 	int snum = 0;
 	
 	if(t_argc < 1)
-    {
+	{
 		script_error("not enough arguments to function\n");
 		return;
-    }
+	}
 	
 	snum = intvalue(t_argv[0]);  
 	
 	for(current = DFraggleThinker::ActiveThinker->RunningScripts->next; current; current=current->next)
-    {
+	{
 		if(current->script->scriptnum == snum)
 		{
 			// script found so return
@@ -4509,7 +4617,7 @@ void FParser::SF_ScriptRunning()
 			t_return.value.i = 1;
 			return;
 		}
-    }
+	}
 	
 	// script not found
 	t_return.type = svt_int;
@@ -4578,27 +4686,27 @@ void init_functions(void)
 	new_function("playertip", &FParser::SF_PlayerTip);
 	new_function("playeringame", &FParser::SF_PlayerInGame);
 	new_function("playername", &FParser::SF_PlayerName);
-    new_function("playeraddfrag", &FParser::SF_PlayerAddFrag);
+	new_function("playeraddfrag", &FParser::SF_PlayerAddFrag);
 	new_function("playerobj", &FParser::SF_PlayerObj);
 	new_function("isplayerobj", &FParser::SF_IsPlayerObj);
 	new_function("isobjplayer", &FParser::SF_IsPlayerObj);
 	new_function("skincolor", &FParser::SF_SkinColor);
 	new_function("playerkeys", &FParser::SF_PlayerKeys);
 	new_function("playerammo", &FParser::SF_PlayerAmmo);
-    new_function("maxplayerammo", &FParser::SF_MaxPlayerAmmo); 
+	new_function("maxplayerammo", &FParser::SF_MaxPlayerAmmo); 
 	new_function("playerweapon", &FParser::SF_PlayerWeapon);
 	new_function("playerselwep", &FParser::SF_PlayerSelectedWeapon);
 	
 	// mobj stuff
 	new_function("spawn", &FParser::SF_Spawn);
 	new_function("spawnexplosion", &FParser::SF_SpawnExplosion);
-    new_function("radiusattack", &FParser::SF_RadiusAttack);
+	new_function("radiusattack", &FParser::SF_RadiusAttack);
 	new_function("kill", &FParser::SF_KillObj);
 	new_function("removeobj", &FParser::SF_RemoveObj);
 	new_function("objx", &FParser::SF_ObjX);
 	new_function("objy", &FParser::SF_ObjY);
 	new_function("objz", &FParser::SF_ObjZ);
-    new_function("testlocation", &FParser::SF_TestLocation);
+	new_function("testlocation", &FParser::SF_TestLocation);
 	new_function("teleport", &FParser::SF_Teleport);
 	new_function("silentteleport", &FParser::SF_SilentTeleport);
 	new_function("damageobj", &FParser::SF_DamageObj);
@@ -4618,10 +4726,10 @@ void init_functions(void)
 	new_function("objmomy", &FParser::SF_MobjMomy);
 	new_function("objmomz", &FParser::SF_MobjMomz);
 
-    new_function("spawnmissile", &FParser::SF_SpawnMissile);
-    new_function("mapthings", &FParser::SF_MapThings);
-    new_function("objtype", &FParser::SF_ObjType);
-    new_function("mapthingnumexist", &FParser::SF_MapThingNumExist);
+	new_function("spawnmissile", &FParser::SF_SpawnMissile);
+	new_function("mapthings", &FParser::SF_MapThings);
+	new_function("objtype", &FParser::SF_ObjType);
+	new_function("mapthingnumexist", &FParser::SF_MapThingNumExist);
 	new_function("objstate", &FParser::SF_ObjState);
 	new_function("resurrect", &FParser::SF_Resurrect);
 	new_function("lineattack", &FParser::SF_LineAttack);
@@ -4665,19 +4773,19 @@ void init_functions(void)
 	new_function("opendoor", &FParser::SF_OpenDoor);
 	new_function("closedoor", &FParser::SF_CloseDoor);
 
-    // HU Graphics
-    new_function("newhupic", &FParser::SF_NewHUPic);
-    new_function("createpic", &FParser::SF_NewHUPic);
-    new_function("deletehupic", &FParser::SF_DeleteHUPic);
-    new_function("modifyhupic", &FParser::SF_ModifyHUPic);
-    new_function("modifypic", &FParser::SF_ModifyHUPic);
-    new_function("sethupicdisplay", &FParser::SF_SetHUPicDisplay);
-    new_function("setpicvisible", &FParser::SF_SetHUPicDisplay);
+	// HU Graphics
+	new_function("newhupic", &FParser::SF_NewHUPic);
+	new_function("createpic", &FParser::SF_NewHUPic);
+	new_function("deletehupic", &FParser::SF_DeleteHUPic);
+	new_function("modifyhupic", &FParser::SF_ModifyHUPic);
+	new_function("modifypic", &FParser::SF_ModifyHUPic);
+	new_function("sethupicdisplay", &FParser::SF_SetHUPicDisplay);
+	new_function("setpicvisible", &FParser::SF_SetHUPicDisplay);
 
 	//
-    new_function("playdemo", &FParser::SF_PlayDemo);
+	new_function("playdemo", &FParser::SF_PlayDemo);
 	new_function("runcommand", &FParser::SF_RunCommand);
-    new_function("checkcvar", &FParser::SF_CheckCVar);
+	new_function("checkcvar", &FParser::SF_CheckCVar);
 	new_function("setlinetexture", &FParser::SF_SetLineTexture);
 	new_function("linetrigger", &FParser::SF_LineTrigger);
 	new_function("lineflag", &FParser::SF_LineFlag);

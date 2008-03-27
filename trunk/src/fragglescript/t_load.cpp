@@ -328,7 +328,7 @@ void T_RegisterSpawnThing(AActor * ac)
 {
 	if (DFraggleThinker::ActiveThinker)
 	{
-		TArray<TObjPtr<AActor>> &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
+		TArray<TObjPtr<AActor> > &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
 		SpawnedThings[SpawnedThings.Size()-1] = ac;
 	}
 }

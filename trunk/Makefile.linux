@@ -12,19 +12,20 @@ CFLAGS += `pkg-config gtk+-2.0 --cflags`
 CFLAGS += -DHAVE_FILELENGTH -D__forceinline=inline `sdl-config --cflags`
 CFLAGS += -DNEED_STRUPR
 CFLAGS += -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp
-LDFLAGS += -lFLAC++ -lFLAC -lz -lmodplug -lfmod `sdl-config --libs`
+LDFLAGS += -lFLAC++ -lFLAC -lz -lmodplug -lfmodex `sdl-config --libs`
 LDFLAGS += -ljpeg `pkg-config gtk+-2.0 --libs`
 LDFLAGS += -lGL -lGLU
 NASMFLAGS += -f elf -DM_TARGET_LINUX
-SRCDIRS = src/ $(addprefix src/,g_doom/ g_heretic/ g_hexen/ g_raven/ g_shared/ g_strife/ oplsynth/ sound/ fragglescript/ thingdef/ Linux/ sdl/ gl/ gl/r_render/ textures/)
+SRCDIRS = src/ $(addprefix src/,g_doom/ g_heretic/ g_hexen/ g_raven/ g_shared/ g_strife/ oplsynth/ sound/ fragglescript/ thingdef/ Linux/ sdl/ gl/ gl/r_render/ textures/ xlat/)
 INCLUDES = $(addprefix -I,$(SRCDIRS))
+INCLUDES += -Isnes_spc/snes_spc/ -I/usr/include/fmodex/
 CFLAGS += $(INCLUDES)
 
 RELEASEOBJ ?= releaseobj
 DEBUGOBJ ?= debugobj
 
 CPPSRCS = $(wildcard $(addsuffix *.cpp,$(SRCDIRS)))
-CSRCS = $(wildcard $(addsuffix *.c,$(SRCDIRS)))
+CSRCS = $(filter-out src/xlat/xlat_parser.c, $(wildcard $(addsuffix *.c,$(SRCDIRS))))
 ifndef NOASM
   ASRCS = $(wildcard src/*.nas)
   CFLAGS += -DUSEASM=1
@@ -78,11 +79,11 @@ endef
 
 all: $(ZDOOMBIN) toolsandpk3 zdoom.pk3
 
-$(ZDOOMBIN): ccdv $(OBJDIR) $(if $(RESTART),deps) $(OBJS)
+$(ZDOOMBIN): ccdv $(OBJDIR) $(if $(RESTART),deps) $(OBJS) snes_spc/libsnes_spc.a
 ifndef RESTART
 	$(CCDV) $(CXX) $(LDFLAGS) $(OBJDIR)/autostart.o \
 	$(filter-out %/autostart.o %/autozend.o,$(OBJS)) \
-	$(OBJDIR)/autozend.o -o $(ZDOOMBIN)
+	snes_spc/libsnes_spc.a $(OBJDIR)/autozend.o -o $(ZDOOMBIN)
 endif
 
 # include any of the dep files that already exist
@@ -119,23 +120,36 @@ ifdef RESTART
 	@make -f $(firstword $(MAKEFILE_LIST)) RESTART=
 endif
 
+# This file needs special handling because GCC misoptimizes it otherwise.
+$(OBJDIR)/fmopl.o: src/oplsynth/fmopl.cpp
+	$(CCDV) $(CXX) $(CXXFLAGS) -fno-tree-dominator-opts -fno-tree-fre -c -o $@ $<
+
+src/xlat/xlat_parser.h src/xlat/xlat_parser.c: tools/lemon/lemon src/xlat/xlat_parser.y
+	$(CCDV) tools/lemon/lemon -s src/xlat/xlat_parser.y
+
 $(OBJDIR):
 	mkdir $(OBJDIR)
 
-toolsandpk3: tools/makewad/makewad tools/dehsupp/dehsupp tools/xlatcc/xlatcc
+toolsandpk3: tools/makewad/makewad src/svnrevision_gz.h
 	make -C wadsrc/
 
 zdoom.pk3: toolsandpk3
 	ln -sf wadsrc/gzdoom.pk3 ./
 
+snes_spc/libsnes_spc.a:
+	$(MAKE) -C snes_spc/
+
 tools/makewad/makewad: ccdv
 	make -C tools/makewad/
 
-tools/dehsupp/dehsupp: ccdv
-	make -C tools/dehsupp/
+tools/lemon/lemon:
+	$(MAKE) -C tools/lemon/
 
-tools/xlatcc/xlatcc: ccdv
-	make -C tools/xlatcc/
+tools/updaterevision/updaterevision: ccdv
+	make -C tools/updaterevision/
+
+src/svnrevision_gz.h: tools/updaterevision/updaterevision
+	tools/updaterevision/updaterevision src src/svnrevision_gz.h
 
 ccdv: ccdv-posix.c
 	@gcc -Os -s ccdv-posix.c -o ccdv
