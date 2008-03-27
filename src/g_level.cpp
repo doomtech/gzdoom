@@ -1697,7 +1697,7 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 	//Added by MC: Initialize bots.
 	if (!deathmatch)
 	{
-		bglobal.Init ();
+		bglobal->Init ();
 	}
 
 	if (mapname != level.mapname)
@@ -1765,7 +1765,7 @@ void G_ChangeLevel(const char * levelname, int position, bool keepFacing, int ne
 	gameaction = ga_completed;
 	resetinventory = resetinv;
 
-	bglobal.End();	//Added by MC:
+	bglobal->End();	//Added by MC:
 
 	// [RH] Give scripts a chance to do something
 	unloading = true;
@@ -2115,7 +2115,7 @@ void G_DoLoadLevel (int position, bool autosave)
 	//Added by MC: Initialize bots.
 	if (deathmatch)
 	{
-		bglobal.Init ();
+		bglobal->Init ();
 	}
 
 	if (timingdemo)
