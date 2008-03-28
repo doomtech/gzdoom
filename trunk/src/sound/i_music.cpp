@@ -95,24 +95,35 @@ StreamSong *ModPlugSong_Create(FILE *file, char *musiccache, int length);
 // Maximum volume of MOD/stream music.
 //==========================================================================
 
-CUSTOM_CVAR (Float, snd_musicvolume, 0.3f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CUSTOM_CVAR (Float, snd_musicvolume, 0.5f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 {
 	if (self < 0.f)
 		self = 0.f;
 	else if (self > 1.f)
 		self = 1.f;
-	else if (GSnd != NULL)
+	else
 	{
-		// Set general music volume.
-		GSnd->SetMusicVolume(clamp<float>(self * relative_volume, 0, 1));
-
+		if (GSnd != NULL)
+		{
+			// Set general music volume.
+			GSnd->SetMusicVolume(clamp<float>(self * relative_volume, 0, 1));
+		}
 		// For music not implemented through the digital sound system,
-		// let them know about the changed.
+		// let them know about the change.
 		if (currSong != NULL)
 		{
 			currSong->MusicVolumeChanged();
 		}
+		else
+		{ // If the music was stopped because volume was 0, start it now.
+			S_RestartMusic();
+		}
 	}
+}
+
+MusInfo::MusInfo()
+: m_Status(STATE_Stopped), m_Looping(false), m_NotStartedYet(true)
+{
 }
 
 MusInfo::~MusInfo ()
@@ -192,6 +203,7 @@ void I_PlaySong (void *handle, int _looping, float rel_vol)
 	saved_relative_volume = relative_volume = rel_vol;
 	info->Stop ();
 	info->Play (_looping ? true : false);
+	info->m_NotStartedYet = false;
 	
 	if (info->m_Status == MusInfo::STATE_Playing)
 		currSong = info;
@@ -481,7 +493,7 @@ void *I_RegisterSong (const char *filename, char *musiccache, int offset, int le
 				}
 			}
 		}
-		
+
 		// no FMOD => no modules/streams
 		// 1024 bytes is an arbitrary restriction. It's assumed that anything
 		// smaller than this can't possibly be a valid music file if it hasn't
