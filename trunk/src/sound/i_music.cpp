@@ -83,11 +83,6 @@ int		nomusic = 0;
 float	relative_volume = 1.f;
 float	saved_relative_volume = 1.0f;	// this could be used to implement an ACS FadeMusic function
 
-
-CVAR(Bool, snd_modplug, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-StreamSong *ModPlugSong_Create(FILE *file, char *musiccache, int length);
-
-
 //==========================================================================
 //
 // CVAR snd_musicvolume
@@ -508,22 +503,16 @@ void *I_RegisterSong (const char *filename, char *musiccache, int offset, int le
 		// Of course MIDIs shorter than 1024 bytes should pass.
 		if (info == NULL && GSnd != NULL && (len >= 1024 || id == MAKE_ID('M','T','h','d')))
 		{
-			if (snd_modplug)
+			// Let FMOD figure out what it is.
+			if (file != NULL)
 			{
-				info = ModPlugSong_Create(file, musiccache, len);
+				fclose (file);
+				file = NULL;
 			}
-			if (info == NULL)
-			{
-				// Let FMOD figure out what it is.
-				if (file != NULL)
-				{
-					fclose (file);
-					file = NULL;
-				}
-				info = new StreamSong (offset >=0 ? filename : musiccache, offset, len);
-			}
+			info = new StreamSong (offset >=0 ? filename : musiccache, offset, len);
 		}
 	}
+
 
 	if (info && !info->IsValid ())
 	{

@@ -2849,10 +2849,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\sound\music_modplug.cpp"
-				>
-			</File>
-			<File
 				RelativePath="src\sound\music_mus_midiout.cpp"
 				>
 			</File>
@@ -2929,86 +2925,6 @@
 				</File>
 				<File
 					RelativePath=".\src\oplsynth\opl_mus_player.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Modplug"
-				>
-				<File
-					RelativePath=".\src\modplug\fastmix.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\it_defs.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\load_it.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\load_mod.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\load_s3m.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\load_stm.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\load_umx.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\load_xm.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\mmcmp.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\modplug.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\modplug.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\snd_dsp.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\snd_flt.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\snd_fx.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\sndfile.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\sndfile.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\sndmix.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\stdafx.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\modplug\tables_mp.cpp"
 					>
 				</File>
 			</Filter>
