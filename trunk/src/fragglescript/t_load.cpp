@@ -304,31 +304,15 @@ void T_LoadScripts(MapData *map)
 
 //-----------------------------------------------------------------------------
 //
-// Registers an entry in the SpawnedThings table
-// If no actor is spawned it will remain NULL, otherwise T_RegisterSpawnThing
-// will be called to set it
+// Adds an actor to the list of spawned things
 //
 //-----------------------------------------------------------------------------
 
-void T_PrepareSpawnThing()
-{
-	if (DFraggleThinker::ActiveThinker)
-	{
-		DFraggleThinker::ActiveThinker->SpawnedThings.Push(NULL);
-	}
-}
-
-//-----------------------------------------------------------------------------
-//
-// Sets the last entry in the table to the passed actor
-//
-//-----------------------------------------------------------------------------
-
-void T_RegisterSpawnThing(AActor * ac)
+void T_AddSpawnedThing(AActor * ac)
 {
 	if (DFraggleThinker::ActiveThinker)
 	{
 		TArray<TObjPtr<AActor> > &SpawnedThings = DFraggleThinker::ActiveThinker->SpawnedThings;
-		SpawnedThings[SpawnedThings.Size()-1] = ac;
+		SpawnedThings.Push(GC::ReadBarrier(ac));
 	}
 }

@@ -2861,6 +2861,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\oplsynth\music_opldumper_mididevice.cpp"
+				>
+			</File>
+			<File
 				RelativePath="src\sound\music_spc.cpp"
 				>
 			</File>
@@ -2901,10 +2905,6 @@
 				</File>
 				<File
 					RelativePath=".\src\oplsynth\fmopl.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\oplsynth\mlkernel.cpp"
 					>
 				</File>
 				<File

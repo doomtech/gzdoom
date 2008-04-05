@@ -1126,7 +1126,7 @@ void gl_DoParseDefs(FScanner &sc, int workingLump)
 				if (lump==-1)
 					sc.ScriptError("Lump '%s' not found", sc.String);
 
-				FScanner newscanner(lump, sc.String);
+				FScanner newscanner(lump);
 				gl_DoParseDefs(newscanner, lump);
 				break;
 			}
@@ -1186,7 +1186,7 @@ void gl_LoadDynLightDefs(char * defsLump)
 	lastLump = 0;
 	while ((workingLump = Wads.FindLump(defsLump, &lastLump)) != -1)
 	{
-		FScanner sc(workingLump, defsLump);
+		FScanner sc(workingLump);
 		gl_DoParseDefs(sc, workingLump);
 	}
 }
