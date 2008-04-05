@@ -81,9 +81,8 @@ static void PlayerLandedOnThing (AActor *mo, AActor *onmobj);
 extern cycle_t BotSupportCycles;
 extern cycle_t BotWTG;
 extern fixed_t attackrange;
-extern int tmfloorpic;
-extern sector_t *tmfloorsector;
 EXTERN_CVAR (Bool, r_drawfuzz);
+EXTERN_CVAR (Int,  cl_rockettrails)
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
@@ -107,7 +106,6 @@ static FRandom pr_missiledamage ("MissileDamage");
  FRandom pr_slam ("SkullSlam");
 static FRandom pr_multiclasschoice ("MultiClassChoice");
 static FRandom pr_rockettrail("RocketTrail");
-
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
@@ -327,7 +325,8 @@ void AActor::Serialize (FArchive &arc)
 		<< DamageType
 		<< gravity
 		<< FastChaseStrafeCount
-		<< master;
+		<< master
+		<< smokecounter;
 
 	if (arc.IsStoring ())
 	{
@@ -1461,11 +1460,12 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 			mo->momx = mo->momy = mo->momz = 0;
 			if (!(mo->flags2 & MF2_DORMANT))
 			{
-				mo->SetState (mo->SeeState != NULL ? mo->SeeState : mo->SpawnState);
+				if (mo->SeeState != NULL) mo->SetState (mo->SeeState);
+				else mo->SetIdle();
 			}
 			else
 			{
-				mo->SetState (mo->SpawnState);
+				mo->SetIdle();
 				mo->tics = -1;
 			}
 		}
@@ -2462,11 +2462,12 @@ bool AActor::Slam (AActor *thing)
 			int dam = GetMissileDamage (7, 1);
 			P_DamageMobj (thing, this, this, dam, NAME_Melee);
 			P_TraceBleed (dam, thing, this);
-			SetState (SeeState != NULL ? SeeState : SpawnState);
+			if (SeeState != NULL) SetState (SeeState);
+			else SetIdle();
 		}
 		else
 		{
-			SetState (SpawnState);
+			SetIdle();
 			tics = -1;
 		}
 	}
@@ -2572,25 +2573,8 @@ void AActor::SetShade (int r, int g, int b)
 //
 // P_MobjThinker
 //
-
-CVAR(Bool, sv_rocketsmoke, false, CVAR_ARCHIVE|CVAR_SERVERINFO)
-
 void AActor::Tick ()
 {
-	if (effects&FX_ROCKET && sv_rocketsmoke && ++visdir==4)
-	{
-		// add some smoke behind the rocket 
-		visdir=0;
-		AActor * th = Spawn("RocketSmokeTrail", x-momx, y-momy, z, ALLOW_REPLACE);
-		if (th)
-		{
-			th->momz = FRACUNIT;
-			th->tics -= pr_rockettrail()&3;
-			if (th->tics < 1) th->tics = 1;
-		}
-	}
-
-
 	// [RH] Data for Heretic/Hexen scrolling sectors
 	static const BYTE HexenScrollDirs[8] = { 64, 0, 192, 128, 96, 32, 224, 160 };
 	static const BYTE HexenSpeedMuls[3] = { 5, 10, 25 };
@@ -2623,421 +2607,469 @@ void AActor::Tick ()
 	PrevY = y;
 	PrevZ = z;
 
-	AInventory * item = Inventory;
-
-	// Handle powerup effects here so that the order is controlled
-	// by the order in the inventory, not the order in the thinker table
-	while (item != NULL && item->Owner == this)
+	if (flags5 & MF5_NOINTERACTION)
 	{
-		item->DoEffect();
-		item = item->Inventory;
+		// only do the minimally necessary things here to save time.
+		UnlinkFromWorld ();
+		flags |= MF_NOBLOCKMAP;
+		x += momx;
+		y += momy;
+		z += momz;
+		LinkToWorld ();
 	}
-
-	if (flags & MF_UNMORPHED)
+	else
 	{
-		return;
-	}
 
-	//Added by MC: Freeze mode.
-	if (bglobal.freeze && !(player && !player->isbot))
-	{
-		return;
-	}
+		AInventory * item = Inventory;
 
-	// Apply freeze mode.
-	if (( level.flags & LEVEL_FROZEN ) && ( player == NULL || !( player->cheats & CF_TIMEFREEZE )))
-	{
-		return;
-	}
-
-
-	fixed_t oldz = z;
-
-	// [RH] Give the pain elemental vertical friction
-	// This used to be in APainElemental::Tick but in order to use
-	// A_PainAttack with other monsters it has to be here!
-	if (flags4 & MF4_VFRICTION)
-	{
-		if (health >0)
+		// Handle powerup effects here so that the order is controlled
+		// by the order in the inventory, not the order in the thinker table
+		while (item != NULL && item->Owner == this)
 		{
-			if (abs (momz) < FRACUNIT/4)
-			{
-				momz = 0;
-				flags4 &= ~MF4_VFRICTION;
-			}
-			else
-			{
-				momz = FixedMul (momz, 0xe800);
-			}
+			item->DoEffect();
+			item = item->Inventory;
 		}
-	}
 
-	// [RH] Pulse in and out of visibility
-	if (effects & FX_VISIBILITYPULSE)
-	{
-		if (visdir > 0)
+		if (flags & MF_UNMORPHED)
 		{
-			alpha += 0x800;
-			if (alpha >= OPAQUE)
-			{
-				alpha = OPAQUE;
-				visdir = -1;
-			}
+			return;
 		}
-		else
+
+		//Added by MC: Freeze mode.
+		if (bglobal.freeze && !(player && !player->isbot))
 		{
-			alpha -= 0x800;
-			if (alpha <= TRANSLUC25)
-			{
-				alpha = TRANSLUC25;
-				visdir = 1;
-			}
+			return;
 		}
-	}
-	else if (flags & MF_STEALTH)
-	{
-		// [RH] Fade a stealth monster in and out of visibility
-		RenderStyle.Flags &= ~STYLEF_Alpha1;
-		if (visdir > 0)
+
+		// Apply freeze mode.
+		if (( level.flags & LEVEL_FROZEN ) && ( player == NULL || !( player->cheats & CF_TIMEFREEZE )))
 		{
-			alpha += 2*FRACUNIT/TICRATE;
-			if (alpha > OPAQUE)
-			{
-				alpha = OPAQUE;
-				visdir = 0;
-			}
+			return;
 		}
-		else if (visdir < 0)
+
+		if (cl_rockettrails & 2)
 		{
-			alpha -= 3*FRACUNIT/TICRATE/2;
-			if (alpha < 0)
+			if (effects & FX_ROCKET) 
 			{
-				alpha = 0;
-				visdir = 0;
-			}
-		}
-	}
-
-	if (bglobal.botnum && consoleplayer == Net_Arbitrator && !demoplayback &&
-		(flags & (MF_SPECIAL|MF_MISSILE)) || (flags3 & MF3_ISMONSTER))
-	{
-		clock (BotSupportCycles);
-		bglobal.m_Thinking = true;
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i] || !players[i].isbot)
-				continue;
-
-			if (flags3 & MF3_ISMONSTER)
-			{
-				if (health > 0
-					&& !players[i].enemy
-					&& player ? !IsTeammate (players[i].mo) : true
-					&& P_AproxDistance (players[i].mo->x-x, players[i].mo->y-y) < MAX_MONSTER_TARGET_DIST
-					&& P_CheckSight (players[i].mo, this, 2))
-				{ //Probably a monster, so go kill it.
-					players[i].enemy = this;
-				}
-			}
-			else if (flags & MF_SPECIAL)
-			{ //Item pickup time
-				//clock (BotWTG);
-				bglobal.WhatToGet (players[i].mo, this);
-				//unclock (BotWTG);
-				BotWTG++;
-			}
-			else if (flags & MF_MISSILE)
-			{
-				if (!players[i].missile && (flags3 & MF3_WARNBOT))
-				{ //warn for incoming missiles.
-					if (target != players[i].mo && bglobal.Check_LOS (players[i].mo, this, ANGLE_90))
-						players[i].missile = this;
-				}
-			}
-		}
-		bglobal.m_Thinking = false;
-		unclock (BotSupportCycles);
-	}
-
-	//End of MC
-
-	// [RH] Consider carrying sectors here
-	fixed_t cummx = 0, cummy = 0;
-	if ((level.Scrolls != NULL || player != NULL) && !(flags & MF_NOCLIP) && !(flags & MF_NOSECTOR))
-	{
-		fixed_t height, waterheight;	// killough 4/4/98: add waterheight
-		const msecnode_t *node;
-		int countx, county;
-
-		// killough 3/7/98: Carry things on floor
-		// killough 3/20/98: use new sector list which reflects true members
-		// killough 3/27/98: fix carrier bug
-		// killough 4/4/98: Underwater, carry things even w/o gravity
-
-		// Move objects only if on floor or underwater,
-		// non-floating, and clipped.
-
-		countx = county = 0;
-
-		for (node = touching_sectorlist; node; node = node->m_tnext)
-		{
-			const sector_t *sec = node->m_sector;
-			fixed_t scrollx, scrolly;
-
-			if (level.Scrolls != NULL)
-			{
-				const FSectorScrollValues *scroll = &level.Scrolls[sec - sectors];
-				scrollx = scroll->ScrollX;
-				scrolly = scroll->ScrollY;
-			}
-			else
-			{
-				scrollx = scrolly = 0;
-			}
-
-			if (player != NULL)
-			{
-				int scrolltype = sec->special & 0xff;
-
-				if (scrolltype >= Scroll_North_Slow &&
-					scrolltype <= Scroll_SouthWest_Fast)
-				{ // Hexen scroll special
-					scrolltype -= Scroll_North_Slow;
-					if (i_compatflags&COMPATF_RAVENSCROLL)
+				if (++smokecounter==4)
+				{
+					// add some smoke behind the rocket 
+					smokecounter = 0;
+					AActor * th = Spawn("RocketSmokeTrail", x-momx, y-momy, z-momz, ALLOW_REPLACE);
+					if (th)
 					{
-						angle_t fineangle = HexenScrollDirs[scrolltype / 3] * 32;
-						fixed_t carryspeed = DivScale32 (HexenSpeedMuls[scrolltype % 3], 32*CARRYFACTOR);
+						th->tics -= pr_rockettrail()&3;
+						if (th->tics < 1) th->tics = 1;
+					}
+				}
+			}
+			else if (effects & FX_GRENADE) 
+			{
+				if (++smokecounter==8)
+				{
+					smokecounter = 0;
+					angle_t moveangle = R_PointToAngle2(0,0,momx,momy);
+					AActor * th = Spawn("GrenadeSmokeTrail", 
+						x - FixedMul (finecosine[(moveangle)>>ANGLETOFINESHIFT], radius*2) + (pr_rockettrail()<<10),
+						y - FixedMul (finesine[(moveangle)>>ANGLETOFINESHIFT], radius*2) + (pr_rockettrail()<<10),
+						z - (height>>3) * (momz>>16) + (2*height)/3, ALLOW_REPLACE);
+					if (th)
+					{
+						th->tics -= pr_rockettrail()&3;
+						if (th->tics < 1) th->tics = 1;
+					}
+				}
+			}
+		}
+
+		fixed_t oldz = z;
+
+		// [RH] Give the pain elemental vertical friction
+		// This used to be in APainElemental::Tick but in order to use
+		// A_PainAttack with other monsters it has to be here
+		if (flags4 & MF4_VFRICTION)
+		{
+			if (health >0)
+			{
+				if (abs (momz) < FRACUNIT/4)
+				{
+					momz = 0;
+					flags4 &= ~MF4_VFRICTION;
+				}
+				else
+				{
+					momz = FixedMul (momz, 0xe800);
+				}
+			}
+		}
+
+		// [RH] Pulse in and out of visibility
+		if (effects & FX_VISIBILITYPULSE)
+		{
+			if (visdir > 0)
+			{
+				alpha += 0x800;
+				if (alpha >= OPAQUE)
+				{
+					alpha = OPAQUE;
+					visdir = -1;
+				}
+			}
+			else
+			{
+				alpha -= 0x800;
+				if (alpha <= TRANSLUC25)
+				{
+					alpha = TRANSLUC25;
+					visdir = 1;
+				}
+			}
+		}
+		else if (flags & MF_STEALTH)
+		{
+			// [RH] Fade a stealth monster in and out of visibility
+			RenderStyle.Flags &= ~STYLEF_Alpha1;
+			if (visdir > 0)
+			{
+				alpha += 2*FRACUNIT/TICRATE;
+				if (alpha > OPAQUE)
+				{
+					alpha = OPAQUE;
+					visdir = 0;
+				}
+			}
+			else if (visdir < 0)
+			{
+				alpha -= 3*FRACUNIT/TICRATE/2;
+				if (alpha < 0)
+				{
+					alpha = 0;
+					visdir = 0;
+				}
+			}
+		}
+
+		if (bglobal.botnum && consoleplayer == Net_Arbitrator && !demoplayback &&
+			(flags & (MF_SPECIAL|MF_MISSILE)) || (flags3 & MF3_ISMONSTER))
+		{
+			clock (BotSupportCycles);
+			bglobal.m_Thinking = true;
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (!playeringame[i] || !players[i].isbot)
+					continue;
+
+				if (flags3 & MF3_ISMONSTER)
+				{
+					if (health > 0
+						&& !players[i].enemy
+						&& player ? !IsTeammate (players[i].mo) : true
+						&& P_AproxDistance (players[i].mo->x-x, players[i].mo->y-y) < MAX_MONSTER_TARGET_DIST
+						&& P_CheckSight (players[i].mo, this, 2))
+					{ //Probably a monster, so go kill it.
+						players[i].enemy = this;
+					}
+				}
+				else if (flags & MF_SPECIAL)
+				{ //Item pickup time
+					//clock (BotWTG);
+					bglobal.WhatToGet (players[i].mo, this);
+					//unclock (BotWTG);
+					BotWTG++;
+				}
+				else if (flags & MF_MISSILE)
+				{
+					if (!players[i].missile && (flags3 & MF3_WARNBOT))
+					{ //warn for incoming missiles.
+						if (target != players[i].mo && bglobal.Check_LOS (players[i].mo, this, ANGLE_90))
+							players[i].missile = this;
+					}
+				}
+			}
+			bglobal.m_Thinking = false;
+			unclock (BotSupportCycles);
+		}
+
+		//End of MC
+
+		// [RH] Consider carrying sectors here
+		fixed_t cummx = 0, cummy = 0;
+		if ((level.Scrolls != NULL || player != NULL) && !(flags & MF_NOCLIP) && !(flags & MF_NOSECTOR))
+		{
+			fixed_t height, waterheight;	// killough 4/4/98: add waterheight
+			const msecnode_t *node;
+			int countx, county;
+
+			// killough 3/7/98: Carry things on floor
+			// killough 3/20/98: use new sector list which reflects true members
+			// killough 3/27/98: fix carrier bug
+			// killough 4/4/98: Underwater, carry things even w/o gravity
+
+			// Move objects only if on floor or underwater,
+			// non-floating, and clipped.
+
+			countx = county = 0;
+
+			for (node = touching_sectorlist; node; node = node->m_tnext)
+			{
+				const sector_t *sec = node->m_sector;
+				fixed_t scrollx, scrolly;
+
+				if (level.Scrolls != NULL)
+				{
+					const FSectorScrollValues *scroll = &level.Scrolls[sec - sectors];
+					scrollx = scroll->ScrollX;
+					scrolly = scroll->ScrollY;
+				}
+				else
+				{
+					scrollx = scrolly = 0;
+				}
+
+				if (player != NULL)
+				{
+					int scrolltype = sec->special & 0xff;
+
+					if (scrolltype >= Scroll_North_Slow &&
+						scrolltype <= Scroll_SouthWest_Fast)
+					{ // Hexen scroll special
+						scrolltype -= Scroll_North_Slow;
+						if (i_compatflags&COMPATF_RAVENSCROLL)
+						{
+							angle_t fineangle = HexenScrollDirs[scrolltype / 3] * 32;
+							fixed_t carryspeed = DivScale32 (HexenSpeedMuls[scrolltype % 3], 32*CARRYFACTOR);
+							scrollx += FixedMul (carryspeed, finecosine[fineangle]);
+							scrolly += FixedMul (carryspeed, finesine[fineangle]);
+						}
+						else
+						{
+							// Use speeds that actually match the scrolling textures!
+							scrollx -= HexenScrollies[scrolltype][0] << (FRACBITS-1);
+							scrolly += HexenScrollies[scrolltype][1] << (FRACBITS-1);
+						}
+					}
+					else if (scrolltype >= Carry_East5 &&
+							 scrolltype <= Carry_West35)
+					{ // Heretic scroll special
+						scrolltype -= Carry_East5;
+						BYTE dir = HereticScrollDirs[scrolltype / 5];
+						fixed_t carryspeed = DivScale32 (HereticSpeedMuls[scrolltype % 5], 32*CARRYFACTOR);
+						if (scrolltype<=Carry_East35 && !(i_compatflags&COMPATF_RAVENSCROLL)) 
+						{
+							// Use speeds that actually match the scrolling textures!
+							carryspeed = (1 << ((scrolltype%5) + FRACBITS-1));
+						}
+						scrollx += carryspeed * ((dir & 3) - 1);
+						scrolly += carryspeed * (((dir & 12) >> 2) - 1);
+					}
+					else if (scrolltype == dScroll_EastLavaDamage)
+					{ // Special Heretic scroll special
+						if (i_compatflags&COMPATF_RAVENSCROLL)
+						{
+							scrollx += DivScale32 (28, 32*CARRYFACTOR);
+						}
+						else
+						{
+							// Use a speed that actually matches the scrolling texture!
+							scrollx += DivScale32 (12, 32*CARRYFACTOR);
+						}
+					}
+					else if (scrolltype == Scroll_StrifeCurrent)
+					{ // Strife scroll special
+						int anglespeed = sec->tag - 100;
+						fixed_t carryspeed = DivScale32 (anglespeed % 10, 16*CARRYFACTOR);
+						angle_t fineangle = (anglespeed / 10) << (32-3);
+						fineangle >>= ANGLETOFINESHIFT;
 						scrollx += FixedMul (carryspeed, finecosine[fineangle]);
 						scrolly += FixedMul (carryspeed, finesine[fineangle]);
 					}
-					else
-					{
-						// Use speeds that actually match the scrolling textures!
-						scrollx -= HexenScrollies[scrolltype][0] << (FRACBITS-1);
-						scrolly += HexenScrollies[scrolltype][1] << (FRACBITS-1);
-					}
 				}
-				else if (scrolltype >= Carry_East5 &&
-						 scrolltype <= Carry_West35)
-				{ // Heretic scroll special
-					scrolltype -= Carry_East5;
-					BYTE dir = HereticScrollDirs[scrolltype / 5];
-					fixed_t carryspeed = DivScale32 (HereticSpeedMuls[scrolltype % 5], 32*CARRYFACTOR);
-					if (scrolltype<=Carry_East35 && !(i_compatflags&COMPATF_RAVENSCROLL)) 
-					{
-						// Use speeds that actually match the scrolling textures!
-						carryspeed = (1 << ((scrolltype%5) + FRACBITS-1));
-					}
-					scrollx += carryspeed * ((dir & 3) - 1);
-					scrolly += carryspeed * (((dir & 12) >> 2) - 1);
-				}
-				else if (scrolltype == dScroll_EastLavaDamage)
-				{ // Special Heretic scroll special
-					if (i_compatflags&COMPATF_RAVENSCROLL)
-					{
-						scrollx += DivScale32 (28, 32*CARRYFACTOR);
-					}
-					else
-					{
-						// Use a speed that actually matches the scrolling texture!
-						scrollx += DivScale32 (12, 32*CARRYFACTOR);
-					}
-				}
-				else if (scrolltype == Scroll_StrifeCurrent)
-				{ // Strife scroll special
-					int anglespeed = sec->tag - 100;
-					fixed_t carryspeed = DivScale32 (anglespeed % 10, 16*CARRYFACTOR);
-					angle_t fineangle = (anglespeed / 10) << (32-3);
-					fineangle >>= ANGLETOFINESHIFT;
-					scrollx += FixedMul (carryspeed, finecosine[fineangle]);
-					scrolly += FixedMul (carryspeed, finesine[fineangle]);
-				}
-			}
 
-			if ((scrollx | scrolly) == 0)
-			{
-				continue;
-			}
-			if (flags & MF_NOGRAVITY &&
-				(sec->heightsec == NULL || (sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC)))
-			{
-				continue;
-			}
-			height = sec->floorplane.ZatPoint (x, y);
-			if (z > height)
-			{
-				if (sec->heightsec == NULL || (sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC))
+				if ((scrollx | scrolly) == 0)
 				{
 					continue;
 				}
-
-				waterheight = sec->heightsec->floorplane.ZatPoint (x, y);
-				if (waterheight > height && z >= waterheight)
+				if (flags & MF_NOGRAVITY &&
+					(sec->heightsec == NULL || (sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC)))
 				{
 					continue;
 				}
-			}
-
-			cummx += scrollx;
-			cummy += scrolly;
-			if (scrollx) countx++;
-			if (scrolly) county++;
-		}
-
-		// Some levels designed with Boom in mind actually want things to accelerate
-		// at neighboring scrolling sector boundaries. But it is only important for
-		// non-player objects.
-		if (player != NULL || !(i_compatflags & COMPATF_BOOMSCROLL))
-		{
-			if (countx > 1)
-			{
-				cummx /= countx;
-			}
-			if (county > 1)
-			{
-				cummy /= county;
-			}
-		}
-	}
-
-	// [RH] If standing on a steep slope, fall down it
-	if ((flags & MF_SOLID) && !(flags & (MF_NOCLIP|MF_NOGRAVITY)) &&
-		!(flags & MF_NOBLOCKMAP) &&
-		momz <= 0 &&
-		floorz == z)
-	{
-		const secplane_t * floorplane = &floorsector->floorplane;
-		static secplane_t copyplane;
-
-		// Check 3D floors as well
-		if (floorsector->e)	// apparently this can be called when the data is already gone-
-		for(unsigned int i=0;i<floorsector->e->XFloor.ffloors.Size();i++)
-		{
-			F3DFloor * rover= floorsector->e->XFloor.ffloors[i];
-			if(!(rover->flags & FF_SOLID) || !(rover->flags & FF_EXISTS)) continue;
-
-			if (rover->top.plane->ZatPoint(x, y) == floorz)
-			{
-				copyplane = *rover->top.plane;
-				if (copyplane.c<0) copyplane.FlipVert();
-				floorplane = &copyplane;
-				break;
-			}
-		}
-
-		if (floorplane->c < STEEPSLOPE &&
-			floorplane->ZatPoint (x, y) <= floorz)
-		{
-			const msecnode_t *node;
-			bool dopush = true;
-
-			if (floorplane->c > STEEPSLOPE*2/3)
-			{
-				for (node = touching_sectorlist; node; node = node->m_tnext)
+				height = sec->floorplane.ZatPoint (x, y);
+				if (z > height)
 				{
-					const sector_t *sec = node->m_sector;
-					if (sec->floorplane.c >= STEEPSLOPE)
+					if (sec->heightsec == NULL || (sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC))
 					{
-						if (floorplane->ZatPoint (x, y) >= z - MaxStepHeight)
+						continue;
+					}
+
+					waterheight = sec->heightsec->floorplane.ZatPoint (x, y);
+					if (waterheight > height && z >= waterheight)
+					{
+						continue;
+					}
+				}
+
+				cummx += scrollx;
+				cummy += scrolly;
+				if (scrollx) countx++;
+				if (scrolly) county++;
+			}
+
+			// Some levels designed with Boom in mind actually want things to accelerate
+			// at neighboring scrolling sector boundaries. But it is only important for
+			// non-player objects.
+			if (player != NULL || !(i_compatflags & COMPATF_BOOMSCROLL))
+			{
+				if (countx > 1)
+				{
+					cummx /= countx;
+				}
+				if (county > 1)
+				{
+					cummy /= county;
+				}
+			}
+		}
+
+		// [RH] If standing on a steep slope, fall down it
+		if ((flags & MF_SOLID) && !(flags & (MF_NOCLIP|MF_NOGRAVITY)) &&
+			!(flags & MF_NOBLOCKMAP) &&
+			momz <= 0 &&
+			floorz == z)
+		{
+			const secplane_t * floorplane = &floorsector->floorplane;
+			static secplane_t copyplane;
+
+			// Check 3D floors as well
+			if (floorsector->e)	// apparently this can be called when the data is already gone-
+			for(unsigned int i=0;i<floorsector->e->XFloor.ffloors.Size();i++)
+			{
+				F3DFloor * rover= floorsector->e->XFloor.ffloors[i];
+				if(!(rover->flags & FF_SOLID) || !(rover->flags & FF_EXISTS)) continue;
+
+				if (rover->top.plane->ZatPoint(x, y) == floorz)
+				{
+					copyplane = *rover->top.plane;
+					if (copyplane.c<0) copyplane.FlipVert();
+					floorplane = &copyplane;
+					break;
+				}
+			}
+
+			if (floorplane->c < STEEPSLOPE &&
+				floorplane->ZatPoint (x, y) <= floorz)
+			{
+				const msecnode_t *node;
+				bool dopush = true;
+
+				if (floorplane->c > STEEPSLOPE*2/3)
+				{
+					for (node = touching_sectorlist; node; node = node->m_tnext)
+					{
+						const sector_t *sec = node->m_sector;
+						if (sec->floorplane.c >= STEEPSLOPE)
 						{
-							dopush = false;
-							break;
+							if (floorplane->ZatPoint (x, y) >= z - MaxStepHeight)
+							{
+								dopush = false;
+								break;
+							}
 						}
 					}
 				}
-			}
-			if (dopush)
-			{
-				momx += floorplane->a;
-				momy += floorplane->b;
+				if (dopush)
+				{
+					momx += floorplane->a;
+					momy += floorplane->b;
+				}
 			}
 		}
-	}
 
-	// [RH] Missiles moving perfectly vertical need some X/Y movement, or they
-	// won't hurt anything. Don't do this if damage is 0! That way, you can
-	// still have missiles that go straight up and down through actors without
-	// damaging anything.
-	if ((flags & MF_MISSILE) && (momx|momy) == 0 && Damage != 0)
-	{
-		momx = 1;
-	}
-
-	// Handle X and Y momemtums
-	BlockingMobj = NULL;
-	P_XYMovement (this, cummx, cummy);
-	if (ObjectFlags & OF_EuthanizeMe)
-	{ // actor was destroyed
-		return;
-	}
-	if ((momx | momy) == 0 && (flags2 & MF2_BLASTED))
-	{ // Reset to not blasted when momentums are gone
-		flags2 &= ~MF2_BLASTED;
-	}
-
-	if (flags2 & MF2_FLOATBOB)
-	{ // Floating item bobbing motion
-		z += FloatBobDiffs[(FloatBobPhase + level.maptime) & 63];
-	}
-	if (momz || BlockingMobj ||
-		(z != floorz && (!(flags2 & MF2_FLOATBOB) ||
-		(z - FloatBobOffsets[(FloatBobPhase + level.maptime) & 63] != floorz)
-		)))
-	{	// Handle Z momentum and gravity
-		if (((flags2 & MF2_PASSMOBJ) || (flags & MF_SPECIAL)) && !(i_compatflags & COMPATF_NO_PASSMOBJ))
+		// [RH] Missiles moving perfectly vertical need some X/Y movement, or they
+		// won't hurt anything. Don't do this if damage is 0! That way, you can
+		// still have missiles that go straight up and down through actors without
+		// damaging anything.
+		if ((flags & MF_MISSILE) && (momx|momy) == 0 && Damage != 0)
 		{
-			if (!(onmo = P_CheckOnmobj (this)))
+			momx = 1;
+		}
+
+		// Handle X and Y momemtums
+		BlockingMobj = NULL;
+		P_XYMovement (this, cummx, cummy);
+		if (ObjectFlags & OF_EuthanizeMe)
+		{ // actor was destroyed
+			return;
+		}
+		if ((momx | momy) == 0 && (flags2 & MF2_BLASTED))
+		{ // Reset to not blasted when momentums are gone
+			flags2 &= ~MF2_BLASTED;
+		}
+
+		if (flags2 & MF2_FLOATBOB)
+		{ // Floating item bobbing motion
+			z += FloatBobDiffs[(FloatBobPhase + level.maptime) & 63];
+		}
+		if (momz || BlockingMobj ||
+			(z != floorz && (!(flags2 & MF2_FLOATBOB) ||
+			(z - FloatBobOffsets[(FloatBobPhase + level.maptime) & 63] != floorz)
+			)))
+		{	// Handle Z momentum and gravity
+			if (((flags2 & MF2_PASSMOBJ) || (flags & MF_SPECIAL)) && !(i_compatflags & COMPATF_NO_PASSMOBJ))
 			{
-				P_ZMovement (this);
-				flags2 &= ~MF2_ONMOBJ;
+				if (!(onmo = P_CheckOnmobj (this)))
+				{
+					P_ZMovement (this);
+					flags2 &= ~MF2_ONMOBJ;
+				}
+				else
+				{
+					if (player)
+					{
+						if (momz < (fixed_t)(level.gravity * Sector->gravity * -655.36f)
+							&& !(flags&MF_NOGRAVITY))
+						{
+							PlayerLandedOnThing (this, onmo);
+						}
+					}
+					if (onmo->z + onmo->height - z <= MaxStepHeight)
+					{
+						if (player && player->mo == this)
+						{
+							player->viewheight -= onmo->z + onmo->height - z;
+							fixed_t deltaview = player->GetDeltaViewHeight();
+							if (deltaview > player->deltaviewheight)
+							{
+								player->deltaviewheight = deltaview;
+							}
+						} 
+						z = onmo->z + onmo->height;
+					}
+					flags2 |= MF2_ONMOBJ;
+					momz = 0;
+					Crash();
+				}
 			}
 			else
 			{
-				if (player)
-				{
-					if (momz < (fixed_t)(level.gravity * Sector->gravity * -655.36f)
-						&& !(flags&MF_NOGRAVITY))
-					{
-						PlayerLandedOnThing (this, onmo);
-					}
-				}
-				if (onmo->z + onmo->height - z <= MaxStepHeight)
-				{
-					if (player && player->mo == this)
-					{
-						player->viewheight -= onmo->z + onmo->height - z;
-						fixed_t deltaview = player->GetDeltaViewHeight();
-						if (deltaview > player->deltaviewheight)
-						{
-							player->deltaviewheight = deltaview;
-						}
-					} 
-					z = onmo->z + onmo->height;
-				}
-				flags2 |= MF2_ONMOBJ;
-				momz = 0;
-				Crash();
+				P_ZMovement (this);
 			}
+
+			if (ObjectFlags & OF_EuthanizeMe)
+				return;		// actor was destroyed
 		}
-		else
+		else if (z <= floorz)
 		{
-			P_ZMovement (this);
+			Crash();
 		}
 
-		if (ObjectFlags & OF_EuthanizeMe)
-			return;		// actor was destroyed
-	}
-	else if (z <= floorz)
-	{
-		Crash();
-	}
+		UpdateWaterLevel (oldz);
 
-	UpdateWaterLevel (oldz);
-
-	// [RH] Don't advance if predicting a player
-	if (player && (player->cheats & CF_PREDICTING))
-	{
-		return;
+		// [RH] Don't advance if predicting a player
+		if (player && (player->cheats & CF_PREDICTING))
+		{
+			return;
+		}
 	}
 
 	// cycle through states, calling action functions at transitions
@@ -3326,7 +3358,7 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 		actor->ceilingsector = actor->Sector;
 		actor->ceilingpic = actor->ceilingsector->ceilingpic;
 	}
-	else
+	else if (!(actor->flags5 & MF5_NOINTERACTION))
 	{
 		P_FindFloorCeiling (actor);
 		actor->floorz = tmffloorz;
@@ -3336,6 +3368,16 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 		actor->floorsector = tmffloorsector;
 		actor->ceilingpic = tmfceilingpic;
 		actor->ceilingsector = tmfceilingsector;
+	}
+	else
+	{
+		actor->floorz = FIXED_MIN;
+		actor->dropoffz = FIXED_MIN;
+		actor->ceilingz = FIXED_MAX;
+		actor->floorpic = 0;
+		actor->floorsector = actor->Sector;
+		actor->ceilingpic = 0;
+		actor->ceilingsector = actor->Sector;
 	}
 
 	actor->SpawnPoint[0] = ix >> FRACBITS;
@@ -3599,7 +3641,7 @@ EXTERN_CVAR (Bool, chasedemo)
 
 extern bool demonew;
 
-void P_SpawnPlayer (mapthing2_t *mthing, bool tempplayer)
+APlayerPawn *P_SpawnPlayer (mapthing2_t *mthing, bool tempplayer)
 {
 	int		  playernum;
 	player_t *p;
@@ -3626,7 +3668,7 @@ void P_SpawnPlayer (mapthing2_t *mthing, bool tempplayer)
 
 	// not playing?
 	if (playernum >= MAXPLAYERS || !playeringame[playernum])
-		return;
+		return NULL;
 
 	p = &players[playernum];
 
@@ -3823,6 +3865,7 @@ void P_SpawnPlayer (mapthing2_t *mthing, bool tempplayer)
 			FBehavior::StaticStartTypedScripts (SCRIPT_Respawn, p->mo, true);
 		}
 	}
+	return mobj;
 }
 
 
@@ -3832,23 +3875,21 @@ void P_SpawnPlayer (mapthing2_t *mthing, bool tempplayer)
 // already be in host byte order.
 //
 // [RH] position is used to weed out unwanted start spots
-void P_SpawnMapThing (mapthing2_t *mthing, int position)
+AActor *P_SpawnMapThing (mapthing2_t *mthing, int position)
 {
 	const PClass *i;
 	int mask;
 	AActor *mobj;
 	fixed_t x, y, z;
 
-	T_PrepareSpawnThing();
-
 	if (mthing->type == 0 || mthing->type == -1)
-		return;
+		return NULL;
 
 	// count deathmatch start positions
 	if (mthing->type == 11)
 	{
 		deathmatchstarts.Push (*mthing);
-		return;
+		return NULL;
 	}
 
 	// Convert Strife starts to Hexen-style starts
@@ -3889,7 +3930,7 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 		polyspawns = polyspawn;
 		if (mthing->type != PO_ANCHOR_TYPE)
 			po_NumPolyobjs++;
-		return;
+		return NULL;
 	}
 
 	// check for players specially
@@ -3927,13 +3968,13 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 		}
 		if (!(mthing->flags & mask))
 		{
-			return;
+			return NULL;
 		}
 
 		mask = G_SkillProperty(SKILLP_SpawnFilter);
 		if (!(mthing->flags & mask))
 		{
-			return;
+			return NULL;
 		}
 
 		// Check class spawn masks. Now with player classes available
@@ -3943,7 +3984,7 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 			int spawnmask = players[consoleplayer].GetSpawnClass();
 			if (spawnmask != 0 && (mthing->flags & spawnmask) == 0)
 			{ // Not for current class
-				return;
+				return NULL;
 			}
 		}
 		else if (!deathmatch)
@@ -3962,7 +4003,7 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 			}
 			if (mask != -1 && (mthing->flags & mask) == 0)
 			{
-				return;
+				return NULL;
 			}
 		}
 	}
@@ -3971,14 +4012,14 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 	{
 		// [RH] Only spawn spots that match position.
 		if (mthing->args[0] != position)
-			return;
+			return NULL;
 
 		// save spots for respawning in network games
 		playerstarts[pnum] = *mthing;
 		if (!deathmatch)
-			P_SpawnPlayer (mthing);
+			return P_SpawnPlayer (mthing);
 
-		return;
+		return NULL;
 	}
 
 	// [RH] sound sequence overriders
@@ -3986,7 +4027,7 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 	{
 		P_PointInSector (mthing->x<<FRACBITS,
 			mthing->y<<FRACBITS)->seqType = mthing->type - 1400;
-		return;
+		return NULL;
 	}
 	else if (mthing->type == 1411)
 	{
@@ -4006,7 +4047,7 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 			P_PointInSector (mthing->x << FRACBITS,
 				mthing->y << FRACBITS)->seqType = type;
 		}
-		return;
+		return NULL;
 	}
 
 	// [RH] Determine if it is an old ambient thing, and if so,
@@ -4053,7 +4094,7 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 
 	// don't spawn keycards and players in deathmatch
 	if (deathmatch && info->flags & MF_NOTDMATCH)
-		return;
+		return NULL;
 
 	// [RH] don't spawn extra weapons in coop if so desired
 	if (multiplayer && !deathmatch && (dmflags & DF_NO_COOP_WEAPON_SPAWN))
@@ -4061,14 +4102,14 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 		if (i->IsDescendantOf (RUNTIME_CLASS(AWeapon)))
 		{
 			if ((mthing->flags & (MTF_DEATHMATCH|MTF_SINGLE)) == MTF_DEATHMATCH)
-				return;
+				return NULL;
 		}
 	}
 
 	// don't spawn any monsters if -nomonsters
 	if (((level.flags & LEVEL_NOMONSTERS) || (dmflags & DF_NO_MONSTERS)) && info->flags3 & MF3_ISMONSTER )
 	{
-		return;
+		return NULL;
 	}
 	
 	// [RH] Other things that shouldn't be spawned depending on dmflags
@@ -4077,13 +4118,11 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 		if (dmflags & DF_NO_HEALTH)
 		{
 			if (i->IsDescendantOf (RUNTIME_CLASS(AHealth)))
-				return;
+				return NULL;
 			if (i->TypeName == NAME_Berserk)
-				return;
-			if (i->TypeName == NAME_Soulsphere)
-				return;
+				return NULL;
 			if (i->TypeName == NAME_Megasphere)
-				return;
+				return NULL;
 		}
 		if (dmflags & DF_NO_ITEMS)
 		{
@@ -4093,9 +4132,9 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 		if (dmflags & DF_NO_ARMOR)
 		{
 			if (i->IsDescendantOf (RUNTIME_CLASS(AArmor)))
-				return;
+				return NULL;
 			if (i->TypeName == NAME_Megasphere)
-				return;
+				return NULL;
 		}
 	}
 
@@ -4138,13 +4177,11 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 
 	mobj->angle = (DWORD)((mthing->angle * UCONST64(0x100000000)) / 360);
 	mobj->BeginPlay ();
-	if (mobj->ObjectFlags & OF_EuthanizeMe)
+	if (!(mobj->ObjectFlags & OF_EuthanizeMe))
 	{
-		return;
+		mobj->LevelSpawned ();
 	}
-	mobj->LevelSpawned ();
-
-	T_RegisterSpawnThing(mobj);
+	return mobj;
 }
 
 
@@ -4158,7 +4195,7 @@ void P_SpawnMapThing (mapthing2_t *mthing, int position)
 // P_SpawnPuff
 //
 
-AActor *P_SpawnPuff (const PClass *pufftype, fixed_t x, fixed_t y, fixed_t z, angle_t dir, int updown, bool hitthing, bool temporary)
+AActor *P_SpawnPuff (const PClass *pufftype, fixed_t x, fixed_t y, fixed_t z, angle_t dir, int updown, int flags)
 {
 	AActor *puff;
 
@@ -4170,26 +4207,26 @@ AActor *P_SpawnPuff (const PClass *pufftype, fixed_t x, fixed_t y, fixed_t z, an
 	// it will enter the crash state. This is used by the StrifeSpark
 	// and BlasterPuff.
 	FState *crashstate;
-	if (hitthing == false && (crashstate = puff->FindState(NAME_Crash)) != NULL)
+	if (!(flags & PF_HITTHING) && (crashstate = puff->FindState(NAME_Crash)) != NULL)
 	{
 		puff->SetState (crashstate);
 	}
-	else if (attackrange == MELEERANGE && puff->MeleeState != NULL)
+	else if ((flags & PF_MELEERANGE) && puff->MeleeState != NULL)
 	{
 		// handle the hard coded state jump of Doom's bullet puff
 		// in a more flexible manner.
 		puff->SetState (puff->MeleeState);
 	}
 
-	if (cl_pufftype && updown != 3 && !temporary && (puff->flags4 & MF4_ALLOWPARTICLES))
+	if (!(flags & PF_TEMPORARY))
 	{
-		P_DrawSplash2 (32, x, y, z, dir, updown, 1);
-		puff->renderflags |= RF_INVISIBLE;
-	}
+		if (cl_pufftype && updown != 3 && (puff->flags4 & MF4_ALLOWPARTICLES))
+		{
+			P_DrawSplash2 (32, x, y, z, dir, updown, 1);
+			puff->renderflags |= RF_INVISIBLE;
+		}
 
-	if (!temporary)
-	{
-		if (hitthing && puff->SeeSound)
+		if ((flags & PF_HITTHING) && puff->SeeSound)
 		{ // Hit thing sound
 			S_SoundID (puff, CHAN_BODY, puff->SeeSound, 1, ATTN_NORM);
 		}
@@ -5097,6 +5134,13 @@ void AActor::Crash()
 		// so this code doesn't have to be executed repeatedly.
 		flags3 |= MF3_CRASHED;
 	}
+}
+
+void AActor::SetIdle()
+{
+	FState *idle = FindState (NAME_Idle);
+	if (idle == NULL) idle = SpawnState;
+	SetState(idle);
 }
 
 FArchive &operator<< (FArchive &arc, FSoundIndex &snd)

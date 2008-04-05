@@ -9,7 +9,6 @@ class AActor;
 
 void T_PreprocessScripts();
 void T_LoadScripts(MapData * map);
-void T_PrepareSpawnThing();
-void T_RegisterSpawnThing(AActor * );
+void T_AddSpawnedThing(AActor * );
 
 #endif

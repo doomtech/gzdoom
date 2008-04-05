@@ -379,7 +379,7 @@ void S_Start ()
 			if (*LocalSndInfo)
 			{
 				// Now parse the local SNDINFO
-				int j = Wads.CheckNumForName(LocalSndInfo);
+				int j = Wads.CheckNumForFullName(LocalSndInfo, true);
 				if (j>=0) S_AddLocalSndInfo(j);
 			}
 
@@ -392,7 +392,7 @@ void S_Start ()
 		}
 		if (parse_ss)
 		{
-			S_ParseSndSeq(*LocalSndSeq? Wads.CheckNumForName(LocalSndSeq) : -1);
+			S_ParseSndSeq(*LocalSndSeq? Wads.CheckNumForFullName(LocalSndSeq, true) : -1);
 		}
 		else
 		
@@ -715,7 +715,8 @@ static void S_StartSound (fixed_t *pt, AActor *mover, int channel,
 
 	// If this sound doesn't like playing near itself, don't play it if
 	// that's what would happen.
-	if (NearLimit > 0 && pt != NULL && S_CheckSoundLimit(sfx, pos, NearLimit))
+	if (NearLimit > 0 && pt != NULL && mover != players[consoleplayer].camera &&
+		S_CheckSoundLimit(sfx, pos, NearLimit))
 		return;
 
 	// Make sure the sound is loaded.

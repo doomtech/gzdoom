@@ -617,7 +617,7 @@ void T_PreprocessScripts()
 //
 //==========================================================================
 
-static bool T_RunScript(int snum, AActor * t_trigger)
+static bool RunScript(int snum, AActor * t_trigger)
 {
 	DFraggleThinker *th = DFraggleThinker::ActiveThinker;
 	if (th)
@@ -651,7 +651,7 @@ static int LS_FS_Execute (line_t *ln, AActor *it, bool backSide,
 {
 	if (arg1 && ln && backSide) return false;
 	if (arg2!=0 && !P_CheckKeys(it, arg2, !!arg3)) return false;
-	return T_RunScript(arg0,it);
+	return RunScript(arg0,it);
 }
 
 //==========================================================================
@@ -713,6 +713,6 @@ CCMD(fpuke)
 	}
 	else
 	{
-		T_RunScript(atoi(argv[1]), players[consoleplayer].mo);
+		RunScript(atoi(argv[1]), players[consoleplayer].mo);
 	}
 }

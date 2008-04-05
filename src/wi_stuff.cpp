@@ -395,10 +395,10 @@ void WI_LoadBackground(bool isenterpic)
 	}
 	else
 	{
-		int lumpnum=Wads.GetNumForName(lumpname+1);
+		int lumpnum=Wads.CheckNumForFullName(lumpname+1, true);
 		if (lumpnum>=0)
 		{
-			FScanner sc(lumpnum,lumpname+1);
+			FScanner sc(lumpnum);
 			while (sc.GetString())
 			{
 				memset(&an,0,sizeof(an));
