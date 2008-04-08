@@ -326,7 +326,9 @@ void AActor::Serialize (FArchive &arc)
 		<< gravity
 		<< FastChaseStrafeCount
 		<< master
-		<< smokecounter;
+		<< smokecounter
+		<< BlockingMobj
+		<< BlockingLine;
 
 	if (arc.IsStoring ())
 	{
@@ -1550,19 +1552,20 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 */
 		// [RH] If walking on a slope, stay on the slope
 		// killough 3/15/98: Allow objects to drop off
-		if (!P_TryMove (mo, ptryx, ptryy, true, walkplane))
+		FCheckPosition tm;
+		if (!P_TryMove (mo, ptryx, ptryy, true, walkplane, tm))
 		{
 			// blocked move
 
 			if ((mo->flags2 & (MF2_SLIDE|MF2_BLASTED) || bForceSlide) && !(mo->flags&MF_MISSILE))
 			{
 				// try to slide along it
-				if (BlockingMobj == NULL)
+				if (mo->BlockingMobj == NULL)
 				{ // slide against wall
-					if (BlockingLine != NULL &&
+					if (mo->BlockingLine != NULL &&
 						mo->player && mo->waterlevel && mo->waterlevel < 3 &&
 						(mo->player->cmd.ucmd.forwardmove | mo->player->cmd.ucmd.sidemove) &&
-						BlockingLine->sidenum[1] != NO_SIDE)
+						mo->BlockingLine->sidenum[1] != NO_SIDE)
 					{
 						mo->momz = WATER_JUMP_SPEED;
 					}
@@ -1630,6 +1633,7 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 			}
 			else if (mo->flags & MF_MISSILE)
 			{
+				AActor *BlockingMobj = mo->BlockingMobj;
 				steps = 0;
 				if (BlockingMobj)
 				{
@@ -1708,10 +1712,10 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 				}
 explode:
 				// explode a missile
-				if (ceilingline &&
-					ceilingline->backsector &&
-					ceilingline->backsector->ceilingpic == skyflatnum &&
-					mo->z >= ceilingline->backsector->ceilingplane.ZatPoint (mo->x, mo->y) && //killough
+				if (tm.ceilingline &&
+					tm.ceilingline->backsector &&
+					tm.ceilingline->backsector->ceilingpic == skyflatnum &&
+					mo->z >= tm.ceilingline->backsector->ceilingplane.ZatPoint (mo->x, mo->y) && //killough
 					!(mo->flags3 & MF3_SKYEXPLODE))
 				{
 					// Hack to prevent missiles exploding against the sky.
@@ -1721,13 +1725,13 @@ explode:
 					return;
 				}
 				// [RH] Don't explode on horizon lines.
-				if (BlockingLine != NULL && BlockingLine->special == Line_Horizon)
+				if (mo->BlockingLine != NULL && mo->BlockingLine->special == Line_Horizon)
 				{
 					mo->Destroy ();
 					DoRipping = false;
 					return;
 				}
-				P_ExplodeMissile (mo, BlockingLine, BlockingMobj);
+				P_ExplodeMissile (mo, mo->BlockingLine, BlockingMobj);
 				DoRipping = false;
 				return;
 			}
@@ -2635,16 +2639,19 @@ void AActor::Tick ()
 			return;
 		}
 
-		//Added by MC: Freeze mode.
-		if (bglobal.freeze && !(player && !player->isbot))
+		if (!(flags5 & MF5_NOTIMEFREEZE))
 		{
-			return;
-		}
+			//Added by MC: Freeze mode.
+			if (bglobal.freeze && !(player && !player->isbot))
+			{
+				return;
+			}
 
-		// Apply freeze mode.
-		if (( level.flags & LEVEL_FROZEN ) && ( player == NULL || !( player->cheats & CF_TIMEFREEZE )))
-		{
-			return;
+			// Apply freeze mode.
+			if (( level.flags & LEVEL_FROZEN ) && ( player == NULL || !( player->cheats & CF_TIMEFREEZE )))
+			{
+				return;
+			}
 		}
 
 		if (cl_rockettrails & 2)
@@ -3361,13 +3368,6 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 	else if (!(actor->flags5 & MF5_NOINTERACTION))
 	{
 		P_FindFloorCeiling (actor);
-		actor->floorz = tmffloorz;
-		actor->dropoffz = tmfdropoffz;
-		actor->ceilingz = tmfceilingz;
-		actor->floorpic = tmffloorpic;
-		actor->floorsector = tmffloorsector;
-		actor->ceilingpic = tmfceilingpic;
-		actor->ceilingsector = tmfceilingsector;
 	}
 	else
 	{
@@ -3764,6 +3764,9 @@ APlayerPawn *P_SpawnPlayer (mapthing2_t *mthing, bool tempplayer)
 	p->damagecount = 0;
 	p->bonuscount = 0;
 	p->morphTics = 0;
+	p->MorphedPlayerClass = 0;
+	p->MorphStyle = 0;
+	p->MorphExitFlash = NULL;
 	p->extralight = 0;
 	p->fixedcolormap = 0;
 	p->viewheight = mobj->ViewHeight;
@@ -4625,7 +4628,7 @@ bool P_CheckMissileSpawn (AActor* th)
 	if (!P_TryMove (th, th->x, th->y, false))
 	{
 		// [RH] Don't explode ripping missiles that spawn inside something
-		if (BlockingMobj == NULL || !(th->flags2 & MF2_RIP) || (BlockingMobj->flags5 & MF5_DONTRIP))
+		if (th->BlockingMobj == NULL || !(th->flags2 & MF2_RIP) || (th->BlockingMobj->flags5 & MF5_DONTRIP))
 		{
 			// If this is a monster spawned by A_CustomMissile subtract it from the counter.
 			if (th->CountsAsKill())
@@ -4634,13 +4637,13 @@ bool P_CheckMissileSpawn (AActor* th)
 				level.total_monsters--;
 			}
 			// [RH] Don't explode missiles that spawn on top of horizon lines
-			if (BlockingLine != NULL && BlockingLine->special == Line_Horizon)
+			if (th->BlockingLine != NULL && th->BlockingLine->special == Line_Horizon)
 			{
 				th->Destroy ();
 			}
 			else
 			{
-				P_ExplodeMissile (th, NULL, BlockingMobj);
+				P_ExplodeMissile (th, NULL, th->BlockingMobj);
 			}
 			return false;
 		}

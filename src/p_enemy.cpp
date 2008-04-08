@@ -32,6 +32,7 @@
 #include "i_system.h"
 #include "doomdef.h"
 #include "p_local.h"
+#include "m_bbox.h"
 #include "p_lnspec.h"
 #include "p_effect.h"
 #include "s_sound.h"
@@ -444,15 +445,17 @@ bool P_Move (AActor *actor)
 			}
 		}
 	}
+	FCheckPosition tm;
+
 	try_ok = true;
 	for(int i=1; i < steps; i++)
 	{
-		try_ok = P_TryMove(actor, origx + Scale(deltax, i, steps), origy + Scale(deltay, i, steps), false);
+		try_ok = P_TryMove(actor, origx + Scale(deltax, i, steps), origy + Scale(deltay, i, steps), false, false, tm);
 		if (!try_ok) break;
 	}
 
 	// killough 3/15/98: don't jump over dropoffs:
-	if (try_ok) try_ok = P_TryMove (actor, tryx, tryy, false);
+	if (try_ok) try_ok = P_TryMove (actor, tryx, tryy, false, false, tm);
 
 	// [GrafZahl] Interpolating monster movement as it is done here just looks bad
 	// so make it switchable!
@@ -474,11 +477,11 @@ bool P_Move (AActor *actor)
 
 	if (!try_ok)
 	{
-		if ((actor->flags & MF_FLOAT) && floatok)
+		if ((actor->flags & MF_FLOAT) && tm.floatok)
 		{ // must adjust height
 			fixed_t savedz = actor->z;
 
-			if (actor->z < tmfloorz)
+			if (actor->z < tm.floorz)
 				actor->z += actor->FloatSpeed;
 			else
 				actor->z -= actor->FloatSpeed;
@@ -523,7 +526,7 @@ bool P_Move (AActor *actor)
 			if (((actor->flags4 & MF4_CANUSEWALLS) && P_ActivateLine (ld, actor, 0, SPAC_USE)) ||
 				((actor->flags2 & MF2_PUSHWALL) && P_ActivateLine (ld, actor, 0, SPAC_PUSH)))
 			{
-				good |= ld == BlockingLine ? 1 : 2;
+				good |= ld == actor->BlockingLine ? 1 : 2;
 			}
 		}
 		return good && ((pr_opendoor() >= 203) ^ (good & 1));
@@ -603,15 +606,18 @@ void P_DoNewChaseDir (AActor *actor, fixed_t deltax, fixed_t deltay)
 	}
 
 	// try other directions
-	if (pr_newchasedir() > 200 || abs(deltay) > abs(deltax))
+	if (!(actor->flags5 & MF5_AVOIDINGDROPOFF))
 	{
-		swap (d[1], d[2]);
-	}
+		if ((pr_newchasedir() > 200 || abs(deltay) > abs(deltax)))
+		{
+			swap (d[1], d[2]);
+		}
 
-	if (d[1] == turnaround)
-		d[1] = DI_NODIR;
-	if (d[2] == turnaround)
-		d[2] = DI_NODIR;
+		if (d[1] == turnaround)
+			d[1] = DI_NODIR;
+		if (d[2] == turnaround)
+			d[2] = DI_NODIR;
+	}
 		
 	if (d[1] != DI_NODIR)
 	{
@@ -630,12 +636,15 @@ void P_DoNewChaseDir (AActor *actor, fixed_t deltax, fixed_t deltay)
 			return;
 	}
 
-	// there is no direct path to the player, so pick another direction.
-	if (olddir != DI_NODIR)
+	if (!(actor->flags5 & MF5_AVOIDINGDROPOFF))
 	{
-		actor->movedir = olddir;
-		if (P_TryWalk (actor))
-			return;
+		// there is no direct path to the player, so pick another direction.
+		if (olddir != DI_NODIR)
+		{
+			actor->movedir = olddir;
+			if (P_TryWalk (actor))
+				return;
+		}
 	}
 
 	// randomly determine direction of search
@@ -688,51 +697,6 @@ void P_DoNewChaseDir (AActor *actor, fixed_t deltax, fixed_t deltay)
 // hang over dropoffs.
 //=============================================================================
 
-struct avoiddropoff_t
-{
-	AActor * thing;
-	fixed_t deltax;
-	fixed_t deltay;
-	fixed_t floorx;
-	fixed_t floory;
-	fixed_t floorz;
-	fixed_t t_bbox[4];
-} a;
-
-static bool PIT_AvoidDropoff(line_t *line)
-{
-	if (line->backsector                          && // Ignore one-sided linedefs
-		a.t_bbox[BOXRIGHT]  > line->bbox[BOXLEFT]   &&
-		a.t_bbox[BOXLEFT]   < line->bbox[BOXRIGHT]  &&
-		a.t_bbox[BOXTOP]    > line->bbox[BOXBOTTOM] && // Linedef must be contacted
-		a.t_bbox[BOXBOTTOM] < line->bbox[BOXTOP]    &&
-		P_BoxOnLineSide(a.t_bbox, line) == -1)
-    {
-		fixed_t front = line->frontsector->floorplane.ZatPoint(a.floorx,a.floory);
-		fixed_t back  = line->backsector->floorplane.ZatPoint(a.floorx,a.floory);
-		angle_t angle;
-		
-		// The monster must contact one of the two floors,
-		// and the other must be a tall dropoff.
-		
-		if (back == a.floorz && front < a.floorz - a.thing->MaxDropOffHeight)
-		{
-			angle = R_PointToAngle2(0,0,line->dx,line->dy);   // front side dropoff
-		}
-		else if (front == a.floorz && back < a.floorz - a.thing->MaxDropOffHeight)
-		{
-			angle = R_PointToAngle2(line->dx,line->dy,0,0); // back side dropoff
-		}
-		else return true;
-		
-		// Move away from dropoff at a standard speed.
-		// Multiple contacted linedefs are cumulative (e.g. hanging over corner)
-		a.deltax -= finesine[angle >> ANGLETOFINESHIFT]*32;
-		a.deltay += finecosine[angle >> ANGLETOFINESHIFT]*32;
-    }
-	return true;
-}
-
 //=============================================================================
 //
 // P_NewChaseDir
@@ -777,26 +741,46 @@ void P_NewChaseDir(AActor * actor)
 		!(actor->flags2 & MF2_ONMOBJ) &&
 		!(actor->flags & MF_FLOAT) && !(i_compatflags & COMPATF_DROPOFF))
 	{
-		a.thing = actor;
-		a.deltax = a.deltay = 0;
-		a.floorx = actor->x;
-		a.floory = actor->y;
-		a.floorz = actor->z;
+		FBoundingBox box(actor->x, actor->y, actor->radius);
+		FBlockLinesIterator it(box);
+		line_t *line;
 
-		int yh=((a.t_bbox[BOXTOP]   = actor->y+actor->radius)-bmaporgy)>>MAPBLOCKSHIFT;
-		int yl=((a.t_bbox[BOXBOTTOM]= actor->y-actor->radius)-bmaporgy)>>MAPBLOCKSHIFT;
-		int xh=((a.t_bbox[BOXRIGHT] = actor->x+actor->radius)-bmaporgx)>>MAPBLOCKSHIFT;
-		int xl=((a.t_bbox[BOXLEFT]  = actor->x-actor->radius)-bmaporgx)>>MAPBLOCKSHIFT;
-		int bx, by;
+		fixed_t deltax = 0;
+		fixed_t deltay = 0;
+		while ((line = it.Next()))
+		{
+			if (line->backsector                     && // Ignore one-sided linedefs
+				box.Right()  > line->bbox[BOXLEFT]   &&
+				box.Left()   < line->bbox[BOXRIGHT]  &&
+				box.Top()    > line->bbox[BOXBOTTOM] && // Linedef must be contacted
+				box.Bottom() < line->bbox[BOXTOP]    &&
+				box.BoxOnLineSide(line) == -1)
+		    {
+				fixed_t front = line->frontsector->floorplane.ZatPoint(actor->x,actor->y);
+				fixed_t back  = line->backsector->floorplane.ZatPoint(actor->x,actor->y);
+				angle_t angle;
 		
-		// check lines
+				// The monster must contact one of the two floors,
+				// and the other must be a tall dropoff.
+				
+				if (back == actor->z && front < actor->z - actor->MaxDropOffHeight)
+				{
+					angle = R_PointToAngle2(0,0,line->dx,line->dy);   // front side dropoff
+				}
+				else if (front == actor->z && back < actor->z - actor->MaxDropOffHeight)
+				{
+					angle = R_PointToAngle2(line->dx,line->dy,0,0); // back side dropoff
+				}
+				else continue;
 		
-		validcount++;
-		for (bx=xl ; bx<=xh ; bx++)
-			for (by=yl ; by<=yh ; by++)
-				P_BlockLinesIterator(bx, by, PIT_AvoidDropoff);  // all contacted lines
+				// Move away from dropoff at a standard speed.
+				// Multiple contacted linedefs are cumulative (e.g. hanging over corner)
+				deltax -= finesine[angle >> ANGLETOFINESHIFT]*32;
+				deltay += finecosine[angle >> ANGLETOFINESHIFT]*32;
+			}
+		}
 
-		if (a.deltax || a.deltay) 
+		if (deltax || deltay) 
 		{
 			// [Graf Zahl] I have changed P_TryMove to only apply this logic when
 			// being called from here. AVOIDINGDROPOFF activates the code that
@@ -806,7 +790,7 @@ void P_NewChaseDir(AActor * actor)
 
 			// use different dropoff movement logic in P_TryMove
 			actor->flags5|=MF5_AVOIDINGDROPOFF;
-			P_DoNewChaseDir(actor, a.deltax, a.deltay);
+			P_DoNewChaseDir(actor, deltax, deltay);
 			actor->flags5&=~MF5_AVOIDINGDROPOFF;
 		
 			// If moving away from dropoff, set movecount to 1 so that 
@@ -2096,64 +2080,6 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 
 //==========================================================================
 //
-// PIT_VileCheck
-//
-//==========================================================================
-
-static AActor *corpsehit;
-static AActor *vileobj;
-static fixed_t viletryx;
-static fixed_t viletryy;
-static FState *raisestate;
-
-static bool PIT_VileCheck (AActor *thing)
-{
-	int maxdist;
-	bool check;
-		
-	if (!(thing->flags & MF_CORPSE) )
-		return true;	// not a monster
-	
-	if (thing->tics != -1)
-		return true;	// not lying still yet
-	
-	raisestate = thing->FindState(NAME_Raise);
-	if (raisestate == NULL)
-		return true;	// monster doesn't have a raise state
-	
-  	// This may be a potential problem if this is used by something other
-	// than an Arch Vile.	
-	//maxdist = thing->GetDefault()->radius + GetDefault<AArchvile>()->radius;
-	
-	// use the current actor's radius instead of the Arch Vile's default.
-	maxdist = thing->GetDefault()->radius + vileobj->radius; 
-		
-	if ( abs(thing->x - viletryx) > maxdist
-		 || abs(thing->y - viletryy) > maxdist )
-		return true;			// not actually touching
-				
-	corpsehit = thing;
-	corpsehit->momx = corpsehit->momy = 0;
-	// [RH] Check against real height and radius
-
-	fixed_t oldheight = corpsehit->height;
-	fixed_t oldradius = corpsehit->radius;
-	int oldflags = corpsehit->flags;
-
-	corpsehit->flags |= MF_SOLID;
-	corpsehit->height = corpsehit->GetDefault()->height;
-	check = P_CheckPosition (corpsehit, corpsehit->x, corpsehit->y);
-	corpsehit->flags = oldflags;
-	corpsehit->radius = oldradius;
-	corpsehit->height = oldheight;
-
-	return !check;
-}
-
-
-
-//==========================================================================
-//
 // P_CheckForResurrection (formerly part of A_VileChase)
 // Check for ressurecting a body
 //
@@ -2161,101 +2087,113 @@ static bool PIT_VileCheck (AActor *thing)
 
 static bool P_CheckForResurrection(AActor *self, bool usevilestates)
 {
-	static TArray<AActor *> vilebt;
-	int xl, xh, yl, yh;
-	int bx, by;
-
 	const AActor *info;
 	AActor *temp;
 		
 	if (self->movedir != DI_NODIR)
 	{
 		const fixed_t absSpeed = abs (self->Speed);
+		fixed_t viletryx = self->x + FixedMul (absSpeed, xspeed[self->movedir]);
+		fixed_t viletryy = self->y + FixedMul (absSpeed, yspeed[self->movedir]);
+		AActor *corpsehit;
+		FState *raisestate;
 
-		// check for corpses to raise
-		viletryx = self->x + FixedMul (absSpeed, xspeed[self->movedir]);
-		viletryy = self->y + FixedMul (absSpeed, yspeed[self->movedir]);
-
-		xl = (viletryx - bmaporgx - MAXRADIUS*2)>>MAPBLOCKSHIFT;
-		xh = (viletryx - bmaporgx + MAXRADIUS*2)>>MAPBLOCKSHIFT;
-		yl = (viletryy - bmaporgy - MAXRADIUS*2)>>MAPBLOCKSHIFT;
-		yh = (viletryy - bmaporgy + MAXRADIUS*2)>>MAPBLOCKSHIFT;
-		
-		vileobj = self;
-		validcount++;
-		vilebt.Clear();
-
-		for (bx = xl; bx <= xh; bx++)
+		FBlockThingsIterator it(FBoundingBox(viletryx, viletryy, 32*FRACUNIT));
+		while ((corpsehit = it.Next()))
 		{
-			for (by = yl; by <= yh; by++)
+			if (!(corpsehit->flags & MF_CORPSE) )
+				continue;	// not a monster
+			
+			if (corpsehit->tics != -1)
+				continue;	// not lying still yet
+			
+			raisestate = corpsehit->FindState(NAME_Raise);
+			if (raisestate == NULL)
+				continue;	// monster doesn't have a raise state
+
+			// use the current actor's radius instead of the Arch Vile's default.
+			fixed_t maxdist = corpsehit->GetDefault()->radius + self->radius; 
+
+			maxdist = corpsehit-> GetDefault()->radius + self->radius; 
+				
+			if ( abs(corpsehit-> x - viletryx) > maxdist ||
+				 abs(corpsehit-> y - viletryy) > maxdist )
+				continue;			// not actually touching
+
+			corpsehit->momx = corpsehit->momy = 0;
+			// [RH] Check against real height and radius
+
+			fixed_t oldheight = corpsehit->height;
+			fixed_t oldradius = corpsehit->radius;
+			int oldflags = corpsehit->flags;
+
+			corpsehit->flags |= MF_SOLID;
+			corpsehit->height = corpsehit->GetDefault()->height;
+			bool check = P_CheckPosition (corpsehit, corpsehit->x, corpsehit->y);
+			corpsehit->flags = oldflags;
+			corpsehit->radius = oldradius;
+			corpsehit->height = oldheight;
+			if (!check) continue;
+
+			// got one!
+			temp = self->target;
+			self->target = corpsehit;
+			A_FaceTarget (self);
+			if (self->flags & MF_FRIENDLY)
 			{
-				// Call PIT_VileCheck to check
-				// whether object is a corpse
-				// that can be raised.
-				if (!P_BlockThingsIterator (bx, by, PIT_VileCheck, vilebt))
+				// If this is a friendly Arch-Vile (which is turning the resurrected monster into its friend)
+				// and the Arch-Vile is currently targetting the resurrected monster the target must be cleared.
+				if (self->lastenemy == temp) self->lastenemy = NULL;
+				if (self->lastenemy == corpsehit) self->lastenemy = NULL;
+				if (temp == self->target) temp = NULL;
+			}
+			self->target = temp;
+								
+			// Make the state the monster enters customizable.
+			FState * state = self->FindState(NAME_Heal);
+			if (state != NULL)
+			{
+				self->SetState (state);
+			}
+			else if (usevilestates)
+			{
+				// For Dehacked compatibility this has to use the Arch Vile's
+				// heal state as a default if the actor doesn't define one itself.
+				const PClass *archvile = PClass::FindClass("Archvile");
+				if (archvile != NULL)
 				{
-					// got one!
-					temp = self->target;
-					self->target = corpsehit;
-					A_FaceTarget (self);
-					if (self->flags & MF_FRIENDLY)
-					{
-						// If this is a friendly Arch-Vile (which is turning the resurrected monster into its friend)
-						// and the Arch-Vile is currently targetting the resurrected monster the target must be cleared.
-						if (self->lastenemy == temp) self->lastenemy = NULL;
-						if (temp == self->target) temp = NULL;
-						
-					}
-					self->target = temp;
-										
-					// Make the state the monster enters customizable.
-					FState * state = self->FindState(NAME_Heal);
-					if (state != NULL)
-					{
-						self->SetState (state);
-					}
-					else if (usevilestates)
-					{
-						// For Dehacked compatibility this has to use the Arch Vile's
-						// heal state as a default if the actor doesn't define one itself.
-						const PClass *archvile = PClass::FindClass("Archvile");
-						if (archvile != NULL)
-						{
-							self->SetState (archvile->ActorInfo->FindState(NAME_Heal));
-						}
-					}
-					S_Sound (corpsehit, CHAN_BODY, "vile/raise", 1, ATTN_IDLE);
-					info = corpsehit->GetDefault ();
-					
-					corpsehit->SetState (raisestate);
-					corpsehit->height = info->height;	// [RH] Use real mobj height
-					corpsehit->radius = info->radius;	// [RH] Use real radius
-					/*
-					// Make raised corpses look ghostly
-					if (corpsehit->alpha > TRANSLUC50)
-						corpsehit->alpha /= 2;
-					*/
-					corpsehit->flags = info->flags;
-					corpsehit->flags2 = info->flags2;
-					corpsehit->flags3 = info->flags3;
-					corpsehit->flags4 = info->flags4;
-					corpsehit->health = info->health;
-					corpsehit->target = NULL;
-					corpsehit->lastenemy = NULL;
-
-					// [RH] If it's a monster, it gets to count as another kill
-					if (corpsehit->CountsAsKill())
-					{
-						level.total_monsters++;
-					}
-
-					// You are the Archvile's minion now, so hate what it hates
-					corpsehit->CopyFriendliness (self, false);
-
-
-					return true;
+					self->SetState (archvile->ActorInfo->FindState(NAME_Heal));
 				}
 			}
+			S_Sound (corpsehit, CHAN_BODY, "vile/raise", 1, ATTN_IDLE);
+			info = corpsehit->GetDefault ();
+			
+			corpsehit->SetState (raisestate);
+			corpsehit->height = info->height;	// [RH] Use real mobj height
+			corpsehit->radius = info->radius;	// [RH] Use real radius
+			/*
+			// Make raised corpses look ghostly
+			if (corpsehit->alpha > TRANSLUC50)
+				corpsehit->alpha /= 2;
+			*/
+			corpsehit->flags = info->flags;
+			corpsehit->flags2 = info->flags2;
+			corpsehit->flags3 = info->flags3;
+			corpsehit->flags4 = info->flags4;
+			corpsehit->health = info->health;
+			corpsehit->target = NULL;
+			corpsehit->lastenemy = NULL;
+
+			// [RH] If it's a monster, it gets to count as another kill
+			if (corpsehit->CountsAsKill())
+			{
+				level.total_monsters++;
+			}
+
+			// You are the Archvile's minion now, so hate what it hates
+			corpsehit->CopyFriendliness (self, false);
+
+			return true;
 		}
 	}
 	return false;

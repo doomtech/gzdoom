@@ -27,11 +27,11 @@
 #include "r_local.h"
 #endif
 
+#include "a_morph.h"
+
 #include <stdlib.h>
 
 #define STEEPSLOPE		46341	// [RH] Minimum floorplane.c value for walking
-
-#define MAXMORPHHEALTH	30
 
 #define BONUSADD		6
 
@@ -75,7 +75,6 @@ void P_DropWeapon (player_t* player);
 //
 void	P_FallingDamage (AActor *ent);
 void	P_PlayerThink (player_t *player);
-bool	P_UndoPlayerMorph (player_t *player, bool force=false);
 void	P_PredictPlayer (player_t *player);
 void	P_UnPredictPlayer ();
 
@@ -234,13 +233,69 @@ struct FLineOpening
 
 void	P_LineOpening (FLineOpening &open, AActor *thing, const line_t *linedef, fixed_t x, fixed_t y, fixed_t refx=FIXED_MIN, fixed_t refy=0);
 
-bool P_BlockLinesIterator (int x, int y, bool(*func)(line_t*));
-bool P_BlockThingsIterator (int x, int y, bool(*func)(AActor*), TArray<AActor *> &checkarray, AActor *start=NULL);
+class FBoundingBox;
 
+class FBlockLinesIterator
+{
+	int minx, maxx;
+	int miny, maxy;
+
+	int curx, cury;
+	polyblock_t *polyLink;
+	int polyIndex;
+	int *list;
+
+	void StartBlock(int x, int y);
+
+public:
+	FBlockLinesIterator(int minx, int miny, int maxx, int maxy, bool keepvalidcount = false);
+	FBlockLinesIterator(const FBoundingBox &box);
+	line_t *Next();
+	void Reset() { StartBlock(minx, miny); }
+};
+
+class FBlockThingsIterator
+{
+	typedef TArray<AActor *> BTChecked;
+
+	static TDeletingArray< BTChecked* > FreeBTChecked;
+
+
+	int minx, maxx;
+	int miny, maxy;
+
+	int curx, cury;
+
+	bool dontfreecheck;
+	BTChecked *checkarray;
+
+	FBlockNode *block;
+
+	BTChecked *GetCheckArray();
+	void FreeCheckArray();
+	void StartBlock(int x, int y);
+
+public:
+	FBlockThingsIterator(int minx, int miny, int maxx, int maxy, TArray<AActor *> *check = NULL);
+	FBlockThingsIterator(const FBoundingBox &box);
+	~FBlockThingsIterator()
+	{
+		if (!dontfreecheck) FreeCheckArray();
+	}
+	AActor *Next();
+	void Reset() { StartBlock(minx, miny); }
+};
+
+class FRadiusThingsIterator : public FBlockThingsIterator
+{
+	fixed_t X, Y, Radius;
+public:
+	FRadiusThingsIterator(fixed_t x, fixed_t y, fixed_t radius);
+	AActor *Next();
+};
 
 #define PT_ADDLINES 	1
 #define PT_ADDTHINGS	2
-#define PT_EARLYOUT 	4
 
 extern divline_t		trace;
 
@@ -260,30 +315,33 @@ AActor *P_RoughMonsterSearch (AActor *mo, int distance);
 // P_MAP
 //
 
+struct FCheckPosition
+{
+	// in
+	AActor			*thing;
+	fixed_t			x;
+	fixed_t			y;
+	fixed_t			z;
+
+	// out
+	sector_t		*sector;
+	fixed_t			floorz;
+	fixed_t			ceilingz;
+	fixed_t			dropoffz;
+	fixed_t			floorpic;
+	sector_t		*floorsector;
+	fixed_t			ceilingpic;
+	sector_t		*ceilingsector;
+	bool			touchmidtex;
+	bool			floatok;
+	line_t			*ceilingline;
+};
+
+
+
 // If "floatok" true, move would be ok
 // if within "tmfloorz - tmceilingz".
-extern bool				floatok;
-extern fixed_t			tmfloorz;
-extern fixed_t			tmceilingz;
 extern msecnode_t		*sector_list;		// phares 3/16/98
-extern AActor			*BlockingMobj;
-extern line_t			*BlockingLine;		// Used only by P_Move
-											// This is not necessarily a *blocking* line
-
-// For P_FindFloorCeiling
-extern fixed_t			tmffloorz, tmfceilingz;
-extern fixed_t			tmfdropoffz;
-extern fixed_t			tmffloorpic;
-extern sector_t			*tmffloorsector;
-extern fixed_t			tmfceilingpic;
-extern sector_t			*tmfceilingsector;
-
-
-//Added by MC: tmsectortype
-extern fixed_t			tmdropoffz; //Needed in b_move.c
-extern sector_t			*tmsector;
-
-extern line_t			*ceilingline;
 
 extern TArray<line_t *> spechit;
 
@@ -294,9 +352,11 @@ extern AActor			*LastRipped;
 
 bool	P_TestMobjLocation (AActor *mobj);
 bool	P_TestMobjZ (AActor *mobj, bool quick=true);
+bool	P_CheckPosition (AActor *thing, fixed_t x, fixed_t y, FCheckPosition &tm);
 bool	P_CheckPosition (AActor *thing, fixed_t x, fixed_t y);
 AActor	*P_CheckOnmobj (AActor *thing);
 void	P_FakeZMovement (AActor *mo);
+bool	P_TryMove (AActor* thing, fixed_t x, fixed_t y, bool dropoff, const secplane_t * onfloor, FCheckPosition &tm);
 bool	P_TryMove (AActor* thing, fixed_t x, fixed_t y, bool dropoff, const secplane_t * onfloor = NULL);
 bool	P_TeleportMove (AActor* thing, fixed_t x, fixed_t y, fixed_t z, bool telefrag);	// [RH] Added z and telefrag parameters
 void	P_PlayerStartStomp (AActor *actor);		// [RH] Stomp on things for a newly spawned player
@@ -306,7 +366,6 @@ bool	P_CheckSight (const AActor* t1, const AActor* t2, int flags=0);
 void	P_ResetSightCounters (bool full);
 void	P_UseLines (player_t* player);
 bool	P_UsePuzzleItem (AActor *actor, int itemType);
-void	PIT_ThrustSpike (AActor *actor);
 void	P_FindFloorCeiling (AActor *actor);
 
 bool	P_ChangeSector (sector_t* sector, int crunch, int amt, int floorOrCeil, bool isreset);
@@ -379,7 +438,6 @@ void P_TouchSpecialThing (AActor *special, AActor *toucher);
 void P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage, FName mod, int flags=0);
 
 bool P_GiveBody (AActor *actor, int num);
-bool P_MorphPlayer (player_t *player, const PClass *morphClass);
 void P_PoisonPlayer (player_t *player, AActor *poisoner, AActor *source, int poison);
 void P_PoisonDamage (player_t *player, AActor *source, int damage, bool playPainSound);
 

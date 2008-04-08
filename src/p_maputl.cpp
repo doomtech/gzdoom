@@ -683,138 +683,295 @@ void FBlockNode::Release ()
 //
 
 
+//===========================================================================
 //
-// P_BlockLinesIterator
-// The validcount flags are used to avoid checking lines
-// that are marked in multiple mapblocks,
-// so increment validcount before the first call
-// to P_BlockLinesIterator, then make one or more calls
-// to it.
+// FBlockLinesIterator
 //
+//===========================================================================
 extern polyblock_t **PolyBlockMap;
 
-bool P_BlockLinesIterator (int x, int y, bool(*func)(line_t*))
+FBlockLinesIterator::FBlockLinesIterator(int _minx, int _miny, int _maxx, int _maxy, bool keepvalidcount)
 {
-	if (x<0 || y<0 || x>=bmapwidth || y>=bmapheight)
+	if (!keepvalidcount) validcount++;
+	minx = _minx;
+	maxx = _maxx;
+	miny = _miny;
+	maxy = _maxy;
+	Reset();
+}
+
+FBlockLinesIterator::FBlockLinesIterator(const FBoundingBox &box)
+{
+	validcount++;
+	maxy = (box.Top() - bmaporgy) >> MAPBLOCKSHIFT;
+	miny = (box.Bottom() - bmaporgy) >> MAPBLOCKSHIFT;
+	maxx = (box.Right() - bmaporgx) >> MAPBLOCKSHIFT;
+	minx = (box.Left() - bmaporgx) >> MAPBLOCKSHIFT;
+	Reset();
+}
+
+
+//===========================================================================
+//
+// FBlockLinesIterator :: StartBlock
+//
+//===========================================================================
+
+void FBlockLinesIterator::StartBlock(int x, int y) 
+{ 
+	curx = x; 
+	cury = y; 
+	if (x >= 0 && y >= 0 && x < bmapwidth && y <bmapheight)
 	{
-		return true;
-	}
-	else
-	{
-		int	offset;
-		int *list;
-
-		/* [RH] Polyobj stuff from Hexen --> */
-		polyblock_t *polyLink;
-
-		offset = y*bmapwidth + x;
-		if (PolyBlockMap)
-		{
-			polyLink = PolyBlockMap[offset];
-			while (polyLink)
-			{
-				if (polyLink->polyobj && polyLink->polyobj->validcount != validcount)
-				{
-					int i;
-					seg_t **tempSeg = polyLink->polyobj->segs;
-					polyLink->polyobj->validcount = validcount;
-
-					for (i = polyLink->polyobj->numsegs; i; i--, tempSeg++)
-					{
-						if ((*tempSeg)->linedef->validcount != validcount)
-						{
-							(*tempSeg)->linedef->validcount = validcount;
-							if (!func ((*tempSeg)->linedef))
-								return false;
-						}
-					}
-				}
-				polyLink = polyLink->next;
-			}
-		}
-		/* <-- Polyobj stuff from Hexen */
-
-		offset = *(blockmap + offset);
+		int offset = y*bmapwidth + x;
+		polyLink = PolyBlockMap? PolyBlockMap[offset] : NULL;
+		polyIndex = 0;
 
 		// There is an extra entry at the beginning of every block.
 		// Apparently, id had originally intended for it to be used
 		// to keep track of things, but the final code does not do that.
-		for (list = blockmaplump + offset + 1; *list != -1; list++)
-		{
-			line_t *ld = &lines[*list];
-
-			if (ld->validcount != validcount)
-			{
-				ld->validcount = validcount;
-					
-				if ( !func(ld) )
-					return false;
-			}
-		}
-	}
-	return true;		// everything was checked
-}
-
-
-//
-// P_BlockThingsIterator
-//
-
-bool P_BlockThingsIterator (int x, int y, bool(*func)(AActor*), TArray<AActor *> &checkarray, AActor *actor)
-{
-	if ((unsigned int)x >= (unsigned int)bmapwidth ||
-		(unsigned int)y >= (unsigned int)bmapheight)
-	{
-		return true;
+		list = blockmaplump + *(blockmap + offset) + 1;
 	}
 	else
 	{
-		FBlockNode *block;
-		int index = y*bmapwidth + x;
+		// invalid block
+		list = NULL;
+		polyLink = NULL;
+	}
+}
 
-		if (actor == NULL)
+//===========================================================================
+//
+// FBlockLinesIterator :: Next
+//
+//===========================================================================
+
+line_t *FBlockLinesIterator::Next()
+{
+	while (true)
+	{
+		while (polyLink != NULL)
 		{
-			block = blocklinks[index];
+			if (polyLink->polyobj)
+			{
+				if (polyIndex == 0)
+				{
+					if (polyLink->polyobj->validcount == validcount)
+					{
+						polyLink = polyLink->next;
+						continue;
+					}
+					polyLink->polyobj->validcount = validcount;
+				}
+
+				seg_t *seg = polyLink->polyobj->segs[polyIndex];
+
+				if (++polyIndex >= polyLink->polyobj->numsegs)
+				{
+					polyLink = polyLink->next;
+					polyIndex = 0;
+				}
+
+				line_t *ld = seg->linedef;
+				if (ld->validcount == validcount)
+				{
+					continue;
+				}
+				else
+				{
+					ld->validcount = validcount;
+					return ld;
+				}
+			}
+			else polyLink = polyLink->next;
 		}
-		else
+
+		if (list != NULL)
 		{
-			block = actor->BlockNode;
-			while (block != NULL && block->BlockIndex != index)
+			while (*list != -1)
 			{
-				block = block->NextBlock;
-			}
-			if (block != NULL)
-			{
-				block = block->NextActor;
+				line_t *ld = &lines[*list];
+
+				if (ld->validcount != validcount)
+				{
+					ld->validcount = validcount;
+					return ld;
+				}
+				else
+				{
+					list++;
+				}
 			}
 		}
+
+		if (++curx > maxx)
+		{
+			curx = minx;
+			if (++cury > maxy) return NULL;
+		}
+		StartBlock(curx, cury);
+	}
+}
+
+//===========================================================================
+//
+// FBlockThingsIterator :: GetCheckArray
+//
+//===========================================================================
+
+TDeletingArray< FBlockThingsIterator::BTChecked* > FBlockThingsIterator::FreeBTChecked;
+
+FBlockThingsIterator::BTChecked *FBlockThingsIterator::GetCheckArray()
+{
+	dontfreecheck = false;
+	if (FreeBTChecked.Size() != 0)
+	{
+		BTChecked *ret;
+		FreeBTChecked.Pop(ret);
+		ret->Clear();
+		return ret;
+	}
+	return new BTChecked();
+}
+
+//===========================================================================
+//
+// FBlockThingsIterator :: FreeCheckArray
+//
+//===========================================================================
+
+void FBlockThingsIterator::FreeCheckArray()
+{
+	FreeBTChecked.Push(checkarray);
+}
+
+//===========================================================================
+//
+// FBlockThingsIterator :: FBlockThingsIterator
+//
+//===========================================================================
+
+FBlockThingsIterator::FBlockThingsIterator(int _minx, int _miny, int _maxx, int _maxy, TArray<AActor *> *Check)
+{
+	if (Check != NULL)
+	{
+		checkarray = Check;
+		dontfreecheck = true;
+	}
+	else
+	{
+		checkarray = GetCheckArray();
+	}
+	minx = _minx;
+	maxx = _maxx;
+	miny = _miny;
+	maxy = _maxy;
+	Reset();
+}
+
+FBlockThingsIterator::FBlockThingsIterator(const FBoundingBox &box)
+{
+	checkarray = GetCheckArray();
+	maxy = (box.Top() - bmaporgy) >> MAPBLOCKSHIFT;
+	miny = (box.Bottom() - bmaporgy) >> MAPBLOCKSHIFT;
+	maxx = (box.Right() - bmaporgx) >> MAPBLOCKSHIFT;
+	minx = (box.Left() - bmaporgx) >> MAPBLOCKSHIFT;
+	Reset();
+}
+
+//===========================================================================
+//
+// FBlockThingsIterator :: StartBlock
+//
+//===========================================================================
+
+void FBlockThingsIterator::StartBlock(int x, int y) 
+{ 
+	if (x >= 0 && y >= 0 && x < bmapwidth && y <bmapheight)
+	{
+		curx = x; 
+		cury = y; 
+		block = blocklinks[y*bmapwidth + x];
+	}
+	else
+	{
+		// invalid block
+		block = NULL;
+	}
+}
+
+//===========================================================================
+//
+// FBlockThingsIterator :: Next
+//
+//===========================================================================
+
+AActor *FBlockThingsIterator::Next()
+{
+	while (true)
+	{
 		while (block != NULL)
 		{
-			FBlockNode *next = block->NextActor;
+			AActor *me = block->Me;
 			int i;
 
+			block = block->NextActor;
 			// Don't recheck things that were already checked
-			for (i = (int)checkarray.Size() - 1; i >= 0; --i)
+			for (i = (int)checkarray->Size() - 1; i >= 0; --i)
 			{
-				if (checkarray[i] == block->Me)
+				if ((*checkarray)[i] == me)
 				{
 					break;
 				}
 			}
 			if (i < 0)
 			{
-				checkarray.Push (block->Me);
-				if (!func (block->Me))
-				{
-					return false;
-				}
+				checkarray->Push (me);
+				return me;
 			}
-			block = next;
 		}
+
+		if (++curx > maxx)
+		{
+			curx = minx;
+			if (++cury > maxy) return NULL;
+		}
+		StartBlock(curx, cury);
 	}
-	return true;
 }
 
+
+//===========================================================================
+//
+// FRadiusThingsIterator :: Next
+//
+//===========================================================================
+
+FRadiusThingsIterator::FRadiusThingsIterator(fixed_t x, fixed_t y, fixed_t radius)
+: FBlockThingsIterator(FBoundingBox(x, y, radius))
+{
+	X = x;
+	Y = y;
+	Radius = radius;
+}
+
+//===========================================================================
+//
+// FRadiusThingsIterator :: Next
+//
+//===========================================================================
+
+AActor *FRadiusThingsIterator::Next()
+{
+	AActor *actor;
+	while ((actor = FBlockThingsIterator::Next()))
+	{
+		fixed_t blockdist = actor->radius + Radius;
+		if ( abs(actor->x - X) < blockdist && abs(actor->y - Y) < blockdist)
+			return actor;
+	}
+	return NULL;
+}
 
 
 //
@@ -823,7 +980,6 @@ bool P_BlockThingsIterator (int x, int y, bool(*func)(AActor*), TArray<AActor *>
 TArray<intercept_t> intercepts (128);
 
 divline_t		trace;
-INTBOOL			earlyout;
 int 			ptflags;
 
 //
@@ -834,147 +990,140 @@ int 			ptflags;
 //
 // A line is crossed if its endpoints
 // are on opposite sides of the trace.
-// Returns true if earlyout and a solid line hit.
 //
-bool PIT_AddLineIntercepts (line_t *ld)
+void P_AddLineIntercepts(int bx, int by)
 {
-	int 				s1;
-	int 				s2;
-	fixed_t 			frac;
-	divline_t			dl;
+	FBlockLinesIterator it(bx, by, bx, by, true);
+	line_t *ld;
 
-	// avoid precision problems with two routines
-	if ( trace.dx > FRACUNIT*16
-		 || trace.dy > FRACUNIT*16
-		 || trace.dx < -FRACUNIT*16
-		 || trace.dy < -FRACUNIT*16)
+	while ((ld = it.Next()))
 	{
-		s1 = P_PointOnDivlineSide (ld->v1->x, ld->v1->y, &trace);
-		s2 = P_PointOnDivlineSide (ld->v2->x, ld->v2->y, &trace);
-	}
-	else
-	{
-		s1 = P_PointOnLineSide (trace.x, trace.y, ld);
-		s2 = P_PointOnLineSide (trace.x+trace.dx, trace.y+trace.dy, ld);
-	}
-	
-	if (s1 == s2)
-		return true;	// line isn't crossed
-	
-	// hit the line
-	P_MakeDivline (ld, &dl);
-	frac = P_InterceptVector (&trace, &dl);
+		int 				s1;
+		int 				s2;
+		fixed_t 			frac;
+		divline_t			dl;
 
-	if (frac < 0)
-		return true;	// behind source
+		// avoid precision problems with two routines
+		if ( trace.dx > FRACUNIT*16
+			 || trace.dy > FRACUNIT*16
+			 || trace.dx < -FRACUNIT*16
+			 || trace.dy < -FRACUNIT*16)
+		{
+			s1 = P_PointOnDivlineSide (ld->v1->x, ld->v1->y, &trace);
+			s2 = P_PointOnDivlineSide (ld->v2->x, ld->v2->y, &trace);
+		}
+		else
+		{
+			s1 = P_PointOnLineSide (trace.x, trace.y, ld);
+			s2 = P_PointOnLineSide (trace.x+trace.dx, trace.y+trace.dy, ld);
+		}
 		
-	// try to early out the check
-	if (earlyout
-		&& frac < FRACUNIT
-		&& !ld->backsector)
-	{
-		return false;	// stop checking
+		if (s1 == s2) continue;	// line isn't crossed
+		
+		// hit the line
+		P_MakeDivline (ld, &dl);
+		frac = P_InterceptVector (&trace, &dl);
+
+		if (frac < 0) continue;	// behind source
+			
+		intercept_t newintercept;
+
+		newintercept.frac = frac;
+		newintercept.isaline = true;
+		newintercept.d.line = ld;
+		intercepts.Push (newintercept);
 	}
-	
-
-	intercept_t newintercept;
-
-	newintercept.frac = frac;
-	newintercept.isaline = true;
-	newintercept.d.line = ld;
-	intercepts.Push (newintercept);
-
-	return true;		// continue
 }
-
 
 
 //
 // PIT_AddThingIntercepts
 //
-bool PIT_AddThingIntercepts (AActor* thing)
+void P_AddThingIntercepts (int bx, int by, TArray<AActor*> &checkbt)
 {
-	int numfronts = 0;
-	divline_t line;
-	int i;
+	FBlockThingsIterator it(bx, by, bx, by, &checkbt);
+	AActor *thing;
 
-	// [RH] Don't check a corner to corner crossection for hit.
-	// Instead, check against the actual bounding box.
-
-	// There's probably a smarter way to determine which two sides
-	// of the thing face the trace than by trying all four sides...
-	for (i = 0; i < 4; ++i)
+	while ((thing = it.Next()))
 	{
-		switch (i)
+		int numfronts = 0;
+		divline_t line;
+		int i;
+
+		// [RH] Don't check a corner to corner crossection for hit.
+		// Instead, check against the actual bounding box.
+
+		// There's probably a smarter way to determine which two sides
+		// of the thing face the trace than by trying all four sides...
+		for (i = 0; i < 4; ++i)
 		{
-		case 0:		// Top edge
-			line.x = thing->x + thing->radius;
-			line.y = thing->y + thing->radius;
-			line.dx = -thing->radius * 2;
-			line.dy = 0;
-			break;
-
-		case 1:		// Right edge
-			line.x = thing->x + thing->radius;
-			line.y = thing->y - thing->radius;
-			line.dx = 0;
-			line.dy = thing->radius * 2;
-			break;
-
-		case 2:		// Bottom edge
-			line.x = thing->x - thing->radius;
-			line.y = thing->y - thing->radius;
-			line.dx = thing->radius * 2;
-			line.dy = 0;
-			break;
-
-		case 3:		// Left edge
-			line.x = thing->x - thing->radius;
-			line.y = thing->y + thing->radius;
-			line.dx = 0;
-			line.dy = thing->radius * -2;
-			break;
-		}
-		// Check if this side is facing the trace origin
-		if (P_PointOnDivlineSide (trace.x, trace.y, &line) == 0)
-		{
-			numfronts++;
-
-			// If it is, see if the trace crosses it
-			if (P_PointOnDivlineSide (line.x, line.y, &trace) !=
-				P_PointOnDivlineSide (line.x + line.dx, line.y + line.dy, &trace))
+			switch (i)
 			{
-				// It's a hit
-				fixed_t frac = P_InterceptVector (&trace, &line);
-				if (frac < 0)
-				{ // behind source
-					return true;
-				}
+			case 0:		// Top edge
+				line.x = thing->x + thing->radius;
+				line.y = thing->y + thing->radius;
+				line.dx = -thing->radius * 2;
+				line.dy = 0;
+				break;
 
-				intercept_t newintercept;
-				newintercept.frac = frac;
-				newintercept.isaline = false;
-				newintercept.d.thing = thing;
-				intercepts.Push (newintercept);
-				return true;	// keep going
+			case 1:		// Right edge
+				line.x = thing->x + thing->radius;
+				line.y = thing->y - thing->radius;
+				line.dx = 0;
+				line.dy = thing->radius * 2;
+				break;
+
+			case 2:		// Bottom edge
+				line.x = thing->x - thing->radius;
+				line.y = thing->y - thing->radius;
+				line.dx = thing->radius * 2;
+				line.dy = 0;
+				break;
+
+			case 3:		// Left edge
+				line.x = thing->x - thing->radius;
+				line.y = thing->y + thing->radius;
+				line.dx = 0;
+				line.dy = thing->radius * -2;
+				break;
+			}
+			// Check if this side is facing the trace origin
+			if (P_PointOnDivlineSide (trace.x, trace.y, &line) == 0)
+			{
+				numfronts++;
+
+				// If it is, see if the trace crosses it
+				if (P_PointOnDivlineSide (line.x, line.y, &trace) !=
+					P_PointOnDivlineSide (line.x + line.dx, line.y + line.dy, &trace))
+				{
+					// It's a hit
+					fixed_t frac = P_InterceptVector (&trace, &line);
+					if (frac < 0)
+					{ // behind source
+						continue;
+					}
+
+					intercept_t newintercept;
+					newintercept.frac = frac;
+					newintercept.isaline = false;
+					newintercept.d.thing = thing;
+					intercepts.Push (newintercept);
+					continue;
+				}
 			}
 		}
-	}
 
-	// If none of the sides was facing the trace, then the trace
-	// must have started inside the box, so add it as an intercept.
-	if (numfronts == 0)
-	{
-		intercept_t newintercept;
-		newintercept.frac = 0;
-		newintercept.isaline = false;
-		newintercept.d.thing = thing;
-		intercepts.Push (newintercept);
-		return true;	// keep going
+		// If none of the sides was facing the trace, then the trace
+		// must have started inside the box, so add it as an intercept.
+		if (numfronts == 0)
+		{
+			intercept_t newintercept;
+			newintercept.frac = 0;
+			newintercept.isaline = false;
+			newintercept.d.thing = thing;
+			intercepts.Push (newintercept);
+		}
 	}
-
-	// Didn't hit it
-	return true;
 }
 
 
@@ -1052,8 +1201,6 @@ bool P_PathTraverse (fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, 
 	int 		mapystep;
 
 	int 		count;
-				
-	earlyout = flags & PT_EARLYOUT;
 				
 	validcount++;
 	intercepts.Clear ();
@@ -1152,14 +1299,12 @@ bool P_PathTraverse (fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, 
 	{
 		if (flags & PT_ADDLINES)
 		{
-			if (!P_BlockLinesIterator (mapx, mapy, PIT_AddLineIntercepts))
-				return false;	// early out
+			P_AddLineIntercepts(mapx, mapy);
 		}
 		
 		if (flags & PT_ADDTHINGS)
 		{
-			if (!P_BlockThingsIterator (mapx, mapy, PIT_AddThingIntercepts, pathbt))
-				return false;	// early out
+			P_AddThingIntercepts(mapx, mapy, pathbt);
 		}
 				
 		if (mapx == xt2 && mapy == yt2)
@@ -1191,16 +1336,14 @@ bool P_PathTraverse (fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, 
 			// be checked.
 			if (flags & PT_ADDLINES)
 			{
-				if (!P_BlockLinesIterator (mapx + mapxstep, mapy, PIT_AddLineIntercepts) ||
-					!P_BlockLinesIterator (mapx, mapy + mapystep, PIT_AddLineIntercepts))
-					return false;	// early out
+				P_AddLineIntercepts(mapx + mapxstep, mapy);
+				P_AddLineIntercepts(mapx, mapy + mapystep);
 			}
 			
 			if (flags & PT_ADDTHINGS)
 			{
-				if (!P_BlockThingsIterator (mapx + mapxstep, mapy, PIT_AddThingIntercepts, pathbt) ||
-					!P_BlockThingsIterator (mapx, mapy + mapystep, PIT_AddThingIntercepts, pathbt))
-					return false;	// early out
+				P_AddThingIntercepts(mapx + mapxstep, mapy, pathbt);
+				P_AddThingIntercepts(mapx, mapy + mapystep, pathbt);
 			}
 			xintercept += xstep;
 			yintercept += ystep;
@@ -1337,3 +1480,4 @@ static AActor *RoughBlockCheck (AActor *mo, int index)
 	}
 	return NULL;
 }
+
