@@ -8,17 +8,9 @@
 class FDecalTemplate;
 struct vertex_s;
 struct side_t;
+struct F3DFloor;
 
 extern void P_SpawnDirt (AActor *actor, fixed_t radius);
-
-bool P_MorphPlayer (player_s *player);
-bool P_UndoPlayerMorph (player_s *player, bool force);
-
-bool P_MorphMonster (AActor *actor, const PClass *morphClass);
-bool P_UpdateMorphedMonster (AActor *actor);
-
-
-struct F3DFloor;
 
 class DBaseDecal : public DThinker
 {
@@ -184,7 +176,8 @@ public:
 	int DoSpecialDamage (AActor *target, int damage);
 	void Serialize (FArchive &arc);
 
-	FNameNoInit	PlayerClass, MonsterClass;
+	FNameNoInit	PlayerClass, MonsterClass, MorphFlash, UnMorphFlash;
+	int Duration, MorphStyle;
 };
 
 class AMorphedMonster : public AActor
@@ -198,7 +191,8 @@ public:
 	void Destroy ();
 
 	TObjPtr<AActor> UnmorphedMe;
-	int UnmorphTime;
+	int UnmorphTime, MorphStyle;
+	const PClass *MorphExitFlash;
 	DWORD FlagsSave;
 };
 

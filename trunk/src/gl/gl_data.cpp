@@ -161,7 +161,6 @@ static void PrepareSectorData()
 {
 	int 				i;
 	int 				j;
-	FBoundingBox		bbox;
 	size_t				/*ii,*/ jj;
 	TArray<subsector_t *> undetermined;
 	subsector_t *		ss;
