@@ -56,12 +56,12 @@
 // Version identifier for network games.
 // Bump it every time you do a release unless you're certain you
 // didn't change anything that will affect sync.
-#define NETGAMEVERSION 215
+#define NETGAMEVERSION 216
 
 // Version stored in the ini's [LastRun] section.
 // Bump it if you made some configuration change that you want to
 // be able to migrate in FGameConfigFile::DoGlobalSetup().
-#define LASTRUNVERSION "206"
+#define LASTRUNVERSION "207"
 
 // Protocol version used in demos.
 // Bump it if you change existing DEM_ commands or add new ones.

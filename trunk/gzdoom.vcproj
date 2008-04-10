@@ -1792,6 +1792,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\win32\critsec.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\win32\cursor1.cur"
 				>
 			</File>
@@ -2975,6 +2979,10 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\src\sdl\critsec.h"
+				>
 			</File>
 			<File
 				RelativePath=".\src\sdl\dikeys.h"

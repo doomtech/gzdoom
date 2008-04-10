@@ -61,57 +61,6 @@ fixed_t P_AproxDistance (fixed_t dx, fixed_t dy)
 
 //==========================================================================
 //
-// P_BoxOnLineSide
-//
-// Considers the line to be infinite
-// Returns side 0 or 1, -1 if box crosses the line.
-//
-//==========================================================================
-
-int P_BoxOnLineSide (const fixed_t *tmbox, const line_t *ld)
-{
-	int p1;
-	int p2;
-		
-	switch (ld->slopetype)
-	{
-	case ST_HORIZONTAL:
-		p1 = tmbox[BOXTOP] > ld->v1->y;
-		p2 = tmbox[BOXBOTTOM] > ld->v1->y;
-		if (ld->dx < 0)
-		{
-			p1 ^= 1;
-			p2 ^= 1;
-		}
-		break;
-		
-	case ST_VERTICAL:
-		p1 = tmbox[BOXRIGHT] < ld->v1->x;
-		p2 = tmbox[BOXLEFT] < ld->v1->x;
-		if (ld->dy < 0)
-		{
-			p1 ^= 1;
-			p2 ^= 1;
-		}
-		break;
-		
-	case ST_POSITIVE:
-		p1 = P_PointOnLineSide (tmbox[BOXLEFT], tmbox[BOXTOP], ld);
-		p2 = P_PointOnLineSide (tmbox[BOXRIGHT], tmbox[BOXBOTTOM], ld);
-		break;
-		
-	case ST_NEGATIVE:
-	default:	// Just to assure GCC that p1 and p2 really do get initialized
-		p1 = P_PointOnLineSide (tmbox[BOXRIGHT], tmbox[BOXTOP], ld);
-		p2 = P_PointOnLineSide (tmbox[BOXLEFT], tmbox[BOXBOTTOM], ld);
-		break;
-	}
-
-	return (p1 == p2) ? p1 : -1;
-}
-
-//==========================================================================
-//
 // P_InterceptVector
 //
 // Returns the fractional intercept point along the first divline.
@@ -270,6 +219,7 @@ void P_LineOpening (FLineOpening &open, AActor *actor, const line_t *linedef,
 // THING POSITION SETTING
 //
 
+//==========================================================================
 //
 // P_UnsetThingPosition
 // Unlinks a thing from block map and sectors.
@@ -277,6 +227,8 @@ void P_LineOpening (FLineOpening &open, AActor *actor, const line_t *linedef,
 // lookups maintaining lists of things inside
 // these structures need to be updated.
 //
+//==========================================================================
+
 void AActor::UnlinkFromWorld ()
 {
 	sector_list = NULL;
@@ -332,11 +284,14 @@ void AActor::UnlinkFromWorld ()
 }
 
 
+//==========================================================================
 //
 // P_SetThingPosition
 // Links a thing into both a block and a subsector based on it's x y.
 // Sets thing->sector properly
 //
+//==========================================================================
+
 void AActor::LinkToWorld (bool buggy)
 {
 	// link into subsector
@@ -440,12 +395,15 @@ void AActor::LinkToWorld (sector_t *sec)
 	}
 }
 
+//==========================================================================
 //
 // [RH] LinkToWorldForMapThing
 //
 // Emulate buggy PointOnLineSide and fix actors that lie on
 // lines to compensate for some IWAD maps.
 //
+//==========================================================================
+
 static int R_PointOnSideSlow (fixed_t x, fixed_t y, node_t *node)
 {
 	// [RH] This might have been faster than two multiplies and an
@@ -549,7 +507,6 @@ sector_t *AActor::LinkToWorldForMapThing ()
 					}
 				}
 
-#if 1
 				// Not inside the line's bounding box
 				if (x + radius <= ldef->bbox[BOXLEFT]
 					|| x - radius >= ldef->bbox[BOXRIGHT]
@@ -593,39 +550,6 @@ sector_t *AActor::LinkToWorldForMapThing ()
 					y += FixedMul(distance, finesine[finean]);
 					return P_PointInSector (x, y);
 				}
-#else
-				if (DMulScale32 (y - ldef->v1->y, ldef->dx, ldef->v1->x - x, ldef->dy) == 0)
-				{
-					// It touches the infinite line; now make sure it touches the linedef
-					SQWORD num, den;
-
-					den = (SQWORD)ldef->dx*ldef->dx + (SQWORD)ldef->dy*ldef->dy;
-					if (den != 0)
-					{
-						num = (SQWORD)(x-ldef->v1->x)*ldef->dx+(SQWORD)(y-ldef->v1->y)*ldef->dy;
-						if (num >= 0 && num <= den)
-						{
-							DPrintf ("%s at (%d,%d) lies directly on %s line %d\n",
-								this->GetClass()->TypeName.GetChars(), x>>FRACBITS, y>>FRACBITS, 
-								ldef->dx == 0? "vertical" :	ldef->dy == 0? "horizontal" : "diagonal",
-								ldef-lines);
-							angle_t finean = R_PointToAngle2 (0, 0, ldef->dx, ldef->dy);
-							if (ldef->backsector != NULL && ldef->backsector == ssec->sector)
-							{
-								finean += ANGLE_90;
-							}
-							else
-							{
-								finean -= ANGLE_90;
-							}
-							finean >>= ANGLETOFINESHIFT;
-							x += finecosine[finean]) >> 2;
-							y += finesine[finean]) >> 2;
-							break;
-						}
-					}
-				}
-#endif
 			}
 		}
 	}
@@ -815,34 +739,20 @@ line_t *FBlockLinesIterator::Next()
 
 //===========================================================================
 //
-// FBlockThingsIterator :: GetCheckArray
+// FBlockThingsIterator :: CheckArray
 //
 //===========================================================================
 
-TDeletingArray< FBlockThingsIterator::BTChecked* > FBlockThingsIterator::FreeBTChecked;
+TArray<AActor *> FBlockThingsIterator::CheckArray(32);
 
-FBlockThingsIterator::BTChecked *FBlockThingsIterator::GetCheckArray()
+int FBlockThingsIterator::GetCheckIndex()
 {
-	dontfreecheck = false;
-	if (FreeBTChecked.Size() != 0)
-	{
-		BTChecked *ret;
-		FreeBTChecked.Pop(ret);
-		ret->Clear();
-		return ret;
-	}
-	return new BTChecked();
+	return CheckArray.Size();
 }
 
-//===========================================================================
-//
-// FBlockThingsIterator :: FreeCheckArray
-//
-//===========================================================================
-
-void FBlockThingsIterator::FreeCheckArray()
+void FBlockThingsIterator::SetCheckIndex(int newvalue)
 {
-	FreeBTChecked.Push(checkarray);
+	CheckArray.Resize(newvalue);
 }
 
 //===========================================================================
@@ -851,17 +761,19 @@ void FBlockThingsIterator::FreeCheckArray()
 //
 //===========================================================================
 
-FBlockThingsIterator::FBlockThingsIterator(int _minx, int _miny, int _maxx, int _maxy, TArray<AActor *> *Check)
+FBlockThingsIterator::FBlockThingsIterator(int x, int y, int check)
 {
-	if (Check != NULL)
-	{
-		checkarray = Check;
-		dontfreecheck = true;
-	}
-	else
-	{
-		checkarray = GetCheckArray();
-	}
+	checkindex = check;
+	dontfreecheck = true;
+	minx = maxx = x;
+	miny = maxy = y;
+	Reset();
+}
+
+FBlockThingsIterator::FBlockThingsIterator(int _minx, int _miny, int _maxx, int _maxy)
+{
+	checkindex = CheckArray.Size();
+	dontfreecheck = false;
 	minx = _minx;
 	maxx = _maxx;
 	miny = _miny;
@@ -871,12 +783,24 @@ FBlockThingsIterator::FBlockThingsIterator(int _minx, int _miny, int _maxx, int 
 
 FBlockThingsIterator::FBlockThingsIterator(const FBoundingBox &box)
 {
-	checkarray = GetCheckArray();
+	checkindex = CheckArray.Size();
+	dontfreecheck = false;
 	maxy = (box.Top() - bmaporgy) >> MAPBLOCKSHIFT;
 	miny = (box.Bottom() - bmaporgy) >> MAPBLOCKSHIFT;
 	maxx = (box.Right() - bmaporgx) >> MAPBLOCKSHIFT;
 	minx = (box.Left() - bmaporgx) >> MAPBLOCKSHIFT;
 	Reset();
+}
+
+//===========================================================================
+//
+// FBlockThingsIterator :: FreeCheckArray
+//
+//===========================================================================
+
+FBlockThingsIterator::~FBlockThingsIterator()
+{
+	if (!dontfreecheck) CheckArray.Resize(checkindex);
 }
 
 //===========================================================================
@@ -917,16 +841,16 @@ AActor *FBlockThingsIterator::Next()
 
 			block = block->NextActor;
 			// Don't recheck things that were already checked
-			for (i = (int)checkarray->Size() - 1; i >= 0; --i)
+			for (i = (int)CheckArray.Size() - 1; i >= checkindex; --i)
 			{
-				if ((*checkarray)[i] == me)
+				if (CheckArray[i] == me)
 				{
 					break;
 				}
 			}
-			if (i < 0)
+			if (i < checkindex)
 			{
-				checkarray->Push (me);
+				CheckArray.Push (me);
 				return me;
 			}
 		}
@@ -974,16 +898,18 @@ AActor *FRadiusThingsIterator::Next()
 }
 
 
+//===========================================================================
 //
-// INTERCEPT ROUTINES
+// FPathTraverse :: Intercepts
 //
-TArray<intercept_t> intercepts (128);
+//===========================================================================
 
-divline_t		trace;
-int 			ptflags;
+TArray<intercept_t> FPathTraverse::intercepts(128);
 
+
+//===========================================================================
 //
-// PIT_AddLineIntercepts.
+// FPathTraverse :: AddLineIntercepts.
 // Looks for lines in the given block
 // that intercept the given trace
 // to add to the intercepts list.
@@ -991,7 +917,9 @@ int 			ptflags;
 // A line is crossed if its endpoints
 // are on opposite sides of the trace.
 //
-void P_AddLineIntercepts(int bx, int by)
+//===========================================================================
+
+void FPathTraverse::AddLineIntercepts(int bx, int by)
 {
 	FBlockLinesIterator it(bx, by, bx, by, true);
 	line_t *ld;
@@ -1030,18 +958,22 @@ void P_AddLineIntercepts(int bx, int by)
 
 		newintercept.frac = frac;
 		newintercept.isaline = true;
+		newintercept.done = false;
 		newintercept.d.line = ld;
 		intercepts.Push (newintercept);
 	}
 }
 
 
+//===========================================================================
 //
-// PIT_AddThingIntercepts
+// FPathTraverse :: AddThingIntercepts
 //
-void P_AddThingIntercepts (int bx, int by, TArray<AActor*> &checkbt)
+//===========================================================================
+
+void FPathTraverse::AddThingIntercepts (int bx, int by, int checkindex)
 {
-	FBlockThingsIterator it(bx, by, bx, by, &checkbt);
+	FBlockThingsIterator it(bx, by, checkindex);
 	AActor *thing;
 
 	while ((thing = it.Next()))
@@ -1106,6 +1038,7 @@ void P_AddThingIntercepts (int bx, int by, TArray<AActor*> &checkbt)
 					intercept_t newintercept;
 					newintercept.frac = frac;
 					newintercept.isaline = false;
+					newintercept.done = false;
 					newintercept.d.thing = thing;
 					intercepts.Push (newintercept);
 					continue;
@@ -1120,6 +1053,7 @@ void P_AddThingIntercepts (int bx, int by, TArray<AActor*> &checkbt)
 			intercept_t newintercept;
 			newintercept.frac = 0;
 			newintercept.isaline = false;
+			newintercept.done = false;
 			newintercept.d.thing = thing;
 			intercepts.Push (newintercept);
 		}
@@ -1127,60 +1061,41 @@ void P_AddThingIntercepts (int bx, int by, TArray<AActor*> &checkbt)
 }
 
 
+//===========================================================================
 //
-// P_TraverseIntercepts
-// Returns true if the traverser function returns true
-// for all lines.
+// FPathTraverse :: Next
 // 
-bool P_TraverseIntercepts (traverser_t func, fixed_t maxfrac)
+//===========================================================================
+
+intercept_t *FPathTraverse::Next()
 {
-	unsigned int count;
-	fixed_t 	 dist;
-	unsigned int scanpos;
-	intercept_t *scan;
 	intercept_t *in = NULL;
 
-	count = intercepts.Size ();
-
-	while (count--)
+	fixed_t dist = FIXED_MAX;
+	for (unsigned scanpos = intercept_index; scanpos < intercepts.Size (); scanpos++)
 	{
-		dist = FIXED_MAX;
-		for (scanpos = 0; scanpos < intercepts.Size (); scanpos++)
+		intercept_t *scan = &intercepts[scanpos];
+		if (scan->frac < dist && !scan->done)
 		{
-			scan = &intercepts[scanpos];
-			if (scan->frac < dist)
-			{
-				dist = scan->frac;
-				in = scan;
-			}
+			dist = scan->frac;
+			in = scan;
 		}
-		
-		if (dist > maxfrac || in == NULL)
-			return true;		// checked everything in range			
-
-		if (!func (in))
-			return false;		// don't bother going farther
-
-		in->frac = FIXED_MAX;
 	}
-		
-	return true;				// everything was traversed
+	
+	if (dist > maxfrac || in == NULL) return NULL;	// checked everything in range			
+	in->done = true;
+	return in;
 }
 
-
-
-
+//===========================================================================
 //
-// P_PathTraverse
+// FPathTraverse
 // Traces a line from x1,y1 to x2,y2,
-// calling the traverser function for each.
-// Returns true if the traverser function returns true
-// for all lines.
 //
-bool P_PathTraverse (fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, bool (*trav) (intercept_t *))
-{
-	static TArray<AActor *> pathbt;
+//===========================================================================
 
+FPathTraverse::FPathTraverse (fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags)
+{
 	fixed_t 	xt1;
 	fixed_t 	yt1;
 	fixed_t 	xt2;
@@ -1203,8 +1118,7 @@ bool P_PathTraverse (fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, 
 	int 		count;
 				
 	validcount++;
-	intercepts.Clear ();
-	pathbt.Clear ();
+	intercept_index = intercepts.Size();
 		
 	if ( ((x1-bmaporgx)&(MAPBLOCKSIZE-1)) == 0)
 		x1 += FRACUNIT; // don't side exactly on a line
@@ -1295,16 +1209,18 @@ bool P_PathTraverse (fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, 
 	mapx = xt1;
 	mapy = yt1;
 		
+	// we want to use one list of checked actors for the entire operation
+	int BTI_CheckIndex = FBlockThingsIterator::GetCheckIndex();
 	for (count = 0 ; count < 100 ; count++)
 	{
 		if (flags & PT_ADDLINES)
 		{
-			P_AddLineIntercepts(mapx, mapy);
+			AddLineIntercepts(mapx, mapy);
 		}
 		
 		if (flags & PT_ADDTHINGS)
 		{
-			P_AddThingIntercepts(mapx, mapy, pathbt);
+			AddThingIntercepts(mapx, mapy, BTI_CheckIndex);
 		}
 				
 		if (mapx == xt2 && mapy == yt2)
@@ -1336,14 +1252,14 @@ bool P_PathTraverse (fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, 
 			// be checked.
 			if (flags & PT_ADDLINES)
 			{
-				P_AddLineIntercepts(mapx + mapxstep, mapy);
-				P_AddLineIntercepts(mapx, mapy + mapystep);
+				AddLineIntercepts(mapx + mapxstep, mapy);
+				AddLineIntercepts(mapx, mapy + mapystep);
 			}
 			
 			if (flags & PT_ADDTHINGS)
 			{
-				P_AddThingIntercepts(mapx + mapxstep, mapy, pathbt);
-				P_AddThingIntercepts(mapx, mapy + mapystep, pathbt);
+				AddThingIntercepts(mapx + mapxstep, mapy, BTI_CheckIndex);
+				AddThingIntercepts(mapx, mapy + mapystep, BTI_CheckIndex);
 			}
 			xintercept += xstep;
 			yintercept += ystep;
@@ -1352,9 +1268,15 @@ bool P_PathTraverse (fixed_t x1, fixed_t y1, fixed_t x2, fixed_t y2, int flags, 
 			break;
 		}
 	}
-	// go through the sorted list
-	return P_TraverseIntercepts ( trav, FRACUNIT );
+	FBlockThingsIterator::SetCheckIndex(BTI_CheckIndex);
+	maxfrac = FRACUNIT;
 }
+
+FPathTraverse::~FPathTraverse()
+{
+	intercepts.Resize(intercept_index);
+}
+
 
 //===========================================================================
 //
