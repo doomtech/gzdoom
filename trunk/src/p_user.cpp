@@ -1067,6 +1067,8 @@ void APlayerPawn::ActivateMorphWeapon ()
 		}
 	}
 	P_SetPsprite (player, ps_flash, NULL);
+
+	player->PendingWeapon = WP_NOCHANGE;
 }
 
 //===========================================================================

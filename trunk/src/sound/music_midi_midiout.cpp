@@ -100,8 +100,8 @@ static BYTE CommonLengths[15] = { 0, 1, 2, 1, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0 }
 //
 //==========================================================================
 
-MIDISong2::MIDISong2 (FILE *file, char *musiccache, int len, bool opl)
-: MIDIStreamer(opl), MusHeader(0), Tracks(0)
+MIDISong2::MIDISong2 (FILE *file, char *musiccache, int len, EMIDIDevice type)
+: MIDIStreamer(type), MusHeader(0), Tracks(0)
 {
 	int p;
 	int i;
@@ -766,14 +766,17 @@ void MIDISong2::SetTempo(int new_tempo)
 
 void MIDISong2::Precache()
 {
-	int i, j;
-
 	// This array keeps track of instruments that are used. The first 128
 	// entries are for melodic instruments. The second 128 are for
 	// percussion.
 	BYTE found_instruments[256] = { 0, };
+	BYTE found_banks[256] = { 0, };
+	bool multiple_banks = false;
+	int i, j;
 	
 	DoRestart();
+	found_banks[0] = true;		// Bank 0 is always used.
+	found_banks[128] = true;
 	for (i = 0; i < NumTracks; ++i)
 	{
 		TrackInfo *track = &Tracks[i];
@@ -781,25 +784,26 @@ void MIDISong2::Precache()
 		BYTE ev, data1, data2, command, channel;
 		int len;
 
+		data2 = 0;	// Silence, GCC
 		while (track->TrackP < track->MaxTrackP)
 		{
 			ev = track->TrackBegin[track->TrackP++];
 			command = ev & 0xF0;
 
-			if (command == MIDI_SYSEX || command == MIDI_SYSEXEND)
-			{
-				len = track->ReadVarLen();
-				track->TrackP += len;
-			}
-			else if (command == MIDI_META)
+			if (ev == MIDI_META)
 			{
 				track->TrackP++;
 				len = track->ReadVarLen();
 				track->TrackP += len;
 			}
-			else if ((command & 0xF0) == 0xF0)
+			else if (ev == MIDI_SYSEX || ev == MIDI_SYSEXEND)
 			{
-				track->TrackP += CommonLengths[ev & 0xF];
+				len = track->ReadVarLen();
+				track->TrackP += len;
+			}
+			else if (command == 0xF0)
+			{
+				track->TrackP += CommonLengths[ev & 0x0F];
 			}
 			else
 			{
@@ -821,27 +825,62 @@ void MIDISong2::Precache()
 				}
 				if (channel != 9 && command == (MIDI_PRGMCHANGE & 0x70))
 				{
-					found_instruments[data1 & 127] = 1;
+					found_instruments[data1 & 127] = true;
+				}
+				else if (channel == 9 && command == (MIDI_PRGMCHANGE & 0x70) && data1 != 0)
+				{ // On a percussion channel, program change also serves as bank select.
+					multiple_banks = true;
+					found_banks[data1 | 128] = true;
 				}
 				else if (channel == 9 && command == (MIDI_NOTEON & 0x70) && data2 != 0)
 				{
-					found_instruments[data1 | 128] = 1;
+					found_instruments[data1 | 128] = true;
 				}
-				track->ReadVarLen();	// Skip delay.
+				else if (command == (MIDI_CTRLCHANGE & 0x70) && data1 == 0 && data2 != 0)
+				{
+					multiple_banks = true;
+					if (channel == 9)
+					{
+						found_banks[data2 | 128] = true;
+					}
+					else
+					{
+						found_banks[data2 & 127] = true;
+					}
+				}
 			}
+			track->ReadVarLen();	// Skip delay.
 		}
 	}
 	DoRestart();
 
 	// Now pack everything into a contiguous region for the PrecacheInstruments call().
-	for (i = j = 0; i < 256; ++i)
+	TArray<WORD> packed;
+
+	for (i = 0; i < 256; ++i)
 	{
 		if (found_instruments[i])
 		{
-			found_instruments[j++] = i;
+			WORD packnum = (i & 127) | ((i & 128) << 7);
+			if (!multiple_banks)
+			{
+				packed.Push(packnum);
+			}
+			else
+			{ // In order to avoid having to multiplex tracks in a type 1 file,
+			  // precache every used instrument in every used bank, even if not
+			  // all combinations are actually used.
+				for (j = 0; j < 128; ++j)
+				{
+					if (found_banks[j + (i & 128)])
+					{
+						packed.Push(packnum | (j << 7));
+					}
+				}
+			}
 		}
 	}
-	MIDI->PrecacheInstruments(found_instruments, j);
+	MIDI->PrecacheInstruments(&packed[0], packed.Size());
 }
 
 //==========================================================================

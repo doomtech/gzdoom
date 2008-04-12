@@ -50,6 +50,7 @@
 #include "gi.h"
 #include "templates.h"
 #include "zstring.h"
+#include "timidity/timidity.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -275,7 +276,7 @@ void S_Init ()
 	{
 		S_ReturnChannel(Channels);
 	}
-	
+
 	// no sounds are playing, and they are not paused
 	MusicPaused = false;
 	SoundPaused = false;
@@ -358,8 +359,8 @@ void S_Start ()
 		
 		// Check for local sound definitions. Only reload if they differ
 		// from the previous ones.
-		char *LocalSndInfo;
-		char *LocalSndSeq;
+		const char *LocalSndInfo;
+		const char *LocalSndSeq;
 		
 		// To be certain better check whether level is valid!
 		if (level.info && level.info->soundinfo)
