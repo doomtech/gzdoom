@@ -89,6 +89,12 @@ typedef BYTE *LPSTR;
 #define MEVT_EVENTPARM(x)   ((x) & 0xffffff)
 
 #define MOM_DONE			969
+#else
+// w32api does not define these
+#ifndef MOD_WAVETABLE
+#define MOD_WAVETABLE   6
+#define MOD_SWSYNTH     7
+#endif
 #endif
 
 class MIDIDevice
@@ -112,7 +118,7 @@ public:
 	virtual bool FakeVolume() = 0;
 	virtual bool Pause(bool paused) = 0;
 	virtual bool NeedThreadedCallback() = 0;
-	virtual void PrecacheInstruments(const BYTE *instruments, int count);
+	virtual void PrecacheInstruments(const WORD *instruments, int count);
 };
 
 // WinMM implementation of a MIDI output device -----------------------------
@@ -138,7 +144,7 @@ public:
 	bool FakeVolume();
 	bool NeedThreadedCallback();
 	bool Pause(bool paused);
-	void PrecacheInstruments(const BYTE *instruments, int count);
+	void PrecacheInstruments(const WORD *instruments, int count);
 
 protected:
 	static void CALLBACK CallbackFunc(HMIDIOUT, UINT, DWORD_PTR, DWORD, DWORD);
@@ -205,12 +211,69 @@ public:
 	void Stop();
 };
 
+// Internal TiMidity MIDI device --------------------------------------------
+
+namespace Timidity { struct Renderer; }
+
+class TimidityMIDIDevice : public MIDIDevice
+{
+public:
+	TimidityMIDIDevice();
+	~TimidityMIDIDevice();
+
+	int Open(void (*callback)(unsigned int, void *, DWORD, DWORD), void *userdata);
+	void Close();
+	bool IsOpen() const;
+	int GetTechnology() const;
+	int SetTempo(int tempo);
+	int SetTimeDiv(int timediv);
+	int StreamOut(MIDIHDR *data);
+	int StreamOutSync(MIDIHDR *data);
+	int Resume();
+	void Stop();
+	int PrepareHeader(MIDIHDR *data);
+	int UnprepareHeader(MIDIHDR *data);
+	bool FakeVolume();
+	bool Pause(bool paused);
+	bool NeedThreadedCallback();
+	void PrecacheInstruments(const WORD *instruments, int count);
+
+protected:
+	static bool FillStream(SoundStream *stream, void *buff, int len, void *userdata);
+	bool ServiceStream (void *buff, int numbytes);
+
+	void (*Callback)(unsigned int, void *, DWORD, DWORD);
+	void *CallbackData;
+
+	void CalcTickRate();
+	int PlayTick();
+
+	FCriticalSection CritSec;
+	SoundStream *Stream;
+	Timidity::Renderer *Renderer;
+	double Tempo;
+	double Division;
+	double SamplesPerTick;
+	double NextTickIn;
+	MIDIHDR *Events;
+	bool Started;
+	DWORD Position;
+};
+
 // Base class for streaming MUS and MIDI files ------------------------------
+
+// MIDI device selection.
+enum EMIDIDevice
+{
+	MIDI_Win,
+	MIDI_OPL,
+	MIDI_Timidity
+};
 
 class MIDIStreamer : public MusInfo
 {
 public:
-	MIDIStreamer(bool opl);
+	MIDIStreamer(EMIDIDevice type);
 	~MIDIStreamer();
 
 	void MusicVolumeChanged();
@@ -276,7 +339,7 @@ protected:
 	int InitialTempo;
 	BYTE ChannelVolumes[16];
 	DWORD Volume;
-	bool UseOPLDevice;
+	EMIDIDevice DeviceType;
 	bool CallbackIsThreaded;
 	FString DumpFilename;
 };
@@ -286,7 +349,7 @@ protected:
 class MUSSong2 : public MIDIStreamer
 {
 public:
-	MUSSong2(FILE *file, char *musiccache, int length, bool opl);
+	MUSSong2(FILE *file, char *musiccache, int length, EMIDIDevice type);
 	~MUSSong2();
 
 	MusInfo *GetOPLDumper(const char *filename);
@@ -311,7 +374,7 @@ protected:
 class MIDISong2 : public MIDIStreamer
 {
 public:
-	MIDISong2(FILE *file, char *musiccache, int length, bool opl);
+	MIDISong2(FILE *file, char *musiccache, int length, EMIDIDevice type);
 	~MIDISong2();
 
 	MusInfo *GetOPLDumper(const char *filename);

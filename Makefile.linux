@@ -1,4 +1,6 @@
 # created on 4/12/2006 by James Bentler
+
+FMOD_PREFIX = /usr/local
 CXX ?= g++
 CC ?= gcc
 NASM ?= nasm
@@ -12,13 +14,13 @@ CFLAGS += `pkg-config gtk+-2.0 --cflags`
 CFLAGS += -DHAVE_FILELENGTH -D__forceinline=inline `sdl-config --cflags`
 CFLAGS += -DNEED_STRUPR
 CFLAGS += -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp
-LDFLAGS += -lFLAC++ -lFLAC -lz -lmodplug -lfmodex `sdl-config --libs`
+LDFLAGS += -lz $(FMOD_PREFIX)/lib/libfmodex.so `sdl-config --libs`
 LDFLAGS += -ljpeg `pkg-config gtk+-2.0 --libs`
 LDFLAGS += -lGL -lGLU
 NASMFLAGS += -f elf -DM_TARGET_LINUX
 SRCDIRS = src/ $(addprefix src/,g_doom/ g_heretic/ g_hexen/ g_raven/ g_shared/ g_strife/ oplsynth/ sound/ fragglescript/ thingdef/ Linux/ sdl/ gl/ gl/r_render/ textures/ xlat/)
 INCLUDES = $(addprefix -I,$(SRCDIRS))
-INCLUDES += -Isnes_spc/snes_spc/ -I/usr/include/fmodex/
+INCLUDES += -Isnes_spc/snes_spc/ -I$(FMOD_PREFIX)/include/fmodex/
 CFLAGS += $(INCLUDES)
 
 RELEASEOBJ ?= releaseobj
@@ -120,6 +122,10 @@ ifdef RESTART
 	@make -f $(firstword $(MAKEFILE_LIST)) RESTART=
 endif
 
+# This file needs special handling so that it actually gets compiled with SSE2 support.
+$(OBJDIR)/nodebuild_classify_sse2.o: src/nodebuild_classify_sse2.cpp
+	$(CCDV) $(CXX) $(CXXFLAGS) -msse2 -mfpmath=sse -c -o $@ $<
+
 # This file needs special handling because GCC misoptimizes it otherwise.
 $(OBJDIR)/fmopl.o: src/oplsynth/fmopl.cpp
 	$(CCDV) $(CXX) $(CXXFLAGS) -fno-tree-dominator-opts -fno-tree-fre -c -o $@ $<
@@ -130,26 +136,26 @@ src/xlat/xlat_parser.h src/xlat/xlat_parser.c: tools/lemon/lemon src/xlat/xlat_p
 $(OBJDIR):
 	mkdir $(OBJDIR)
 
-toolsandpk3: tools/makewad/makewad src/svnrevision_gz.h
-	make -C wadsrc/
+toolsandpk3: ccdv tools/makewad/makewad src/svnrevision_gz.h
+	$(MAKE) -C wadsrc/
 
 zdoom.pk3: toolsandpk3
 	ln -sf wadsrc/gzdoom.pk3 ./
 
-snes_spc/libsnes_spc.a:
+snes_spc/libsnes_spc.a: ccdv
 	$(MAKE) -C snes_spc/
 
 tools/makewad/makewad: ccdv
-	make -C tools/makewad/
+	$(MAKE) -C tools/makewad/
 
-tools/lemon/lemon:
+tools/lemon/lemon: ccdv
 	$(MAKE) -C tools/lemon/
 
 tools/updaterevision/updaterevision: ccdv
-	make -C tools/updaterevision/
+	$(MAKE) -C tools/updaterevision/
 
 src/svnrevision_gz.h: tools/updaterevision/updaterevision
-	tools/updaterevision/updaterevision src src/svnrevision_gz.h
+	tools/updaterevision/updaterevision . src/svnrevision_gz.h
 
 ccdv: ccdv-posix.c
 	@gcc -Os -s ccdv-posix.c -o ccdv

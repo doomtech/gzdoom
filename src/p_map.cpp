@@ -77,13 +77,8 @@ static FRandom pr_crunch ("DoCrunch");
 // but don't process them until the move is proven valid
 TArray<line_t *> spechit;
 
-AActor *onmobj; // generic global onmobj...used for landing on pods/players
-
 // Temporary holder for thing_sectorlist threads
 msecnode_t* sector_list = NULL;		// phares 3/16/98
-
-bool DoRipping;
-AActor *LastRipped;
 
 //==========================================================================
 //
@@ -672,8 +667,6 @@ bool PIT_CheckLine (line_t *ld, const FBoundingBox &box, FCheckPosition &tm)
 //
 //==========================================================================
 
-static AActor *stepthing;
-
 bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 {
 	fixed_t topz;
@@ -704,7 +697,7 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 //			if (abs(thing->x - tmx) <= thing->radius &&
 //				abs(thing->y - tmy) <= thing->radius)
 			{
-				stepthing = thing;
+				tm.stepthing = thing;
 				tm.floorz = topz;
 			}
 		}
@@ -871,11 +864,11 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 		{
 			return true;
 		}
-		if (DoRipping && !(thing->flags5 & MF5_DONTRIP))
+		if (tm.DoRipping && !(thing->flags5 & MF5_DONTRIP))
 		{
-			if (LastRipped != thing)
+			if (tm.LastRipped != thing)
 			{
-				LastRipped = thing;
+				tm.LastRipped = thing;
 				if (!(thing->flags & MF_NOBLOOD) &&
 					!(thing->flags2 & MF2_REFLECTIVE) &&
 					!(tm.thing->flags3 & MF3_BLOODLESSIMPACT) &&
@@ -1102,7 +1095,7 @@ bool P_CheckPosition (AActor *thing, fixed_t x, fixed_t y, FCheckPosition &tm)
 		thing->height = realheight + thing->MaxStepHeight;
 	}
 
-	stepthing = NULL;
+	tm.stepthing = NULL;
 
 	FRadiusThingsIterator it2(x, y, thing->radius);
 	AActor *th;
@@ -1185,7 +1178,7 @@ bool P_CheckPosition (AActor *thing, fixed_t x, fixed_t y, FCheckPosition &tm)
 	if (tm.ceilingz - tm.floorz < thing->height)
 		return false;
 
-	if (stepthing != NULL || tm.touchmidtex)
+	if (tm.stepthing != NULL || tm.touchmidtex)
 	{
 		tm.dropoffz = thingdropoffz;
 	}
@@ -1210,10 +1203,11 @@ AActor *P_CheckOnmobj (AActor *thing)
 {
 	fixed_t oldz;
 	bool good;
+	AActor *onmobj;
 
 	oldz = thing->z;
 	P_FakeZMovement (thing);
-	good = P_TestMobjZ (thing, false);
+	good = P_TestMobjZ (thing, false, &onmobj);
 	thing->z = oldz;
 
 	return good ? NULL : onmobj;
@@ -1225,11 +1219,14 @@ AActor *P_CheckOnmobj (AActor *thing)
 //
 //=============================================================================
 
-bool P_TestMobjZ (AActor *actor, bool quick)
+bool P_TestMobjZ (AActor *actor, bool quick, AActor **pOnmobj)
 {
-	onmobj = NULL;
+	AActor *onmobj = NULL;
 	if (actor->flags & MF_NOCLIP)
+	{
+		if (pOnmobj) *pOnmobj = NULL;
 		return true;
+	}
 
 	FRadiusThingsIterator it(actor->x, actor->y, actor->radius);
 	AActor *thing;
@@ -1268,7 +1265,7 @@ bool P_TestMobjZ (AActor *actor, bool quick)
 		if (quick) break;
 	}
 
-
+	if (pOnmobj) *pOnmobj = onmobj;
 	return onmobj == NULL;
 }
 
@@ -2401,7 +2398,6 @@ bool P_BounceWall (AActor *mo)
 // Aiming
 //
 //============================================================================
-AActor*			linetarget;		// who got hit (or NULL)
 
 struct aim_t
 {
@@ -2411,6 +2407,7 @@ struct aim_t
 	AActor*			shootthing;
 
 	fixed_t			toppitch, bottompitch;
+	AActor *		linetarget;
 	AActor *		thing_friend, * thing_other;
 	angle_t			pitch_friend, pitch_other;
 	bool			notsmart;
@@ -2424,8 +2421,6 @@ struct aim_t
 	bool AimTraverse3DFloors(const divline_t &trace, intercept_t * in);
 
 };
-
-aim_t aim;
 
 //============================================================================
 //
@@ -2583,7 +2578,7 @@ void aim_t::AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t e
 				return;				// stop
 							
 			if (!AimTraverse3DFloors(it.Trace(), in)) return;
-			continue;
+			continue;					// shot continues
 		}
 
 		// shoot a thing
@@ -2712,7 +2707,7 @@ void aim_t::AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t e
 // P_AimLineAttack
 //
 //============================================================================
-fixed_t P_AimLineAttack (AActor *t1, angle_t angle, fixed_t distance, fixed_t vrange, bool forcenosmart)
+fixed_t P_AimLineAttack (AActor *t1, angle_t angle, fixed_t distance, AActor **pLineTarget, fixed_t vrange, bool forcenosmart)
 {
 	fixed_t x2;
 	fixed_t y2;
@@ -2754,7 +2749,7 @@ fixed_t P_AimLineAttack (AActor *t1, angle_t angle, fixed_t distance, fixed_t vr
 	aim.notsmart = forcenosmart;
 
 	aim.attackrange = distance;
-	linetarget = NULL;
+	aim.linetarget = NULL;
 
 	// for smart aiming
 	aim.thing_friend=aim.thing_other=NULL;
@@ -2779,20 +2774,21 @@ fixed_t P_AimLineAttack (AActor *t1, angle_t angle, fixed_t distance, fixed_t vr
 
 	aim.AimTraverse (t1->x, t1->y, x2, y2);
 
-	if (!linetarget) 
+	if (!aim.linetarget) 
 	{
 		if (aim.thing_other)
 		{
-			linetarget=aim.thing_other;
+			aim.linetarget=aim.thing_other;
 			aim.aimpitch=aim.pitch_other;
 		}
 		else if (aim.thing_friend)
 		{
-			linetarget=aim.thing_friend;
+			aim.linetarget=aim.thing_friend;
 			aim.aimpitch=aim.pitch_friend;
 		}
 	}
-	return linetarget ? aim.aimpitch : t1->pitch;
+	if (pLineTarget) *pLineTarget = aim.linetarget;
+	return aim.linetarget ? aim.aimpitch : t1->pitch;
 }
 
 
@@ -4306,7 +4302,8 @@ void PIT_CeilingRaise (AActor *thing, FChangePosition *cpos)
 	}
 	else if ((thing->flags2 & MF2_PASSMOBJ) && !isgood && thing->z + thing->height < thing->ceilingz)
 	{
-		if (!P_TestMobjZ (thing) && onmobj->z <= thing->z)
+		AActor *onmobj;
+		if (!P_TestMobjZ (thing, true, &onmobj) && onmobj->z <= thing->z)
 		{
 			thing->z = MIN (thing->ceilingz - thing->height,
 							onmobj->z + onmobj->height);
