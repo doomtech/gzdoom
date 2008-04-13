@@ -457,14 +457,27 @@ int FMultiPatchTexture::CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf
 FTextureFormat FMultiPatchTexture::GetFormat() 
 { 
 	if (NumParts == 1) return Parts[0].Texture->GetFormat();
-
-	for(int i=0;i<NumParts;i++)
-	{
-		if (!Parts[i].Texture->UseBasePalette()) return TEX_RGB;
-	}
-	return TEX_Pal;
+	return UseBasePalette() ? TEX_Pal : TEX_RGB;
 }
 
+
+//===========================================================================
+//
+// FMultipatchTexture::UseBasePalette
+//
+// returns true if all patches in the texture use the unmodified base
+// palette.
+//
+//===========================================================================
+
+bool FMultiPatchTexture::UseBasePalette() 
+{ 
+	for(int i=0;i<NumParts;i++)
+	{
+		if (!Parts[i].Texture->UseBasePalette()) return false;
+	}
+	return true;
+}
 
 //==========================================================================
 //
@@ -701,11 +714,11 @@ void FMultiPatchTexture::ParsePatch(FScanner &sc, TexPart & part)
 			sc.MustGetString();
 			if (sc.Compare("flipx"))
 			{
-				part.Mirror = 1;
+				part.Mirror |= 1;
 			}
 			else if (sc.Compare("flipy"))
 			{
-				part.Mirror = 2;
+				part.Mirror |= 2;
 			}
 			else if (sc.Compare("rotate"))
 			{
@@ -718,22 +731,31 @@ void FMultiPatchTexture::ParsePatch(FScanner &sc, TexPart & part)
 			}
 		}
 	}
+	if (part.Mirror & 2)
+	{
+		part.Rotate = (part.Rotate + 180) % 360;
+		part.Mirror &= 1;
+	}
 	*/
 }
 
 
 FMultiPatchTexture::FMultiPatchTexture (FScanner &sc, int usetype)
+: Pixels (0), Spans(0), Parts(0), bRedirect(false)
 {
 	TArray<TexPart> parts;
 
+	sc.SetCMode(true);
 	sc.MustGetString();
 	uppercopy(Name, sc.String);
+	Name[8] = 0;
 	sc.MustGetStringName(",");
 	sc.MustGetNumber();
 	Width = sc.Number;
 	sc.MustGetStringName(",");
 	sc.MustGetNumber();
 	Height = sc.Number;
+	UseType = FTexture::TEX_Override;
 
 	if (sc.CheckString("{"))
 	{
@@ -754,6 +776,10 @@ FMultiPatchTexture::FMultiPatchTexture (FScanner &sc, int usetype)
 			{
 				bWorldPanning = true;
 			}
+			else if (sc.Compare("NullTexture"))
+			{
+				UseType = FTexture::TEX_Null;
+			}
 			else if (sc.Compare("NoDecals"))
 			{
 				bNoDecals = true;
@@ -767,7 +793,6 @@ FMultiPatchTexture::FMultiPatchTexture (FScanner &sc, int usetype)
 		}
 
 		NumParts = parts.Size();
-		UseType = FTexture::TEX_Override;
 		Parts = new TexPart[NumParts];
 		memcpy(Parts, &parts[0], NumParts * sizeof(*Parts));
 
@@ -787,9 +812,7 @@ FMultiPatchTexture::FMultiPatchTexture (FScanner &sc, int usetype)
 		}
 		//DefinitionLump = sc.G deflumpnum;
 	}
-
-
-
+	sc.SetCMode(false);
 }
 
 

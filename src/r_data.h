@@ -89,12 +89,12 @@ public:
 	const BYTE *GetColumn (unsigned int column, const Span **spans_out);
 	const BYTE *GetPixels ();
 	FTextureFormat GetFormat();
+	bool UseBasePalette() ;
 	void Unload ();
 	virtual void SetFrontSkyLayer ();
 
 	int CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf_height, int x, int y);
 	int GetSourceLump() { return DefinitionLump; }
-	bool UseBasePalette() ;
 
 protected:
 	BYTE *Pixels;

@@ -46,7 +46,7 @@
 //==========================================================================
 
 FileReader::FileReader ()
-: File(NULL), Length(0), CloseOnDestruct(false)
+: File(NULL), Length(0), StartPos(0), CloseOnDestruct(false)
 {
 }
 
@@ -59,13 +59,10 @@ FileReader::FileReader (const FileReader &other, long length)
 FileReader::FileReader (const char *filename)
 : File(NULL), Length(0), StartPos(0), FilePos(0), CloseOnDestruct(false)
 {
-	File = fopen (filename, "rb");
-	if (File == NULL)
+	if (!Open(filename))
 	{
 		I_Error ("Could not open %s", filename);
 	}
-	CloseOnDestruct = true;
-	Length = CalcFileLen();
 }
 
 FileReader::FileReader (FILE *file)
@@ -88,6 +85,18 @@ FileReader::~FileReader ()
 		File = NULL;
 	}
 }
+
+bool FileReader::Open (const char *filename)
+{
+	File = fopen (filename, "rb");
+	if (File == NULL) return false;
+	FilePos = 0;
+	StartPos = 0;
+	CloseOnDestruct = true;
+	Length = CalcFileLen();
+	return true;
+}
+
 
 void FileReader::ResetFilePtr ()
 {
@@ -134,13 +143,12 @@ long FileReader::Read (void *buffer, long len)
 
 char *FileReader::Gets(char *strbuf, int len)
 {
-	if (FilePos + len > StartPos + Length)
-	{
-		len = Length - FilePos + StartPos;
-	}
 	if (len <= 0) return 0;
 	char *p = fgets(strbuf, len, File);
-	FilePos += len;
+	if (p != NULL)
+	{
+		FilePos = ftell(File) - StartPos;
+	}
 	return p;
 }
 
@@ -150,16 +158,26 @@ char *FileReader::GetsFromBuffer(const char * bufptr, char *strbuf, int len)
 	if (len <= 0) return NULL;
 
 	char *p = strbuf;
-	while (len > 1 && bufptr[FilePos] != 0)
+	while (len > 1)
 	{
+		if (bufptr[FilePos] == 0)
+		{
+			FilePos++;
+			break;
+		}
 		if (bufptr[FilePos] != '\r')
 		{
 			*p++ = bufptr[FilePos];
 			len--;
-			if (bufptr[FilePos] == '\n') break;
+			if (bufptr[FilePos] == '\n') 
+			{
+				FilePos++;
+				break;
+			}
 		}
 		FilePos++;
 	}
+	if (p==strbuf) return NULL;
 	*p++=0;
 	return strbuf;
 }
