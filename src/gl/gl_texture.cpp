@@ -302,9 +302,9 @@ static CopyFunc copyfuncs[]={
 //===========================================================================
 void OpenGLFrameBuffer::CopyPixelDataRGB(BYTE * buffer, int texpitch, int texheight, int originx, int originy,
 										const BYTE * patch, int srcwidth, int srcheight, int step_x, int step_y,
-										int ct)
+										int rotate, int ct)
 {
-	if (ClipCopyPixelRect(texpitch>>2, texheight, originx, originy, patch, srcwidth, srcheight, step_x, step_y))
+	if (ClipCopyPixelRect(texpitch>>2, texheight, originx, originy, patch, srcwidth, srcheight, step_x, step_y, rotate))
 	{
 		buffer+=4*originx + texpitch*originy;
 		for (int y=0;y<srcheight;y++)
@@ -446,13 +446,13 @@ void ModifyPalette(PalEntry * pout, PalEntry * pin, int cm, int count)
 //===========================================================================
 void OpenGLFrameBuffer::CopyPixelData(BYTE * buffer, int texpitch, int texheight, int originx, int originy,
 										const BYTE * patch, int srcwidth, int srcheight, 
-										int step_x, int step_y, PalEntry * palette)
+										int step_x, int step_y, int rotate, PalEntry * palette)
 {
 	PalEntry penew[256];
 
 	int x,y,pos,i;
 
-	if (ClipCopyPixelRect(texpitch>>2, texheight, originx, originy, patch, srcwidth, srcheight, step_x, step_y))
+	if (ClipCopyPixelRect(texpitch>>2, texheight, originx, originy, patch, srcwidth, srcheight, step_x, step_y, rotate))
 	{
 		buffer+=4*originx + texpitch*originy;
 
@@ -568,11 +568,11 @@ void OpenGLFrameBuffer::CopyPixelData(BYTE * buffer, int texpitch, int texheight
 //
 //===========================================================================
 
-int FWarpTexture::CopyTrueColorPixels(BYTE * buffer, int buf_pitch, int buf_height, int xx, int yy)
+int FWarpTexture::CopyTrueColorPixels(BYTE * buffer, int buf_pitch, int buf_height, int xx, int yy, int rotate)
 {
 	if (gl_warp_shader || gl_glsl_renderer)
 	{
-		return SourcePic->CopyTrueColorPixels(buffer, buf_pitch, buf_height, xx, yy);
+		return SourcePic->CopyTrueColorPixels(buffer, buf_pitch, buf_height, xx, yy, rotate);
 	}
 
 	unsigned long * in=new unsigned long[Width*Height];
@@ -663,11 +663,11 @@ int FWarpTexture::CopyTrueColorPixels(BYTE * buffer, int buf_pitch, int buf_heig
 //
 //===========================================================================
 
-int FWarp2Texture::CopyTrueColorPixels(BYTE * buffer, int buf_pitch, int buf_height, int xx, int yy)
+int FWarp2Texture::CopyTrueColorPixels(BYTE * buffer, int buf_pitch, int buf_height, int xx, int yy, int rotate)
 {
 	if (gl_warp_shader || gl_glsl_renderer)
 	{
-		return SourcePic->CopyTrueColorPixels(buffer, buf_pitch, buf_height, xx, yy);
+		return SourcePic->CopyTrueColorPixels(buffer, buf_pitch, buf_height, xx, yy, rotate);
 	}
 
 	unsigned long * in=new unsigned long[Width*Height];

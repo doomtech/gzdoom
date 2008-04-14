@@ -66,11 +66,11 @@ public:
 	// texture copy functions
 	virtual void CopyPixelDataRGB(BYTE * buffer, int texwidth, int texheight, int originx, int originy,
 					     const BYTE * patch, int pix_width, int pix_height, int step_x, int step_y,
-						 int ct);
+						 int rotate, int ct);
 
 	virtual void CopyPixelData(BYTE * buffer, int texwidth, int texheight, int originx, int originy,
 					  const BYTE * patch, int pix_width, int pix_height, 
-					  int step_x, int step_y, PalEntry * palette);
+					  int step_x, int step_y, int rotate, PalEntry * palette);
 
 	void PrecacheTexture(FTexture *tex, bool cache);
 
