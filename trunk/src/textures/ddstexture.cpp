@@ -351,6 +351,10 @@ const BYTE *FDDSTexture::GetColumn (unsigned int column, const Span **spans_out)
 	}
 	if (spans_out != NULL)
 	{
+		if (Spans == NULL)
+		{
+			Spans = CreateSpans (Pixels);
+		}
 		*spans_out = Spans[column];
 	}
 	return Pixels + column*Height;
@@ -388,10 +392,6 @@ void FDDSTexture::MakeTexture ()
 	else if (Format == ID_DXT5 || Format == ID_DXT4)
 	{
 		DecompressDXT5 (lump, Format == ID_DXT4);
-	}
-	if (Spans == NULL)
-	{
-		Spans = CreateSpans (Pixels);
 	}
 }
 
@@ -742,7 +742,7 @@ void FDDSTexture::DecompressDXT5 (FWadLump &lump, bool premultiplied, BYTE *tcbu
 //
 //===========================================================================
 
-int FDDSTexture::CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf_height, int x, int y)
+int FDDSTexture::CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf_height, int x, int y, int rotate)
 {
 	FWadLump lump = Wads.OpenLumpNum (SourceLump);
 
@@ -768,7 +768,7 @@ int FDDSTexture::CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf_height
 	}
 
 	// All formats decompress to RGBA.
-	screen->CopyPixelDataRGB(buffer, buf_pitch, buf_height, x, y, TexBuffer, Width, Height, 4, Width*4, CF_RGBA);
+	screen->CopyPixelDataRGB(buffer, buf_pitch, buf_height, x, y, TexBuffer, Width, Height, 4, Width*4, rotate, CF_RGBA);
 	delete [] TexBuffer;
 	return -1;
 }	
