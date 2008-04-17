@@ -1056,6 +1056,10 @@ void APlayerPawn::ActivateMorphWeapon ()
 		if (player->ReadyWeapon == NULL)
 		{
 			player->ReadyWeapon = static_cast<AWeapon *>(player->mo->GiveInventoryType (morphweapon));
+			if (player->ReadyWeapon != NULL)
+			{
+				player->ReadyWeapon->GivenAsMorphWeapon = true; // flag is used only by new beastweap semantics in P_UndoPlayerMorph
+			}
 		}
 		if (player->ReadyWeapon != NULL)
 		{

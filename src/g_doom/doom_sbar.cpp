@@ -145,9 +145,9 @@ public:
 		player_t *oldplayer = CPlayer;
 
 		DBaseStatusBar::AttachToPlayer (player);
-		if (oldplayer != CPlayer)
+		if (oldplayer != CPlayer || savegamerestore/*added for morphing*/)
 		{
-			SetFace (&skins[CPlayer->userinfo.skin]);
+			SetFace (&skins[CPlayer->morphTics ? CPlayer->MorphedPlayerClass : CPlayer->userinfo.skin]);
 		}
 		if (multiplayer)
 		{
@@ -211,7 +211,7 @@ private:
 		void Unload ();
 		~FDoomStatusBarTexture ();
 		void SetPlayerRemap(FRemapTable *remap);
-		int CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf_height, int x, int y, int rotate);
+		int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf = NULL);
 
 		FTextureFormat GetFormat()
 		{
@@ -224,7 +224,7 @@ private:
 
 		FTexture *BaseTexture;
 		BYTE *Pixels;
-		FRemapTable *STBFremap;
+		FRemapTable *STFBRemap;
 	}
 	StatusBarTex;
 
@@ -1044,7 +1044,7 @@ DDoomStatusBar::FDoomStatusBarTexture::FDoomStatusBarTexture ()
 	// now copy all the properties from the base texture
 	CopySize(BaseTexture);
 	Pixels = NULL;
-	STBFremap = NULL;
+	STFBRemap = NULL;
 }
 
 const BYTE *DDoomStatusBar::FDoomStatusBarTexture::GetColumn (unsigned int column, const Span **spans_out)
@@ -1090,36 +1090,36 @@ void DDoomStatusBar::FDoomStatusBarTexture::MakeTexture ()
 	if (!deathmatch) DrawToBar("STARMS", 104, 0, NULL);
 	DrawToBar("STTPRCNT", 90, 3, NULL);
 	DrawToBar("STTPRCNT", 221, 3, NULL);
-	if (multiplayer) DrawToBar("STFBANY", 143, 1, STBFremap? STBFremap->Remap : NULL);
+	if (multiplayer) DrawToBar("STFBANY", 143, 1, STFBRemap? STFBRemap->Remap : NULL);
 }
 
-int DDoomStatusBar::FDoomStatusBarTexture::CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf_height, int x, int y, int rotate)
+int DDoomStatusBar::FDoomStatusBarTexture::CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf)
 {
 	FTexture *tex;
 
-	// rotate is never used here
-	BaseTexture->CopyTrueColorPixels(buffer, buf_pitch, buf_height, x, y);
+	// rotate and inf are never used here
+	BaseTexture->CopyTrueColorPixels(bmp, x, y);
 	if (!deathmatch)
 	{
 		tex = TexMan["STARMS"];
 		if (tex != NULL)
 		{
-			tex->CopyTrueColorPixels(buffer, buf_pitch, buf_height, x+104, y);
+			tex->CopyTrueColorPixels(bmp, x+104, y);
 		}
 	}
 
 	tex = TexMan["STTPRCNT"];
 	if (tex != NULL)
 	{
-		tex->CopyTrueColorPixels(buffer, buf_pitch, buf_height, x+90, y+3);
-		tex->CopyTrueColorPixels(buffer, buf_pitch, buf_height, x+221, y+3);
+		tex->CopyTrueColorPixels(bmp, x+90, y+3);
+		tex->CopyTrueColorPixels(bmp, x+221, y+3);
 	}
 	if (multiplayer)
 	{
 		tex = TexMan["STFBANY"];
 		if (tex != NULL)
 		{
-			tex->CopyTrueColorTranslated(buffer, buf_pitch, buf_height, x+143, y+1, STBFremap);
+			tex->CopyTrueColorTranslated(bmp, x+143, y+1, 0, STFBRemap);
 		}
 	}
 	return -1;
@@ -1141,7 +1141,7 @@ void DDoomStatusBar::FDoomStatusBarTexture::SetPlayerRemap(FRemapTable *remap)
 {
 	Unload();
 	KillNative();
-	STBFremap = remap;
+	STFBRemap = remap;
 }
 
 DBaseStatusBar *CreateDoomStatusBar ()
