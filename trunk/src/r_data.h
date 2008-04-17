@@ -94,7 +94,7 @@ public:
 	void Unload ();
 	virtual void SetFrontSkyLayer ();
 
-	int CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf_height, int x, int y, int rotate);
+	int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf = NULL);
 	int GetSourceLump() { return DefinitionLump; }
 
 protected:
@@ -107,10 +107,11 @@ protected:
 		SWORD OriginX, OriginY;
 		BYTE Rotate;
 		bool textureOwned;
+		FRemapTable *Translation;
+		PalEntry Blend;
 		FTexture *Texture;
 
 		TexPart();
-		~TexPart();
 	};
 
 	int NumParts;
@@ -261,7 +262,7 @@ public:
 	const BYTE *GetPixels ();
 	void Unload ();
 	FTextureFormat GetFormat ();
-	int CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf_height, int x, int y, int rotate);
+	int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf = NULL);
 	bool UseBasePalette();
 	int GetSourceLump() { return SourceLump; }
 
@@ -329,7 +330,7 @@ protected:
 	void DecompressDXT3 (FWadLump &lump, bool premultiplied, BYTE *tcbuf = NULL);
 	void DecompressDXT5 (FWadLump &lump, bool premultiplied, BYTE *tcbuf = NULL);
 
-	int CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf_height, int x, int y, int rotate);
+	int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf = NULL);
 	bool UseBasePalette();
 
 	friend class FTexture;
@@ -345,7 +346,7 @@ public:
 	const BYTE *GetPixels ();
 	void Unload ();
 	FTextureFormat GetFormat ();
-	int CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf_height, int x, int y, int rotate);
+	int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf = NULL);
 	bool UseBasePalette();
 	int GetSourceLump() { return SourceLump; }
 
@@ -397,7 +398,7 @@ public:
 	void Unload ();
 	FTextureFormat GetFormat ();
 
-	int CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf_height, int x, int y, int rotate);
+	int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf = NULL);
 	bool UseBasePalette();
 	int GetSourceLump() { return SourceLump; }
 
@@ -454,7 +455,7 @@ public:
 	void Unload ();
 	FTextureFormat GetFormat ();
 
-	int CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf_height, int x, int y, int rotate);
+	int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf = NULL);
 	bool UseBasePalette();
 	int GetSourceLump() { return SourceLump; }
 
@@ -492,7 +493,7 @@ public:
 	bool CheckModified ();
 
 	// [OpenGL]
-	int CopyTrueColorPixels(BYTE * buffer, int buf_width, int buf_height, int x, int y, int rotate);
+	int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf = NULL);
 	bool UseBasePalette() { return false; }
 	int GetSourceLump() { return SourcePic->GetSourceLump(); }
 
@@ -512,7 +513,7 @@ public:
 	FWarp2Texture (FTexture *source);
 
 	// [OpenGL]
-	int CopyTrueColorPixels(BYTE * buffer, int buf_width, int buf_height, int x, int y, int rotate);
+	int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf = NULL);
 	bool UseBasePalette() { return false; }
 
 protected:

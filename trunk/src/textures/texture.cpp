@@ -40,6 +40,7 @@
 #include "templates.h"
 #include "i_system.h"
 #include "r_translate.h"
+#include "bitmap.h"
 
 typedef bool (*CheckFunc)(FileReader & file);
 typedef FTexture * (*CreateFunc)(FileReader & file, int lumpnum);
@@ -120,7 +121,7 @@ FTexture::FTexture ()
 : LeftOffset(0), TopOffset(0),
   WidthBits(0), HeightBits(0), xScale(FRACUNIT), yScale(FRACUNIT),
   UseType(TEX_Any), bNoDecals(false), bNoRemap0(false), bWorldPanning(false),
-  bMasked(true), bAlphaTexture(false), bHasCanvas(false), bWarped(0), bIsPatch(false),
+  bMasked(true), bAlphaTexture(false), bHasCanvas(false), bWarped(0), bIsPatch(false), bComplex(false),
   Rotations(0xFFFF), Width(0), Height(0), WidthMask(0), Native(NULL)
 {
 	*Name = 0;
@@ -456,8 +457,11 @@ void FTexture::FillBuffer(BYTE *buff, int pitch, int height, FTextureFormat fmt)
 		break;
 
 	case TEX_RGB:
-		CopyTrueColorPixels(buff, pitch, height, 0, 0); 
+	{
+		FBitmap bmp(buff, pitch, pitch/4, height);
+		CopyTrueColorPixels(&bmp, 0, 0); 
 		break;
+	}
 
 	default:
 		I_Error("FTexture::FillBuffer: Unsupported format %d", fmt);
@@ -476,25 +480,21 @@ void FTexture::FillBuffer(BYTE *buff, int pitch, int height, FTextureFormat fmt)
 //
 //===========================================================================
 
-int FTexture::CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf_height, int x, int y, int rotate)
+int FTexture::CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf)
 {
 	PalEntry *palette = screen->GetPalette();
 	palette[0].a=255;	// temporarily modify the first color's alpha
-	screen->CopyPixelData(buffer, buf_pitch, buf_height, x, y,
-				  GetPixels(), Width, Height, Height, 1, 
-				  rotate, palette);
+	bmp->CopyPixelData(x, y, GetPixels(), Width, Height, Height, 1, rotate, palette, inf);
 
 	palette[0].a=0;
 	return 0;
 }
 
-int FTexture::CopyTrueColorTranslated(BYTE *buffer, int buf_pitch, int buf_height, int x, int y, FRemapTable *remap)
+int FTexture::CopyTrueColorTranslated(FBitmap *bmp, int x, int y, int rotate, FRemapTable *remap)
 {
 	PalEntry *palette = remap->Palette;
 	palette[0].a=255;	// temporarily modify the first color's alpha
-	screen->CopyPixelData(buffer, buf_pitch, buf_height, x, y,
-				  GetPixels(), Width, Height, Height, 1, 
-				  0, palette);
+	bmp->CopyPixelData(x, y, GetPixels(), Width, Height, Height, 1, rotate, palette);
 
 	palette[0].a=0;
 	return 0;

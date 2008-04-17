@@ -44,6 +44,8 @@
 #include "sc_man.h"
 #include "templates.h"
 #include "vectors.h"
+#include "r_translate.h"
+#include "bitmap.h"
 
 // On the Alpha, accessing the shorts directly if they aren't aligned on a
 // 4-byte boundary causes unaligned access warnings. Why it does this at
@@ -177,6 +179,11 @@ FMultiPatchTexture::~FMultiPatchTexture ()
 	Unload ();
 	if (Parts != NULL)
 	{
+		for(int i=0; i<NumParts;i++)
+		{
+			if (Parts[i].textureOwned && Parts[i].Texture != NULL) delete Parts[i].Texture;
+			if (Parts[i].Translation != NULL) delete Parts[i].Translation;
+		}
 		delete[] Parts;
 		Parts = NULL;
 	}
@@ -274,6 +281,70 @@ const BYTE *FMultiPatchTexture::GetColumn (unsigned int column, const Span **spa
 	return Pixels + column*Height;
 }
 
+
+//==========================================================================
+//
+// FMultiPatchTexture :: GetColumn
+//
+//==========================================================================
+
+BYTE * GetBlendMap(PalEntry blend, BYTE *blendwork)
+{
+
+	switch (blend.a==0 ? blend.r : -1)
+	{
+	case BLEND_INVERSEMAP:
+		return InverseColormap;
+
+	case BLEND_GOLDMAP:
+		return GoldColormap;
+
+	case BLEND_REDMAP:
+		return RedColormap;
+
+	case BLEND_GREENMAP:
+		return GreenColormap;
+
+	case BLEND_ICEMAP:
+		return TranslationToTable(TRANSLATION(TRANSLATION_Standard, 7))->Remap;
+
+	default:
+		if (blend.r >= BLEND_DESATURATE1 && blend.r <= BLEND_DESATURATE31)
+		{
+			return DesaturateColormap[blend - BLEND_DESATURATE1];
+		}
+		else 
+		{
+			blendwork[0]=0;
+			if (blend.a == 255)
+			{
+				for(int i=1;i<256;i++)
+				{
+					int rr = (blend.r * GPalette.BaseColors[i].r) / 255;
+					int gg = (blend.g * GPalette.BaseColors[i].g) / 255;
+					int bb = (blend.b * GPalette.BaseColors[i].b) / 255;
+
+					blendwork[i] = ColorMatcher.Pick(rr, gg, bb);
+				}
+				return blendwork;
+			}
+			else if (blend.a != 0)
+			{
+				for(int i=1;i<256;i++)
+				{
+					int rr = (blend.r * blend.a + GPalette.BaseColors[i].r * (255-blend.a)) / 255;
+					int gg = (blend.g * blend.a + GPalette.BaseColors[i].g * (255-blend.a)) / 255;
+					int bb = (blend.b * blend.a + GPalette.BaseColors[i].b * (255-blend.a)) / 255;
+
+					blendwork[i] = ColorMatcher.Pick(rr, gg, bb);
+				}
+				return blendwork;
+			}
+		}
+	}
+	return NULL;
+}
+
 //==========================================================================
 //
 // FMultiPatchTexture :: MakeTexture
@@ -285,14 +356,20 @@ void FMultiPatchTexture::MakeTexture ()
 	// Add a little extra space at the end if the texture's height is not
 	// a power of 2, in case somebody accidentally makes it repeat vertically.
 	int numpix = Width * Height + (1 << HeightBits) - Height;
+	BYTE blendwork[256];
 
 	Pixels = new BYTE[numpix];
 	memset (Pixels, 0, numpix);
 
 	for (int i = 0; i < NumParts; ++i)
 	{
+		BYTE *trans = Parts[i].Translation? Parts[i].Translation->Remap : NULL;
+		if (Parts[i].Blend != BLEND_NONE)
+		{
+			trans = GetBlendMap(Parts[i].Blend, blendwork);
+		}
 		Parts[i].Texture->CopyToBlock (Pixels, Width, Height,
-			Parts[i].OriginX, Parts[i].OriginY, Parts[i].Rotate);
+			Parts[i].OriginX, Parts[i].OriginY, Parts[i].Rotate, trans);
 	}
 }
 
@@ -304,14 +381,69 @@ void FMultiPatchTexture::MakeTexture ()
 //
 //===========================================================================
 
-int FMultiPatchTexture::CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf_height, int x, int y, int rotate)
+int FMultiPatchTexture::CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf)
 {
 	int retv = -1;
+	FCopyInfo info;
 
 	for(int i=0;i<NumParts;i++)
 	{
-		int ret = Parts[i].Texture->CopyTrueColorPixels(buffer, buf_pitch, buf_height, 
-									x+Parts[i].OriginX, y+Parts[i].OriginY, Parts[i].Rotate);
+		int ret;
+
+		if (!Parts[i].Texture->bComplex || inf == NULL)
+		{
+			memset (&info, 0, sizeof (info));
+			if (Parts[i].Translation != NULL)
+			{
+				// Using a translation forces downconversion to the base palette
+				ret = Parts[i].Texture->CopyTrueColorTranslated(bmp, x+Parts[i].OriginX, y+Parts[i].OriginY, Parts[i].Rotate, Parts[i].Translation);
+			}
+			else
+			{
+				PalEntry b = Parts[i].Blend;
+				if (b.a == 0 && b.r != BLEND_NONE)
+				{
+					info.blend = EBlend(b.r);
+					inf = &info;
+				}
+				else if (b.a != 0)
+				{
+					if (b.a == 255)
+					{
+						info.blendcolor[0] = b.r * FRACUNIT / 255;
+						info.blendcolor[1] = b.g * FRACUNIT / 255;
+						info.blendcolor[2] = b.b * FRACUNIT / 255;
+						info.blend = BLEND_MODULATE;
+						inf = &info;
+					}
+					else
+					{
+						info.blendcolor[3] = b.a * FRACUNIT / 255;
+						info.blendcolor[0] = b.r * (FRACUNIT-info.blendcolor[3]);
+						info.blendcolor[1] = b.g * (FRACUNIT-info.blendcolor[3]);
+						info.blendcolor[2] = b.b * (FRACUNIT-info.blendcolor[3]);
+
+						info.blend = BLEND_OVERLAY;
+						inf = &info;
+					}
+				}
+				ret = Parts[i].Texture->CopyTrueColorPixels(bmp, x+Parts[i].OriginX, y+Parts[i].OriginY, Parts[i].Rotate, inf);
+			}
+		}
+		else
+		{
+			// If the patch is a texture with some kind of processing involved
+			// and being drawn with additional processing
+			// the copying must be done in 2 steps: First create a complete image of the patch
+			// including all processing and then copy from that intermediate image to the destination
+			FBitmap bmp1;
+			if (bmp1.Create(Parts[i].Texture->GetWidth(), Parts[i].Texture->GetHeight()))
+			{
+				Parts[i].Texture->CopyTrueColorPixels(&bmp1, 0, 0);
+				bmp->CopyPixelDataRGB(x+Parts[i].OriginX, y+Parts[i].OriginY, bmp1.GetPixels(), 
+					bmp1.GetWidth(), bmp1.GetHeight(), 4, bmp1.GetPitch()*4, Parts[i].Rotate, CF_BGRA, inf);
+			}
+		}
 
 		if (ret > retv) retv = ret;
 	}
@@ -328,6 +460,7 @@ int FMultiPatchTexture::CopyTrueColorPixels(BYTE *buffer, int buf_pitch, int buf
 
 FTextureFormat FMultiPatchTexture::GetFormat() 
 { 
+	if (bComplex) return TEX_RGB;
 	if (NumParts == 1) return Parts[0].Texture->GetFormat();
 	return UseBasePalette() ? TEX_Pal : TEX_RGB;
 }
@@ -344,6 +477,7 @@ FTextureFormat FMultiPatchTexture::GetFormat()
 
 bool FMultiPatchTexture::UseBasePalette() 
 { 
+	if (bComplex) return false;
 	for(int i=0;i<NumParts;i++)
 	{
 		if (!Parts[i].Texture->UseBasePalette()) return false;
@@ -490,18 +624,8 @@ FMultiPatchTexture::TexPart::TexPart()
 	Rotate = 0;
 	textureOwned = false;
 	Texture = NULL;
-}
-
-//==========================================================================
-//
-// FMultiPatchTexture :: TexPart :: TexPart
-//
-//==========================================================================
-
-FMultiPatchTexture::TexPart::~TexPart()
-{
-	if (textureOwned && Texture != NULL) delete Texture;
-	Texture = NULL;
+	Translation = NULL;
+	Blend = 0;
 }
 
 //==========================================================================
@@ -674,6 +798,17 @@ void FTextureManager::AddTexturesLumps (int lump1, int lump2, int patcheslump)
 }
 
 
+static bool Check(char *& range,  char c)
+{
+	while (isspace(*range)) range++;
+	if (*range==c)
+	{
+		range++;
+		return true;
+	}
+	return false;
+}
+
 void FMultiPatchTexture::ParsePatch(FScanner &sc, TexPart & part)
 {
 	FString patchname;
@@ -690,10 +825,20 @@ void FMultiPatchTexture::ParsePatch(FScanner &sc, TexPart & part)
 			part.Texture = FTexture::CreateTexture(lumpnum, TEX_WallPatch);
 			part.textureOwned = true;
 		}
+		else if (strlen(sc.String) <= 8 && !strpbrk(sc.String, "./"))
+		{
+			int lumpnum = Wads.CheckNumForName(sc.String, ns_patches);
+			if (lumpnum >= 0)
+			{
+				part.Texture = FTexture::CreateTexture(lumpnum, TEX_WallPatch);
+				TexMan.AddTexture(part.Texture);
+			}
+		}
 	}
 	else
 	{
 		part.Texture = TexMan[texno];
+		bComplex |= part.Texture->bComplex;
 	}
 	if (part.Texture == NULL)
 	{
@@ -727,6 +872,113 @@ void FMultiPatchTexture::ParsePatch(FScanner &sc, TexPart & part)
 					sc.ScriptError("Rotation must be 0, 90, 180 or -90 degrees");
 				}
 				part.Rotate = (sc.Number / 90) & 3;
+			}
+			else if (sc.Compare("Translation"))
+			{
+				bComplex = true;
+				if (part.Translation != NULL) delete part.Translation;
+				part.Translation = NULL;
+				part.Blend = 0;
+				static const char *maps[] = { "inverse", "gold", "red", "green", "ice", "desaturate", NULL };
+				sc.MustGetString();
+				int match = sc.MatchString(maps);
+				if (match >= 0)
+				{
+					part.Blend.r = 1 + match;
+					if (part.Blend.r == BLEND_DESATURATE1)
+					{
+						sc.MustGetStringName(",");
+						sc.MustGetNumber();
+						part.Blend.r += clamp(sc.Number-1, 0, 30);
+					}
+				}
+				else
+				{
+					sc.UnGet();
+					part.Translation = new FRemapTable;
+					part.Translation->MakeIdentity();
+					do
+					{
+						sc.MustGetString();
+
+						char *range = sc.String;
+						int start,end;
+
+						start=strtol(range, &range, 10);
+						if (!Check(range, ':')) return;
+						end=strtol(range, &range, 10);
+						if (!Check(range, '=')) return;
+						if (!Check(range, '['))
+						{
+							int pal1,pal2;
+
+							pal1=strtol(range, &range, 10);
+							if (!Check(range, ':')) return;
+							pal2=strtol(range, &range, 10);
+
+							part.Translation->AddIndexRange(start, end, pal1, pal2);
+						}
+						else
+						{ 
+							// translation using RGB values
+							int r1,g1,b1,r2,g2,b2;
+
+							r1=strtol(range, &range, 10);
+							if (!Check(range, ',')) return;
+							g1=strtol(range, &range, 10);
+							if (!Check(range, ',')) return;
+							b1=strtol(range, &range, 10);
+							if (!Check(range, ']')) return;
+							if (!Check(range, ':')) return;
+							if (!Check(range, '[')) return;
+							r2=strtol(range, &range, 10);
+							if (!Check(range, ',')) return;
+							g2=strtol(range, &range, 10);
+							if (!Check(range, ',')) return;
+							b2=strtol(range, &range, 10);
+							if (!Check(range, ']')) return;
+
+							part.Translation->AddColorRange(start, end, r1, g1, b1, r2, g2, b2);
+						}
+					}
+					while (sc.CheckString(","));
+				}
+
+			}
+			else if (sc.Compare("Blend"))
+			{
+				bComplex = true;
+				if (part.Translation != NULL) delete part.Translation;
+				part.Translation = NULL;
+				part.Blend = 0;
+
+				if (!sc.CheckNumber())
+				{
+					sc.MustGetString();
+					part.Blend = V_GetColor(NULL, sc.String);
+				}
+				else
+				{
+					int r,g,b;
+
+					sc.MustGetNumber();
+					sc.MustGetStringName(",");
+					r = sc.Number;
+					sc.MustGetNumber();
+					sc.MustGetStringName(",");
+					g = sc.Number;
+					sc.MustGetNumber();
+					sc.MustGetStringName(",");
+					b = sc.Number;
+					part.Blend = MAKERGB(r, g, b);
+				}
+				if (sc.CheckString(","))
+				{
+					sc.MustGetFloat();
+					part.Blend.a = clamp<int>(int(sc.Float*255), 1, 254);
+				}
+				else part.Blend.a = 255;
+				bComplex = true;
 			}
 		}
 	}
@@ -790,7 +1042,9 @@ FMultiPatchTexture::FMultiPatchTexture (FScanner &sc, int usetype)
 			{
 				TexPart part;
 				ParsePatch(sc, part);
-				parts.Push(part);
+				if (part.Texture != NULL) parts.Push(part);
+				part.Texture = NULL;
+				part.Translation = NULL;
 			}
 		}
 

@@ -76,9 +76,9 @@ public:
 		if (faces[0]) return faces[0]->GetPixels();
 		return NULL;
 	}
-	virtual int CopyTrueColorPixels(BYTE * buffer, int buf_width, int buf_height, int x, int y)
+	virtual int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf)
 	{
-		if (faces[0]) return faces[0]->CopyTrueColorPixels(buffer, buf_width, buf_height, x, y);
+		if (faces[0]) return faces[0]->CopyTrueColorPixels(bmp, x, y, rotate, inf);
 		return 0;
 	}
 	bool UseBasePalette() { return false; }	// not really but here it's not important.

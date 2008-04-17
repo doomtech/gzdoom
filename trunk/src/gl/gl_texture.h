@@ -5,6 +5,7 @@
 #include "gl/gltexture.h"
 #include "r_data.h"
 #include "i_system.h"
+#include "textures/bitmap.h"
 
 EXTERN_CVAR(Bool, gl_precache)
 EXTERN_CVAR(Bool, gl_brightmap_shader)
@@ -13,6 +14,31 @@ struct GL_RECT;
 
 void ModifyPalette(PalEntry * pout, PalEntry * pin, int cm, int count);
 void CopyColorsRGBA(unsigned char * pout, const unsigned char * pin, int cm, int count, int step);
+
+class FGLBitmap : public FBitmap
+{
+	int cm;
+	int translation;
+public:
+
+	FGLBitmap() {}
+	FGLBitmap(BYTE *buffer, int pitch, int width, int height)
+		: FBitmap(buffer, pitch, width, height)
+	{}
+
+	void SetTranslationInfo(int _cm, int _trans=-1337)
+	{
+		if (_cm != -1) cm = _cm;
+		if (_trans != -1337) translation = _trans;
+
+	}
+
+	virtual void CopyPixelDataRGB(int originx, int originy, const BYTE *patch, int srcwidth, 
+								int srcheight, int step_x, int step_y, int rotate, int ct, FCopyInfo *inf = NULL);
+	virtual void CopyPixelData(int originx, int originy, const BYTE * patch, int srcwidth, int srcheight, 
+								int step_x, int step_y, int rotate, PalEntry * palette, FCopyInfo *inf = NULL);
+};
+
 
 // Two intermediate classes which wrap the low level textures.
 // These ones are returned by the Bind* functions to ensure
@@ -125,7 +151,7 @@ private:
 	static bool SmoothEdges(unsigned char * buffer,int w, int h, bool clampsides);
 	int CheckDDPK3();
 	int CheckExternalFile(bool & hascolorkey);
-	unsigned char * LoadHiresTexture(int *width, int *height);
+	unsigned char * LoadHiresTexture(int *width, int *height, int cm);
 
 
 	void SetSize(int w, int h)
@@ -247,7 +273,7 @@ public:
 	const BYTE *GetPixels ();
 	void Unload ();
 
-	int CopyTrueColorPixels(BYTE * buffer, int buf_width, int buf_height, int x, int y);
+	int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf);
 	bool UseBasePalette() { return false; }
 
 protected:
