@@ -300,6 +300,7 @@ fail:
 			sp->panning = panning & 0x7f;
 		}
 		sp->panning |= sp->panning << 7;
+		song->compute_pan(sp->panning, sp->left_offset, sp->right_offset);
 
 		/* tremolo */
 		if (patch_data.TremoloRate == 0 || patch_data.TremoloDepth == 0)
@@ -347,6 +348,10 @@ fail:
 		{
 			sp->scale_note = LittleShort(patch_data.ScaleFrequency);
 			sp->scale_factor = LittleShort(patch_data.ScaleFactor);
+			if (sp->scale_factor <= 2)
+			{
+				sp->scale_factor *= 1024;
+			}
 			if (sp->scale_factor != 1024)
 			{
 				cmsg(CMSG_INFO, VERB_DEBUG, " * Scale: note %d, factor %d\n",

@@ -21,10 +21,10 @@ class FGLBitmap : public FBitmap
 	int translation;
 public:
 
-	FGLBitmap() {}
+	FGLBitmap() { cm = CM_DEFAULT; translation = 0; }
 	FGLBitmap(BYTE *buffer, int pitch, int width, int height)
 		: FBitmap(buffer, pitch, width, height)
-	{}
+	{ cm = CM_DEFAULT; translation = 0; }
 
 	void SetTranslationInfo(int _cm, int _trans=-1337)
 	{
@@ -121,6 +121,12 @@ class FGLTexture : public FNativeTexture, protected WorldTextureInfo, protected 
 
 	static TArray<FGLTexture *> gltextures;
 public:
+	enum ETexUse
+	{
+		GLUSE_PATCH,
+		GLUSE_TEXTURE,
+	};
+
 	FTexture * tex;
 	FTexture * hirestexture;
 	char bIsTransparent;
@@ -135,12 +141,12 @@ private:
 	GL_RECT * areas;
 	GLShader * Shader;
 
-	short LeftOffset;
-	short TopOffset;
-	short Width;
-	short Height;
-	short RenderWidth;
-	short RenderHeight;
+	short LeftOffset[2];
+	short TopOffset[2];
+	short Width[2];
+	short Height[2];
+	short RenderWidth[2];
+	short RenderHeight[2];
 	float AlphaThreshold;
 
 	virtual bool Update();
@@ -154,14 +160,6 @@ private:
 	unsigned char * LoadHiresTexture(int *width, int *height, int cm);
 
 
-	void SetSize(int w, int h)
-	{
-		Width=w;
-		Height=h;
-		scalex=(float)Width/RenderWidth;
-		scaley=(float)Height/RenderHeight;
-	}
-
 	void CheckForAlpha(const unsigned char * buffer);
 
 	const WorldTextureInfo * Bind(int texunit, int cm, int clamp, int translation);
@@ -171,7 +169,7 @@ public:
 	FGLTexture(FTexture * tx);
 	~FGLTexture();
 
-	unsigned char * CreateTexBuffer(int cm, int translation, int & w, int & h, bool allowhires=true);
+	unsigned char * CreateTexBuffer(ETexUse use, int cm, int translation, int & w, int & h, bool allowhires=true);
 	const WorldTextureInfo * Bind(int cm, int clamp=0, int translation=0);
 	const PatchTextureInfo * BindPatch(int cm, int translation=0);
 
@@ -186,10 +184,10 @@ public:
 
 	// Patch drawing utilities
 
-	void GetRect(GL_RECT * r) const;
+	void GetRect(GL_RECT * r, ETexUse i) const;
 
-	int TextureHeight() const { return RenderHeight; }
-	int TextureWidth() const { return RenderWidth; }
+	int TextureHeight(ETexUse i) const { return RenderHeight[i]; }
+	int TextureWidth(ETexUse i) const { return RenderWidth[i]; }
 
 	int GetAreaCount() const { return areacount; }
 	GL_RECT * GetAreas() const { return areas; }
@@ -207,40 +205,40 @@ public:
 	}
 
 	// Returns the size for which texture offset coordinates are used.
-	fixed_t TextureAdjustWidth() const
+	fixed_t TextureAdjustWidth(ETexUse i) const
 	{
-		if (tex->bWorldPanning) return RenderWidth;
-		else return Width;
+		if (tex->bWorldPanning) return RenderWidth[i];
+		else return Width[i];
 	}
 
-	int GetWidth() const
+	int GetWidth(ETexUse i) const
 	{
-		return Width;
+		return Width[i];
 	}
 
-	int GetHeight() const
+	int GetHeight(ETexUse i) const
 	{
-		return Height;
+		return Height[i];
 	}
 
-	int GetLeftOffset() const
+	int GetLeftOffset(ETexUse i) const
 	{
-		return LeftOffset;
+		return LeftOffset[i];
 	}
 
-	int GetTopOffset() const
+	int GetTopOffset(ETexUse i) const
 	{
-		return TopOffset;
+		return TopOffset[i];
 	}
 
-	int GetScaledLeftOffset() const
+	int GetScaledLeftOffset(ETexUse i) const
 	{
-		return DivScale16(LeftOffset, tex->xScale);
+		return DivScale16(LeftOffset[i], tex->xScale);
 	}
 
-	int GetScaledTopOffset() const
+	int GetScaledTopOffset(ETexUse i) const
 	{
-		return DivScale16(TopOffset, tex->yScale);
+		return DivScale16(TopOffset[i], tex->yScale);
 	}
 
 	int GetIndex() const

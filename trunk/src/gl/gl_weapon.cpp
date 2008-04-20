@@ -90,25 +90,25 @@ static void DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy,
 	// calculate edges of the shape
 	scalex=FRACUNIT * vw / 320 * BaseRatioSizes[WidescreenRatio][3] / 48;
 
-	tx = sx - ((160 + tex->GetScaledLeftOffset())<<FRACBITS);
+	tx = sx - ((160 + tex->GetScaledLeftOffset(FGLTexture::GLUSE_PATCH))<<FRACBITS);
 	x1 = (FixedMul(tx, scalex)>>FRACBITS) + (vw>>1);
 	if (x1 > vw)	return; // off the right side
 	x1+=viewwindowx;
 
-	tx +=  tex->TextureWidth() << FRACBITS;
+	tx +=  tex->TextureWidth(FGLTexture::GLUSE_PATCH) << FRACBITS;
 	x2 = (FixedMul(tx, scalex)>>FRACBITS) + (vw>>1);
 	if (x2 < 0) return; // off the left side
 	x2+=viewwindowx;
 
 	// killough 12/98: fix psprite positioning problem
-	texturemid = (100<<FRACBITS) - (sy-(tex->GetScaledTopOffset()<<FRACBITS));
+	texturemid = (100<<FRACBITS) - (sy-(tex->GetScaledTopOffset(FGLTexture::GLUSE_PATCH)<<FRACBITS));
 
 	AWeapon * wi=player->ReadyWeapon;
 	if (wi && wi->YAdjust && screenblocks>=11) texturemid -= wi->YAdjust;
 
 	scale = ((SCREENHEIGHT*vw)/SCREENWIDTH) / 200.0f;    
 	y1=viewwindowy+(vh>>1)-(int)(((float)texturemid/(float)FRACUNIT)*scale);
-	y2=y1+(int)((float)tex->TextureHeight()*scale)+1;
+	y2=y1+(int)((float)tex->TextureHeight(FGLTexture::GLUSE_PATCH)*scale)+1;
 
 	if (!mirror)
 	{

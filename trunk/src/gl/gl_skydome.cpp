@@ -182,7 +182,7 @@ static PalEntry SkyCapColor(unsigned int texno, bool bottom)
 			{
 				int w;
 				int h;
-				unsigned char * buffer = tex->CreateTexBuffer(CM_DEFAULT, 0, w, h);
+				unsigned char * buffer = tex->CreateTexBuffer(FGLTexture::GLUSE_TEXTURE, CM_DEFAULT, 0, w, h);
 
 				if (buffer)
 				{
@@ -387,8 +387,8 @@ static void RenderDome(int texno, FGLTexture * tex, float x_offset, float y_offs
 	if (tex)
 	{
 		tex->Bind(CM_Index);
-		texw = tex->TextureWidth();
-		texh = tex->TextureHeight();
+		texw = tex->TextureWidth(FGLTexture::GLUSE_TEXTURE);
+		texh = tex->TextureHeight(FGLTexture::GLUSE_TEXTURE);
 
 		if (texh>190 && skystretch) texh=190;
 
