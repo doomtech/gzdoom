@@ -852,12 +852,15 @@ FGLTexture::FGLTexture(FTexture * tx)
 
 	bHasColorkey = false;
 
-	Width = tex->GetWidth();
-	Height = tex->GetHeight();
-	LeftOffset = tex->LeftOffset;
-	TopOffset = tex->TopOffset;
-	RenderWidth = tex->GetScaledWidth();
-	RenderHeight = tex->GetScaledHeight();
+	for (int i=GLUSE_PATCH; i<=GLUSE_TEXTURE; i++)
+	{
+		Width[i] = tex->GetWidth();
+		Height[i] = tex->GetHeight();
+		LeftOffset[i] = tex->LeftOffset;
+		TopOffset[i] = tex->TopOffset;
+		RenderWidth[i] = tex->GetScaledWidth();
+		RenderHeight[i] = tex->GetScaledHeight();
+	}
 
 	scalex = tex->xScale/(float)FRACUNIT;
 	scaley = tex->yScale/(float)FRACUNIT;
@@ -869,12 +872,12 @@ FGLTexture::FGLTexture(FTexture * tx)
 		tex->UseType == FTexture::TEX_SkinSprite || 
 		tex->UseType == FTexture::TEX_Decal)
 	{
-		RenderWidth+=2;
-		RenderHeight+=2;
-		Width+=2;
-		Height+=2;
-		LeftOffset+=1;
-		TopOffset+=1;
+		RenderWidth[GLUSE_PATCH]+=2;
+		RenderHeight[GLUSE_PATCH]+=2;
+		Width[GLUSE_PATCH]+=2;
+		Height[GLUSE_PATCH]+=2;
+		LeftOffset[GLUSE_PATCH]+=1;
+		TopOffset[GLUSE_PATCH]+=1;
 	}
 
 	if ((gl.flags & RFL_GLSL) && tx->UseBasePalette() && HasGlobalBrightmap &&
@@ -932,12 +935,12 @@ bool FGLTexture::Update ()
 // GetRect
 //
 //===========================================================================
-void FGLTexture::GetRect(GL_RECT * r) const
+void FGLTexture::GetRect(GL_RECT * r, FGLTexture::ETexUse i) const
 {
-	r->left=-(float)GetScaledLeftOffset();
-	r->top=-(float)GetScaledTopOffset();
-	r->width=(float)TextureWidth();
-	r->height=(float)TextureHeight();
+	r->left=-(float)GetScaledLeftOffset(i);
+	r->top=-(float)GetScaledTopOffset(i);
+	r->width=(float)TextureWidth(i);
+	r->height=(float)TextureHeight(i);
 }
 
 //===========================================================================
@@ -1171,10 +1174,11 @@ void FGLTexture::Clean(bool all)
 //
 //===========================================================================
 
-unsigned char * FGLTexture::CreateTexBuffer(int _cm, int translation, int & w, int & h, bool allowhires)
+unsigned char * FGLTexture::CreateTexBuffer(ETexUse use, int _cm, int translation, int & w, int & h, bool allowhires)
 {
 	unsigned char * buffer;
 	intptr_t cm = _cm;
+	int W, H;
 
 
 	// Textures that are already scaled in the texture lump will not get replaced
@@ -1188,14 +1192,14 @@ unsigned char * FGLTexture::CreateTexBuffer(int _cm, int translation, int & w, i
 		}
 	}
 
-	w=Width;
-	h=Height;
+	W = w = Width[use];
+	H = h = Height[use];
 
 
-	buffer=new unsigned char[Width*(Height+1)*4];
-	memset(buffer, 0, Width * (Height+1) * 4);
+	buffer=new unsigned char[W*(H+1)*4];
+	memset(buffer, 0, W * (H+1) * 4);
 
-	FGLBitmap bmp(buffer, Width*4, Width, Height);
+	FGLBitmap bmp(buffer, W*4, W, H);
 	bmp.SetTranslationInfo(cm, translation);
 
 	if (tex->bComplex)
@@ -1204,21 +1208,21 @@ unsigned char * FGLTexture::CreateTexBuffer(int _cm, int translation, int & w, i
 
 		// The texture contains special processing so it must be composited using with the
 		// base bitmap class and then be converted as a whole.
-		if (imgCreate.Create(Width, Height))
+		if (imgCreate.Create(W, H))
 		{
-			memset(imgCreate.GetPixels(), 0, Width * Height * 4);
+			memset(imgCreate.GetPixels(), 0, W * H * 4);
 			int trans = 
-				tex->CopyTrueColorPixels(&imgCreate, GetLeftOffset() - tex->LeftOffset, GetTopOffset() - tex->TopOffset);
-			bmp.CopyPixelDataRGB(0, 0, imgCreate.GetPixels(), Width, Height, 4, Width*4, 0, CF_BGRA);
-			CheckTrans(buffer, w*h, trans);
+				tex->CopyTrueColorPixels(&imgCreate, GetLeftOffset(use) - tex->LeftOffset, GetTopOffset(use) - tex->TopOffset);
+			bmp.CopyPixelDataRGB(0, 0, imgCreate.GetPixels(), W, H, 4, W * 4, 0, CF_BGRA);
+			CheckTrans(buffer, W*H, trans);
 		}
 	}
 	else if (translation<=0)
 	{
 		int trans = 
-			tex->CopyTrueColorPixels(&bmp, GetLeftOffset() - tex->LeftOffset, GetTopOffset() - tex->TopOffset);
+			tex->CopyTrueColorPixels(&bmp, GetLeftOffset(use) - tex->LeftOffset, GetTopOffset(use) - tex->TopOffset);
 
-		CheckTrans(buffer, w*h, trans);
+		CheckTrans(buffer, W*H, trans);
 
 	}
 	else
@@ -1226,7 +1230,7 @@ unsigned char * FGLTexture::CreateTexBuffer(int _cm, int translation, int & w, i
 		// When using translations everything must be mapped to the base palette.
 		// Since FTexture's method is doing exactly that by calling GetPixels let's use that here
 		// to do all the dirty work for us. ;)
-		tex->FTexture::CopyTrueColorPixels(&bmp, GetLeftOffset() - tex->LeftOffset, GetTopOffset() - tex->TopOffset);
+		tex->FTexture::CopyTrueColorPixels(&bmp, GetLeftOffset(use) - tex->LeftOffset, GetTopOffset(use) - tex->TopOffset);
 	}
 
 	return buffer;
@@ -1243,7 +1247,7 @@ const WorldTextureInfo * FGLTexture::GetWorldTextureInfo()
 {
 
 	if (tex->UseType==FTexture::TEX_Null) return NULL;		// Cannot register a NULL texture!
-	if (!gltexture) gltexture=new GLTexture(Width, Height, true, true);
+	if (!gltexture) gltexture=new GLTexture(Width[GLUSE_TEXTURE], Height[GLUSE_TEXTURE], true, true);
 	if (gltexture) return (WorldTextureInfo*)this; 	
 	return NULL;
 }
@@ -1260,7 +1264,7 @@ const PatchTextureInfo * FGLTexture::GetPatchTextureInfo()
 	if (tex->UseType==FTexture::TEX_Null) return NULL;		// Cannot register a NULL texture!
 	if (!glpatch) 
 	{
-		glpatch=new GLTexture(Width, Height, false, false);
+		glpatch=new GLTexture(Width[GLUSE_PATCH], Height[GLUSE_PATCH], false, false);
 	}
 	if (glpatch) return (PatchTextureInfo*)this; 	
 	return NULL;
@@ -1344,7 +1348,7 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 			int w,h;
 
 			// Create this texture
-			unsigned char * buffer = CreateTexBuffer(cm, translation, w, h);
+			unsigned char * buffer = CreateTexBuffer(GLUSE_TEXTURE, cm, translation, w, h);
 
 			ProcessData(buffer, w, h, cm, false);
 			if (!gltexture->CreateTexture(buffer, w, h, true, texunit, cm, translation)) 
@@ -1448,7 +1452,7 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 			int w, h;
 
 			// Create this texture
-			unsigned char * buffer = CreateTexBuffer(cm, translation, w, h, false);
+			unsigned char * buffer = CreateTexBuffer(GLUSE_PATCH, cm, translation, w, h, false);
 			ProcessData(buffer, w, h, cm, true);
 			if (!glpatch->CreateTexture(buffer, w, h, false, texunit, cm, translation)) 
 			{
