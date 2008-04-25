@@ -452,7 +452,7 @@ void FGLBitmap::CopyPixelData(int originx, int originy, const BYTE * patch, int 
 			for(int i=0;i<256;i++) 
 			{
 				if (palette[i].a != 0)
-					penew[i]=PalEntry(255,255,255,255);
+					penew[i]=PalEntry(i, 255,255,255);
 				else
 					penew[i]=PalEntry(0,255,255,255);	// If the palette contains transparent colors keep them.
 			}
