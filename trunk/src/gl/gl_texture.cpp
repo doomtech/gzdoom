@@ -324,6 +324,7 @@ void ModifyPalette(PalEntry * pout, PalEntry * pin, int cm, int count)
 		{
 			int gray = (pin[i].r*77 + pin[i].g*143 + pin[i].b*37) >> 8;
 			gl_InverseMap(gray, pout[i].r, pout[i].g, pout[i].b);
+			pout[i].a = pin[i].a;
 		}
 		break;
 
@@ -333,6 +334,7 @@ void ModifyPalette(PalEntry * pout, PalEntry * pin, int cm, int count)
 		{
 			int gray = (pin[i].r*77 + pin[i].g*143 + pin[i].b*37) >> 8;
 			gl_GoldMap(gray, pout[i].r, pout[i].g, pout[i].b);
+			pout[i].a = pin[i].a;
 		}
 		break;
 
@@ -342,6 +344,7 @@ void ModifyPalette(PalEntry * pout, PalEntry * pin, int cm, int count)
 		{
 			int gray = (pin[i].r*77 + pin[i].g*143 + pin[i].b*37) >> 8;
 			gl_RedMap(gray, pout[i].r, pout[i].g, pout[i].b);
+			pout[i].a = pin[i].a;
 		}
 		break;
 
@@ -351,6 +354,7 @@ void ModifyPalette(PalEntry * pout, PalEntry * pin, int cm, int count)
 		{
 			int gray = (pin[i].r*77 + pin[i].g*143 + pin[i].b*37) >> 8;
 			gl_GreenMap(gray, pout[i].r, pout[i].g, pout[i].b);
+			pout[i].a = pin[i].a;
 		}
 		break;
 
@@ -447,10 +451,10 @@ void FGLBitmap::CopyPixelData(int originx, int originy, const BYTE * patch, int 
 		{
 			for(int i=0;i<256;i++) 
 			{
-				if (palette[i].a!=255)
-					penew[i]=PalEntry(255-i,255,255,255);
+				if (palette[i].a != 0)
+					penew[i]=PalEntry(255,255,255,255);
 				else
-					penew[i]=0xffffffff;	// If the palette contains transparent colors keep them.
+					penew[i]=PalEntry(0,255,255,255);	// If the palette contains transparent colors keep them.
 			}
 		}
 		else
@@ -503,13 +507,14 @@ void FGLBitmap::CopyPixelData(int originx, int originy, const BYTE * patch, int 
 			for (x=0;x<srcwidth;x++,pos+=4)
 			{
 				int v=(unsigned char)patch[y*step_y+x*step_x];
-				if (penew[v].a==0)
+				if (penew[v].a!=0)
 				{
-					buffer[pos]=penew[v].r;
-					buffer[pos+1]=penew[v].g;
-					buffer[pos+2]=penew[v].b;
-					buffer[pos+3]=255-penew[v].a;
+					buffer[pos]   = penew[v].r;
+					buffer[pos+1] = penew[v].g;
+					buffer[pos+2] = penew[v].b;
+					buffer[pos+3] = penew[v].a;
 				}
+				/*
 				else if (penew[v].a!=255)
 				{
 					buffer[pos  ] = (buffer[pos  ] * penew[v].a + penew[v].r * (1-penew[v].a)) / 255;
@@ -517,6 +522,7 @@ void FGLBitmap::CopyPixelData(int originx, int originy, const BYTE * patch, int 
 					buffer[pos+2] = (buffer[pos+2] * penew[v].a + penew[v].b * (1-penew[v].a)) / 255;
 					buffer[pos+3] = clamp<int>(buffer[pos+3] + (( 255-buffer[pos+3]) * (255-penew[v].a))/255, 0, 255);
 				}
+				*/
 			}
 		}
 	}

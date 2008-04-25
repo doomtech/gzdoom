@@ -1,3 +1,158 @@
+April 25, 2008 (SBarInfo Update #18)
+- Simplified the DrawGraphic function in sbarinfo_display.cpp
+- Added xOffset, yOffset, and alpha to every drawing function in
+  sbarinfo_display.cpp.  So Strife popups can be handeled better and allow for
+  other effects (translucent bars?).  I'm thinking about making a struct for
+  these five (also x and y) arguments so that the argument lists don't become a
+  mess.
+- Changed DRAWIMAGE in sbarinfo_display.cpp to not use so many calls to
+  DrawGraphic.
+- DrawKeyBar wasn't using screen->DrawTexture.
+- Added a Fade transition for popups.  It takes two args fade in rate and fade
+  out rate.  Both are floats (1.0 = 1 tic to complete 0.5 = 2 tics to complete
+  and so on).
+- Added a translucency arg to statusbars.  1.0 = opaque and 0.0 = invisible.
+
+April 24, 2008
+- Fixed: When an instrument's envelope runs out, it does not immediately ramp
+  to zero. Rather, it lets the remainder of the sample finish playing.
+- Fixed: When playing a MIDI file with EMIDI track designations to turn a
+  track off, any ticks that had only events on the disabled track would cause
+  the delay for that track to be thrown away, and the following notes on
+  enabled tracks would play too soon. This could be heard quite clearly in
+  xplasma.mid, where track 4 (FMGlass Drone 1) would interfere with the timing
+  of tracks 13 and 14 (EP1 Melody and EP1 Echo).
+
+April 24, 2008 (Changes by Graf Zahl)
+- Fixed: DFlashFader did some operations in its destructor that had to be moved
+  to its Destroy method.
+- Fixed: Dropped weapons from dying players should not double ammo.
+
+April 23, 2008
+- Fixed: When note_on() is called and another copy of the same note is
+  already playing on the channel, it should stop it with finish_note(), not
+  kill_note(). This can be clearly heard in the final cymbal crashes of
+  D_DM2TTL where TiMidity cuts them off because the final cymbals are played
+  with a velocity of 1 before the preceding cymbals have finished. (I wonder
+  if I should be setting the self_nonexclusive flag for GUS patches to
+  disable even this behavior, though, since gf1note.c doesn't turn off
+  duplicate notes.)
+- Changed envelope handling to hopefully match the GUS player's. The most
+  egregious mistake TiMidity makes is to treat bit 6 as an envelope enable
+  bit. This is not what it does; every sample has an envelope. Rather, this
+  is a "no sampled release" flag. Also, despite fiddling with the
+  PATCH_SUSTAIN flag during instrument loading, TiMidity never actually
+  used it. Nor did it do anything at all with the PATCH_FAST_REL flag.
+
+April 23, 2008 (Changes by Graf Zahl)
+- Fixed: wbstartstruct's lump name fields were only 8 characters long
+  and not properly zero-terminated when all 8 characters were used.
+- Fixed: Local sound sequence definitions caused a crash because a proper
+  NULL check was missing.
+
+April 22, 2008 (Changes by Graf Zahl)
+- Added translucent blending modes to FMultipatchTexture (not tested yet!)
+- Also changed all true color texture creation functions to use proper alpha
+  values instead of inverted ones.
+- Changed FRemapTable so that all palette entries must contain proper alpha
+  values. 
+  
+April 21, 2008 (Changes by Graf Zahl)
+- Fixed: The F1 screen check in m_menu.cpp was missing a NULL pointer check.
+  
+April 20, 2008 (Changes by Graf Zahl)
+- Changed: The boss brain's explosions play weapons/rocklx which is an 
+  unlimited sound. This can become extremely loud. Replaced with a new
+  sound which is just an alias to weapons/rocklx but has a limit of 4.
+
+April 19, 2008
+- Fixed: MugShotFrame::getTexture() allocated space for the sprite name that
+  it never freed. I'm not sure it's a good assumption that 9 characters is
+  always long enough, either, since you can have longer file names than that
+  inside a zip.
+- Fixed: DSBarInfo::DrawGem() crashed if chain or gem was NULL.
+- Fixed: Sound sequences are not thinkers, therefore they must be explicitly
+  marked as roots for the GC.
+- Reduced the range that area sounds require to interpolate between 2D and
+  3D panning.
+- The listener's velocity is now set at 0 for the sound engine. The player
+  moves so fast that you can hear the doppler shift just by running around,
+  otherwise.
+- Changed the sound code so that all sounds that start playing on a single
+  tic actually start playing at the exact same sample position.
+- Added the writewave command to write the internal TiMidity's output to a
+  wave file.
+- Changed the default channel velocity for MUS files from 64 to 100 to
+  better match apparent MIDI practice. (Would like to know what this is
+  supposed to be.)
+- Changed the mus2midi channel assignments to match the internal player's.
+- Fixed: apply_envelope_to_amp() should clamp the mix levels to 0.
+
+April 18, 2008
+- Made the maximum number of TiMidity voices configurable through the
+  timidity_voices cvar.
+- Added stats lines for the OPL and Timidity MIDI devices.
+- Completely changed the way TiMidity volume calculations are done. It
+  should now be extremely close to the output a real GUS would produce with
+  its official MIDI player (excepting where TiMidity normalizes sample
+  volumes). The new equations more closely match what is specified by the DLS
+  and SF2 specs (but not quite), so I presume it's also more musically
+  correct than what TiMidity (and TiMidity++) do.
+
+April 18, 2008 (Changes by Graf Zahl)
+- Fixed: FBlockThingsIterator didn't set the current block coordinates if
+  they were outside the blockmap. This could cause extreme delays if an
+  iteration started outside the valid boundaries.
+
+April 17, 2008
+- Fixed: The music stream needs to zero the FMOD_REVERB_CHANNELPROPERTIES
+  before sending it to Channel::getReverbProperties().
+- Fixed: The earthquake effect did not play its sound as an actual looping
+  sound. I'm a bit surprised this only recently started causing problems.
+
+April 17, 2008 (Changes by Graf Zahl)
+- Added Martin Howe's fixes for morphing and DECORATE function prototypes.
+- Minor fixes in texture code.
+
+April 16, 2008
+- Fixed: The FMOD::System object was never released, only closed, so
+  snd_reset would eventually run into the hard limit on the total number
+  of FMOD::System objects that can be created concurrently (currently 15).
+- Added proper error checks to the FMOD initialization process.
+- Updated fmod_wrap.h for FMOD 4.14.
+- Set note velocity back to using a linear sounding volume curve, although
+  it's now used to scale channel volume and expression, so recompute_amp()
+  is still only doing one volume curve lookup.
+- Fixed: TimidityMIDIDevice caused a crash at the end of a non-looping song.
+
+April 16, 2008 (Changes by Graf Zahl)
+- Made translation support for multipatch textures operational.
+
+April 15, 2008
+- Added support for the GUS patch format's scale_frequency and scale_factor
+  parameters. These seem to be used primarily to restrict percussion
+  instruments to specific notes.
+- Changed note velocity to not use the volume curve in recompute_amp(), since
+  this sounds closer to TiMidity++, although I don't believe it's correct
+  MIDI behavior. Also changed expression so that it scales the channel volume
+  before going through the curve.
+- Reworked load_instrument() to be less opaque.
+- Went through the TiMidity code and removed pretty much all of the SDL_mixer
+  extensions. The only exception would be kill_others(), which I reworked
+  into a kill_key_group() function, which should be useful for DLS
+  instruments in the future.
+
+April 15, 2008 (Changes by Graf Zahl)
+- Added translation support to multipatch textures. Not tested yet!
+- Added Martin Howe's morph weapon update.
+- Changed true color texture creation to use a newly defined Bitmap class
+  instead of having the copy functions in the frame buffer class.
+- Fixed: The WolfSS didn't have its obituary defined.
+- Added submission for ACS CheckPlayerCamera ACS function.
+- Removed FRadiusThingsIterator after discovering that VC++ misoptimized
+  it in P_CheckPosition. Now FBlockThingsIterator is used with the distance
+  check being done manually.
+
 April 14, 2008 (Changes by Graf Zahl)
 - Added rotation 90° angles only) and mirroring to the Multipatch texture 
   composition code.
