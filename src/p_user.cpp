@@ -1115,6 +1115,7 @@ void APlayerPawn::Die (AActor *source, AActor *inflictor)
 						{
 							static_cast<AWeapon *>(item)->AmmoGive2 = weap->Ammo2->Amount;
 						}
+						item->ItemFlags |= IF_IGNORESKILL;
 					}
 				}
 				else
@@ -1123,11 +1124,13 @@ void APlayerPawn::Die (AActor *source, AActor *inflictor)
 					if (item != NULL)
 					{
 						item->Amount = weap->Ammo1->Amount;
+						item->ItemFlags |= IF_IGNORESKILL;
 					}
 					item = P_DropItem (this, weap->AmmoType2, -1, 256);
 					if (item != NULL)
 					{
 						item->Amount = weap->Ammo2->Amount;
+						item->ItemFlags |= IF_IGNORESKILL;
 					}
 				}
 			}
