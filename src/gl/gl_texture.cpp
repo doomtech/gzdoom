@@ -576,7 +576,7 @@ int FWarpTexture::CopyTrueColorPixels(FBitmap *bmp, int xx, int yy, int rotate, 
 	int ret = SourcePic->CopyTrueColorPixels(&inb, 0, 0);
 
 	static unsigned long linebuffer[256];	// anything larger will bring down performance so it is excluded above.
-	int timebase = r_FrameTime*23/28;
+	int timebase = DWORD(r_FrameTime*Speed*23/28);
 	int xsize = Width;
 	int ysize = Height;
 	int xmask = xsize - 1;
@@ -596,7 +596,7 @@ int FWarpTexture::CopyTrueColorPixels(FBitmap *bmp, int xx, int yy, int rotate, 
 			*dest = *(source+(yf<<ds_xbits));
 		}
 	}
-	timebase = r_FrameTime*32/28;
+	timebase = DWORD(r_FrameTime*Speed*32/28);
 	int y;
 	for (y = ysize-1; y >= 0; y--)
 	{
@@ -687,7 +687,7 @@ int FWarp2Texture::CopyTrueColorPixels(FBitmap *bmp, int xx, int yy, int rotate,
 
 	for(ybits=-1,i=ysize; i; i>>=1, ybits++);
 
-	DWORD timebase = r_FrameTime * 40 / 28;
+	DWORD timebase = (r_FrameTime * Speed * 40 / 28);
 	for (x = xsize-1; x >= 0; x--)
 	{
 		for (y = ysize-1; y >= 0; y--)
@@ -1321,7 +1321,7 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 						(usebright) ||
 						((tex->bHasCanvas || gl_colormap_shader) && cm!=CM_DEFAULT && /*!(cm>=CM_DESAT1 && cm<=CM_DESAT31) &&*/  cm!=CM_SHADE && gl_texturemode != TM_MASK))
 					{
-						Shader->Bind(cm, usebright);
+						Shader->Bind(cm, usebright, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 0.f);
 						if (cm != CM_SHADE) cm = CM_DEFAULT;
 					}
 					else
@@ -1342,7 +1342,7 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 			}
 			else
 			{
-				Shader->Bind(cm, usebright);
+				Shader->Bind(cm, usebright, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 0.f);
 				if (cm != CM_SHADE) cm = CM_DEFAULT;
 			}
 		}
@@ -1425,7 +1425,7 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 						(usebright) ||
 						((tex->bHasCanvas || gl_colormap_shader) && cm!=CM_DEFAULT && /*!(cm>=CM_DESAT1 && cm<=CM_DESAT31) &&*/ cm!=CM_SHADE && gl_texturemode != TM_MASK))
 					{
-						Shader->Bind(cm, usebright);
+						Shader->Bind(cm, usebright, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 0.f);
 						if (cm != CM_SHADE) cm = CM_DEFAULT;
 					}
 					else
@@ -1446,7 +1446,7 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 			}
 			else
 			{
-				Shader->Bind(cm, usebright);
+				Shader->Bind(cm, usebright, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 0.f);
 				if (cm != CM_SHADE) cm = CM_DEFAULT;
 			}
 		}
