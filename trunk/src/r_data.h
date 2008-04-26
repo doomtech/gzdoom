@@ -498,13 +498,16 @@ public:
 	// [OpenGL]
 	int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf = NULL);
 	bool UseBasePalette() { return false; }
+	float GetSpeed() const { return Speed; }
 	int GetSourceLump() { return SourcePic->GetSourceLump(); }
+	void SetSpeed(float fac) { Speed = fac; }
 
 protected:
 	FTexture *SourcePic;
 	BYTE *Pixels;
 	Span **Spans;
 	DWORD GenTime;
+	float Speed;
 
 	virtual void MakeTexture (DWORD time);
 };
