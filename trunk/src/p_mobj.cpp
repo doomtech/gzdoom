@@ -161,8 +161,6 @@ fixed_t FloatBobDiffs[64] =
 CVAR (Int, cl_pufftype, 0, CVAR_ARCHIVE);
 CVAR (Int, cl_bloodtype, 0, CVAR_ARCHIVE);
 
-AActor *MissileActor;
-
 // CODE --------------------------------------------------------------------
 
 IMPLEMENT_POINTY_CLASS (AActor)
@@ -405,7 +403,8 @@ void AActor::Serialize (FArchive &arc)
 				GetDefaultByType (player->cls)->SpawnState->sprite.index)
 			{ // Give player back the skin
 				sprite = skins[player->userinfo.skin].sprite;
-				scaleX = scaleY = skins[player->userinfo.skin].Scale;
+				scaleX = skins[player->userinfo.skin].ScaleX;
+				scaleY = skins[player->userinfo.skin].ScaleY;
 			}
 			if (Speed == 0)
 			{
@@ -3740,7 +3739,8 @@ APlayerPawn *P_SpawnPlayer (mapthing2_t *mthing, bool tempplayer)
 
 	// [RH] Set player sprite based on skin
 	mobj->sprite = skins[p->userinfo.skin].sprite;
-	mobj->scaleX = mobj->scaleY = skins[p->userinfo.skin].Scale;
+	mobj->scaleX = skins[p->userinfo.skin].ScaleX;
+	mobj->scaleY = skins[p->userinfo.skin].ScaleY;
 
 	p->DesiredFOV = p->FOV = 90.f;
 	p->camera = p->mo;

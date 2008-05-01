@@ -388,7 +388,7 @@ struct FParser
 	{
 		LineStart = NULL;
 		Rover = NULL;
-		Tokens[0] = new char[scr->len];
+		Tokens[0] = new char[scr->len+32];	// 32 for safety. FS seems to need a few bytes more than the script's actual length.
 		NumTokens = 0;
 		Script = scr;
 		Section = PrevSection = NULL;
