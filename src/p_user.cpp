@@ -1335,7 +1335,7 @@ void P_CheckPlayerSprites()
 			
 			if (player->userinfo.skin != 0)
 			{
-				defscaleY = skins[player->userinfo.skin].Scale;
+				defscaleY = skins[player->userinfo.skin].ScaleY;
 			}
 			
 			// Set the crouch sprite

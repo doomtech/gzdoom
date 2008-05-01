@@ -502,7 +502,11 @@ void DFraggleThinker::Tick()
 			// runningscript
 			
 			for(i=0; i<VARIABLESLOTS; i++)
+			{
 				current->script->variables[i] = current->variables[i];
+				GC::WriteBarrier(current->script, current->variables[i]);
+				current->variables[i] = NULL;
+			}
 			current->script->trigger = current->trigger; // copy trigger
 			
 			// unhook from chain 

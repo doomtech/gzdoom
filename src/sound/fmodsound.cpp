@@ -208,7 +208,8 @@ static const char *OpenStateNames[] =
 	"Error",
 	"Connecting",
 	"Buffering",
-	"Seeking"
+	"Seeking",
+	"Streaming"
 };
 
 // CODE --------------------------------------------------------------------
@@ -266,9 +267,9 @@ static const char *Enum_NameForNum(const FEnumList *list, int num)
 class FMODStreamCapsule : public SoundStream
 {
 public:
-	FMODStreamCapsule(FMOD::Sound *stream, FMODSoundRenderer *owner)
+	FMODStreamCapsule(FMOD::Sound *stream, FMODSoundRenderer *owner, const char *url)
 		: Owner(owner), Stream(NULL), Channel(NULL),
-		  UserData(NULL), Callback(NULL), Ended(false)
+		  UserData(NULL), Callback(NULL), Ended(false), URL(url)
 	{
 		SetStream(stream);
 	}
@@ -280,6 +281,10 @@ public:
 
 	~FMODStreamCapsule()
 	{
+		if (Channel != NULL)
+		{
+			Channel->stop();
+		}
 		if (Stream != NULL)
 		{
 			Stream->release();
@@ -303,7 +308,11 @@ public:
 	{
 		FMOD_RESULT result;
 
-		Stream->setMode(looping ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF);
+		if (URL.IsNotEmpty())
+		{ // Net streams cannot be looped, because they cannot be seeked.
+			looping = false;
+		}
+		Stream->setMode((looping ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF) | FMOD_SOFTWARE | FMOD_2D);
 		result = Owner->Sys->playSound(FMOD_CHANNEL_FREE, Stream, true, &Channel);
 		if (result != FMOD_OK)
 		{
@@ -320,6 +329,11 @@ public:
 			Channel->setReverbProperties(&reverb);
 		}
 		Channel->setPaused(false);
+		Ended = false;
+		JustStarted = true;
+		Starved = false;
+		Loop = looping;
+		Volume = volume;
 		return true;
 	}
 
@@ -352,12 +366,82 @@ public:
 		return 0;
 	}
 
+	bool IsEnded()
+	{
+		bool is;
+		FMOD_OPENSTATE openstate = FMOD_OPENSTATE_MAX;
+		bool starving;
+
+		if (Stream == NULL)
+		{
+			return true;
+		}
+		if (FMOD_OK != Stream->getOpenState(&openstate, NULL, &starving))
+		{
+			openstate = FMOD_OPENSTATE_ERROR;
+		}
+		if (openstate == FMOD_OPENSTATE_ERROR)
+		{
+			if (Channel != NULL)
+			{
+				Channel->stop();
+				Channel = NULL;
+			}
+			return true;
+		}
+		if (Channel != NULL && (FMOD_OK != Channel->isPlaying(&is) || is == false))
+		{
+			return true;
+		}
+		if (Ended)
+		{
+			Channel->stop();
+			Channel = NULL;
+			return true;
+		}
+		if (URL.IsNotEmpty() && !JustStarted && openstate == FMOD_OPENSTATE_READY)
+		{
+			// Reconnect the stream, since it seems to have stalled.
+			// The only way to do this appears to be to completely recreate it.
+			FMOD_RESULT result;
+
+			Channel->stop();
+			Stream->release();
+			Channel = NULL;
+			Stream = NULL;
+			Owner->Sys->setStreamBufferSize(64*1024, FMOD_TIMEUNIT_RAWBYTES);
+			// Open the stream asynchronously, so we don't hang the game while trying to reconnect.
+			// (It would be nice to do the initial open asynchronously as well, but I'd need to rethink
+			// the music system design to pull that off.)
+			result = Owner->Sys->createSound(URL, (Loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF) | FMOD_SOFTWARE | FMOD_2D |
+				FMOD_CREATESTREAM | FMOD_NONBLOCKING, NULL, &Stream);
+			JustStarted = true;
+			Owner->Sys->setStreamBufferSize(16*1024, FMOD_TIMEUNIT_RAWBYTES);
+			return result != FMOD_OK;
+		}
+		if (JustStarted && openstate == FMOD_OPENSTATE_STREAMING)
+		{
+			JustStarted = false;
+		}
+		if (JustStarted && Channel == NULL && openstate == FMOD_OPENSTATE_READY)
+		{
+			return !Play(Loop, Volume);
+		}
+		if (starving != Starved)
+		{ // Mute the sound if it's starving.
+			Channel->setVolume(starving ? 0 : Volume);
+			Starved = starving;
+		}
+		return false;
+	}
+
 	void SetVolume(float volume)
 	{
-		if (Channel != NULL)
+		if (Channel != NULL && !Starved)
 		{
 			Channel->setVolume(volume);
 		}
+		Volume = volume;
 	}
 
 	// Sets the current order number for a MOD-type song, or the position in ms
@@ -387,12 +471,17 @@ public:
 
 		if (FMOD_OK == Stream->getOpenState(&openstate, &percentbuffered, &starving))
 		{
-			stats = (openstate <= FMOD_OPENSTATE_SEEKING ? OpenStateNames[openstate] : "Unknown state");
+			stats = (openstate <= FMOD_OPENSTATE_STREAMING ? OpenStateNames[openstate] : "Unknown state");
 			stats.AppendFormat(",%3d%% buffered, %s", percentbuffered, starving ? "Starving" : "Well-fed");
 		}
 		if (Channel != NULL && FMOD_OK == Channel->getPosition(&position, FMOD_TIMEUNIT_MS))
 		{
-			stats.AppendFormat(", %d ms", position);
+			stats.AppendFormat(", %d", position);
+			if (FMOD_OK == Stream->getLength(&position, FMOD_TIMEUNIT_MS))
+			{
+				stats.AppendFormat("/%d", position);
+			}
+			stats += " ms";
 		}
 		return stats;
 	}
@@ -428,7 +517,12 @@ private:
 	FMOD::Channel *Channel;
 	void *UserData;
 	SoundStreamCallback Callback;
+	FString URL;
 	bool Ended;
+	bool JustStarted;
+	bool Starved;
+	bool Loop;
+	float Volume;
 };
 
 //==========================================================================
@@ -665,10 +759,25 @@ bool FMODSoundRenderer::Init()
 	{
 		result = Sys->init(snd_channels + NUM_EXTRA_SOFTWARE_CHANNELS, initflags, 0);
 		if (result == FMOD_ERR_OUTPUT_CREATEBUFFER)
-		{ // The speaker mode selected isn't supported by this soundcard. Switch it back to stereo.
+		{ 
+			// Possible causes of a buffer creation failure:
+			// 1. The speaker mode selected isn't supported by this soundcard. Force it to stereo.
+			// 2. The output format is unsupported. Force it to 16-bit PCM.
+			// 3. ???
 			result = Sys->getSpeakerMode(&speakermode);
-			if (result == FMOD_OK && FMOD_OK == Sys->setSpeakerMode(FMOD_SPEAKERMODE_STEREO))
+			if (result == FMOD_OK &&
+				speakermode != FMOD_SPEAKERMODE_STEREO &&
+				FMOD_OK == Sys->setSpeakerMode(FMOD_SPEAKERMODE_STEREO))
 			{
+				Printf(TEXTCOLOR_RED"  Buffer creation failed. Retrying with stereo output.\n");
+				continue;
+			}
+			result = Sys->getSoftwareFormat(&samplerate, &format, NULL, NULL, &resampler, NULL);
+			if (result == FMOD_OK &&
+				format != FMOD_SOUND_FORMAT_PCM16 &&
+				FMOD_OK == Sys->setSoftwareFormat(samplerate, FMOD_SOUND_FORMAT_PCM16, 0, 0, resampler))
+			{
+				Printf(TEXTCOLOR_RED"  Buffer creation failed. Retrying with PCM-16 output.\n");
 				continue;
 			}
 		}
@@ -1071,6 +1180,7 @@ SoundStream *FMODSoundRenderer::OpenStream(const char *filename_or_data, int fla
 	FMOD_CREATESOUNDEXINFO exinfo = { sizeof(exinfo), };
 	FMOD::Sound *stream;
 	FMOD_RESULT result;
+	bool url;
 
 	mode = FMOD_SOFTWARE | FMOD_2D | FMOD_CREATESTREAM;
 	if (flags & SoundStream::Loop)
@@ -1089,7 +1199,19 @@ SoundStream *FMODSoundRenderer::OpenStream(const char *filename_or_data, int fla
 		exinfo.dlsname = snd_midipatchset;
 	}
 
+	url = (offset == 0 && length == 0 && strstr(filename_or_data, "://") > filename_or_data);
+	if (url)
+	{
+		// Use a larger buffer for URLs so that it's less likely to be effected
+		// by hiccups in the data rate from the remote server.
+		Sys->setStreamBufferSize(64*1024, FMOD_TIMEUNIT_RAWBYTES);
+	}
 	result = Sys->createSound(filename_or_data, mode, &exinfo, &stream);
+	if (url)
+	{
+		// Restore standard buffer size.
+		Sys->setStreamBufferSize(16*1024, FMOD_TIMEUNIT_RAWBYTES);
+	}
 	if (result == FMOD_ERR_FORMAT && exinfo.dlsname != NULL)
 	{
 		// FMOD_ERR_FORMAT could refer to either the main sound file or
@@ -1104,7 +1226,7 @@ SoundStream *FMODSoundRenderer::OpenStream(const char *filename_or_data, int fla
 	}
 	if (result == FMOD_OK)
 	{
-		return new FMODStreamCapsule(stream, this);
+		return new FMODStreamCapsule(stream, this, url ? filename_or_data : NULL);
 	}
 	return NULL;
 }
@@ -1475,7 +1597,7 @@ void FMODSoundRenderer::LoadSound(sfxinfo_t *sfx)
 {
 	if (sfx->data == NULL)
 	{
-		DPrintf("loading sound \"%s\" (%d) ", sfx->name.GetChars(), sfx - &S_sfx[0]);
+		DPrintf("loading sound \"%s\" (%d)\n", sfx->name.GetChars(), sfx - &S_sfx[0]);
 		getsfx(sfx);
 	}
 }
@@ -1955,11 +2077,11 @@ void FMODSoundRenderer::DrawWave(float *wavearray, int x, int y, int width, int 
 	if (screen->Accel2D)
 	{ // Drawing this with lines is super-slow without hardware acceleration, at least with
 	  // the debug build.
-		float lasty = wavearray[0] * scale + mid;
+		float lasty = mid - wavearray[0] * scale;
 		float newy;
 		for (i = 1; i < width; ++i)
 		{
-			newy = wavearray[i] * scale + mid;
+			newy = mid - wavearray[i] * scale;
 			screen->DrawLine(x + i - 1, int(lasty), x + i, int(newy), -1, MAKEARGB(255,255,248,248));
 			lasty = newy;
 		}

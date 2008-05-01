@@ -1,4 +1,47 @@
-April 26, 2008 (SBarInfo Update #18)
+April 30, 2008
+- Fixed: I had instrument vibrato setting the tremolo_sweep_increment value
+  in the instrument loader, effectively disabling vibrato.
+
+April 29, 2008
+- Fixed: FString::StripRight() stripped the final character of the string if
+  there were no designated characters to strip at the end of it.
+- Added support for Shoutcast/Icecast playlists.
+- Added an error message when a playlist could not be opened.
+- Added support for PLS format playlists, in addition to M3U.
+- Changed FPlayList to use an array of FStrings.
+- Fixed: Playlists required every song to be specified by an absolute path.
+- Fixed a copy-and-paste error in win32/i_main.cpp for 64-bit mode.
+- Tweaked OPL centering a little.
+
+April 28, 2008
+- Added dynamic recentering for the OPL synth. The chip has four basic
+  waveforms, and three of them are non-negative. This can cause a tendency
+  for the resulting output waveform to go into very high ranges depending on
+  the timbres used, and Heretic's exemplify this problem.
+- Reduced the OPL volume level slightly.
+- Fixed: The waveform view from snd_drawoutput was upside-down.
+- Various fixes for compiling working 64-bit binaries with Visual C++. The
+  number of changes was pleasantly small, and a cursory check seems to show
+  everything working alright.
+
+April 27, 2008
+- Separated the skin scale values into separate X and Y values so that skins
+  automatically generated for different player classes can use both the
+  scaling values that can be set for the actor.
+
+April 26, 2008
+- Fixed: Any MIDI ticks that contain only events that are interpreted by
+  the MIDI parser and not passed on to the MIDI device would mess up timing
+  for future events.
+- Changed EMIDI controller 110-113 handling to more accurately match the
+  EMIDI specs: Track designations and exclusions should be ignored past
+  the initial beat, and EMIDI program change and volume events should be
+  ignored unless they were used in the initial beat.
+- Fixed: When FMOD::System::init() returns FMOD_ERR_OUTPUT_CREATEBUFFER, it
+  could also be because the user selected PCM-Float output, but the driver
+  doesn't support it (even if it claims to *cough*Audigy XP drivers*cough*).
+
+April 26, 2008 (Changes by Graf Zahl)
 - Added speed factors for texture warp commands.
 - Added damage type parameter to A_Die.
 
