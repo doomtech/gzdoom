@@ -855,7 +855,7 @@ void S_SoundID (int channel, int sound_id, float volume, int attenuation)
 
 void S_SoundID (AActor *ent, int channel, int sound_id, float volume, int attenuation)
 {
-	if (ent->Sector->MoreFlags & SECF_SILENT)
+	if (ent->Sector->Flags & SECF_SILENT)
 		return;
 	S_StartSound (&ent->x, ent, channel, sound_id, volume, SELECT_ATTEN(attenuation));
 }
@@ -1335,7 +1335,7 @@ bool S_ChangeMusic (const char *musicname, int order, bool looping, bool force)
 	else
 	{
 		int lumpnum = -1;
-		int offset, length;
+		int offset = 0, length = 0;
 		int device = MDEV_DEFAULT;
 		void *handle = NULL;
 
@@ -1397,11 +1397,6 @@ bool S_ChangeMusic (const char *musicname, int order, bool looping, bool force)
 					}
 				}
 			}
-		}
-		else
-		{
-			offset = 0;
-			length = 0;
 		}
 
 		// shutdown old music

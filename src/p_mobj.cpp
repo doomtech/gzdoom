@@ -418,7 +418,7 @@ void AActor::Serialize (FArchive &arc)
 	}
 }
 
-void MapThing::Serialize (FArchive &arc)
+void FMapThing::Serialize (FArchive &arc)
 {
 	arc << thingid << x << y << z << angle << type << flags << special
 		<< args[0] << args[1] << args[2] << args[3] << args[4];
@@ -1862,6 +1862,8 @@ void P_MonsterFallingDamage (AActor *mo)
 
 	if (!(level.flags&LEVEL_MONSTERFALLINGDAMAGE))
 		return;
+	if (mo->floorsector->Flags & SECF_NOFALLINGDAMAGE)
+		return;
 
 	mom = abs(mo->momz);
 	if (mom > 35*FRACUNIT)
@@ -2247,19 +2249,19 @@ void P_NightmareRespawn (AActor *mobj)
 	else if (info->flags2 & MF2_SPAWNFLOAT)
 		z = FLOATRANDZ;
 	else if (info->flags2 & MF2_FLOATBOB)
-		z = mobj->SpawnPoint[2] << FRACBITS;
+		z = mobj->SpawnPoint[2];
 	else
 		z = ONFLOORZ;
 
 	// spawn it
-	x = mobj->SpawnPoint[0] << FRACBITS;
-	y = mobj->SpawnPoint[1] << FRACBITS;
+	x = mobj->SpawnPoint[0];
+	y = mobj->SpawnPoint[1];
 	mo = Spawn (RUNTIME_TYPE(mobj), x, y, z, NO_REPLACE);
 
 	if (z == ONFLOORZ)
-		mo->z += mo->SpawnPoint[2] << FRACBITS;
+		mo->z += mo->SpawnPoint[2];
 	else if (z == ONCEILINGZ)
-		mo->z -= mo->SpawnPoint[2] << FRACBITS;
+		mo->z -= mo->SpawnPoint[2];
 
 	// something is occupying its position?
 	if (!P_TestMobjLocation (mo))
@@ -3364,8 +3366,8 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 		actor->ceilingsector = actor->Sector;
 	}
 
-	actor->SpawnPoint[0] = ix >> FRACBITS;
-	actor->SpawnPoint[1] = iy >> FRACBITS;
+	actor->SpawnPoint[0] = ix;
+	actor->SpawnPoint[1] = iy;
 
 	if (iz == ONFLOORZ)
 	{
@@ -3390,7 +3392,7 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 	}
 	else
 	{
-		actor->SpawnPoint[2] = (actor->z - actor->floorz) >> FRACBITS;
+		actor->SpawnPoint[2] = (actor->z - actor->floorz);
 	}
 
 	if (actor->flags2 & MF2_FLOATBOB)
@@ -3625,7 +3627,7 @@ EXTERN_CVAR (Bool, chasedemo)
 
 extern bool demonew;
 
-APlayerPawn *P_SpawnPlayer (mapthing2_t *mthing, bool tempplayer)
+APlayerPawn *P_SpawnPlayer (FMapThing *mthing, bool tempplayer)
 {
 	int		  playernum;
 	player_t *p;
@@ -3696,8 +3698,8 @@ APlayerPawn *P_SpawnPlayer (mapthing2_t *mthing, bool tempplayer)
 	}
 	else
 	{
-		spawn_x = mthing->x << FRACBITS;
-		spawn_y = mthing->y << FRACBITS;
+		spawn_x = mthing->x;
+		spawn_y = mthing->y;
 		spawn_angle = ANG45 * (mthing->angle/45);
 	}
 
@@ -3863,7 +3865,7 @@ APlayerPawn *P_SpawnPlayer (mapthing2_t *mthing, bool tempplayer)
 // already be in host byte order.
 //
 // [RH] position is used to weed out unwanted start spots
-AActor *P_SpawnMapThing (mapthing2_t *mthing, int position)
+AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 {
 	const PClass *i;
 	int mask;
@@ -3911,8 +3913,8 @@ AActor *P_SpawnMapThing (mapthing2_t *mthing, int position)
 	{
 		polyspawns_t *polyspawn = new polyspawns_t;
 		polyspawn->next = polyspawns;
-		polyspawn->x = mthing->x << FRACBITS;
-		polyspawn->y = mthing->y << FRACBITS;
+		polyspawn->x = mthing->x;
+		polyspawn->y = mthing->y;
 		polyspawn->angle = mthing->angle;
 		polyspawn->type = mthing->type;
 		polyspawns = polyspawn;
@@ -3960,7 +3962,7 @@ AActor *P_SpawnMapThing (mapthing2_t *mthing, int position)
 		}
 
 		mask = G_SkillProperty(SKILLP_SpawnFilter);
-		if (!(mthing->flags & mask))
+		if (!(mthing->SkillFilter & mask))
 		{
 			return NULL;
 		}
@@ -3970,7 +3972,7 @@ AActor *P_SpawnMapThing (mapthing2_t *mthing, int position)
 		if (!multiplayer)
 		{ // Single player
 			int spawnmask = players[consoleplayer].GetSpawnClass();
-			if (spawnmask != 0 && (mthing->flags & spawnmask) == 0)
+			if (spawnmask != 0 && (mthing->ClassFilter & spawnmask) == 0)
 			{ // Not for current class
 				return NULL;
 			}
@@ -4013,8 +4015,7 @@ AActor *P_SpawnMapThing (mapthing2_t *mthing, int position)
 	// [RH] sound sequence overriders
 	if (mthing->type >= 1400 && mthing->type < 1410)
 	{
-		P_PointInSector (mthing->x<<FRACBITS,
-			mthing->y<<FRACBITS)->seqType = mthing->type - 1400;
+		P_PointInSector (mthing->x, mthing->y)->seqType = mthing->type - 1400;
 		return NULL;
 	}
 	else if (mthing->type == 1411)
@@ -4032,8 +4033,7 @@ AActor *P_SpawnMapThing (mapthing2_t *mthing, int position)
 		}
 		else
 		{
-			P_PointInSector (mthing->x << FRACBITS,
-				mthing->y << FRACBITS)->seqType = type;
+			P_PointInSector (mthing->x,	mthing->y)->seqType = type;
 		}
 		return NULL;
 	}
@@ -4057,7 +4057,7 @@ AActor *P_SpawnMapThing (mapthing2_t *mthing, int position)
 		// [RH] Don't die if the map tries to spawn an unknown thing
 		Printf ("Unknown type %i at (%i, %i)\n",
 				 mthing->type,
-				 mthing->x, mthing->y);
+				 mthing->x>>FRACBITS, mthing->y>>FRACBITS);
 		i = PClass::FindClass("Unknown");
 	}
 	// [RH] If the thing's corresponding sprite has no frames, also map
@@ -4073,7 +4073,7 @@ AActor *P_SpawnMapThing (mapthing2_t *mthing, int position)
 			sprites[defaults->SpawnState->sprite.index].numframes == 0)
 		{
 			Printf ("%s at (%i, %i) has no frames\n",
-					i->TypeName.GetChars(), mthing->x, mthing->y);
+					i->TypeName.GetChars(), mthing->x>>FRACBITS, mthing->y>>FRACBITS);
 			i = PClass::FindClass("Unknown");
 		}
 	}
@@ -4127,8 +4127,8 @@ AActor *P_SpawnMapThing (mapthing2_t *mthing, int position)
 	}
 
 	// spawn it
-	x = mthing->x << FRACBITS;
-	y = mthing->y << FRACBITS;
+	x = mthing->x;
+	y = mthing->y;
 
 	if (info->flags & MF_SPAWNCEILING)
 		z = ONCEILINGZ;
@@ -4142,9 +4142,9 @@ AActor *P_SpawnMapThing (mapthing2_t *mthing, int position)
 	SpawningMapThing = false;
 
 	if (z == ONFLOORZ)
-		mobj->z += mthing->z << FRACBITS;
+		mobj->z += mthing->z;
 	else if (z == ONCEILINGZ)
-		mobj->z -= mthing->z << FRACBITS;
+		mobj->z -= mthing->z;
 
 	mobj->SpawnPoint[0] = mthing->x;
 	mobj->SpawnPoint[1] = mthing->y;
@@ -4662,7 +4662,7 @@ void P_PlaySpawnSound(AActor *missile, AActor *spawner)
 		{
 			// If there is no spawner use the spawn position.
 			// But not in a silenced sector.
-			if (!(missile->Sector->MoreFlags & SECF_SILENT))
+			if (!(missile->Sector->Flags & SECF_SILENT))
 				S_SoundID (&missile->x, CHAN_WEAPON, missile->SeeSound, 1, ATTN_NORM);
 		}
 	}
