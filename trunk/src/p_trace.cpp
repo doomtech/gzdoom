@@ -507,7 +507,7 @@ cont:
 
 			// the trace hit a 3D-floor before the thing.
 			// Calculate an intersection and abort.
-			Results->Sector = &sector[CurSector->sectornum];
+			Results->Sector = &sectors[CurSector->sectornum];
 			if (!CheckSectorPlane(CurSector, Results->HitType==TRACE_HitFloor))
 			{
 				Results->HitType=TRACE_HitNone;
