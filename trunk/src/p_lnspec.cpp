@@ -1802,6 +1802,25 @@ FUNC(LS_Sector_ChangeSound)
 	return rtn;
 }
 
+FUNC(LS_Sector_ChangeFlags)
+// Sector_ChangeFlags (tag, set, clear)
+{
+	int secNum;
+	bool rtn;
+
+	if (!arg0)
+		return false;
+
+	secNum = -1;
+	rtn = false;
+	while ((secNum = P_FindSectorFromTag (arg0,	secNum)) >= 0)
+	{
+		sectors[secNum].Flags = (sectors[secNum].Flags | arg1) & ~arg2;
+		rtn = true;
+	}
+	return rtn;
+}
+
 struct FThinkerCollection
 {
 	int RefNum;
@@ -2608,7 +2627,7 @@ FUNC(LS_TranslucentLine)
 	int linenum = -1;
 	while ((linenum = P_FindLineFromID (arg0, linenum)) >= 0)
 	{
-		lines[linenum].alpha = arg1 & 255;
+		lines[linenum].Alpha = Scale(clamp(arg1, 0, 255), FRACUNIT, 255);
 		if (arg2 == 0)
 		{
 			sides[lines[linenum].sidenum[0]].Flags &= ~WALLF_ADDTRANS;

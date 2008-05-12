@@ -842,6 +842,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\p_slopes.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\p_spec.cpp"
 				>
 			</File>
@@ -867,6 +871,10 @@
 			</File>
 			<File
 				RelativePath=".\src\p_trace.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\p_udmf.cpp"
 				>
 			</File>
 			<File
@@ -2956,59 +2964,7 @@
 				Name="Timidity"
 				>
 				<File
-					RelativePath=".\src\timidity\common.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\timidity\dls1.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\timidity\dls2.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\timidity\instrum.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\timidity\instrum_dls.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\timidity\mix.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\timidity\playmidi.cpp"
-					>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							EnableEnhancedInstructionSet="0"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath=".\src\timidity\resample.cpp"
-					>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							EnableEnhancedInstructionSet="0"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath=".\src\timidity\timidity.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\timidity\timidity.h"
+					RelativePath=".\src\timidity\instrum_font.cpp"
 					>
 				</File>
 				<Filter
@@ -3028,6 +2984,82 @@
 					</File>
 					<File
 						RelativePath=".\src\timidity\README"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="Headers"
+					>
+					<File
+						RelativePath=".\src\timidity\dls1.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\timidity\dls2.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\timidity\gf1patch.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\timidity\sf2.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\timidity\timidity.h"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="Source"
+					>
+					<File
+						RelativePath=".\src\timidity\common.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\src\timidity\instrum.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\src\timidity\instrum_dls.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\src\timidity\instrum_sf2.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\src\timidity\mix.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\src\timidity\playmidi.cpp"
+						>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								EnableEnhancedInstructionSet="0"
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath=".\src\timidity\resample.cpp"
+						>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								EnableEnhancedInstructionSet="0"
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath=".\src\timidity\timidity.cpp"
 						>
 					</File>
 				</Filter>
@@ -3677,6 +3709,22 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool

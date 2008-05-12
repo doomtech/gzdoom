@@ -34,6 +34,7 @@ struct MapData
 	bool HasBehavior;
 	bool CloseOnDestruct;
 	bool Encrypted;
+	bool isText;
 	int lumpnum;
 	FileReader * file;
 	
@@ -45,6 +46,7 @@ struct MapData
 		HasBehavior = false;
 		CloseOnDestruct = true;
 		Encrypted = false;
+		isText = false;
 	}
 	
 	~MapData()
@@ -82,6 +84,7 @@ struct MapData
 
 MapData * P_OpenMapData(const char * mapname);
 bool P_CheckMapData(const char * mapname);
+
 
 // NOT called by W_Ticker. Fixme. [RH] Is that bad?
 //
