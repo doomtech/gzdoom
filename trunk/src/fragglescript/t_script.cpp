@@ -636,6 +636,7 @@ static bool RunScript(int snum, AActor * t_trigger)
 		if(!script)	return false;
 	
 		DRunningScript *runscr = new DRunningScript(script, 0);
+		runscr->trigger = t_trigger;
 		// hook into chain at start
 		th->AddRunningScript(runscr);
 		return true;
