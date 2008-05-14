@@ -164,7 +164,7 @@ static bool PIT_FindFloorCeiling (line_t *ld, const FBoundingBox &box, FCheckPos
 //
 //==========================================================================
 
-void P_FindFloorCeiling (AActor *actor)
+void P_FindFloorCeiling (AActor *actor, bool onlymidtex)
 {
 	sector_t *sec;
 	FCheckPosition tmf;
@@ -195,13 +195,16 @@ void P_FindFloorCeiling (AActor *actor)
 
 	if (tmf.touchmidtex) tmf.dropoffz = tmf.floorz;
 
-	actor->floorz = tmf.floorz;
-	actor->dropoffz = tmf.dropoffz;
-	actor->ceilingz = tmf.ceilingz;
-	actor->floorpic = tmf.floorpic;
-	actor->floorsector = tmf.floorsector;
-	actor->ceilingpic = tmf.ceilingpic;
-	actor->ceilingsector = tmf.ceilingsector;
+	if (!onlymidtex || (tmf.touchmidtex && (tmf.floorz < actor->z)))
+	{
+		actor->floorz = tmf.floorz;
+		actor->dropoffz = tmf.dropoffz;
+		actor->ceilingz = tmf.ceilingz;
+		actor->floorpic = tmf.floorpic;
+		actor->floorsector = tmf.floorsector;
+		actor->ceilingpic = tmf.ceilingpic;
+		actor->ceilingsector = tmf.ceilingsector;
+	}
 }
 
 //
@@ -3035,6 +3038,9 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 		puff->Destroy();
 		puff = NULL;
 	}
+	// [BB] If the puff came from a player, set the target of the puff to this player.
+	if ( puff && (puff->flags5 & MF5_PUFFGETSOWNER) && t1 && t1->player )
+		puff->target = t1;
 	return puff;
 }
 
