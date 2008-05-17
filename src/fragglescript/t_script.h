@@ -68,10 +68,8 @@ enum
   svt_label,        // labels for goto calls are variables
   svt_const,        // const
   svt_fixed,        // haleyjd: fixed-point int - 8-17 std
-  svt_arraysweredeleted,
   svt_pInt,         // pointer to game int
   svt_pMobj,        // pointer to game mobj
-  svt_parraysweredeleted,
 };
 
 //==========================================================================
