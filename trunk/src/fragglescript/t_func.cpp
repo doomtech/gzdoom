@@ -2267,18 +2267,6 @@ void FParser::SF_ChangeMusic(void)
 
 //==========================================================================
 //
-//
-//
-//==========================================================================
-
-inline line_t * P_FindLine(int tag,int * searchPosition)
-{
-	*searchPosition=P_FindLineFromID(tag,*searchPosition);
-	return *searchPosition>=0? &lines[*searchPosition]:NULL;
-}
-
-//==========================================================================
-//
 // FParser::SF_SetLineBlocking()
 //
 //  Sets a line blocking or unblocking
@@ -2286,22 +2274,18 @@ inline line_t * P_FindLine(int tag,int * searchPosition)
 //==========================================================================
 void FParser::SF_SetLineBlocking(void)
 {
-	line_t *line;
-	int blocking;
-	int searcher = -1;
-	int tag;
 	static unsigned short blocks[]={0,ML_BLOCKING,ML_BLOCKEVERYTHING};
 	
 	if (CheckArgs(2))
 	{
-		blocking=intvalue(t_argv[1]);
+		int blocking=intvalue(t_argv[1]);
 		if (blocking>=0 && blocking<=2) 
 		{
 			blocking=blocks[blocking];
-			tag=intvalue(t_argv[0]);
-			while((line = P_FindLine(tag, &searcher)) != NULL)
+			int tag=intvalue(t_argv[0]);
+			for (int i = -1; (i = P_FindLineFromID(tag, i)) >= 0;) 
 			{
-				line->flags = (line->flags & ~(ML_BLOCKING|ML_BLOCKEVERYTHING)) | blocking;
+				lines[i].flags = (lines[i].flags & ~(ML_BLOCKING|ML_BLOCKEVERYTHING)) | blocking;
 			}
 		}
 	}
@@ -2315,19 +2299,14 @@ void FParser::SF_SetLineBlocking(void)
 
 void FParser::SF_SetLineMonsterBlocking(void)
 {
-	line_t *line;
-	int blocking;
-	int searcher = -1;
-	int tag;
-	
 	if (CheckArgs(2))
 	{
-		blocking = intvalue(t_argv[1]) ? ML_BLOCKMONSTERS : 0;
-		
-		tag=intvalue(t_argv[0]);
-		while((line = P_FindLine(tag, &searcher)) != NULL)
+		int blocking = intvalue(t_argv[1]) ? ML_BLOCKMONSTERS : 0;
+		int tag=intvalue(t_argv[0]);
+
+		for (int i = -1; (i = P_FindLineFromID(tag, i)) >= 0;) 
 		{
-			line->flags = (line->flags & ~ML_BLOCKMONSTERS) | blocking;
+			lines[i].flags = (lines[i].flags & ~ML_BLOCKMONSTERS) | blocking;
 		}
 	}
 }
@@ -2348,13 +2327,12 @@ void FParser::SF_SetLineMonsterBlocking(void)
 
 void FParser::SF_SetLineTexture(void)
 {
-	line_t *line;
 	int tag;
 	int side;
 	int position;
 	const char *texture;
 	int texturenum;
-	int searcher;
+	int i;
 	
 	if (CheckArgs(4))
 	{
@@ -2381,14 +2359,12 @@ void FParser::SF_SetLineTexture(void)
 			texture = stringvalue(t_argv[3]);
 			texturenum = TexMan.GetTexture(texture, FTexture::TEX_Wall, FTextureManager::TEXMAN_Overridable);
 			
-			searcher = -1;
-			
-			while((line = P_FindLine(tag, &searcher)) != NULL)
+			for (i = -1; (i = P_FindLineFromID(tag, i)) >= 0;) 
 			{
 				// bad sidedef, Hexen just SEGV'd here!
-				if(line->sidenum[side]!=NO_SIDE)
+				if(lines[i].sidenum[side] != NO_SIDE)
 				{
-					side_t * sided=&sides[line->sidenum[side]];
+					side_t * sided = &sides[lines[i].sidenum[side]];
 					if (position >=0 && position <=2)
 					{
 						sided->SetTexture(position, texturenum);
@@ -2398,13 +2374,12 @@ void FParser::SF_SetLineTexture(void)
 		}
 		else // and an improved legacy version
 		{ 
-			int i = -1; 
 			int picnum = TexMan.GetTexture(t_argv[1].string, FTexture::TEX_Wall, FTextureManager::TEXMAN_Overridable); 
 			side = !!intvalue(t_argv[2]); 
 			int sections = intvalue(t_argv[3]); 
 			
 			// set all sectors with tag 
-			while ((i = P_FindLineFromID(tag, i)) >= 0) 
+			for (i = -1; (i = P_FindLineFromID(tag, i)) >= 0;) 
 			{ 
 				if(lines[i].sidenum[side]!=NO_SIDE)
 				{ 
@@ -2553,7 +2528,7 @@ void FParser::SF_IsPlayerObj(void)
 // been expanded from their original and are limited as a result
 //
 // Since FraggleScript is rather hard coded to the original inventory
-// handling of Doom this is rather messy.
+// handling of Doom this is quite messy.
 //
 //============================================================================
 
@@ -2958,7 +2933,7 @@ void FParser::SF_PlayerSelectedWeapon()
 
 //==========================================================================
 //
-//
+// new for GZDoom: named inventory handling
 //
 //==========================================================================
 
@@ -2981,7 +2956,7 @@ void FParser::SF_GiveInventory(void)
 
 //==========================================================================
 //
-//
+// new for GZDoom: named inventory handling
 //
 //==========================================================================
 
@@ -3004,7 +2979,7 @@ void FParser::SF_TakeInventory(void)
 
 //==========================================================================
 //
-//
+// new for GZDoom: named inventory handling
 //
 //==========================================================================
 
@@ -3632,7 +3607,8 @@ void FParser::SF_ObjState()
 
 //==========================================================================
 //
-//
+// only here for Legacy maps. The implementation of this function
+// is completely useless.
 //
 //==========================================================================
 
@@ -3753,6 +3729,9 @@ void FParser::SF_Resurrect()
 		mo->radius = mo->GetDefault()->radius;
 		mo->flags =  mo->GetDefault()->flags;
 		mo->flags2 = mo->GetDefault()->flags2;
+		mo->flags3 = mo->GetDefault()->flags3;
+		mo->flags4 = mo->GetDefault()->flags4;
+		mo->flags5 = mo->GetDefault()->flags5;
 		mo->health = mo->GetDefault()->health;
 		mo->target = NULL;
 	}
@@ -4384,8 +4363,8 @@ void FParser::SF_SetLineTrigger()
 			int f = lines[i].flags;
 			P_TranslateLineDef(&lines[i], &mld);	
 			lines[i].id=tag;
-			lines[i].flags = (lines[i].flags & (ML_MONSTERSCANACTIVATE|ML_REPEAT_SPECIAL|ML_SPAC_MASK)) |
-										(f & ~(ML_MONSTERSCANACTIVATE|ML_REPEAT_SPECIAL|ML_SPAC_MASK));
+			lines[i].flags = (lines[i].flags & (ML_MONSTERSCANACTIVATE|ML_REPEAT_SPECIAL|ML_SPAC_MASK|ML_FIRSTSIDEONLY)) |
+										(f & ~(ML_MONSTERSCANACTIVATE|ML_REPEAT_SPECIAL|ML_SPAC_MASK|ML_FIRSTSIDEONLY));
 
 		}
 	}
@@ -4400,8 +4379,6 @@ void FParser::SF_SetLineTrigger()
 // ACS still works so I can hack around it with this.)
 //
 //==========================================================================
-
-void P_InitTagLists();
 
 void FParser::SF_ChangeTag()
 {
