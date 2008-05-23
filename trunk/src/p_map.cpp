@@ -4375,7 +4375,7 @@ bool P_ChangeSector (sector_t *sector, int crunch, int amt, int floorOrCeil, boo
 	cpos.crushchange = crunch;
 	cpos.moveamt = abs (amt);
 	cpos.movemidtex = false;
-
+	cpos.sector = sector;
 
 	// Also process all sectors that have 3D floors transferred from the
 	// changed sector.
