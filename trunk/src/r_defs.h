@@ -141,6 +141,12 @@ struct secplane_t
 		return FixedMul (ic, -d - DMulScale16 (a, x, b, y));
 	}
 
+	// Returns the value of z at (x,y) as a double
+	double ZatPoint (double x, double y) const
+	{
+		return (d + a*x + b*y) * ic / (-65536.0 * 65536.0);
+	}
+
 	// Returns the value of z at vertex v
 	fixed_t ZatPoint (const vertex_t *v) const
 	{
@@ -254,6 +260,7 @@ enum
 {
 	SECF_SILENT			= 1,	// actors in sector make no noise
 	SECF_NOFALLINGDAMAGE= 2,	// No falling damage in this sector
+	SECF_FLOORDROP		= 4,	// all actors standing on this floor will remain on it when it lowers very fast.
 };
 
 struct FDynamicColormap;
@@ -500,7 +507,7 @@ struct side_t
 	WORD		linenum;
 	DWORD		LeftSide, RightSide;	// [RH] Group walls into loops
 	WORD		TexelLength;
-	SBYTE		Light;
+	SWORD		Light;
 	BYTE		Flags;
 
 	int GetLightLevel (bool foggy, int baselight) const;
@@ -819,6 +826,7 @@ public:
 		TEX_Override,	// For patches between TX_START/TX_END
 		TEX_Autopage,	// Automap background - used to enable the use of FAutomapTexture
 		TEX_Null,
+		TEX_FirstDefined,
 	};
 
 	struct Span
@@ -995,6 +1003,7 @@ public:
 	{
 		TEXMAN_TryAny = 1,
 		TEXMAN_Overridable = 2,
+		TEXMAN_ReturnFirst = 4,
 	};
 
 	int CheckForTexture (const char *name, int usetype, BITFIELD flags=TEXMAN_TryAny);
