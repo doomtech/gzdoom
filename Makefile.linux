@@ -6,9 +6,9 @@ CC ?= gcc
 NASM ?= nasm
 CCDV = @./ccdv
 ifndef DEBUG
-CFLAGS ?= -pipe -Wall -Wno-unused -O2 -fomit-frame-pointer
+CFLAGS ?= -pipe -Wall -Wno-unused -fno-strict-aliasing -O2 -fomit-frame-pointer
 else
-CFLAGS ?= -pipe -Wall -Wno-unused
+CFLAGS ?= -pipe -Wall -Wno-unused -fno-strict-aliasing
 endif
 CFLAGS += `pkg-config gtk+-2.0 --cflags`
 CFLAGS += -DHAVE_FILELENGTH -D__forceinline=inline `sdl-config --cflags`
@@ -18,7 +18,7 @@ LDFLAGS += -lz $(FMOD_PREFIX)/lib/libfmodex.so `sdl-config --libs`
 LDFLAGS += -ljpeg `pkg-config gtk+-2.0 --libs`
 LDFLAGS += -lGL -lGLU
 NASMFLAGS += -f elf -DM_TARGET_LINUX
-SRCDIRS = src/ $(addprefix src/,g_doom/ g_heretic/ g_hexen/ g_raven/ g_shared/ g_strife/ oplsynth/ sound/ fragglescript/ thingdef/ Linux/ sdl/ gl/ gl/r_render/ textures/ xlat/)
+SRCDIRS = src/ $(addprefix src/,g_doom/ g_heretic/ g_hexen/ g_raven/ g_shared/ g_strife/ oplsynth/ sound/ fragglescript/ thingdef/ Linux/ sdl/ gl/ gl/r_render/ textures/ xlat/ timidity/)
 INCLUDES = $(addprefix -I,$(SRCDIRS))
 INCLUDES += -Isnes_spc/snes_spc/ -I$(FMOD_PREFIX)/include/fmodex/
 CFLAGS += $(INCLUDES)
@@ -79,9 +79,9 @@ _obj_: _src_
 	$(CCDV) $(CC) -c $(CFLAGS) -o _obj_ -c _src_
 endef
 
-all: $(ZDOOMBIN) toolsandpk3 zdoom.pk3
+all: $(ZDOOMBIN) toolsandpk3 gzdoom.pk3 brightmaps.pk3 lights.pk3
 
-$(ZDOOMBIN): ccdv $(OBJDIR) $(if $(RESTART),deps) $(OBJS) snes_spc/libsnes_spc.a
+$(ZDOOMBIN): ccdv $(if $(RESTART),updaterev) src/xlat/xlat_parser.h src/xlat/xlat_parser.c $(OBJDIR) $(if $(RESTART),deps) $(OBJS) snes_spc/libsnes_spc.a
 ifndef RESTART
 	$(CCDV) $(CXX) $(LDFLAGS) $(OBJDIR)/autostart.o \
 	$(filter-out %/autostart.o %/autozend.o,$(OBJS)) \
@@ -136,11 +136,19 @@ src/xlat/xlat_parser.h src/xlat/xlat_parser.c: tools/lemon/lemon src/xlat/xlat_p
 $(OBJDIR):
 	mkdir $(OBJDIR)
 
-toolsandpk3: ccdv tools/makewad/makewad src/svnrevision_gz.h
+toolsandpk3: ccdv tools/makewad/makewad tools/lemon/lemon tools/updaterevision/updaterevision
 	$(MAKE) -C wadsrc/
+	$(MAKE) -C wadsrc_bm/
+	$(MAKE) -C wadsrc_lights/
 
-zdoom.pk3: toolsandpk3
+gzdoom.pk3: toolsandpk3
 	ln -sf wadsrc/gzdoom.pk3 ./
+
+brightmaps.pk3: toolsandpk3
+	ln -sf wadsrc_bm/brightmaps.pk3 ./
+
+lights.pk3: toolsandpk3
+	ln -sf wadsrc_lights/lights.pk3 ./
 
 snes_spc/libsnes_spc.a: ccdv
 	$(MAKE) -C snes_spc/
@@ -154,13 +162,13 @@ tools/lemon/lemon: ccdv
 tools/updaterevision/updaterevision: ccdv
 	$(MAKE) -C tools/updaterevision/
 
-src/svnrevision_gz.h: tools/updaterevision/updaterevision
+updaterev: tools/updaterevision/updaterevision
 	tools/updaterevision/updaterevision . src/svnrevision_gz.h
 
 ccdv: ccdv-posix.c
 	@gcc -Os -s ccdv-posix.c -o ccdv
 
-.PHONY : clean cleandeps cleanobjs distclean deps toolsandpk3
+.PHONY : clean cleandeps cleanobjs distclean deps toolsandpk3 updaterev
 
 clean: cleanobjs
 	rm -f $(ZDOOMDEBUG) $(ZDOOM) $(ZDOOM).map

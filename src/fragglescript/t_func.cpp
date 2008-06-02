@@ -4346,7 +4346,7 @@ void FParser::SF_SectorType(void)
 
 void FParser::SF_SetLineTrigger()
 {
-	int i,id,spec,tag;
+	int i,id,spec,tag(0);
 
 	if (CheckArgs(2))
 	{
@@ -4610,7 +4610,7 @@ void FParser::SF_ScriptRunning()
 
 static int zoom=1;	// Dummy - no longer needed!
 
-inline void new_function(char *name, void (FParser::*handler)() )
+inline void new_function(const char *name, void (FParser::*handler)() )
 {
 	global_script->NewVariable (name, svt_function)->value.handler = handler;
 }

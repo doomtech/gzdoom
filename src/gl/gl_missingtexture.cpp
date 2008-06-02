@@ -104,7 +104,7 @@ void GLDrawInfo::AddUpperMissingTexture(seg_t * seg, fixed_t backheight)
 	if (!seg->backsector) return;
 
 	clock(totalms);
-	MissingTextureInfo mti;
+	MissingTextureInfo mti = {};
 	MissingSegInfo msi;
 
 	if (!seg->Subsector) 
@@ -123,7 +123,7 @@ void GLDrawInfo::AddUpperMissingTexture(seg_t * seg, fixed_t backheight)
 		return;
 	}
 
-	for(int i=0;i<MissingUpperTextures.Size();i++)
+	for(unsigned int i=0;i<MissingUpperTextures.Size();i++)
 	{
 		if (MissingUpperTextures[i].sub == sub)
 		{
@@ -165,7 +165,7 @@ void GLDrawInfo::AddLowerMissingTexture(seg_t * seg, fixed_t backheight)
 	}
 
 	clock(totalms);
-	MissingTextureInfo mti;
+	MissingTextureInfo mti = {};
 	MissingSegInfo msi;
 
 	if (!seg->Subsector) 
@@ -191,7 +191,7 @@ void GLDrawInfo::AddLowerMissingTexture(seg_t * seg, fixed_t backheight)
 		return;
 	}
 
-	for(int i=0;i<MissingLowerTextures.Size();i++)
+	for(unsigned int i=0;i<MissingLowerTextures.Size();i++)
 	{
 		if (MissingLowerTextures[i].sub == sub)
 		{
@@ -229,13 +229,13 @@ bool GLDrawInfo::DoOneSectorUpper(subsector_t * subsec, fixed_t planez)
 {
 	// Is there a one-sided wall in this sector?
 	// Do this first to avoid unnecessary recursion
-	for(int i=0; i< subsec->numlines; i++)
+	for(DWORD i=0; i< subsec->numlines; i++)
 	{
 		if (segs[subsec->firstline + i].backsector == NULL) return false;
 		if (segs[subsec->firstline + i].PartnerSeg == NULL) return false;
 	}
 
-	for(int i=0; i< subsec->numlines; i++)
+	for(DWORD i=0; i< subsec->numlines; i++)
 	{
 		seg_t * seg = &segs[subsec->firstline + i];
 		subsector_t * backsub = seg->PartnerSeg->Subsector;
@@ -287,13 +287,13 @@ bool GLDrawInfo::DoOneSectorLower(subsector_t * subsec, fixed_t planez)
 {
 	// Is there a one-sided wall in this subsector?
 	// Do this first to avoid unnecessary recursion
-	for(int i=0; i< subsec->numlines; i++)
+	for(DWORD i=0; i< subsec->numlines; i++)
 	{
 		if (segs[subsec->firstline + i].backsector == NULL) return false;
 		if (segs[subsec->firstline + i].PartnerSeg == NULL) return false;
 	}
 
-	for(int i=0; i< subsec->numlines; i++)
+	for(DWORD i=0; i< subsec->numlines; i++)
 	{
 		seg_t * seg = &segs[subsec->firstline + i];
 		subsector_t * backsub = seg->PartnerSeg->Subsector;
@@ -346,13 +346,13 @@ bool GLDrawInfo::DoFakeBridge(subsector_t * subsec, fixed_t planez)
 {
 	// Is there a one-sided wall in this sector?
 	// Do this first to avoid unnecessary recursion
-	for(int i=0; i< subsec->numlines; i++)
+	for(DWORD i=0; i< subsec->numlines; i++)
 	{
 		if (segs[subsec->firstline + i].backsector == NULL) return false;
 		if (segs[subsec->firstline + i].PartnerSeg == NULL) return false;
 	}
 
-	for(int i=0; i< subsec->numlines; i++)
+	for(DWORD i=0; i< subsec->numlines; i++)
 	{
 		seg_t * seg = &segs[subsec->firstline + i];
 		subsector_t * backsub = seg->PartnerSeg->Subsector;
@@ -399,13 +399,13 @@ bool GLDrawInfo::DoFakeCeilingBridge(subsector_t * subsec, fixed_t planez)
 {
 	// Is there a one-sided wall in this sector?
 	// Do this first to avoid unnecessary recursion
-	for(int i=0; i< subsec->numlines; i++)
+	for(DWORD i=0; i< subsec->numlines; i++)
 	{
 		if (segs[subsec->firstline + i].backsector == NULL) return false;
 		if (segs[subsec->firstline + i].PartnerSeg == NULL) return false;
 	}
 
-	for(int i=0; i< subsec->numlines; i++)
+	for(DWORD i=0; i< subsec->numlines; i++)
 	{
 		seg_t * seg = &segs[subsec->firstline + i];
 		subsector_t * backsub = seg->PartnerSeg->Subsector;
@@ -456,7 +456,7 @@ void GLDrawInfo::HandleMissingTextures()
 	totalupper=MissingUpperTextures.Size();
 	totallower=MissingLowerTextures.Size();
 
-	for(int i=0;i<MissingUpperTextures.Size();i++)
+	for(unsigned int i=0;i<MissingUpperTextures.Size();i++)
 	{
 		if (!MissingUpperTextures[i].seg) continue;
 		HandledSubsectors.Clear();
@@ -473,7 +473,7 @@ void GLDrawInfo::HandleMissingTextures()
 				// The mere fact that this seg has been added to the list means that the back sector
 				// will be rendered so we can safely assume that it is already in the render list
 
-				for(int j=0;j<HandledSubsectors.Size();j++)
+				for(unsigned int j=0;j<HandledSubsectors.Size();j++)
 				{				
 					gl_subsectorrendernode * node = SSR_List.GetNew();
 					node->sub = HandledSubsectors[j];
@@ -484,9 +484,9 @@ void GLDrawInfo::HandleMissingTextures()
 				if (HandledSubsectors.Size()!=1)
 				{
 					// mark all subsectors in the missing list that got processed by this
-					for(int j=0;j<HandledSubsectors.Size();j++)
+					for(unsigned int j=0;j<HandledSubsectors.Size();j++)
 					{
-						for(int k=0;k<MissingUpperTextures.Size();k++)
+						for(unsigned int k=0;k<MissingUpperTextures.Size();k++)
 						{
 							if (MissingUpperTextures[k].sub==HandledSubsectors[j])
 							{
@@ -516,7 +516,7 @@ void GLDrawInfo::HandleMissingTextures()
 				// The mere fact that this seg has been added to the list means that the back sector
 				// will be rendered so we can safely assume that it is already in the render list
 
-				for(int j=0;j<HandledSubsectors.Size();j++)
+				for(unsigned int j=0;j<HandledSubsectors.Size();j++)
 				{				
 					gl_subsectorrendernode * node = SSR_List.GetNew();
 					node->sub = HandledSubsectors[j];
@@ -527,7 +527,7 @@ void GLDrawInfo::HandleMissingTextures()
 		}
 	}
 
-	for(int i=0;i<MissingLowerTextures.Size();i++)
+	for(unsigned int i=0;i<MissingLowerTextures.Size();i++)
 	{
 		if (!MissingLowerTextures[i].seg) continue;
 		HandledSubsectors.Clear();
@@ -544,7 +544,7 @@ void GLDrawInfo::HandleMissingTextures()
 				// The mere fact that this seg has been added to the list means that the back sector
 				// will be rendered so we can safely assume that it is already in the render list
 
-				for(int j=0;j<HandledSubsectors.Size();j++)
+				for(unsigned int j=0;j<HandledSubsectors.Size();j++)
 				{				
 					gl_subsectorrendernode * node = SSR_List.GetNew();
 					node->sub = HandledSubsectors[j];
@@ -554,9 +554,9 @@ void GLDrawInfo::HandleMissingTextures()
 				if (HandledSubsectors.Size()!=1)
 				{
 					// mark all subsectors in the missing list that got processed by this
-					for(int j=0;j<HandledSubsectors.Size();j++)
+					for(unsigned int j=0;j<HandledSubsectors.Size();j++)
 					{
-						for(int k=0;k<MissingLowerTextures.Size();k++)
+						for(unsigned int k=0;k<MissingLowerTextures.Size();k++)
 						{
 							if (MissingLowerTextures[k].sub==HandledSubsectors[j])
 							{
@@ -586,7 +586,7 @@ void GLDrawInfo::HandleMissingTextures()
 				// The mere fact that this seg has been added to the list means that the back sector
 				// will be rendered so we can safely assume that it is already in the render list
 
-				for(int j=0;j<HandledSubsectors.Size();j++)
+				for(unsigned int j=0;j<HandledSubsectors.Size();j++)
 				{				
 					gl_subsectorrendernode * node = SSR_List.GetNew();
 					node->sub = HandledSubsectors[j];
@@ -950,7 +950,7 @@ bool GLDrawInfo::CheckAnchorFloor(subsector_t * sub)
 	if (sub->hacked==3) return true;
 	if (sub->degenerate) return false;
 
-	for(int j=0;j<sub->numlines;j++)
+	for(DWORD j=0;j<sub->numlines;j++)
 	{
 		seg_t * seg = &segs[sub->firstline+j];
 		if (!seg->PartnerSeg) return true;
@@ -1012,7 +1012,7 @@ bool GLDrawInfo::CollectSubsectorsFloor(subsector_t * sub, sector_t * anchor)
 
 	// We can assume that all segs in this subsector are connected to a subsector that has
 	// to be checked as well
-	for(int j=0;j<sub->numlines;j++)
+	for(DWORD j=0;j<sub->numlines;j++)
 	{
 		seg_t * seg = &segs[sub->firstline+j];
 		if (seg->PartnerSeg)
@@ -1056,7 +1056,7 @@ bool GLDrawInfo::CheckAnchorCeiling(subsector_t * sub)
 	if (sub->hacked==3) return true;
 	if (sub->degenerate) return false;
 
-	for(int j=0;j<sub->numlines;j++)
+	for(DWORD j=0;j<sub->numlines;j++)
 	{
 		seg_t * seg = &segs[sub->firstline+j];
 		if (!seg->PartnerSeg) return true;
@@ -1113,7 +1113,7 @@ bool GLDrawInfo::CollectSubsectorsCeiling(subsector_t * sub, sector_t * anchor)
 
 	// We can assume that all segs in this subsector are connected to a subsector that has
 	// to be checked as well
-	for(int j=0;j<sub->numlines;j++)
+	for(DWORD j=0;j<sub->numlines;j++)
 	{
 		seg_t * seg = &segs[sub->firstline+j];
 		if (seg->PartnerSeg)
@@ -1159,7 +1159,7 @@ void GLDrawInfo::HandleHackedSubsectors()
 
 	// Each subsector may only be processed once in this loop!
 	validcount++;
-	for(int i=0;i<SubsectorHacks.Size();i++)
+	for(unsigned int i=0;i<SubsectorHacks.Size();i++)
 	{
 		subsector_t * sub = SubsectorHacks[i].sub;
 		if (sub->validcount!=validcount && CheckAnchorFloor(sub))
@@ -1170,14 +1170,14 @@ void GLDrawInfo::HandleHackedSubsectors()
 			lowersegs.Clear();
 			if (CollectSubsectorsFloor(sub, sub->render_sector))
 			{
-				for(int j=0;j<HandledSubsectors.Size();j++)
+				for(unsigned int j=0;j<HandledSubsectors.Size();j++)
 				{				
 					gl_subsectorrendernode * node = SSR_List.GetNew();
 
 					node->sub = HandledSubsectors[j];
 					AddOtherFloorPlane(sub->render_sector->sectornum, node);
 				}
-				if (inview) for(int j=0;j<lowersegs.Size();j++)
+				if (inview) for(unsigned int j=0;j<lowersegs.Size();j++)
 				{
 					seg_t * seg=lowersegs[j];
 					wall.ProcessLowerMiniseg (seg, seg->Subsector->render_sector, seg->PartnerSeg->Subsector->render_sector);
@@ -1189,7 +1189,7 @@ void GLDrawInfo::HandleHackedSubsectors()
 
 	// Each subsector may only be processed once in this loop!
 	validcount++;
-	for(int i=0;i<SubsectorHacks.Size();i++)
+	for(unsigned int i=0;i<SubsectorHacks.Size();i++)
 	{
 		subsector_t * sub = SubsectorHacks[i].sub;
 		if (sub->validcount!=validcount && CheckAnchorCeiling(sub))
@@ -1198,7 +1198,7 @@ void GLDrawInfo::HandleHackedSubsectors()
 			HandledSubsectors.Clear();
 			if (CollectSubsectorsCeiling(sub, sub->render_sector))
 			{
-				for(int j=0;j<HandledSubsectors.Size();j++)
+				for(unsigned int j=0;j<HandledSubsectors.Size();j++)
 				{				
 					gl_subsectorrendernode * node = SSR_List.GetNew();
 
@@ -1276,7 +1276,7 @@ void GLDrawInfo::CollectSectorStacksCeiling(subsector_t * sub, sector_t * anchor
 
 	HandledSubsectors.Push (sub);
 
-	for(int j=0;j<sub->numlines;j++)
+	for(DWORD j=0;j<sub->numlines;j++)
 	{
 		seg_t * seg = &segs[sub->firstline+j];
 		if (seg->PartnerSeg)
@@ -1324,7 +1324,7 @@ void GLDrawInfo::CollectSectorStacksFloor(subsector_t * sub, sector_t * anchor)
 
 	HandledSubsectors.Push (sub);
 
-	for(int j=0;j<sub->numlines;j++)
+	for(DWORD j=0;j<sub->numlines;j++)
 	{
 		seg_t * seg = &segs[sub->firstline+j];
 		if (seg->PartnerSeg)
@@ -1344,7 +1344,7 @@ void GLDrawInfo::CollectSectorStacksFloor(subsector_t * sub, sector_t * anchor)
 
 void GLDrawInfo::ProcessSectorStacks()
 {
-	int i;
+	unsigned int i;
 
 	validcount++;
 	for (i=0;i<CeilingStacks.Size (); i++)
@@ -1352,7 +1352,7 @@ void GLDrawInfo::ProcessSectorStacks()
 		subsector_t * sub = CeilingStacks[i];
 
 		HandledSubsectors.Clear();
-		for(int j=0;j<sub->numlines;j++)
+		for(DWORD j=0;j<sub->numlines;j++)
 		{
 			seg_t * seg = &segs[sub->firstline+j];
 			if (seg->PartnerSeg)
@@ -1363,7 +1363,7 @@ void GLDrawInfo::ProcessSectorStacks()
 			}
 		}
 
-		for(int j=0;j<HandledSubsectors.Size();j++)
+		for(unsigned int j=0;j<HandledSubsectors.Size();j++)
 		{				
 			ss_renderflags[HandledSubsectors[j]-subsectors] &= ~SSRF_RENDERCEILING;
 
@@ -1382,7 +1382,7 @@ void GLDrawInfo::ProcessSectorStacks()
 		subsector_t * sub = FloorStacks[i];
 
 		HandledSubsectors.Clear();
-		for(int j=0;j<sub->numlines;j++)
+		for(DWORD j=0;j<sub->numlines;j++)
 		{
 			seg_t * seg = &segs[sub->firstline+j];
 			if (seg->PartnerSeg)
@@ -1393,7 +1393,7 @@ void GLDrawInfo::ProcessSectorStacks()
 			}
 		}
 
-		for(int j=0;j<HandledSubsectors.Size();j++)
+		for(unsigned int j=0;j<HandledSubsectors.Size();j++)
 		{				
 			//Printf("%d: ss %d, sec %d\n", j, HandledSubsectors[j]-subsectors, HandledSubsectors[j]->render_sector->sectornum);
 			ss_renderflags[HandledSubsectors[j]-subsectors] &= ~SSRF_RENDERFLOOR;
