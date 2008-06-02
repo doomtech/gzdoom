@@ -897,7 +897,7 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 	{
 		bool translucent = false;
 
-		switch (seg->sidedef->Flags& WALLF_ADDTRANS)//TRANSBITS)
+		switch (seg->linedef->flags& ML_ADDTRANS)//TRANSBITS)
 		{
 		case 0:
 			RenderStyle=STYLE_Translucent;
@@ -905,7 +905,7 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 			translucent = seg->linedef->Alpha < FRACUNIT || (gltexture && gltexture->GetTransparent());
 			break;
 
-		case WALLF_ADDTRANS:
+		case ML_ADDTRANS:
 			RenderStyle=STYLE_Add;
 			alpha=FIXED2FLOAT(seg->linedef->Alpha);
 			translucent=true;
