@@ -484,7 +484,7 @@ void FParser::RunStatement()
 //
 //==========================================================================
 
-int FParser::FindOperator(int start, int stop, char *value)
+int FParser::FindOperator(int start, int stop, const char *value)
 {
 	int i;
 	int bracketlevel = 0;
@@ -513,7 +513,7 @@ int FParser::FindOperator(int start, int stop, char *value)
 //
 //==========================================================================
 
-int FParser::FindOperatorBackwards(int start, int stop, char *value)
+int FParser::FindOperatorBackwards(int start, int stop, const char *value)
 {
 	int i;
 	int bracketlevel = 0;
@@ -733,7 +733,7 @@ void FParser::ErrorMessage(FString msg)
 //
 //==========================================================================
 
-void script_error(char *s, ...)
+void script_error(const char *s, ...)
 {
 	FString composed;
 	va_list args;

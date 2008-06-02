@@ -351,7 +351,7 @@ struct FParser
 {
 	struct operator_t
 	{
-		char *string;
+		const char *string;
 		void (FParser::*handler)(svalue_t &, int, int, int); // left, mid, right
 		int direction;
 	};
@@ -405,8 +405,8 @@ struct FParser
 
 	void Run(char *rover, char *data, char *end);
 	void RunStatement();
-	int FindOperator(int start, int stop, char *value);
-	int FindOperatorBackwards(int start, int stop, char *value);
+	int FindOperator(int start, int stop, const char *value);
+	int FindOperatorBackwards(int start, int stop, const char *value);
 	void SimpleEvaluate(svalue_t &, int n);
 	void PointlessBrackets(int *start, int *stop);
 	void EvaluateExpression(svalue_t &, int start, int stop);
@@ -677,7 +677,7 @@ public:
 
 #include "t_fs.h"
 
-void script_error(char *s, ...);
+void script_error(const char *s, ...);
 void FS_EmulateCmd(char * string);
 
 extern AActor *trigger_obj;
