@@ -1439,7 +1439,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 	{
 		if (seg->sidedef->Flags & WALLF_AUTOCONTRAST)
 		{
-			rellight = (seg->linedef->dx==0? level.WallVertLight : seg->linedef->dy==0 ? level.WallHorizLight : 0)<<1;
+			rellight = (seg->linedef->dx==0? level.WallVertLight : seg->linedef->dy==0 ? level.WallHorizLight : 0);
 		}
 		else if (!(seg->sidedef->Flags & WALLF_ABSLIGHTING))
 		{

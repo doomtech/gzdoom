@@ -74,7 +74,6 @@ extern bool P_LoadBuildMap (BYTE *mapdata, size_t len, FMapThing **things, int *
 extern void P_TranslateTeleportThings (void);
 
 void P_ParseTextMap(MapData *map);
-void P_SpawnTextThings(int position);
 
 extern int numinterpolations;
 extern unsigned int R_OldBlend;
@@ -3160,21 +3159,6 @@ void P_FreeLevelData ()
 	}
 	if (polyobjs != NULL)
 	{
-		for (int i = 0; i < po_NumPolyobjs; ++i)
-		{
-			if (polyobjs[i].segs != NULL)
-			{
-				delete[] polyobjs[i].segs;
-			}
-			if (polyobjs[i].originalPts != NULL)
-			{
-				delete[] polyobjs[i].originalPts;
-			}
-			if (polyobjs[i].prevPts != NULL)
-			{
-				delete[] polyobjs[i].prevPts;
-			}
-		}
 		delete[] polyobjs;
 		polyobjs = NULL;
 	}
@@ -3319,6 +3303,7 @@ void P_SetupLevel (char *lumpname, int position)
 			// If none has been defined in a map use the game's default.
 			P_LoadTranslator(level.info->translator != NULL? (const char *)level.info->translator : gameinfo.translator);
 		}
+		T_LoadScripts(map);
 
 		if (!map->HasBehavior || map->isText)
 		{
