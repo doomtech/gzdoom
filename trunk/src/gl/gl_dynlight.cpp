@@ -50,6 +50,7 @@
 #include "r_state.h"
 #include "stats.h"
 #include "zstring.h"
+#include "d_dehacked.h"
 
 #include "gl/gl_functions.h"
 #include "gl/gl_lights.h"
@@ -66,22 +67,14 @@ void gl_ParseBrightmap(FScanner &sc, int);
 //
 // Dehacked aliasing
 //
-// There's no need for a complicated alias list. All the needed
-// information is directly accessible!
-//
 //==========================================================================
-extern TArray<PClass *> DehackedPickups;
-
-class ADehackedPickup : public AInventory
-{
-	DECLARE_ACTOR (ADehackedPickup, AInventory)
-};
 
 inline const PClass * GetRealType(const PClass * ti)
 {
-	if (GetDefaultByType(ti)->SpawnState == &ADehackedPickup::States[0])
+	FActorInfo *rep = ti->ActorInfo->GetReplacement();
+	if (rep != ti->ActorInfo && rep != NULL && rep->Class->IsDescendantOf(RUNTIME_CLASS(ADehackedPickup)))
 	{
-		return DehackedPickups[GetDefaultByType(ti)->health];
+		return rep->Class;
 	}
 	return ti;
 }
