@@ -5,6 +5,10 @@ CXX ?= g++
 CC ?= gcc
 NASM ?= nasm
 CCDV = @./ccdv
+
+# Can be libdumbd.a, if you really need to debug DUMB
+DUMBLIB ?= libdumbd.a
+
 ifndef DEBUG
 CFLAGS ?= -pipe -Wall -Wno-unused -fno-strict-aliasing -O2 -fomit-frame-pointer
 else
@@ -81,11 +85,11 @@ endef
 
 all: $(ZDOOMBIN) toolsandpk3 gzdoom.pk3 brightmaps.pk3 lights.pk3
 
-$(ZDOOMBIN): ccdv $(if $(RESTART),updaterev) src/xlat/xlat_parser.h src/xlat/xlat_parser.c $(OBJDIR) $(if $(RESTART),deps) $(OBJS) snes_spc/libsnes_spc.a
+$(ZDOOMBIN): ccdv $(if $(RESTART),updaterev) src/xlat/xlat_parser.h src/xlat/xlat_parser.c $(OBJDIR) $(if $(RESTART),deps) $(OBJS) snes_spc/libsnes_spc.a dumb/lib/$(DUMBLIB)
 ifndef RESTART
 	$(CCDV) $(CXX) $(LDFLAGS) $(OBJDIR)/autostart.o \
 	$(filter-out %/autostart.o %/autozend.o,$(OBJS)) \
-	snes_spc/libsnes_spc.a $(OBJDIR)/autozend.o -o $(ZDOOMBIN)
+	snes_spc/libsnes_spc.a dumb/lib/$(DUMBLIB) $(OBJDIR)/autozend.o -o $(ZDOOMBIN)
 endif
 
 # include any of the dep files that already exist
@@ -152,6 +156,12 @@ lights.pk3: toolsandpk3
 
 snes_spc/libsnes_spc.a: ccdv
 	$(MAKE) -C snes_spc/
+
+dumb/lib/libdumb.a: ccdv
+	$(MAKE) -C dumb/
+
+dumb/lib/libdumbd.a: ccdv
+	$(MAKE) CONFIG=Debug -C dumb/
 
 tools/makewad/makewad: ccdv
 	$(MAKE) -C tools/makewad/
