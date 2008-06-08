@@ -40,6 +40,7 @@
 #include "gi.h"
 #include "m_png.h"
 #include "st_stuff.h"
+#include "r_interpolate.h"
 #include "gl/gl_struct.h"
 #include "gl/gl_renderstruct.h"
 #include "gl/gl_portal.h"
@@ -833,7 +834,7 @@ sector_t * gl_RenderView (AActor * camera, GL_IRECT * bounds, float fov, float r
 	gl_DrawScene();
 	GLDrawInfo::EndDrawInfo();
 
-	restoreinterpolations ();
+	interpolator.RestoreInterpolations ();
 	return retval;
 }
 
