@@ -656,7 +656,7 @@ void FParser::EvaluateExpression(svalue_t &result, int start, int stop)
 	// possible pointless brackets
 	if(TokenType[start] == operator_ && TokenType[stop] == operator_)
 		PointlessBrackets(&start, &stop);
-	
+
 	if(start == stop)       // only 1 thing to evaluate
     {
 		SimpleEvaluate(result, start);
@@ -664,7 +664,6 @@ void FParser::EvaluateExpression(svalue_t &result, int start, int stop)
     }
 	
 	// go through each operator in order of precedence
-	
 	for(i=0; i<num_operators; i++)
     {
 		// check backwards for the token. it has to be
@@ -673,11 +672,11 @@ void FParser::EvaluateExpression(svalue_t &result, int start, int stop)
 		
 		if (operators[i].direction==forward)
 		{
-			n = FindOperator(start, stop, operators[i].string);
+			n = FindOperatorBackwards(start, stop, operators[i].string);
 		}
 		else
 		{
-			n = FindOperatorBackwards(start, stop, operators[i].string);
+			n = FindOperator(start, stop, operators[i].string);
 		}
 
 		if( n != -1)
@@ -722,7 +721,6 @@ void FParser::ErrorMessage(FString msg)
 			if(*temp == '\n') linenum++;    // count EOLs
     }
 
-	FString lineinfo;
 	//lineinfo.Format("Script %d, line %d: ", Script->scriptnum, linenum);
 	I_Error("Script %d, line %d: %s", Script->scriptnum, linenum, msg.GetChars());
 }

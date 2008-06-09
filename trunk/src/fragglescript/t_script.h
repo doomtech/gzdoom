@@ -621,7 +621,7 @@ class DRunningScript : public DObject
 	HAS_OBJECT_POINTERS
 
 public:
-	DRunningScript(DFsScript *owner = NULL, int index = 0) ;
+	DRunningScript(AActor *trigger=NULL, DFsScript *owner = NULL, int index = 0) ;
 	void Destroy();
 	void Serialize(FArchive &arc);
 

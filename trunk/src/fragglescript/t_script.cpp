@@ -263,7 +263,7 @@ END_POINTERS
 //
 //==========================================================================
 
-DRunningScript::DRunningScript(DFsScript *owner, int index) 
+DRunningScript::DRunningScript(AActor *trigger, DFsScript *owner, int index) 
 {
 	prev = next = NULL;
 	script = owner;
@@ -272,10 +272,10 @@ DRunningScript::DRunningScript(DFsScript *owner, int index)
 	wait_type = wt_none;
 	wait_data = 0;
 
+	this->trigger = trigger;
 	if (owner == NULL)
 	{
 		for(int i=0; i< VARIABLESLOTS; i++) variables[i] = NULL;
-		trigger = NULL;
 	}
 	else
 	{
@@ -303,7 +303,6 @@ DRunningScript::DRunningScript(DFsScript *owner, int index)
 
 			GC::WriteBarrier(this, variables[i]);
 		}
-		trigger = owner->trigger;
 	}
 }
 
@@ -635,8 +634,7 @@ static bool RunScript(int snum, AActor * t_trigger)
 		DFsScript *script = th->LevelScript->children[snum];
 		if(!script)	return false;
 	
-		DRunningScript *runscr = new DRunningScript(script, 0);
-		runscr->trigger = t_trigger;
+		DRunningScript *runscr = new DRunningScript(t_trigger, script, 0);
 		// hook into chain at start
 		th->AddRunningScript(runscr);
 		return true;
