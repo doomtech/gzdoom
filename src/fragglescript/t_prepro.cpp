@@ -282,7 +282,7 @@ char *DFsScript::ProcessFindChar(char *datap, char find)
 			
 			while(!isop(*labelptr)) labelptr--;
 
-			FString labelname(labelptr+1, strcspn(labelptr, ":"));
+			FString labelname(labelptr+1, strcspn(labelptr+1, ":"));
 			
 			if (labelname.Len() == 0)
 			{

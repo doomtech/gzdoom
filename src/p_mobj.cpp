@@ -4441,7 +4441,8 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t z)
 	{		
 		F3DFloor * rover = sec->e->XFloor.ffloors[i];
 		if (!(rover->flags & FF_EXISTS)) continue;
-		if (rover->top.plane->ZatPoint(thing->x, thing->y) == z)
+		fixed_t planez = rover->top.plane->ZatPoint(thing->x, thing->y);
+		if (z >= planez - 2*FRACUNIT && z <= planez + 3*FRACUNIT)	// account for offset used in P_LineAttack
 		{
 			if (rover->flags & (FF_SOLID|FF_SWIMMABLE) )
 			{
@@ -4449,6 +4450,8 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t z)
 				goto foundone;
 			}
 		}
+		planez = rover->bottom.plane->ZatPoint(thing->x, thing->y);
+		if (planez < z) return false;
 	}
 	if (sec->heightsec == NULL ||
 		//!sec->heightsec->waterzone ||
