@@ -315,6 +315,7 @@ void AActor::Serialize (FArchive &arc)
 		<< MaxDropOffHeight 
 		<< MaxStepHeight
 		<< bouncefactor
+		<< wallbouncefactor
 		<< bouncecount
 		<< maxtargetrange
 		<< meleethreshold
@@ -3137,7 +3138,7 @@ bool AActor::UpdateWaterLevel (fixed_t oldz, bool dosplash)
 		return false;
 	}
 
-	if (Sector->MoreFlags & SECF_UNDERWATERMASK)
+	if (Sector->MoreFlags & SECF_UNDERWATER)	// intentionally not SECF_UNDERWATERMASK
 	{
 		waterlevel = 3;
 	}
@@ -3147,7 +3148,7 @@ bool AActor::UpdateWaterLevel (fixed_t oldz, bool dosplash)
 		if (hsec != NULL && !(hsec->MoreFlags & SECF_IGNOREHEIGHTSEC))
 		{
 			fh = hsec->floorplane.ZatPoint (x, y);
-			//if (hsec->MoreFlags & SECF_UNDERWATERMASK)	// also check Boom-style non-swimmable sectors!
+			//if (hsec->MoreFlags & SECF_UNDERWATERMASK)	// also check Boom-style non-swimmable sectors
 			{
 				if (z < fh)
 				{
@@ -3172,7 +3173,7 @@ bool AActor::UpdateWaterLevel (fixed_t oldz, bool dosplash)
 				}
 			}
 			// even non-swimmable deep water must be checked here to do the splashes correctly
-			// But the water level must be reset when this function returns!
+			// But the water level must be reset when this function returns
 			if (!(hsec->MoreFlags&SECF_UNDERWATERMASK)) reset=true;
 		}
 		else
@@ -3280,6 +3281,7 @@ BEGIN_DEFAULTS (AActor, Any, -1, 0)
 	PROP_MaxDropOffHeight(24)
 	PROP_MaxStepHeight(24)
 	PROP_BounceFactor(FRACUNIT*7/10)
+	PROP_WallBounceFactor(FRACUNIT*3/4)
 	PROP_BounceCount(-1)
 	PROP_FloatSpeed(4)
 	PROP_Gravity(FRACUNIT)

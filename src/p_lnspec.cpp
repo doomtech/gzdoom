@@ -1558,10 +1558,11 @@ FUNC(LS_ACS_Execute)
 {
 	level_info_t *info;
 
-	if ( (arg1 == 0) || !(info = FindLevelByNum (arg1)) )
+	if (arg1 == 0)
 		return P_StartScript (it, ln, arg0, level.mapname, backSide, arg2, arg3, arg4, false, false);
-	else
+	else if ((info = FindLevelByNum (arg1)) )
 		return P_StartScript (it, ln, arg0, info->mapname, backSide, arg2, arg3, arg4, false, false);
+	else return false;
 }
 
 FUNC(LS_ACS_ExecuteAlways)
@@ -1569,10 +1570,11 @@ FUNC(LS_ACS_ExecuteAlways)
 {
 	level_info_t *info;
 
-	if ( (arg1 == 0) || !(info = FindLevelByNum (arg1)) )
+	if (arg1 == 0)
 		return P_StartScript (it, ln, arg0, level.mapname, backSide, arg2, arg3, arg4, true, false);
-	else
+	else if ((info = FindLevelByNum (arg1)) )
 		return P_StartScript (it, ln, arg0, info->mapname, backSide, arg2, arg3, arg4, true, false);
+	else return false;
 }
 
 FUNC(LS_ACS_LockedExecute)
@@ -1607,9 +1609,9 @@ FUNC(LS_ACS_Suspend)
 {
 	level_info_t *info;
 
-	if ( (arg1 == 0) || !(info = FindLevelByNum (arg1)) )
+	if (arg1 == 0)
 		P_SuspendScript (arg0, level.mapname);
-	else
+	else if ((info = FindLevelByNum (arg1)) )
 		P_SuspendScript (arg0, info->mapname);
 
 	return true;
@@ -1620,9 +1622,9 @@ FUNC(LS_ACS_Terminate)
 {
 	level_info_t *info;
 
-	if ( (arg1 == 0) || !(info = FindLevelByNum (arg1)) )
+	if (arg1 == 0)
 		P_TerminateScript (arg0, level.mapname);
-	else
+	else if ((info = FindLevelByNum (arg1)) )
 		P_TerminateScript (arg0, info->mapname);
 
 	return true;
@@ -2158,8 +2160,8 @@ FUNC(LS_Sector_SetCeilingPanning)
 
 	while ((secnum = P_FindSectorFromTag (arg0, secnum)) >= 0)
 	{
-		sectors[secnum].ceiling_xoffs = xofs;
-		sectors[secnum].ceiling_yoffs = yofs;
+		sectors[secnum].SetXOffset(sector_t::ceiling, xofs);
+		sectors[secnum].SetYOffset(sector_t::ceiling, yofs);
 	}
 	return true;
 }
@@ -2173,8 +2175,8 @@ FUNC(LS_Sector_SetFloorPanning)
 
 	while ((secnum = P_FindSectorFromTag (arg0, secnum)) >= 0)
 	{
-		sectors[secnum].floor_xoffs = xofs;
-		sectors[secnum].floor_yoffs = yofs;
+		sectors[secnum].SetXOffset(sector_t::floor, xofs);
+		sectors[secnum].SetYOffset(sector_t::floor, yofs);
 	}
 	return true;
 }
@@ -2194,9 +2196,9 @@ FUNC(LS_Sector_SetCeilingScale)
 	while ((secnum = P_FindSectorFromTag (arg0, secnum)) >= 0)
 	{
 		if (xscale)
-			sectors[secnum].ceiling_xscale = xscale;
+			sectors[secnum].SetXScale(sector_t::ceiling, arg1);
 		if (yscale)
-			sectors[secnum].ceiling_yscale = yscale;
+			sectors[secnum].SetYScale(sector_t::ceiling, arg2);
 	}
 	return true;
 }
@@ -2214,9 +2216,9 @@ FUNC(LS_Sector_SetFloorScale2)
 	while ((secnum = P_FindSectorFromTag (arg0, secnum)) >= 0)
 	{
 		if (arg1)
-			sectors[secnum].floor_xscale = arg1;
+			sectors[secnum].SetXScale(sector_t::floor, arg1);
 		if (arg2)
-			sectors[secnum].floor_yscale = arg2;
+			sectors[secnum].SetXScale(sector_t::floor, arg1);
 	}
 	return true;
 }
@@ -2234,9 +2236,9 @@ FUNC(LS_Sector_SetCeilingScale2)
 	while ((secnum = P_FindSectorFromTag (arg0, secnum)) >= 0)
 	{
 		if (arg1)
-			sectors[secnum].ceiling_xscale = arg1;
+			sectors[secnum].SetXScale(sector_t::ceiling, arg1);
 		if (arg2)
-			sectors[secnum].ceiling_yscale = arg2;
+			sectors[secnum].SetXScale(sector_t::ceiling, arg1);
 	}
 	return true;
 }
@@ -2256,9 +2258,9 @@ FUNC(LS_Sector_SetFloorScale)
 	while ((secnum = P_FindSectorFromTag (arg0, secnum)) >= 0)
 	{
 		if (xscale)
-			sectors[secnum].floor_xscale = xscale;
+			sectors[secnum].SetXScale(sector_t::floor, arg1);
 		if (yscale)
-			sectors[secnum].floor_yscale = yscale;
+			sectors[secnum].SetXScale(sector_t::floor, arg1);
 	}
 	return true;
 }
@@ -2272,8 +2274,8 @@ FUNC(LS_Sector_SetRotation)
 
 	while ((secnum = P_FindSectorFromTag (arg0, secnum)) >= 0)
 	{
-		sectors[secnum].floor_angle = floor;
-		sectors[secnum].ceiling_angle = ceiling;
+		sectors[secnum].SetAngle(sector_t::floor, floor);
+		sectors[secnum].SetAngle(sector_t::ceiling, ceiling);
 	}
 	return true;
 }
