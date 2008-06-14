@@ -807,12 +807,12 @@ void DWallLightTransfer::DoTransfer (BYTE lightlevel, int target, BYTE flags)
 
 		if (flags & WLF_SIDE1 && line->sidenum[0]!=NO_SIDE)
 		{
-			sides[line->sidenum[0]].Light = lightlevel;
+			sides[line->sidenum[0]].SetLight(lightlevel);
 		}
 
 		if (flags & WLF_SIDE2 && line->sidenum[1]!=NO_SIDE)
 		{
-			sides[line->sidenum[1]].Light = lightlevel;
+			sides[line->sidenum[1]].SetLight(lightlevel);
 		}
 	}
 }
@@ -976,7 +976,7 @@ void P_SpawnSpecials (void)
 		// killough 3/7/98:
 		// support for drawn heights coming from different sector
 		case Transfer_Heights:
-			sec = sides[*lines[i].sidenum].sector;
+			sec = sides[lines[i].sidenum[0]].sector;
 			if (lines[i].args[1] & 2)
 			{
 				sec->MoreFlags |= SECF_FAKEFLOORONLY;
@@ -1154,13 +1154,13 @@ void DScroller::Tick ()
 			break;
 
 		case sc_floor:						// killough 3/7/98: Scroll floor texture
-			sectors[m_Affectee].floor_xoffs += dx;
-			sectors[m_Affectee].floor_yoffs += dy;
+			sectors[m_Affectee].AddXOffset(sector_t::floor, dx);
+			sectors[m_Affectee].AddYOffset(sector_t::floor, dy);
 			break;
 
 		case sc_ceiling:					// killough 3/7/98: Scroll ceiling texture
-			sectors[m_Affectee].ceiling_xoffs += dx;
-			sectors[m_Affectee].ceiling_yoffs += dy;
+			sectors[m_Affectee].AddXOffset(sector_t::ceiling, dx);
+			sectors[m_Affectee].AddYOffset(sector_t::ceiling, dy);
 			break;
 
 		// [RH] Don't actually carry anything here. That happens later.
