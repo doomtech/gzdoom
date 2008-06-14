@@ -160,8 +160,7 @@ void FScriptLoader::ParseInfoCmd(char *line, FString &scriptsrc)
 		{
 			sc.MustGetStringName("=");
 			sc.MustGetString();
-			strncpy(level.info->exitpic, sc.String, 8);
-			level.info->exitpic[8]=0;
+			ReplaceString(&level.info->exitpic, sc.String);
 		}
 		else if (sc.Compare("gravity"))
 		{
