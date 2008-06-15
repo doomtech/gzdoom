@@ -41,6 +41,7 @@
 
 #include "doomdef.h"
 #include "r_blend.h"
+#include "s_sound.h"
 
 struct subsector_t;
 //
@@ -302,6 +303,7 @@ enum
 	MF5_NOINTERACTION	= 0x00200000,	// Thing is completely excluded from any gameplay related checks
 	MF5_NOTIMEFREEZE	= 0x00400000,	// Actor is not affected by time freezer
 	MF5_PUFFGETSOWNER	= 0x00800000,	// [BB] Sets the owner of the puff to the player who fired it
+
 
 // --- mobj.renderflags ---
 
@@ -723,12 +725,12 @@ public:
 	DWORD Translation;
 
 	// [RH] Stuff that used to be part of an Actor Info
-	WORD SeeSound;
-	WORD AttackSound;
-	WORD PainSound;
-	WORD DeathSound;
-	WORD ActiveSound;
-	WORD UseSound;		// [RH] Sound to play when an actor is used.
+	FSoundIDNoInit SeeSound;
+	FSoundIDNoInit AttackSound;
+	FSoundIDNoInit PainSound;
+	FSoundIDNoInit DeathSound;
+	FSoundIDNoInit ActiveSound;
+	FSoundIDNoInit UseSound;		// [RH] Sound to play when an actor is used.
 
 	fixed_t Speed;
 	fixed_t FloatSpeed;
@@ -871,21 +873,5 @@ inline T *Spawn (fixed_t x, fixed_t y, fixed_t z, replace_t allowreplacement)
 }
 
 #define S_FREETARGMOBJ	1
-
-struct FSoundIndex
-{
-	int Index;
-};
-
-struct FSoundIndexWord
-{
-	WORD Index;
-};
-
-FArchive &operator<< (FArchive &arc, FSoundIndex &snd);
-FArchive &operator<< (FArchive &arc, FSoundIndexWord &snd);
-
-#define AR_SOUND(id) (*(FSoundIndex *)&(id))
-#define AR_SOUNDW(id) (*(FSoundIndexWord *)&(id))
 
 #endif // __P_MOBJ_H__

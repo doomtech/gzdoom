@@ -298,12 +298,12 @@ void AActor::Serialize (FArchive &arc)
 		<< id
 		<< FloatBobPhase
 		<< Translation
-		<< AR_SOUNDW(SeeSound)
-		<< AR_SOUNDW(AttackSound)
-		<< AR_SOUNDW(PainSound)
-		<< AR_SOUNDW(DeathSound)
-		<< AR_SOUNDW(ActiveSound)
-		<< AR_SOUNDW(UseSound)
+		<< SeeSound
+		<< AttackSound
+		<< PainSound
+		<< DeathSound
+		<< ActiveSound
+		<< UseSound
 		<< Speed
 		<< FloatSpeed
 		<< Mass
@@ -1175,7 +1175,7 @@ void P_ExplodeMissile (AActor *mo, line_t *line, AActor *target)
 
 		if (mo->DeathSound)
 		{
-			S_SoundID (mo, CHAN_VOICE, mo->DeathSound, 1,
+			S_Sound (mo, CHAN_VOICE, mo->DeathSound, 1,
 				(mo->flags3 & MF3_FULLVOLDEATH) ? ATTN_NONE : ATTN_NORM);
 		}
 	}
@@ -1235,7 +1235,7 @@ bool AActor::FloorBounceMissile (secplane_t &plane)
 
 	if (SeeSound && !(flags4 & MF4_NOBOUNCESOUND))
 	{
-		S_SoundID (this, CHAN_VOICE, SeeSound, 1, ATTN_IDLE);
+		S_Sound (this, CHAN_VOICE, SeeSound, 1, ATTN_IDLE);
 	}
 
 	if ((flags2 & MF2_BOUNCETYPE) == MF2_DOOMBOUNCE)
@@ -1651,7 +1651,7 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 							mo->momy = FixedMul (speed, finesine[angle]);
 							if (mo->SeeSound && !(mo->flags4&MF4_NOBOUNCESOUND))
 							{
-								S_SoundID (mo, CHAN_VOICE, mo->SeeSound, 1, ATTN_IDLE);
+								S_Sound (mo, CHAN_VOICE, mo->SeeSound, 1, ATTN_IDLE);
 							}
 							return;
 						}
@@ -1669,7 +1669,7 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 					{
 						if (mo->SeeSound && !(mo->flags3 & MF3_NOWALLBOUNCESND))
 						{
-							S_SoundID (mo, CHAN_VOICE, mo->SeeSound, 1, ATTN_IDLE);
+							S_Sound (mo, CHAN_VOICE, mo->SeeSound, 1, ATTN_IDLE);
 						}
 						return;
 					}
@@ -2423,7 +2423,7 @@ void AActor::Howl ()
 	int howl = GetClass()->Meta.GetMetaInt(AMETA_HowlSound);
 	if (!S_IsActorPlayingSomething(this, CHAN_BODY, howl))
 	{
-		S_SoundID (this, CHAN_BODY, howl, 1, ATTN_NORM);
+		S_Sound (this, CHAN_BODY, howl, 1, ATTN_NORM);
 	}
 }
 
@@ -2515,7 +2515,7 @@ void AActor::PlayActiveSound ()
 {
 	if (ActiveSound && !S_IsActorPlayingSomething (this, CHAN_VOICE, -1))
 	{
-		S_SoundID (this, CHAN_VOICE, ActiveSound, 1,
+		S_Sound (this, CHAN_VOICE, ActiveSound, 1,
 			(flags3 & MF3_FULLVOLACTIVE) ? ATTN_NONE : ATTN_IDLE);
 	}
 }
@@ -3211,7 +3211,7 @@ bool AActor::UpdateWaterLevel (fixed_t oldz, bool dosplash)
 		}
 	}
 		
-	// some additional checks to make deep sectors à la Boom splash without setting
+	// some additional checks to make deep sectors like Boom's splash without setting
 	// the water flags. 
 	if (boomwaterlevel == 0 && waterlevel != 0 && dosplash) P_HitWater(this, Sector, fh);
 	boomwaterlevel=waterlevel;
@@ -3805,6 +3805,16 @@ APlayerPawn *P_SpawnPlayer (FMapThing *mthing, bool tempplayer)
 	  // it above, but the other modes don't.
 		oldactor->DestroyAllInventory();
 	}
+	// [BC] Handle temporary invulnerability when respawned
+	if ((state == PST_REBORN || state == PST_ENTER) &&
+		(dmflags2 & DF2_YES_RESPAWN_INVUL) &&
+		(multiplayer || alwaysapplydmflags))
+	{
+		APowerup *invul = static_cast<APowerup*>(p->mo->GiveInventoryType (RUNTIME_CLASS(APowerInvulnerable)));
+		invul->EffectTics = 3*TICRATE;
+		invul->BlendColor = 0;				// don't mess with the view
+		p->mo->effects |= FX_RESPAWNINVUL;	// [RH] special effect
+	}
 
 	if (StatusBar != NULL && (playernum == consoleplayer || StatusBar->GetPlayer() == playernum))
 	{
@@ -3824,8 +3834,6 @@ APlayerPawn *P_SpawnPlayer (FMapThing *mthing, bool tempplayer)
 		mobj->z = mobj->ceilingz - mobj->height;
 	}
 
-	// [RH] If someone is in the way, kill them
-	P_PlayerStartStomp (mobj);
 
 	// [BC] Do script stuff
 	if (!tempplayer)
@@ -4224,11 +4232,11 @@ AActor *P_SpawnPuff (const PClass *pufftype, fixed_t x, fixed_t y, fixed_t z, an
 
 		if ((flags & PF_HITTHING) && puff->SeeSound)
 		{ // Hit thing sound
-			S_SoundID (puff, CHAN_BODY, puff->SeeSound, 1, ATTN_NORM);
+			S_Sound (puff, CHAN_BODY, puff->SeeSound, 1, ATTN_NORM);
 		}
 		else if (puff->AttackSound)
 		{
-			S_SoundID (puff, CHAN_BODY, puff->AttackSound, 1, ATTN_NORM);
+			S_Sound (puff, CHAN_BODY, puff->AttackSound, 1, ATTN_NORM);
 		}
 	}
 
@@ -4525,13 +4533,13 @@ foundone:
 	}
 	if (mo)
 	{
-		S_SoundID (mo, CHAN_ITEM, smallsplash ?
+		S_Sound (mo, CHAN_ITEM, smallsplash ?
 			splash->SmallSplashSound : splash->NormalSplashSound,
 			1, ATTN_IDLE);
 	}
 	else
 	{
-		S_SoundID (thing->x, thing->y, z, CHAN_ITEM, smallsplash ?
+		S_Sound (thing->x, thing->y, z, CHAN_ITEM, smallsplash ?
 			splash->SmallSplashSound : splash->NormalSplashSound,
 			1, ATTN_IDLE);
 	}
@@ -4663,18 +4671,18 @@ void P_PlaySpawnSound(AActor *missile, AActor *spawner)
 	{
 		if (!(missile->flags & MF_SPAWNSOUNDSOURCE))
 		{
-			S_SoundID (missile, CHAN_VOICE, missile->SeeSound, 1, ATTN_NORM);
+			S_Sound (missile, CHAN_VOICE, missile->SeeSound, 1, ATTN_NORM);
 		}
 		else if (spawner != NULL)
 		{
-			S_SoundID (spawner, CHAN_WEAPON, missile->SeeSound, 1, ATTN_NORM);
+			S_Sound (spawner, CHAN_WEAPON, missile->SeeSound, 1, ATTN_NORM);
 		}
 		else
 		{
 			// If there is no spawner use the spawn position.
 			// But not in a silenced sector.
 			if (!(missile->Sector->Flags & SECF_SILENT))
-				S_SoundID (&missile->x, CHAN_WEAPON, missile->SeeSound, 1, ATTN_NORM);
+				S_Sound (&missile->x, CHAN_WEAPON, missile->SeeSound, 1, ATTN_NORM);
 		}
 	}
 }
@@ -5143,26 +5151,4 @@ void AActor::SetIdle()
 	FState *idle = FindState (NAME_Idle);
 	if (idle == NULL) idle = SpawnState;
 	SetState(idle);
-}
-
-FArchive &operator<< (FArchive &arc, FSoundIndex &snd)
-{
-	if (arc.IsStoring ())
-	{
-		arc.WriteName (snd.Index ? S_sfx[snd.Index].name.GetChars() : NULL);
-	}
-	else
-	{
-		const char *name = arc.ReadName ();
-		snd.Index = name != NULL ? S_FindSound (name) : 0;
-	}
-	return arc;
-}
-
-FArchive &operator<< (FArchive &arc, FSoundIndexWord &snd)
-{
-	FSoundIndex snd2 = { snd.Index };
-	arc << snd2;
-	snd.Index = snd2.Index;
-	return arc;
 }

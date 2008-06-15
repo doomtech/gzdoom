@@ -4,6 +4,7 @@
 #include "dobject.h"
 #include "actor.h"
 #include "info.h"
+#include "s_sound.h"
 
 #define MAX_MANA				200
 
@@ -97,7 +98,7 @@ enum
 	IF_KEEPDEPLETED		= 1<<13,	// Items with this flag are retained even when they run out.
 	IF_IGNORESKILL		= 1<<14,	// Ignores any skill related multiplicators when giving this item.
 	IF_CREATECOPYMOVED	= 1<<15,	// CreateCopy changed the owner (copy's Owner field holds new owner).
-	IF_INITEFFECTFAILED	= 1<<16		// CreateCopy tried to activate a powerup and activation failed (can happen with PowerMorph)
+	IF_INITEFFECTFAILED	= 1<<16,	// CreateCopy tried to activate a powerup and activation failed (can happen with PowerMorph)
 };
 
 struct vissprite_t;
@@ -140,7 +141,7 @@ public:
 	DWORD ItemFlags;
 	const PClass *PickupFlash;	// actor to spawn as pickup flash
 
-	WORD PickupSound;
+	FSoundIDNoInit PickupSound;
 
 	virtual void BecomeItem ();
 	virtual void BecomePickup ();
@@ -211,7 +212,7 @@ public:
 	int AmmoUse1, AmmoUse2;					// How much ammo to use with each shot
 	int Kickback;
 	fixed_t YAdjust;						// For viewing the weapon fullscreen
-	WORD UpSound, ReadySound;				// Sounds when coming up and idle
+	FSoundIDNoInit UpSound, ReadySound;		// Sounds when coming up and idle
 	const PClass *SisterWeaponType;			// Another weapon to pick up with this one
 	const PClass *ProjectileType;			// Projectile used by primary attack
 	const PClass *AltProjectileType;		// Projectile used by alternate attack

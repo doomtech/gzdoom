@@ -2905,7 +2905,7 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 		AActor *puffDefaults = GetDefaultByType (pufftype);
 		if (puffDefaults->ActiveSound)
 		{ // Play miss sound
-			S_SoundID (t1, CHAN_WEAPON, puffDefaults->ActiveSound, 1, ATTN_NORM);
+			S_Sound (t1, CHAN_WEAPON, puffDefaults->ActiveSound, 1, ATTN_NORM);
 		}
 		if (puffDefaults->flags3 & MF3_ALWAYSPUFF)
 		{ // Spawn the puff anyway
