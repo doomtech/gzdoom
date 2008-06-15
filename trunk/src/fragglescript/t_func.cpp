@@ -372,10 +372,10 @@ static const PClass * T_GetAmmo(const svalue_t &t)
 // of sound management.
 //
 //==========================================================================
-static int T_FindSound(const char * name)
+static FSoundID T_FindSound(const char * name)
 {
 	char buffer[40];
-	int so=S_FindSound(name);
+	FSoundID so=S_FindSound(name);
 
 	if (so>0) return so;
 
@@ -391,10 +391,10 @@ static int T_FindSound(const char * name)
 		strcpy(buffer, name);
 		if (Wads.CheckNumForName(buffer, ns_sounds)<0) sprintf(buffer, "DS%.35s", name);
 	}
-	
-	so=S_AddSound(name, buffer);
+
+	int id = S_AddSound(name, buffer);
 	S_HashSounds();
-	return so;
+	return *(FSoundID*)&id;	// Yuck!
 }
 
 
@@ -1515,7 +1515,7 @@ void FParser::SF_StartSound(void)
 		
 		if (mo)
 		{
-			S_SoundID(mo, CHAN_BODY, T_FindSound(stringvalue(t_argv[1])), 1, ATTN_NORM);
+			S_Sound(mo, CHAN_BODY, T_FindSound(stringvalue(t_argv[1])), 1, ATTN_NORM);
 		}
 	}
 }
@@ -1540,7 +1540,7 @@ void FParser::SF_StartSectorSound(void)
 		while ((i = T_FindSectorFromTag(tagnum, i)) >= 0)
 		{
 			sector = &sectors[i];
-			S_SoundID(sector->soundorg, CHAN_BODY, T_FindSound(stringvalue(t_argv[1])), 1.0f, ATTN_NORM);
+			S_Sound(sector->soundorg, CHAN_BODY, T_FindSound(stringvalue(t_argv[1])), 1.0f, ATTN_NORM);
 		}
 	}
 }
@@ -3250,7 +3250,7 @@ void FParser::SF_AmbientSound(void)
 {
 	if (CheckArgs(1))
 	{
-		S_SoundID(CHAN_AUTO, T_FindSound(stringvalue(t_argv[0])), 1, ATTN_NORM);
+		S_Sound(CHAN_AUTO, T_FindSound(stringvalue(t_argv[0])), 1, ATTN_NORM);
 	}
 }
 
@@ -3351,7 +3351,7 @@ void FParser::SF_SpawnExplosion()
 			if (spawn->flags&MF_COUNTITEM) level.total_items--;
 			spawn->flags&=~(MF_COUNTKILL|MF_COUNTITEM);
 			t_return.value.i = spawn->SetState(spawn->FindState(NAME_Death));
-			if(spawn->DeathSound) S_SoundID (spawn, CHAN_BODY, spawn->DeathSound, 1, ATTN_NORM);
+			if(spawn->DeathSound) S_Sound (spawn, CHAN_BODY, spawn->DeathSound, 1, ATTN_NORM);
 		}
 	}
 }
@@ -4262,7 +4262,7 @@ void FParser::SF_SpawnShot2(void)
 		AActor *mo = Spawn (PClass, source->x, source->y, source->z+z, ALLOW_REPLACE);
 		if (mo) 
 		{
-			S_SoundID (mo, CHAN_VOICE, mo->SeeSound, 1, ATTN_NORM);
+			S_Sound (mo, CHAN_VOICE, mo->SeeSound, 1, ATTN_NORM);
 			mo->target = source;
 			P_ThrustMobj(mo, mo->angle = source->angle, mo->Speed);
 			if (!P_CheckMissileSpawn(mo)) mo = NULL;
