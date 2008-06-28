@@ -61,6 +61,7 @@
 #include "p_setup.h"
 #include "r_translate.h"
 #include "r_interpolate.h"
+#include "r_sky.h"
 #include "gl/gl_functions.h"
 
 #include "fragglescript/t_fs.h"
@@ -522,19 +523,19 @@ static void SetTexture (side_t *side, int position, DWORD *blend, char *name8)
 	char name[9];
 	strncpy (name, name8, 8);
 	name[8] = 0;
-	int texture;
+	FTextureID texture;
 	if ((*blend = R_ColormapNumForName (name)) == 0)
 	{
-		if ((texture = TexMan.CheckForTexture (name, FTexture::TEX_Wall,
-			FTextureManager::TEXMAN_Overridable|FTextureManager::TEXMAN_TryAny)
-			) == -1)
+		texture = TexMan.CheckForTexture (name, FTexture::TEX_Wall,
+			FTextureManager::TEXMAN_Overridable|FTextureManager::TEXMAN_TryAny);
+		if (!texture.Exists())
 		{
 			char name2[9];
 			char *stop;
 			strncpy (name2, name, 8);
 			name2[8] = 0;
 			*blend = strtoul (name2, &stop, 16);
-			texture = 0;
+			texture = FNullTextureID();
 		}
 		else
 		{
@@ -543,7 +544,7 @@ static void SetTexture (side_t *side, int position, DWORD *blend, char *name8)
 	}
 	else
 	{
-		texture = 0;
+		texture = FNullTextureID();
 	}
 	side->SetTexture(position, texture);
 }
@@ -551,13 +552,13 @@ static void SetTexture (side_t *side, int position, DWORD *blend, char *name8)
 static void SetTextureNoErr (side_t *side, int position, DWORD *color, char *name8, bool *validcolor, bool isFog)
 {
 	char name[9];
-	int texture;
+	FTextureID texture;
 	strncpy (name, name8, 8);
 	name[8] = 0;
 	*validcolor = false;
-	if ((texture = TexMan.CheckForTexture (name, FTexture::TEX_Wall,
-		FTextureManager::TEXMAN_Overridable|FTextureManager::TEXMAN_TryAny)
-		) == -1)
+	texture = TexMan.CheckForTexture (name, FTexture::TEX_Wall,	
+		FTextureManager::TEXMAN_Overridable|FTextureManager::TEXMAN_TryAny);
+	if (!texture.Exists())
 	{
 		char name2[9];
 		char *stop;
@@ -566,14 +567,14 @@ static void SetTextureNoErr (side_t *side, int position, DWORD *color, char *nam
 		if (*name != '#')
 		{
 			*color = strtoul (name, &stop, 16);
-			texture = 0;
+			texture = FNullTextureID();
 			*validcolor = (*stop == 0) && (stop >= name + 2) && (stop <= name + 6);
 			return;
 		}
 		else	// Support for Legacy's color format!
 		{
 			int l=(int)strlen(name);
-			texture = 0;
+			texture = FNullTextureID();
 			*validcolor = false;
 			if (l>=7) 
 			{
@@ -600,12 +601,12 @@ static void SetTextureNoErr (side_t *side, int position, DWORD *color, char *nam
 				}
 
 				*color=MAKEARGB(factor, red, green, blue);
-				texture = 0;
+				texture = FNullTextureID();
 				*validcolor = true;
 				return;
 			}
 		}
-		texture = 0;
+		texture = FNullTextureID();
 	}
 	side->SetTexture(position, texture);
 }
@@ -1534,7 +1535,7 @@ void P_SpawnThings (int position)
 	}
 	for(int i=0; i<MAXPLAYERS; i++)
 	{
-		if (playeringame[i])
+		if (playeringame[i] && players[i].mo != NULL)
 			P_PlayerStartStomp(players[i].mo);
 	}
 }
@@ -1601,8 +1602,15 @@ void P_SetLineID (line_t *ld)
 		switch (ld->special)
 		{
 		case Line_SetIdentification:
-			ld->id = ld->args[0] + 256 * ld->args[4];
-			ld->flags |= ld->args[1]<<16;
+			if (!(level.flags & LEVEL_HEXENHACK))
+			{
+				ld->id = ld->args[0] + 256 * ld->args[4];
+				ld->flags |= ld->args[1]<<16;
+			}
+			else
+			{
+				ld->id = ld->args[0];
+			}
 			break;
 
 		case TranslucentLine:
@@ -2141,7 +2149,7 @@ void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, mapside
 		if (msd->toptexture[0]=='#')
 		{
 			strncpy (name, msd->toptexture, 8);
-			sd->SetTexture(side_t::top, -strtol(name+1, NULL, 10));	// store the alpha as a negative texture index
+			sd->SetTexture(side_t::top, FNullTextureID() +(-strtol(name+1, NULL, 10)));	// store the alpha as a negative texture index
 														// This will be sorted out by the 3D-floor code later.
 		}
 		else
@@ -2165,13 +2173,13 @@ void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, mapside
 			if (strnicmp ("TRANMAP", msd->midtexture, 8) == 0)
 			{
 				// The translator set the alpha argument already; no reason to do it again.
-				sd->SetTexture(side_t::mid, 0);
+				sd->SetTexture(side_t::mid, FNullTextureID());
 			}
 			else if ((lumpnum = Wads.CheckNumForName (msd->midtexture)) > 0 &&
 				Wads.LumpLength (lumpnum) == 65536)
 			{
 				*alpha = (short)P_DetermineTranslucency (lumpnum);
-				sd->SetTexture(side_t::mid, 0);
+				sd->SetTexture(side_t::mid, FNullTextureID());
 			}
 			else
 			{

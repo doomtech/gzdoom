@@ -217,8 +217,8 @@ void GLWall::RenderFogBoundary()
 //==========================================================================
 void GLWall::RenderMirrorSurface()
 {
-	int lump=TexMan.CheckForTexture("MIRROR", FTexture::TEX_MiscPatch,FTextureManager::TEXMAN_TryAny);
-	if (lump<0) return;
+	FTextureID lump=TexMan.CheckForTexture("MIRROR", FTexture::TEX_MiscPatch,FTextureManager::TEXMAN_TryAny);
+	if (!lump.isValid()) return;
 
 	// Use sphere mapping for this
 	gl.Enable(GL_TEXTURE_GEN_T);

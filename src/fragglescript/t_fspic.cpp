@@ -42,22 +42,14 @@
 
 struct FHudPic
 {
-	int       texturenum;
+	FTextureID       texturenum;
 	int       xpos;
 	int       ypos;
 	bool   draw;
 
 	void Serialize(FArchive & arc)
 	{
-		arc << xpos << ypos << draw;
-		if (arc.IsStoring())
-		{
-			TexMan.WriteTexture(arc, texturenum);
-		}
-		else
-		{
-			texturenum = TexMan.ReadTexture(arc);
-		}
+		arc << xpos << ypos << draw << texturenum;
 	}
 
 };
@@ -117,7 +109,7 @@ void DHUDPicManager::Serialize(FArchive & ar)
 //======================================================================
 void DHUDPicManager::DoDraw (int linenum, int x, int y, int hudheight, float translucent)
 {
-	for(unsigned int i=0; i<piclist.Size();i++) if (piclist[i].texturenum>=0 && piclist[i].draw)
+	for(unsigned int i=0; i<piclist.Size();i++) if (piclist[i].texturenum.isValid() && piclist[i].draw)
 	{
 		FTexture * tex = TexMan[piclist[i].texturenum];
 		if (tex) screen->DrawTexture(tex, piclist[i].xpos, piclist[i].ypos, DTA_320x200, true, 
@@ -147,12 +139,12 @@ static TArray<FHudPic> & GetPicList()
 //======================================================================
 //
 //======================================================================
-int HU_GetFSPic(int texturenum, int xpos, int ypos)
+int HU_GetFSPic(FTextureID texturenum, int xpos, int ypos)
 {
 	TArray<FHudPic> &piclist=GetPicList();
 	unsigned int i;
 
-	for(i=0;i<piclist.Size();i++) if (piclist[i].texturenum>=0) continue;
+	for(i=0;i<piclist.Size();i++) if (piclist[i].texturenum.isValid()) continue;
 	if (i==piclist.Size()) i=piclist.Reserve(1);
 
 	FHudPic * pic=&piclist[i];
@@ -173,7 +165,7 @@ int HU_DeleteFSPic(unsigned handle)
 	TArray<FHudPic> &piclist=GetPicList();
 	
 	if(handle >= piclist.Size()) return -1;
-	piclist[handle].texturenum = -1;
+	piclist[handle].texturenum.SetInvalid();
 	return 0;
 }
 
@@ -181,12 +173,12 @@ int HU_DeleteFSPic(unsigned handle)
 //======================================================================
 //
 //======================================================================
-int HU_ModifyFSPic(unsigned handle, int texturenum, int xpos, int ypos)
+int HU_ModifyFSPic(unsigned handle, FTextureID texturenum, int xpos, int ypos)
 {
 	TArray<FHudPic> &piclist=GetPicList();
 	
 	if(handle >= piclist.Size()) return -1;
-	if(piclist[handle].texturenum == -1) return -1;
+	if(!piclist[handle].texturenum.isValid()) return -1;
 	
 	piclist[handle].texturenum = texturenum;
 	piclist[handle].xpos = xpos;
@@ -202,7 +194,7 @@ int HU_FSDisplay(unsigned handle, bool newval)
 	TArray<FHudPic> &piclist=GetPicList();
 	
 	if(handle >= piclist.Size()) return -1;
-	if(piclist[handle].texturenum == -1) return -1;
+	if(!piclist[handle].texturenum.isValid()) return -1;
 
 	piclist[handle].draw = newval;
 	return 0;

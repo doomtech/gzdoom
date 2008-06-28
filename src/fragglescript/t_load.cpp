@@ -65,6 +65,56 @@ public:
 	bool ParseInfo(MapData * map);
 };
 
+struct FFsOptions : public FOptionalMapinfoData
+{
+	FFsOptions()
+	{
+		identifier = "fragglescript";
+		nocheckposition = false;
+	}
+	virtual FOptionalMapinfoData *Clone() const
+	{
+		FFsOptions *newopt = new FFsOptions;
+		newopt->identifier = identifier;
+		newopt->nocheckposition = nocheckposition;
+		return newopt;
+	}
+	bool nocheckposition;
+};
+
+static void ParseFunc(FScanner &sc, level_info_t *info)
+{
+	FName id = "fragglescript";
+	FOptionalMapinfoData *dat = info->opdata;
+
+	while (dat && dat->identifier != id) dat = dat->Next;
+	if (!dat) dat = new FFsOptions;
+	dat->Next = info->opdata;
+	info->opdata = dat;
+
+	FFsOptions *opt = static_cast<FFsOptions*>(dat);
+
+	while (!sc.CheckString("}"))
+	{
+		sc.MustGetString();
+		if (sc.Compare("nocheckposition"))
+		{
+			if (!sc.CheckNumber()) opt->nocheckposition = false;
+			else opt->nocheckposition = !!sc.Number;
+		}
+		else
+		{
+			sc.ScriptError(NULL);
+		}
+	}
+}
+
+void AddFsMapinfoParser() 
+{ 
+	AddOptionalMapinfoParser("fragglescript", ParseFunc);
+}
+
+
 //-----------------------------------------------------------------------------
 //
 // Process the lump to strip all unneeded information from it
@@ -267,7 +317,19 @@ bool FScriptLoader::ParseInfo(MapData * map)
 
 		if (drownflag==-1) drownflag = ((level.flags&LEVEL_HEXENFORMAT) || fsglobal);
 		if (!drownflag) level.airsupply=0;	// Legacy doesn't to water damage.
+
+		FName id = "fragglescript";
+		FOptionalMapinfoData *dat = level.info->opdata;
+
+		while (dat && dat->identifier != id) dat = dat->Next;
+		if (dat != NULL)
+		{
+			FFsOptions *opt = static_cast<FFsOptions*>(dat);
+			DFraggleThinker::ActiveThinker->nocheckposition = opt->nocheckposition;
+		}
 	}
+
+
 	delete lump;
 	return HasScripts;
 }
