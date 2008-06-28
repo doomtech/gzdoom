@@ -494,10 +494,9 @@ bool gl_SetupLight(Plane & p, ADynamicLight * light, Vector & nearPt, Vector & u
 //==========================================================================
 bool gl_SetupLightTexture()
 {
-	FTextureID lump=TexMan.CheckForTexture("GLLIGHT", FTexture::TEX_MiscPatch,FTextureManager::TEXMAN_TryAny);
 
-	if (!lump.isValid()) return false;
-	FGLTexture * pat=FGLTexture::ValidateTexture(lump, false);
+	if (gllight == NULL) return false;
+	FGLTexture * pat = FGLTexture::ValidateTexture(gllight);
 	pat->BindPatch(CM_DEFAULT, 0);
 	return true;
 }

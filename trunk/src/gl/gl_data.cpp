@@ -49,6 +49,32 @@
 #include "gl/gl_functions.h"
 #include "r_sky.h"
 #include "sc_man.h"
+#include "w_wad.h"
+
+
+
+
+FTexture *glpart2;
+FTexture *glpart;
+FTexture *mirrortexture;
+FTexture *gllight;
+
+static void DeleteGLTextures()
+{
+	if (glpart2) delete glpart2;
+	if (glpart) delete glpart;
+	if (mirrortexture) delete mirrortexture;
+	if (gllight) delete gllight;
+}
+
+AT_GAME_SET(gltextures)
+{
+	glpart2 = FTexture::CreateTexture(Wads.GetNumForFullName("glstuff/glpart2.png"), FTexture::TEX_MiscPatch);
+	glpart = FTexture::CreateTexture(Wads.GetNumForFullName("glstuff/glpart.png"), FTexture::TEX_MiscPatch);
+	mirrortexture = FTexture::CreateTexture(Wads.GetNumForFullName("glstuff/mirror.png"), FTexture::TEX_MiscPatch);
+	gllight = FTexture::CreateTexture(Wads.GetNumForFullName("glstuff/gllight.png"), FTexture::TEX_MiscPatch);
+	atterm(DeleteGLTextures);
+}
 
 
 

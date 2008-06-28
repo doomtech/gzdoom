@@ -61,15 +61,6 @@ EXTERN_CVAR (Float, transsouls)
 
 const BYTE SF_FRAMEMASK  = 0x1f;
 
-static FTextureID glpart2;
-static FTextureID glpart;
-
-AT_GAME_SET(glpart)
-{
-	glpart2 = TexMan.CheckForTexture("GLPART2", FTexture::TEX_MiscPatch,FTextureManager::TEXMAN_TryAny);
-	glpart = TexMan.CheckForTexture("GLPART", FTexture::TEX_MiscPatch,FTextureManager::TEXMAN_TryAny);
-}
-
 //==========================================================================
 //
 // 
@@ -755,7 +746,7 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 	// [BB] Load the texture for round or smooth particles
 	if (gl_particles_style)
 	{
-		FTextureID lump;
+		FTexture *lump = NULL;
 		if (gl_particles_style == 1)
 		{
 			lump = glpart2;
@@ -764,11 +755,10 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 		{
 			lump = glpart;
 		}
-		else lump.SetInvalid();
 
-		if ( lump.isValid())
+		if (lump != NULL)
 		{
-			gltexture=FGLTexture::ValidateTexture(lump, false);
+			gltexture=FGLTexture::ValidateTexture(lump);
 			translation = 0;
 			const PatchTextureInfo * pti = gltexture->GetPatchTextureInfo();
 
