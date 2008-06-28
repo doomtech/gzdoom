@@ -654,6 +654,7 @@ public:
 	TObjPtr<DFsScript> LevelScript;
 	TObjPtr<DRunningScript> RunningScripts;
 	TArray<TObjPtr<AActor> > SpawnedThings;
+	bool nocheckposition;
 
 	DFraggleThinker();
 	void Destroy();

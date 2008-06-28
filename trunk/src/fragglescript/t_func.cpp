@@ -72,7 +72,7 @@ static FRandom pr_script("FScript");
 #define CenterSpot(sec) (vertex_t*)&(sec)->soundorg[0]
 
 // Disables Legacy-incompatible bug fixes.
-CVAR(Bool, fs_forcecompatible, false, CVAR_ARCHIVE|CVAR_SERVERINFO)
+//CVAR(Bool, fs_forcecompatible, false, CVAR_ARCHIVE|CVAR_SERVERINFO)
 
 // functions. FParser::SF_ means Script Function not, well.. heh, me
 
@@ -394,7 +394,7 @@ static FSoundID T_FindSound(const char * name)
 
 	int id = S_AddSound(name, buffer);
 	S_HashSounds();
-	return *(FSoundID*)&id;	// Yuck!
+	return FSoundID(id);
 }
 
 
@@ -891,7 +891,7 @@ void FParser::SF_Spawn(void)
 		{
 			t_return.value.mobj->angle = angle;
 
-			if (!fs_forcecompatible)
+			if (!DFraggleThinker::ActiveThinker->nocheckposition)
 			{
 				if (!P_TestMobjLocation(t_return.value.mobj))
 				{
@@ -2017,7 +2017,7 @@ void FParser::SF_FloorTexture(void)
 		if(t_argc > 1)
 		{
 			int i = -1;
-			int picnum = TexMan.GetTexture(t_argv[1].string, FTexture::TEX_Flat, FTextureManager::TEXMAN_Overridable);
+			FTextureID picnum = TexMan.GetTexture(t_argv[1].string, FTexture::TEX_Flat, FTextureManager::TEXMAN_Overridable);
 			
 			// set all sectors with tag
 			while ((i = T_FindSectorFromTag(tagnum, i)) >= 0)
@@ -2106,7 +2106,7 @@ void FParser::SF_CeilingTexture(void)
 		if(t_argc > 1)
 		{
 			int i = -1;
-			int picnum = TexMan.GetTexture(t_argv[1].string, FTexture::TEX_Flat, FTextureManager::TEXMAN_Overridable);
+			FTextureID picnum = TexMan.GetTexture(t_argv[1].string, FTexture::TEX_Flat, FTextureManager::TEXMAN_Overridable);
 			
 			// set all sectors with tag
 			while ((i = T_FindSectorFromTag(tagnum, i)) >= 0)
@@ -2331,7 +2331,7 @@ void FParser::SF_SetLineTexture(void)
 	int side;
 	int position;
 	const char *texture;
-	int texturenum;
+	FTextureID texturenum;
 	int i;
 	
 	if (CheckArgs(4))
@@ -2374,7 +2374,7 @@ void FParser::SF_SetLineTexture(void)
 		}
 		else // and an improved legacy version
 		{ 
-			int picnum = TexMan.GetTexture(t_argv[1].string, FTexture::TEX_Wall, FTextureManager::TEXMAN_Overridable); 
+			FTextureID picnum = TexMan.GetTexture(t_argv[1].string, FTexture::TEX_Wall, FTextureManager::TEXMAN_Overridable); 
 			side = !!intvalue(t_argv[2]); 
 			int sections = intvalue(t_argv[3]); 
 			
@@ -3918,9 +3918,9 @@ void FParser::SF_Pow()
 //==========================================================================
 
 
-int HU_GetFSPic(int lumpnum, int xpos, int ypos);
+int HU_GetFSPic(FTextureID lumpnum, int xpos, int ypos);
 int HU_DeleteFSPic(unsigned int handle);
-int HU_ModifyFSPic(unsigned int handle, int lumpnum, int xpos, int ypos);
+int HU_ModifyFSPic(unsigned int handle, FTextureID lumpnum, int xpos, int ypos);
 int HU_FSDisplay(unsigned int handle, bool newval);
 
 void FParser::SF_NewHUPic()

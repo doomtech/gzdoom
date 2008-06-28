@@ -9,19 +9,34 @@ CCDV = @./ccdv
 # Can be libdumbd.a, if you really need to debug DUMB
 DUMBLIB ?= libdumbd.a
 
-ifndef DEBUG
-CFLAGS ?= -pipe -Wall -Wno-unused -fno-strict-aliasing -O2 -fomit-frame-pointer
-else
-CFLAGS ?= -pipe -Wall -Wno-unused -fno-strict-aliasing
+ifndef X64
+  ifeq (x86_64,$(shell uname -m))
+    X64=64
+  else
+    X64=
+  endif
 endif
+
+ifdef DEBUG
+  CFLAGS ?= -pipe -Wall -Wno-unused -fno-strict-aliasing
+else
+  CFLAGS ?= -pipe -Wall -Wno-unused -fno-strict-aliasing -O2 -fomit-frame-pointer
+endif
+
 CFLAGS += `pkg-config gtk+-2.0 --cflags`
 CFLAGS += -DHAVE_FILELENGTH -D__forceinline=inline `sdl-config --cflags`
 CFLAGS += -DNEED_STRUPR
 CFLAGS += -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp
-LDFLAGS += -lz $(FMOD_PREFIX)/lib/libfmodex.so `sdl-config --libs`
+LDFLAGS += -lz $(FMOD_PREFIX)/lib/libfmodex${X64}.so `sdl-config --libs`
 LDFLAGS += -ljpeg `pkg-config gtk+-2.0 --libs`
 LDFLAGS += -lGL -lGLU
 NASMFLAGS += -f elf -DM_TARGET_LINUX
+
+ifdef VALGRIND
+  NOSTRIP = 1
+  NASMFLAGS += -DVALGRIND_AWARE
+endif
+
 SRCDIRS = src/ $(addprefix src/,g_doom/ g_heretic/ g_hexen/ g_raven/ g_shared/ g_strife/ oplsynth/ sound/ fragglescript/ thingdef/ Linux/ sdl/ gl/ gl/r_render/ textures/ xlat/ timidity/)
 INCLUDES = $(addprefix -I,$(SRCDIRS))
 INCLUDES += -Isnes_spc/snes_spc/ -I$(FMOD_PREFIX)/include/fmodex/
@@ -32,11 +47,14 @@ DEBUGOBJ ?= debugobj
 
 CPPSRCS = $(wildcard $(addsuffix *.cpp,$(SRCDIRS)))
 CSRCS = $(filter-out src/xlat/xlat_parser.c, $(wildcard $(addsuffix *.c,$(SRCDIRS))))
-ifndef NOASM
+ifdef X64
+  NOASM=1
+endif
+ifdef NOASM
+  CFLAGS += -DNOASM
+else
   ASRCS = $(wildcard src/*.nas)
   CFLAGS += -DUSEASM=1
-else
-  CFLAGS += -DNOASM
 endif
 SRCS = $(CSRCS) $(CPPSRCS) $(ASRCS)
 CPPOBJFILES = $(notdir $(patsubst %.cpp,%.o,$(CPPSRCS)))

@@ -328,6 +328,7 @@ size_t player_t::FixPointers (const DObject *old, DObject *rep)
 	if (last_mate == old)		last_mate = replacement, changed++;
 	if (ReadyWeapon == old)		ReadyWeapon = static_cast<AWeapon *>(rep), changed++;
 	if (PendingWeapon == old)	PendingWeapon = static_cast<AWeapon *>(rep), changed++;
+	if (PremorphWeapon == old)	PremorphWeapon = static_cast<AWeapon *>(rep), changed++;
 	if (ConversationNPC == old)	ConversationNPC = replacement, changed++;
 	if (ConversationPC == old)	ConversationPC = replacement, changed++;
 	return changed;
@@ -348,6 +349,7 @@ size_t player_t::PropagateMark()
 	GC::Mark(ReadyWeapon);
 	GC::Mark(ConversationNPC);
 	GC::Mark(ConversationPC);
+	GC::Mark(PremorphWeapon);
 	if (PendingWeapon != WP_NOCHANGE)
 	{
 		GC::Mark(PendingWeapon);
