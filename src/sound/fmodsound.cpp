@@ -67,8 +67,6 @@ extern HWND Window;
 // Just some extra for music and whatever
 #define NUM_EXTRA_SOFTWARE_CHANNELS		1
 
-#define FIXED2FLOAT(x)				((x)/65536.f)
-
 #define MAX_CHANNELS				256
 
 #define SPECTRUM_SIZE				256
@@ -1408,8 +1406,8 @@ FSoundChan *FMODSoundRenderer::StartSound(sfxinfo_t *sfx, float vol, int pitch, 
 CVAR(Float, snd_3dspread, 180, 0)
 
 FSoundChan *FMODSoundRenderer::StartSound3D(sfxinfo_t *sfx, float vol, float distscale,
-	int pitch, int priority, float pos[3], float vel[3], sector_t *sector, int channum, int chanflags,
-	FSoundChan *reuse_chan)
+	int pitch, int priority, const FVector3 &pos, const FVector3 &vel, const sector_t *sector,
+	int channum, int chanflags, FSoundChan *reuse_chan)
 {
 	int id = int(sfx - &S_sfx[0]);
 	FMOD_RESULT result;
@@ -1480,13 +1478,12 @@ FSoundChan *FMODSoundRenderer::StartSound3D(sfxinfo_t *sfx, float vol, float dis
 		chan->setVolume(vol);
 		if (mode & FMOD_3D)
 		{
-			chan->set3DAttributes((FMOD_VECTOR *)pos, (FMOD_VECTOR *)vel);
+			chan->set3DAttributes((FMOD_VECTOR *)&pos[0], (FMOD_VECTOR *)&vel[0]);
 			chan->set3DSpread(snd_3dspread);
 		}
 		HandleChannelDelay(chan, reuse_chan, freq);
 		chan->setPaused(false);
 		FSoundChan *schan = CommonChannelSetup(chan, reuse_chan);
-		schan->DistanceScale = distscale;
 		return schan;
 	}
 
@@ -1547,65 +1544,25 @@ void FMODSoundRenderer::HandleChannelDelay(FMOD::Channel *chan, FSoundChan *reus
 //
 //==========================================================================
 
-FMOD_MODE FMODSoundRenderer::SetChanHeadSettings(FMOD::Channel *chan, sfxinfo_t *sfx, float pos[3], int channum, int chanflags, sector_t *sec, FMOD_MODE oldmode) const
+FMOD_MODE FMODSoundRenderer::SetChanHeadSettings(FMOD::Channel *chan, sfxinfo_t *sfx, const FVector3 &pos, int channum, int chanflags, const sector_t *sec, FMOD_MODE oldmode) const
 {
 	if (players[consoleplayer].camera == NULL)
 	{
 		return oldmode;
 	}
-	float cpos[3];
-	cpos[0] = FIXED2FLOAT(players[consoleplayer].camera->x);
-	cpos[2] = FIXED2FLOAT(players[consoleplayer].camera->y);
-	cpos[1] = FIXED2FLOAT(players[consoleplayer].camera->z);
+	FVector3 cpos, mpos;
+	cpos.X = FIXED2FLOAT(players[consoleplayer].camera->x);
+	cpos.Y = FIXED2FLOAT(players[consoleplayer].camera->z);
+	cpos.Z = FIXED2FLOAT(players[consoleplayer].camera->y);
 
-	if ((chanflags & CHAN_AREA) && sec != NULL)
+	if (chanflags & CHAN_AREA)
 	{
-		fixed_t ox = fixed_t(pos[0] * 65536);
-		fixed_t oy = fixed_t(pos[1] * 65536);
-		fixed_t cx, cy, cz;
 		float level, old_level;
-
-		// Are we inside the sector? If yes, the closest point is the one we're on.
-		if (P_PointInSector(players[consoleplayer].camera->x, players[consoleplayer].camera->y) == sec)
-		{
-			pos[0] = cpos[0];
-			pos[2] = cpos[2];
-			cx = players[consoleplayer].camera->x;
-			cy = players[consoleplayer].camera->y;
-		}
-		else
-		{
-			// Find the closest point on the sector's boundary lines and use
-			// that as the perceived origin of the sound.
-			sec->ClosestPoint(players[consoleplayer].camera->x, players[consoleplayer].camera->y, cx, cy);
-			pos[0] = FIXED2FLOAT(cx);
-			pos[2] = FIXED2FLOAT(cy);
-		}
-		// Set sound height based on channel.
-		if (channum == CHAN_FLOOR)
-		{
-			cz = MIN(sec->floorplane.ZatPoint(cx, cy), players[consoleplayer].camera->z);
-		}
-		else if (channum == CHAN_CEILING)
-		{
-			cz = MAX(sec->ceilingplane.ZatPoint(cx, cy), players[consoleplayer].camera->z);
-		}
-		else if (channum == CHAN_INTERIOR)
-		{
-			cz = clamp(players[consoleplayer].camera->z, sec->floorplane.ZatPoint(cx, cy),
-				sec->ceilingplane.ZatPoint(cx, cy));
-		}
-		else
-		{
-			cz = players[consoleplayer].camera->z;
-		}
-		pos[1] = FIXED2FLOAT(cz);
 
 		// How far are we from the perceived sound origin? Within a certain
 		// short distance, we interpolate between 2D panning and full 3D panning.
 		const double interp_range = 32.0;
-		double dx = cpos[0] - pos[0], dy = cpos[1] - pos[1], dz = cpos[2] - pos[2];
-		double dist_sqr = dx*dx + dy*dy + dz*dz;
+		double dist_sqr = (cpos - pos).LengthSquared();
 
 		if (dist_sqr == 0)
 		{
@@ -1631,7 +1588,7 @@ FMOD_MODE FMODSoundRenderer::SetChanHeadSettings(FMOD::Channel *chan, sfxinfo_t 
 		}
 		return oldmode;
 	}
-	else if (cpos[0] == pos[0] && cpos[1] == pos[1] && cpos[2] == pos[2])
+	else if (cpos == pos)
 	{ // Head relative
 		return (oldmode & ~FMOD_3D) | FMOD_2D;
 	}
@@ -1755,7 +1712,7 @@ void FMODSoundRenderer::SetInactive(bool inactive)
 //
 //==========================================================================
 
-void FMODSoundRenderer::UpdateSoundParams3D(FSoundChan *chan, float pos[3], float vel[3])
+void FMODSoundRenderer::UpdateSoundParams3D(FSoundChan *chan, const FVector3 &pos, const FVector3 &vel)
 {
 	if (chan == NULL || chan->SysChannel == NULL)
 		return;
@@ -1772,7 +1729,7 @@ void FMODSoundRenderer::UpdateSoundParams3D(FSoundChan *chan, float pos[3], floa
 	{ // Only set the mode if it changed.
 		fchan->setMode(mode);
 	}
-	fchan->set3DAttributes((FMOD_VECTOR *)pos, (FMOD_VECTOR *)vel);
+	fchan->set3DAttributes((FMOD_VECTOR *)&pos[0], (FMOD_VECTOR *)&vel[0]);
 }
 
 //==========================================================================
