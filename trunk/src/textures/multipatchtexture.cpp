@@ -43,7 +43,6 @@
 #include "st_start.h"
 #include "sc_man.h"
 #include "templates.h"
-#include "vectors.h"
 #include "r_translate.h"
 #include "bitmap.h"
 
@@ -1011,9 +1010,10 @@ void FMultiPatchTexture::ParsePatch(FScanner &sc, TexPart & part)
 			else if (sc.Compare("rotate"))
 			{
 				sc.MustGetNumber();
-				if (sc.Number != 0 && sc.Number !=90 && sc.Number != 180 && sc.Number != -90)
-				{
-					sc.ScriptError("Rotation must be 0, 90, 180 or -90 degrees");
+				sc.Number = (((sc.Number + 90)%360)-90);
+ 				if (sc.Number != 0 && sc.Number !=90 && sc.Number != 180 && sc.Number != -90)
+ 				{
+					sc.ScriptError("Rotation must be a multiple of 90 degrees.");
 				}
 				part.Rotate = (sc.Number / 90) & 3;
 			}

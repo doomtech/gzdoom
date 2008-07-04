@@ -489,7 +489,6 @@ enum
 	PO_SPAWNHURT_TYPE
 };
 
-extern FPolyObj *polyobjs; // list of all poly-objects on the level
 extern int po_NumPolyobjs;
 extern polyspawns_t *polyspawns;	// [RH] list of polyobject things to spawn
 
@@ -498,6 +497,7 @@ bool PO_MovePolyobj (int num, int x, int y, bool force=false);
 bool PO_RotatePolyobj (int num, angle_t angle);
 void PO_Init ();
 bool PO_Busy (int polyobj);
+void PO_ClosestPoint(const FPolyObj *poly, fixed_t ox, fixed_t oy, fixed_t &x, fixed_t &y, seg_t **seg);
 
 //
 // P_SPEC

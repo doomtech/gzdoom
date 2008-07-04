@@ -1540,7 +1540,7 @@ void FParser::SF_StartSectorSound(void)
 		while ((i = T_FindSectorFromTag(tagnum, i)) >= 0)
 		{
 			sector = &sectors[i];
-			S_Sound(sector->soundorg, CHAN_BODY, T_FindSound(stringvalue(t_argv[1])), 1.0f, ATTN_NORM);
+			S_Sound(sector, CHAN_BODY, T_FindSound(stringvalue(t_argv[1])), 1.0f, ATTN_NORM);
 		}
 	}
 }
