@@ -56,8 +56,8 @@
 #include "gl/gl_framebuffer.h"
 #include "gl/gl_models.h"
 
-#define DEG2RAD( a ) ( a * M_PI ) / 180.0F
-#define RAD2DEG( a ) ( a / M_PI ) * 180.0F
+//#define DEG2RAD( a ) ( a * M_PI ) / 180.0F
+//#define RAD2DEG( a ) ( a / M_PI ) * 180.0F
 
 //==========================================================================
 //

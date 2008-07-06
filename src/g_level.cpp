@@ -79,7 +79,20 @@
 #include "gi.h"
 
 #include "g_hub.h"
+
+
+
 #include "gl/gl_functions.h"
+
+#ifndef STAT
+#define STAT_NEW(map)
+#define STAT_END(newl)
+#define STAT_SAVE(arc, hub)
+#else
+void STAT_NEW(const char *lev);
+void STAT_END(const char *newl);
+void STAT_SAVE(FArchive &arc, bool hubload);
+#endif
 
 EXTERN_CVAR (Float, sv_gravity)
 EXTERN_CVAR (Float, sv_aircontrol)
@@ -1810,6 +1823,8 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 		// force players to be initialized upon first level load
 		for (i = 0; i < MAXPLAYERS; i++)
 			players[i].playerstate = PST_ENTER;	// [BC]
+
+		STAT_NEW(mapname);
 	}
 
 	usergame = !bTitleLevel;		// will be set false if a demo
@@ -1896,6 +1911,8 @@ void G_ChangeLevel(const char * levelname, int position, bool keepFacing, int ne
 	unloading = true;
 	FBehavior::StaticStartTypedScripts (SCRIPT_Unloading, NULL, false, 0, true);
 	unloading = false;
+
+	STAT_END(nextlevel);
 
 	if (thiscluster && (thiscluster->flags & CLUSTER_HUB))
 	{
@@ -2830,7 +2847,6 @@ void G_SerializeLevel (FArchive &arc, bool hubLoad)
 	P_SerializeThinkers (arc, hubLoad);
 	P_SerializeWorld (arc);
 	P_SerializePolyobjs (arc);
-	P_SerializeSounds (arc);
 	StatusBar->Serialize (arc);
 	//SerializeInterpolations (arc);
 
@@ -2872,11 +2888,10 @@ void G_SerializeLevel (FArchive &arc, bool hubLoad)
 	FCanvasTextureInfo::Serialize (arc);
 	AM_SerializeMarkers(arc);
 
-	if (!hubLoad)
-	{
-		P_SerializePlayers (arc);
-	}
+	P_SerializePlayers (arc, hubLoad);
+	P_SerializeSounds (arc);
 
+	STAT_SAVE(arc, hubLoad);
 	if (arc.IsLoading()) for(i=0;i<numsectors;i++)
 	{
 		P_Recalculate3DFloors(&sectors[i]);
