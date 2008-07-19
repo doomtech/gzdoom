@@ -3734,7 +3734,7 @@ APlayerPawn *P_SpawnPlayer (FMapThing *mthing, bool tempplayer)
 	p->multicount = 0;
 	p->lastkilltime = 0;
 	p->BlendR = p->BlendG = p->BlendB = p->BlendA = 0.f;
-	p->mo->ResetAirSupply();
+	p->mo->ResetAirSupply(false);
 	p->Uncrouch();
 
 	p->momx = p->momy = 0;		// killough 10/98: initialize bobbing to 0.
@@ -4927,6 +4927,9 @@ AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 	MissileActor->momx = FixedMul (vx, speed);
 	MissileActor->momy = FixedMul (vy, speed);
 	MissileActor->momz = FixedMul (vz, speed);
+
+	if (MissileActor->flags4 & MF4_SPECTRAL)
+		MissileActor->health = -1;
 
 	if (P_CheckMissileSpawn (MissileActor))
 	{

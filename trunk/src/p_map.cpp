@@ -4427,13 +4427,11 @@ bool P_ChangeSector (sector_t *sector, int crunch, int amt, int floorOrCeil, boo
 	case 0:
 		// floor
 		iterator = (amt < 0) ? PIT_FloorDrop : PIT_FloorRaise;
-		sector->soundorg[2] = sector->floorplane.ZatPoint (sector->soundorg[0], sector->soundorg[1]);
 		break;
 
 	case 1:
 		// ceiling
 		iterator = (amt < 0) ? PIT_CeilingLower : PIT_CeilingRaise;
-		sector->soundorg[2] = sector->ceilingplane.ZatPoint (sector->soundorg[0], sector->soundorg[1]);
 		break;
 
 	case 2:

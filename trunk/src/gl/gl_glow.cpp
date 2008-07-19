@@ -126,7 +126,7 @@ void gl_GetGlowColor(FTextureID texno, float * data)
 
 				if (buffer)
 				{
-					GlowingColors[texno.GetIndex()]=averageColor((unsigned long *) buffer, w*h, true);
+					GlowingColors[texno.GetIndex()]=averageColor((DWORD *) buffer, w*h, true);
 					delete buffer;
 					GlowingColors[texno.GetIndex()].a=1;	// mark as processed
 				}
