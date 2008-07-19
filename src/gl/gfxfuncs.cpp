@@ -51,7 +51,7 @@
 //	component becomes one.
 //
 //===========================================================================
-PalEntry averageColor(const unsigned long *data, int size, bool maxout)
+PalEntry averageColor(const DWORD *data, int size, bool maxout)
 {
 	int				i;
 	unsigned int	r, g, b;

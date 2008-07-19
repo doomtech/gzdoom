@@ -74,8 +74,8 @@ typedef struct
 
 typedef struct 
 {
-	long numsegs;
-	long firstseg;    // Index of first one; segs are stored sequentially.
+	SDWORD numsegs;
+	SDWORD firstseg;    // Index of first one; segs are stored sequentially.
 } gl3_mapsubsector_t;
 
 typedef struct
@@ -89,11 +89,11 @@ typedef struct
 
 typedef struct
 {
-	long			v1;
-	long			v2;
+	SDWORD			v1;
+	SDWORD			v2;
 	unsigned short	linedef;
 	short			side;
-	long			partner;
+	SDWORD			partner;
 } glseg3_t;
 
 

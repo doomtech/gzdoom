@@ -647,9 +647,12 @@ static void CalcPosVel(int type, const AActor *actor, const sector_t *sector,
 			break;
 
 		case SOURCE_Actor:
-			x = actor->x;
-			y = actor->z;
-			z = actor->y;
+			if (actor != NULL)
+			{
+				x = actor->x;
+				y = actor->z;
+				z = actor->y;
+			}
 			break;
 
 		case SOURCE_Sector:
@@ -691,9 +694,12 @@ static void CalcPosVel(int type, const AActor *actor, const sector_t *sector,
 		// Only actors maintain velocity information.
 		if (type == SOURCE_Actor)
 		{
-			vel->X = FIXED2FLOAT(actor->momx) * TICRATE;
-			vel->Y = FIXED2FLOAT(actor->momz) * TICRATE;
-			vel->Z = FIXED2FLOAT(actor->momy) * TICRATE;
+			if (actor != NULL)
+			{
+				vel->X = FIXED2FLOAT(actor->momx) * TICRATE;
+				vel->Y = FIXED2FLOAT(actor->momz) * TICRATE;
+				vel->Z = FIXED2FLOAT(actor->momy) * TICRATE;
+			}
 		}
 		else
 		{
@@ -714,17 +720,25 @@ static void CalcPosVel(int type, const AActor *actor, const sector_t *sector,
 
 static void CalcSectorSoundOrg(const sector_t *sec, int channum, fixed_t *x, fixed_t *y, fixed_t *z)
 {
-	// Are we inside the sector? If yes, the closest point is the one we're on.
-	if (P_PointInSector(*x, *y) == sec)
+	if (!(i_compatflags & COMPATF_SECTORSOUNDS))
 	{
-		*x = players[consoleplayer].camera->x;
-		*y = players[consoleplayer].camera->y;
+		// Are we inside the sector? If yes, the closest point is the one we're on.
+		if (P_PointInSector(*x, *y) == sec)
+		{
+			*x = players[consoleplayer].camera->x;
+			*y = players[consoleplayer].camera->y;
+		}
+		else
+		{
+			// Find the closest point on the sector's boundary lines and use
+			// that as the perceived origin of the sound.
+			sec->ClosestPoint(*x, *y, *x, *y);
+		}
 	}
 	else
 	{
-		// Find the closest point on the sector's boundary lines and use
-		// that as the perceived origin of the sound.
-		sec->ClosestPoint(*x, *y, *x, *y);
+		*x = sec->soundorg[0];
+		*y = sec->soundorg[1];
 	}
 
 	// Set sound vertical position based on channel.
@@ -1075,7 +1089,7 @@ void S_RestartSound(FSoundChan *chan)
 		// be set.
 		if (ochan->SourceType == SOURCE_Actor)
 		{
-			ochan->Actor->SoundChans |= 1 << ochan->EntChannel;
+			if (ochan->Actor != NULL) ochan->Actor->SoundChans |= 1 << ochan->EntChannel;
 		}
 	}
 }
@@ -1099,7 +1113,7 @@ void S_Sound (int channel, FSoundID sound_id, float volume, float attenuation)
 
 void S_Sound (AActor *ent, int channel, FSoundID sound_id, float volume, float attenuation)
 {
-	if (ent->Sector->Flags & SECF_SILENT)
+	if (ent == NULL || ent->Sector->Flags & SECF_SILENT)
 		return;
 	S_StartSound (ent, NULL, NULL, NULL, channel, sound_id, volume, attenuation);
 }
@@ -2027,7 +2041,7 @@ CCMD (playsound)
 {
 	if (argv.argc() > 1)
 	{
-		S_Sound (CHAN_AUTO, argv[1], 1.f, ATTN_NONE);
+		S_Sound (CHAN_AUTO | CHAN_UI, argv[1], 1.f, ATTN_NONE);
 	}
 }
 
