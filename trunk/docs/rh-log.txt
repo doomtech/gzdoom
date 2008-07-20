@@ -1,3 +1,48 @@
+July 20, 2008 (Changes by Graf Zahl)
+- fixed: Textures marked as complex must not redirect to the base patch.
+- fixed: Alpha for composite textures was not applied.
+- fixed: The CentaurMash didn't inherit from the Centaur.
+- added some NULL pointer checks to the sound code.
+
+July 19, 2008 (Changes by Graf Zahl)
+- Fixed: When Heretic's Mace was replaced by a non-child class A_SpawnMace still 
+  treated it as a mace and wrote into some undefined memory.
+- Fixed: A_BishopMissileWeave didn't initialize special2 for proper movement.
+- Added a speed parameter to A_SkullAttack.
+- Fixed: Black as first or only blood color didn't work.
+- Fixed: Sounds played in wi_stuff.cpp and f_finale.cpp need the CHAN_UI flag.
+- Fixed: Spawning a player could play the *gasp sound.
+- Fixed: SBARINFO's health display didn't scale to the proper maximum.
+
+July 18, 2008 (Changes by Graf Zahl)
+- Added const char &operator[] (unsigned int index) to FString class.
+- Added Skulltag's Teleport_NoStop action special.
+
+July 15, 2008 (Changes by Graf Zahl)
+- Fixed: Strife's EntityBoss didn't copy friendliness information to the
+  sub-entities.
+
+July 12, 2008 (Changes by Graf Zahl)
+- Fixed: Friendly spectral monsters should be able to hurt unfriendly ones
+  and vice versa.
+- Fixed: In deathmatch specral missiles spawned by players should hurt other
+  players.
+- Fixed: SpectralLightningBigBall didn't set the proper owner for the lightning
+  projectiles it spawned.
+- Changed the EntityBoss's attack function to call the equivalent spectre
+  functions instead of duplicating their code.
+- Gave many of Strife's code pointers that only had a number as name more
+  meaningful names. 
+- Fixed: All spectral attacks must set 'health' first before P_CheckMissileSpawn
+  is called.
+- Added a compatibility option to play sector sounds from the precalculated
+  center because some maps apparently abuse the behavior to make the sound
+  play somewhere where it can't be heard by the player to fake silent movement.
+- Fixed: The S_Sound variant taking an actor must check if the actor is not
+  NULL.
+- Fixed: ACS's ActivatorSound must check if the activator is valid.
+- Changed stats drawing so that multi-line strings can be used.
+
 July 5, 2008
 - Added a check to G_DoSaveGame() to prevent saving when you're not actually
   in a level.
