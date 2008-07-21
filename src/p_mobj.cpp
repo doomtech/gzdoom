@@ -3402,7 +3402,10 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 	{
 		level.total_items++;
 	}
+	bool smt = SpawningMapThing;
+	SpawningMapThing = false;
 	gl_SetActorLights(actor);
+	SpawningMapThing = smt;
 	return actor;
 }
 
