@@ -383,7 +383,7 @@ static FSoundID T_FindSound(const char * name)
 
 	if (gameinfo.gametype & GAME_DoomStrife)
 	{
-		mysnprintf(buffer, countof(buffer) "DS%.35s", name);
+		mysnprintf(buffer, countof(buffer), "DS%.35s", name);
 		if (Wads.CheckNumForName(buffer, ns_sounds)<0) strcpy(buffer, name);
 	}
 	else
@@ -2241,7 +2241,7 @@ bool FS_ChangeMusic(const char * string)
 	if (Wads.CheckNumForName(string, ns_music)<0 || !S_ChangeMusic(string,true))
 	{
 		// Retry with O_ prepended to the music name, then with D_
-		mysnprintf(buffer, countogf "O_%s", string);
+		mysnprintf(buffer, countof(buffer), "O_%s", string);
 		if (Wads.CheckNumForName(buffer, ns_music)<0 || !S_ChangeMusic(buffer,true))
 		{
 			mysnprintf(buffer, countof(buffer), "D_%s", string);
