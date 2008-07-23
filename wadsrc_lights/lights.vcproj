@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
-	Name="lights"
+	Name="wadsrc"
 	ProjectGUID="{31090871-A623-4BBC-A167-DE821CD1240C}"
-	RootNamespace="lights"
+	RootNamespace="wadsrc"
 	Keyword="MakeFileProj"
 	>
 	<Platforms>
@@ -22,84 +22,88 @@
 			Name="Debug|Win32"
 			OutputDirectory="Debug"
 			IntermediateDirectory="Debug"
-			ConfigurationType="0"
+			ConfigurationType="10"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			>
 			<Tool
-				Name="VCNMakeTool"
-				BuildCommandLine="nmake /nologo RM=&quot;del /f /q&quot; SLASH=\ andcopy"
-				ReBuildCommandLine="nmake /nologo RM=&quot;del /f /q&quot; SLASH=\ nrebuild"
-				CleanCommandLine="nmake /nologo RM=&quot;del /f /q&quot; SLASH=\ clean"
-				Output="lights.pk3"
-				PreprocessorDefinitions=""
-				IncludeSearchPath=""
-				ForcedIncludes=""
-				AssemblySearchPath=""
-				ForcedUsingAssemblies=""
-				CompileAsManaged=""
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Checking lights.pk3..."
+				CommandLine="&quot;$(SolutionDir)tools\zipdir\zipdir.exe&quot; &quot;$(InputDir)lights.pk3&quot; &quot;$(InputDir)static&quot;&#x0D;&#x0A;copy &quot;$(InputDir)lights.pk3&quot; &quot;$(SolutionDir)..\lights.pk3&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"
-			ConfigurationType="0"
+			ConfigurationType="10"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			>
 			<Tool
-				Name="VCNMakeTool"
-				BuildCommandLine="nmake /nologo RM=&quot;del /f /q&quot; SLASH=\ andcopy"
-				ReBuildCommandLine="nmake /nologo RM=&quot;del /f /q&quot; SLASH=\ nrebuild"
-				CleanCommandLine="nmake /nologo RM=&quot;del /f /q&quot; SLASH=\ clean"
-				Output="lights.pk3"
-				PreprocessorDefinitions=""
-				IncludeSearchPath=""
-				ForcedIncludes=""
-				AssemblySearchPath=""
-				ForcedUsingAssemblies=""
-				CompileAsManaged=""
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Checking lights.pk3..."
+				CommandLine="&quot;$(SolutionDir)tools\zipdir\zipdir.exe&quot; &quot;$(InputDir)lights.pk3&quot; &quot;$(InputDir)static&quot;&#x0D;&#x0A;copy &quot;$(InputDir)lights.pk3&quot; &quot;$(SolutionDir)..\lights.pk3&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
 			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="0"
+			ConfigurationType="10"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			>
 			<Tool
-				Name="VCNMakeTool"
-				BuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad NOLOGO=/nologo andcopy"
-				ReBuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad NOLOGO=/nologo nrebuild"
-				CleanCommandLine="del wadmake lights.pk3"
-				Output="lights.pk3"
-				PreprocessorDefinitions=""
-				IncludeSearchPath=""
-				ForcedIncludes=""
-				AssemblySearchPath=""
-				ForcedUsingAssemblies=""
-				CompileAsManaged=""
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Checking lights.pk3..."
+				CommandLine="&quot;$(SolutionDir)tools\zipdir\zipdir.exe&quot; &quot;$(InputDir)lights.pk3&quot; &quot;$(InputDir)static&quot; &#x0D;&#x0A;copy &quot;$(InputDir)lights.pk3&quot; &quot;$(SolutionDir)..\lights.pk3&quot;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
 			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="0"
+			ConfigurationType="10"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			>
 			<Tool
-				Name="VCNMakeTool"
-				BuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad NOLOGO=/nologo"
-				ReBuildCommandLine="nmake /nologo MAKEWAD=..\tools\makewad\makewad NOLOGO=/nologo nrebuild"
-				CleanCommandLine="del wadmake lights.pk3"
-				Output="lights.pk3"
-				PreprocessorDefinitions=""
-				IncludeSearchPath=""
-				ForcedIncludes=""
-				AssemblySearchPath=""
-				ForcedUsingAssemblies=""
-				CompileAsManaged=""
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Checking lights.pk3..."
+				CommandLine="&quot;$(SolutionDir)tools\zipdir\zipdir.exe&quot; &quot;$(InputDir)lights.pk3&quot; &quot;$(InputDir)static&quot; &#x0D;&#x0A;copy &quot;$(InputDir)lights.pk3&quot; &quot;$(SolutionDir)..\lights.pk3&quot;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -107,31 +111,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\doomdefs.txt"
-			>
-		</File>
-		<File
-			RelativePath=".\hexndefs.txt"
-			>
-		</File>
-		<File
-			RelativePath=".\hticdefs.txt"
-			>
-		</File>
-		<File
-			RelativePath=".\Makefile"
-			>
-		</File>
-		<File
-			RelativePath=".\Makefile.mgw"
-			>
-		</File>
-		<File
-			RelativePath=".\Makefile2"
-			>
-		</File>
-		<File
-			RelativePath=".\zdoom.lst"
+			RelativePath=".\CMakeLists.txt"
 			>
 		</File>
 	</Files>

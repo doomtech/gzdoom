@@ -1440,7 +1440,7 @@ void M_InitVideoModesMenu ()
 		{
 			/*
 			Depths[currval].value = currval;
-			sprintf (name, "%d bit", i);
+			mysnprintf (name, countof(name), "%d bit", i);
 			Depths[currval].name = copystring (name);
 			*/
 			BitTranslate[currval++] = i;
@@ -1496,13 +1496,13 @@ void M_SizeDisplay (int diff)
 CCMD (sizedown)
 {
 	M_SizeDisplay (-1);
-	S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+	S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 }
 
 CCMD (sizeup)
 {
 	M_SizeDisplay (1);
-	S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+	S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 }
 
 // Draws a string in the console font, scaled to the 8x8 cells
@@ -1784,7 +1784,7 @@ void M_OptDrawer ()
 				{
 					char tbuf[16];
 
-					sprintf (tbuf, "%d.", item->b.position);
+					mysnprintf (tbuf, countof(tbuf), "%d.", item->b.position);
 					x = CurrentMenu->indent - SmallFont->StringWidth (tbuf);
 					screen->DrawText (CR_GREY, x, y, tbuf, DTA_Clean, true, TAG_DONE);
 				}
@@ -2077,10 +2077,10 @@ void M_OptDrawer ()
 			{
 				if (printed)
 				{
-					fillptr += sprintf (fillptr, "    ");
+					fillptr += mysnprintf (fillptr, countof(flagsblah) - (fillptr - flagsblah), "    ");
 				}
 				printed = true;
-				fillptr += sprintf (fillptr, "%s = %d", vars[i]->GetName (), **vars[i]);
+				fillptr += mysnprintf (fillptr, countof(flagsblah) - (fillptr - flagsblah), "%s = %d", vars[i]->GetName (), **vars[i]);
 			}
 		}
 		screen->DrawText (ValueColor,
@@ -2177,7 +2177,7 @@ void M_OptResponder (event_t *ev)
 				CurrentMenu->items[CurrentItem].a.selmode = modecol;
 			}
 
-			S_Sound (CHAN_VOICE, "menu/cursor", 1, ATTN_NONE);
+			S_Sound (CHAN_VOICE | CHAN_UI, "menu/cursor", 1, ATTN_NONE);
 		}
 		break;
 
@@ -2241,7 +2241,7 @@ void M_OptResponder (event_t *ev)
 			if (CurrentMenu->items[CurrentItem].type == screenres)
 				CurrentMenu->items[CurrentItem].a.selmode = modecol;
 
-			S_Sound (CHAN_VOICE, "menu/cursor", 1, ATTN_NONE);
+			S_Sound (CHAN_VOICE | CHAN_UI, "menu/cursor", 1, ATTN_NONE);
 		}
 		break;
 
@@ -2263,7 +2263,7 @@ void M_OptResponder (event_t *ev)
 			{
 				++CurrentItem;
 			}
-			S_Sound (CHAN_VOICE, "menu/cursor", 1, ATTN_NONE);
+			S_Sound (CHAN_VOICE | CHAN_UI, "menu/cursor", 1, ATTN_NONE);
 		}
 		break;
 
@@ -2286,7 +2286,7 @@ void M_OptResponder (event_t *ev)
 			{
 				++CurrentItem;
 			}
-			S_Sound (CHAN_VOICE, "menu/cursor", 1, ATTN_NONE);
+			S_Sound (CHAN_VOICE | CHAN_UI, "menu/cursor", 1, ATTN_NONE);
 		}
 		break;
 
@@ -2324,12 +2324,12 @@ void M_OptResponder (event_t *ev)
 					else
 						item->a.cvar->SetGenericRep (newval, CVAR_Float);
 				}
-				S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 				break;
 
 			case palettegrid:
 				SelColorIndex = (SelColorIndex - 1) & 15;
-				S_Sound (CHAN_VOICE, "menu/cursor", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/cursor", 1, ATTN_NONE);
 				break;
 
 			case discretes:
@@ -2359,14 +2359,14 @@ void M_OptResponder (event_t *ev)
 					if (item->e.values == Depths)
 						BuildModesList (SCREENWIDTH, SCREENHEIGHT, DisplayBits);
 				}
-				S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 				break;
 
 			case ediscrete:
 				value = item->a.cvar->GetGenericRep(CVAR_String);
 				value.String = const_cast<char *>(M_FindPrevVal(value.String, item->e.enumvalues, (int)item->b.numvalues));
 				item->a.cvar->SetGenericRep(value, CVAR_String);
-				S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 				break;
 
 			case bitmask:
@@ -2385,7 +2385,7 @@ void M_OptResponder (event_t *ev)
 					value.Int = (value.Int & ~bmask) | int(item->e.values[cur].value);
 					item->a.cvar->SetGenericRep (value, CVAR_Int);
 				}
-				S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 				break;
 
 			case discrete_guid:
@@ -2400,14 +2400,14 @@ void M_OptResponder (event_t *ev)
 
 					*(item->a.guidcvar) = item->e.guidvalues[cur].ID;
 				}
-				S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 				break;
 
 			case inverter:
 				value = item->a.cvar->GetGenericRep (CVAR_Float);
 				value.Float = -value.Float;
 				item->a.cvar->SetGenericRep (value, CVAR_Float);
-				S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 				break;
 
 			case screenres:
@@ -2431,7 +2431,7 @@ void M_OptResponder (event_t *ev)
 						item->a.selmode = col;
 					}
 				}
-				S_Sound (CHAN_VOICE, "menu/cursor", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/cursor", 1, ATTN_NONE);
 				break;
 
 			default:
@@ -2473,12 +2473,12 @@ void M_OptResponder (event_t *ev)
 					else
 						item->a.cvar->SetGenericRep (newval, CVAR_Float);
 				}
-				S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 				break;
 
 			case palettegrid:
 				SelColorIndex = (SelColorIndex + 1) & 15;
-				S_Sound (CHAN_VOICE, "menu/cursor", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/cursor", 1, ATTN_NONE);
 				break;
 
 			case discretes:
@@ -2508,14 +2508,14 @@ void M_OptResponder (event_t *ev)
 					if (item->e.values == Depths)
 						BuildModesList (SCREENWIDTH, SCREENHEIGHT, DisplayBits);
 				}
-				S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 				break;
 
 			case ediscrete:
 				value = item->a.cvar->GetGenericRep(CVAR_String);
 				value.String = const_cast<char *>(M_FindNextVal(value.String, item->e.enumvalues, (int)item->b.numvalues));
 				item->a.cvar->SetGenericRep(value, CVAR_String);
-				S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 				break;
 
 			case bitmask:
@@ -2534,7 +2534,7 @@ void M_OptResponder (event_t *ev)
 					value.Int = (value.Int & ~bmask) | int(item->e.values[cur].value);
 					item->a.cvar->SetGenericRep (value, CVAR_Int);
 				}
-				S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 				break;
 
 			case discrete_guid:
@@ -2549,14 +2549,14 @@ void M_OptResponder (event_t *ev)
 
 					*(item->a.guidcvar) = item->e.guidvalues[cur].ID;
 				}
-				S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 				break;
 
 			case inverter:
 				value = item->a.cvar->GetGenericRep (CVAR_Float);
 				value.Float = -value.Float;
 				item->a.cvar->SetGenericRep (value, CVAR_Float);
-				S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 				break;
 
 			case screenres:
@@ -2583,7 +2583,7 @@ void M_OptResponder (event_t *ev)
 						item->a.selmode = col;
 					}
 				}
-				S_Sound (CHAN_VOICE, "menu/cursor", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/cursor", 1, ATTN_NONE);
 				break;
 
 			default:
@@ -2641,7 +2641,7 @@ void M_OptResponder (event_t *ev)
 				setmodeneeded = true;
 				NewBits = BitTranslate[DummyDepthCvar];
 			}
-			S_Sound (CHAN_VOICE, "menu/choose", 1, ATTN_NONE);
+			S_Sound (CHAN_VOICE | CHAN_UI, "menu/choose", 1, ATTN_NONE);
 			SetModesMenu (NewWidth, NewHeight, NewBits);
 		}
 		else if ((item->type == more ||
@@ -2652,7 +2652,7 @@ void M_OptResponder (event_t *ev)
 				 && item->e.mfunc)
 		{
 			CurrentMenu->lastOn = CurrentItem;
-			S_Sound (CHAN_VOICE, "menu/choose", 1, ATTN_NONE);
+			S_Sound (CHAN_VOICE | CHAN_UI, "menu/choose", 1, ATTN_NONE);
 			if (item->type == safemore || item->type == rsafemore)
 			{
 				ActivateConfirm (item->label, item->e.mfunc);
@@ -2687,7 +2687,7 @@ void M_OptResponder (event_t *ev)
 			if (item->e.values == Depths)
 				BuildModesList (SCREENWIDTH, SCREENHEIGHT, DisplayBits);
 
-			S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+			S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 		}
 		else if (item->type == control)
 		{
@@ -2700,7 +2700,7 @@ void M_OptResponder (event_t *ev)
 		else if (item->type == listelement)
 		{
 			CurrentMenu->lastOn = CurrentItem;
-			S_Sound (CHAN_VOICE, "menu/choose", 1, ATTN_NONE);
+			S_Sound (CHAN_VOICE | CHAN_UI, "menu/choose", 1, ATTN_NONE);
 			item->e.lfunc (CurrentItem);
 		}
 		else if (item->type == inverter)
@@ -2708,7 +2708,7 @@ void M_OptResponder (event_t *ev)
 			value = item->a.cvar->GetGenericRep (CVAR_Float);
 			value.Float = -value.Float;
 			item->a.cvar->SetGenericRep (value, CVAR_Float);
-			S_Sound (CHAN_VOICE, "menu/change", 1, ATTN_NONE);
+			S_Sound (CHAN_VOICE | CHAN_UI, "menu/change", 1, ATTN_NONE);
 		}
 		else if (item->type == screenres)
 		{
@@ -2716,7 +2716,7 @@ void M_OptResponder (event_t *ev)
 		else if (item->type == colorpicker)
 		{
 			CurrentMenu->lastOn = CurrentItem;
-			S_Sound (CHAN_VOICE, "menu/choose", 1, ATTN_NONE);
+			S_Sound (CHAN_VOICE | CHAN_UI, "menu/choose", 1, ATTN_NONE);
 			StartColorPickerMenu (item->label, item->a.colorcvar);
 		}
 		else if (item->type == palettegrid)
@@ -2752,7 +2752,7 @@ void M_OptResponder (event_t *ev)
 				NewBits = BitTranslate[DummyDepthCvar];
 				setmodeneeded = true;
 				testingmode = I_GetTime(false) + 5 * TICRATE;
-				S_Sound (CHAN_VOICE, "menu/choose", 1, ATTN_NONE);
+				S_Sound (CHAN_VOICE | CHAN_UI, "menu/choose", 1, ATTN_NONE);
 				SetModesMenu (NewWidth, NewHeight, NewBits);
 			}
 		}
@@ -3205,7 +3205,7 @@ static void BuildModesList (int hiwidth, int hiheight, int hi_bits)
 				if (/* hi_bits == showbits && */ width == hiwidth && height == hiheight)
 					ModesItems[i].e.highlight = ModesItems[i].a.selmode = c;
 				
-				sprintf (strtemp, "%dx%d%s", width, height, letterbox?TEXTCOLOR_BROWN" LB":"");
+				mysnprintf (strtemp, countof(strtemp), "%dx%d%s", width, height, letterbox?TEXTCOLOR_BROWN" LB":"");
 				ReplaceString (str, strtemp);
 			}
 			else
@@ -3302,7 +3302,7 @@ static void SetModesMenu (int w, int h, int bits)
 	{
 		char strtemp[64];
 
-		sprintf (strtemp, "TESTING %dx%dx%d", w, h, bits);
+		mysnprintf (strtemp, countof(strtemp), "TESTING %dx%dx%d", w, h, bits);
 		ModesItems[VM_ENTERLINE].label = copystring (strtemp);
 		ModesItems[VM_TESTLINE].label = "Please wait 5 seconds...";
 	}
@@ -3357,7 +3357,7 @@ void M_LoadKeys (const char *modname, bool dbl)
 	if (GameNames[gameinfo.gametype] == NULL)
 		return;
 
-	sprintf (section, "%s.%s%sBindings", GameNames[gameinfo.gametype], modname,
+	mysnprintf (section, countof(section), "%s.%s%sBindings", GameNames[gameinfo.gametype], modname,
 		dbl ? ".Double" : ".");
 	if (GameConfig->SetSection (section))
 	{
@@ -3388,7 +3388,7 @@ int M_DoSaveKeys (FConfigFile *config, char *section, int i, bool dbl)
 	return i;
 }
 
-void M_SaveCustomKeys (FConfigFile *config, char *section, char *subsection)
+void M_SaveCustomKeys (FConfigFile *config, char *section, char *subsection, size_t sublen)
 {
 	if (ControlsMenu.items == ControlsItems)
 		return;
@@ -3404,9 +3404,9 @@ void M_SaveCustomKeys (FConfigFile *config, char *section, char *subsection)
 		if (item->type == whitetext)
 		{
 			assert (item->e.command != NULL);
-			sprintf (subsection, "%s.Bindings", item->e.command);
+			mysnprintf (subsection, sublen, "%s.Bindings", item->e.command);
 			M_DoSaveKeys (config, section, (int)i, false);
-			sprintf (subsection, "%s.DoubleBindings", item->e.command);
+			mysnprintf (subsection, sublen, "%s.DoubleBindings", item->e.command);
 			i = M_DoSaveKeys (config, section, (int)i, true);
 		}
 		else

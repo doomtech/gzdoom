@@ -26,10 +26,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wadsrc", "wadsrc\wadsrc.vcp
 		{24A19C02-F041-4AB0-A1A1-02E1E88EDBD3} = {24A19C02-F041-4AB0-A1A1-02E1E88EDBD3}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "makewad", "tools\makewad\makewad.vcproj", "{24A19C02-F041-4AB0-A1A1-02E1E88EDBD3}"
-	ProjectSection(ProjectDependencies) = postProject
-		{F9D9E7D4-E1A2-4866-9E85-B1B14137EE63} = {F9D9E7D4-E1A2-4866-9E85-B1B14137EE63}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "updaterevision", "tools\updaterevision\updaterevision.vcproj", "{6077B7D6-349F-4077-B552-3BC302EF5859}"
 EndProject
@@ -47,6 +43,12 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lights", "wadsrc_lights\lights.vcproj", "{31090871-A623-4BBC-A167-DE821CD1240C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dumb_static", "dumb\vc6\dumb_static\dumb_static.vcproj", "{8997289F-10BF-4678-8BAA-3BB509C84953}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zipdir", "tools\zipdir\zipdir.vcproj", "{24A19C02-F041-4AB0-A1A1-02E1E88EDBD3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F9D9E7D4-E1A2-4866-9E85-B1B14137EE63} = {F9D9E7D4-E1A2-4866-9E85-B1B14137EE63}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gdtoa", "gdtoa\gdtoa.vcproj", "{B68E0ABF-B627-48A3-A92F-D8F827A75054}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
