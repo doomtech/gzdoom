@@ -117,13 +117,13 @@ const char *stringvalue(const svalue_t & v)
 	case svt_fixed:
 		{
 			double val = ((double)v.value.f) / FRACUNIT;
-			sprintf(buffer, "%g", val);
+			mysnprintf(buffer, countof(buffer), "%g", val);
 			return buffer;
 		}
 		
 	case svt_int:
 	default:
-        sprintf(buffer, "%i", v.value.i);
+        mysnprintf(buffer, countof(buffer), "%i", v.value.i);
 		return buffer;	
     }
 }
