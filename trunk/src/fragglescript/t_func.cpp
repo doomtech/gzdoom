@@ -383,13 +383,13 @@ static FSoundID T_FindSound(const char * name)
 
 	if (gameinfo.gametype & GAME_DoomStrife)
 	{
-		sprintf(buffer, "DS%.35s", name);
+		mysnprintf(buffer, countof(buffer) "DS%.35s", name);
 		if (Wads.CheckNumForName(buffer, ns_sounds)<0) strcpy(buffer, name);
 	}
 	else
 	{
 		strcpy(buffer, name);
-		if (Wads.CheckNumForName(buffer, ns_sounds)<0) sprintf(buffer, "DS%.35s", name);
+		if (Wads.CheckNumForName(buffer, ns_sounds)<0) mysnprintf(buffer, countof(buffer), "DS%.35s", name);
 	}
 
 	int id = S_AddSound(name, buffer);
@@ -589,7 +589,7 @@ void FParser::SF_Include(void)
 			tempstr[8]=0;
 		}
 		else
-			sprintf(tempstr, "%i", (int)t_argv[0].value.i);
+			mysnprintf(tempstr, countof(tempstr), "%i", (int)t_argv[0].value.i);
 		
 		Script->ParseInclude(tempstr);
 	}
@@ -2241,10 +2241,10 @@ bool FS_ChangeMusic(const char * string)
 	if (Wads.CheckNumForName(string, ns_music)<0 || !S_ChangeMusic(string,true))
 	{
 		// Retry with O_ prepended to the music name, then with D_
-		sprintf(buffer, "O_%s", string);
+		mysnprintf(buffer, countogf "O_%s", string);
 		if (Wads.CheckNumForName(buffer, ns_music)<0 || !S_ChangeMusic(buffer,true))
 		{
-			sprintf(buffer, "D_%s", string);
+			mysnprintf(buffer, countof(buffer), "D_%s", string);
 			if (Wads.CheckNumForName(buffer, ns_music)<0) 
 			{
 				S_ChangeMusic(NULL, 0);

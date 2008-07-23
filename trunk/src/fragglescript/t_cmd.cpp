@@ -76,7 +76,7 @@ static void FS_Gimme(const char * what)
 	else if (!strnicmp(what, "fullmap", 7)) what="Allmap";
 	else return;
 
-	sprintf(buffer, "give %.72s", what);
+	mysnprintf(buffer, countof(buffer), "give %.72s", what);
 	AddCommandString(buffer);
 }
 
