@@ -6,6 +6,7 @@ endif( COMMAND cmake_policy )
 
 include( CheckFunctionExists )
 include( FindPkgConfig )
+include( FindOpenGL )
 
 option( NO_ASM "Disable assembly code" )
 if( CMAKE_COMPILER_IS_GNUCXX )
@@ -121,6 +122,18 @@ endif( WIN32 )
 if( X64 )
 	set( NO_ASM ON )
 endif( X64 )
+
+# Check if we have OpenGL
+
+if( NOT OPENGL_FOUND )
+	message( FATAL_ERROR "OpenGL is required for building." )
+endif( NOT OPENGL_FOUND )
+if( NOT OPENGL_GLU_FOUND )
+	message( FATAL_ERROR "OpenGL GLU is required for building." )
+endif( NOT OPENGL_GLU_FOUND )
+
+set( ZDOOM_LIBS ${ZDOOM_LIBS} ${OPENGL_LIBRARIES} )
+include_directories( ${OPENGL_INCLUDE_DIR} )
 
 # Decide on the name of the FMOD library we want to use.
 
@@ -259,10 +272,10 @@ if( NOT MSVC )
 	add_definitions( -D__forceinline=inline )
 endif( NOT MSVC )
 
-# Update svnrevision.h
+# Update svnrevision_gz.h
 
 add_custom_target( revision_check ALL
-	COMMAND ${CMAKE_BINARY_DIR}/tools/updaterevision/updaterevision . src/svnrevision.h
+	COMMAND ${CMAKE_BINARY_DIR}/tools/updaterevision/updaterevision . src/svnrevision_gz.h
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	DEPENDS updaterevision )
 
@@ -289,6 +302,7 @@ if( WIN32 )
 		win32/i_movie.cpp
 		win32/i_system.cpp
 		win32/st_start.cpp
+		win32/win32gliface.cpp
 		win32/win32video.cpp )
 	if( CMAKE_COMPILER_IS_GNUCXX )
 		# CMake is not set up to compile and link rc files with GCC. :(
@@ -309,6 +323,7 @@ else( WIN32 )
 		sdl/i_main.cpp
 		sdl/i_movie.cpp
 		sdl/i_system.cpp
+		sdl/sdlglvideo.cpp
 		sdl/sdlvideo.cpp
 		sdl/st_start.cpp )
 endif( WIN32 )
@@ -404,6 +419,7 @@ add_executable( zdoom WIN32
 	nodebuild_extract.cpp
 	nodebuild_gl.cpp
 	nodebuild_utility.cpp
+	p_3dfloors.cpp
 	p_3dmidtex.cpp
 	p_acs.cpp
 	p_buildmap.cpp
@@ -478,6 +494,16 @@ add_executable( zdoom WIN32
 	wi_stuff.cpp
 	zstrformat.cpp
 	zstring.cpp
+	fragglescript/t_cmd.cpp
+	fragglescript/t_fspic.cpp
+	fragglescript/t_func.cpp
+	fragglescript/t_load.cpp
+	fragglescript/t_oper.cpp
+	fragglescript/t_parse.cpp
+	fragglescript/t_prepro.cpp
+	fragglescript/t_script.cpp
+	fragglescript/t_spec.cpp
+	fragglescript/t_variable.cpp
 	g_doom/a_arachnotron.cpp
 	g_doom/a_archvile.cpp
 	g_doom/a_bossbrain.cpp
@@ -603,6 +629,45 @@ add_executable( zdoom WIN32
 	g_shared/sbar_mugshot.cpp
 	g_shared/shared_hud.cpp
 	g_shared/shared_sbar.cpp
+	gl/a_dynlight.cpp
+	gl/gfxfuncs.cpp
+	gl/gl_bsp.cpp
+	gl/gl_clipper.cpp
+	gl/gl_cycler.cpp
+	gl/gl_data.cpp
+	gl/gl_decal.cpp
+	gl/gl_drawinfo.cpp
+	gl/gl_dynlight.cpp
+	gl/gl_fakeflat.cpp
+	gl/gl_flats.cpp
+	gl/gl_framebuffer.cpp
+	gl/gl_geometric.cpp
+	gl/gl_glow.cpp
+	gl/gl_hirestex.cpp
+	gl/gl_light.cpp
+	gl/gl_menu.cpp
+	gl/gl_missinglines.cpp
+	gl/gl_missingtexture.cpp
+	gl/gl_models.cpp
+	gl/gl_models_md2.cpp
+	gl/gl_models_md3.cpp
+	gl/gl_nodes.cpp
+	gl/gl_portal.cpp
+	gl/gl_scene.cpp
+	gl/gl_shader.cpp
+	gl/gl_sky.cpp
+	gl/gl_skydome.cpp
+	gl/gl_sprite.cpp
+	gl/gl_swshaders.cpp
+	gl/gl_texture.cpp
+	gl/gltexture.cpp
+	gl/gl_translate.cpp
+	gl/gl_vertex.cpp
+	gl/gl_walls.cpp
+	gl/gl_walls_draw.cpp
+	gl/gl_weapon.cpp
+	gl/gl_wipe.cpp
+	gl/r_render/r_opengl.cpp
 	oplsynth/fmopl.cpp
 	oplsynth/mlopl.cpp
 	oplsynth/mlopl_io.cpp
@@ -671,6 +736,8 @@ include_directories( .
 	g_raven
 	g_strife
 	g_shared
+	fragglescript
+	Linux
 	oplsynth
 	sound
 	textures
