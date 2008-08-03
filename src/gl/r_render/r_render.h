@@ -42,7 +42,7 @@ struct RenderContext
 	void (APIENTRY * SetTextureMode) (int type);
 	void (APIENTRY * ArrayPointer) (void * data, int stride);
 	void (APIENTRY * PrintStartupLog) ();
-	BOOL (APIENTRY * SetVSync) (int on);
+	bool (APIENTRY * SetVSync) (int on);
 #ifndef unix
 	bool (APIENTRY * InitHardware) (HWND, bool allowsoftware, bool nostencil, int multisample);
 	void (APIENTRY * Shutdown) ();
