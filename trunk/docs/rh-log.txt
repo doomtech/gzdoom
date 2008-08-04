@@ -1,4 +1,25 @@
+August 3, 2008 (Changes by Graf Zahl)
+- Converted the Minotaur's projectiles to DECORATE so that I can get
+  rid of the AT_SPEED_SET code.
+- Converted Heretic's Blaster and SkullRod to DECORATE.
+- Converted the mace and all related actors to DECORATE and generalized
+  the spawn function that only spawns one mace per level.
+- Moved Mace respawning code into AInventory so that it works properly
+  for replacement actors.
+- Added more DECORATE conversions by Karate Chris.
+- Cleaned up the new bridge code and exported all related actors to
+  DECORATE so that the exported code pointers can be used.
+- Separated Heretic's and Hexen's invulnerability items for stability 
+  reasons.
+
+August 2, 2008
+- Fixed spurious warnings on 32-bit VC++ debug builds.
+- Made the subsong (order) number a proper parameter to MusInfo::Play()
+  instead of requiring a separate SetPosition() call to do it.
+
 August 2, 2008 (Changes by Graf Zahl)
+- Added Gez's submission for custom bridge things.
+- Fixed: ASpecialSpot must check the array's size before dividing by it.
 - Fixed: The mugshot drawe ignored the accuracy parameter.
 - Fixed: The Alt HUD's weapon drawer didn't check properly for invalid icons.
 - Added DECORATE conversions for Hexen's Cleric Mace, Firedemon and fog by
