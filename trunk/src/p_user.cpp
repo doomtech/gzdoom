@@ -226,7 +226,6 @@ player_t::player_t()
   health(0),
   inventorytics(0),
   CurrentPlayerClass(0),
-  pieces(0),
   backpack(0),
   fragcount(0),
   lastkilltime(0),
@@ -407,34 +406,7 @@ IMPLEMENT_POINTY_CLASS (APlayerPawn)
  DECLARE_POINTER(InvSel)
 END_POINTERS
 
-BEGIN_STATELESS_DEFAULTS (APlayerPawn, Any, -1, 0)
-	PROP_SpawnHealth (100)
-	PROP_RadiusFixed (16)
-	PROP_HeightFixed (56)
-	PROP_Mass (100)
-	PROP_PainChance (255)
-	PROP_SpeedFixed (1)
-	PROP_Flags (MF_SOLID|MF_SHOOTABLE|MF_DROPOFF|MF_PICKUP|MF_NOTDMATCH|MF_FRIENDLY)
-	PROP_Flags2 (MF2_SLIDE|MF2_PASSMOBJ|MF2_PUSHWALL|MF2_FLOORCLIP|MF2_WINDTHRUST|MF2_TELESTOMP)
-	PROP_Flags3 (MF3_NOBLOCKMONST)
-	PROP_PlayerPawn_AttackZOffset (8)
-	// [GRB]
-	PROP_PlayerPawn_JumpZ (8*FRACUNIT)
-	PROP_PlayerPawn_ViewHeight (41*FRACUNIT)
-	PROP_PlayerPawn_ForwardMove1 (FRACUNIT)
-	PROP_PlayerPawn_ForwardMove2 (FRACUNIT)
-	PROP_PlayerPawn_SideMove1 (FRACUNIT)
-	PROP_PlayerPawn_SideMove2 (FRACUNIT)
-	PROP_PlayerPawn_ColorRange (0, 0)
-	PROP_PlayerPawn_SoundClass ("player")
-	PROP_PlayerPawn_Face ("None")
-	PROP_PlayerPawn_MorphWeapon ("None")
-END_DEFAULTS
-
-IMPLEMENT_STATELESS_ACTOR (APlayerChunk, Any, -1, 0)
-	PROP_Flags (MF_DROPOFF)
-	PROP_Flags2 (MF2_PASSMOBJ)
-END_DEFAULTS
+IMPLEMENT_CLASS (APlayerChunk)
 
 void APlayerPawn::Serialize (FArchive &arc)
 {
@@ -473,7 +445,7 @@ void APlayerPawn::BeginPlay ()
 		// This assumes that player sprites always exist in rotated form and
 		// that the front view is always a separate sprite. So far this is
 		// true for anything that exists.
-		FString normspritename = sprites[SpawnState->sprite.index].name;
+		FString normspritename = sprites[SpawnState->sprite].name;
 		FString crouchspritename = sprites[crouchsprite].name;
 
 		int spritenorm = Wads.CheckNumForName(normspritename + "A1", ns_sprites);
@@ -1115,8 +1087,7 @@ void APlayerPawn::Die (AActor *source, AActor *inflictor)
 				AInventory *item;
 
 				if (weap->SpawnState != NULL &&
-					weap->SpawnState != &AActor::States[0] &&
-					weap->SpawnState != &AActor::States[AActor::S_NULL])
+					weap->SpawnState != ::GetDefault<AActor>()->SpawnState)
 				{
 					item = P_DropItem (this, weap->GetClass(), -1, 256);
 					if (item != NULL)
@@ -1356,7 +1327,7 @@ void P_CheckPlayerSprites()
 			if (player->crouchfactor < FRACUNIT*3/4)
 			{
 
-				if (mo->sprite == mo->SpawnState->sprite.index || mo->sprite == mo->crouchsprite) 
+				if (mo->sprite == mo->SpawnState->sprite || mo->sprite == mo->crouchsprite) 
 				{
 					crouchspriteno = mo->crouchsprite;
 				}
@@ -1385,7 +1356,7 @@ void P_CheckPlayerSprites()
 			{
 				if (mo->sprite == mo->crouchsprite)
 				{
-					mo->sprite = mo->SpawnState->sprite.index;
+					mo->sprite = mo->SpawnState->sprite;
 				}
 				else if (mo->sprite == skins[player->userinfo.skin].crouchsprite)
 				{
@@ -2428,7 +2399,6 @@ void player_t::Serialize (FArchive &arc)
 		<< centering
 		<< health
 		<< inventorytics
-		<< pieces
 		<< backpack
 		<< fragcount
 		<< spreecount

@@ -60,6 +60,7 @@
 #include "w_wad.h"
 #include "gi.h"
 #include "zstring.h"
+#include "i_system.h"
 
 #include "gl/gl_data.h"
 

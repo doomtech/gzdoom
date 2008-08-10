@@ -80,7 +80,7 @@ static void PlayerLandedOnThing (AActor *mo, AActor *onmobj);
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
 extern cycle_t BotSupportCycles;
-extern cycle_t BotWTG;
+extern int BotWTG;
 EXTERN_CVAR (Bool, r_drawfuzz);
 EXTERN_CVAR (Int,  cl_rockettrails)
 
@@ -364,8 +364,8 @@ void AActor::Serialize (FArchive &arc)
 		{
 			if (playeringame[player - players] && 
 				player->cls != NULL &&
-				state->sprite.index == 
-				GetDefaultByType (player->cls)->SpawnState->sprite.index)
+				state->sprite == 
+				GetDefaultByType (player->cls)->SpawnState->sprite)
 			{ // Give player back the skin
 				sprite = skins[player->userinfo.skin].sprite;
 				scaleX = skins[player->userinfo.skin].ScaleX;
@@ -481,7 +481,7 @@ bool AActor::SetState (FState *newstate)
 
 		if (state != NULL)
 		{
-			prevsprite = state->sprite.index;
+			prevsprite = state->sprite;
 		}
 		else
 		{
@@ -490,13 +490,13 @@ bool AActor::SetState (FState *newstate)
 		state = newstate;
 		tics = GetTics(newstate);
 		renderflags = (renderflags & ~RF_FULLBRIGHT) | newstate->GetFullbright();
-		newsprite = newstate->sprite.index;
+		newsprite = newstate->sprite;
 		if (newsprite != 1)
 		{
 			// Sprite 1 is ----, which means "do not change the sprite"
 			frame = newstate->GetFrame();
 
-			if (!(flags4 & MF4_NOSKIN) && newsprite == SpawnState->sprite.index)
+			if (!(flags4 & MF4_NOSKIN) && newsprite == SpawnState->sprite)
 			{ // [RH] If the new sprite is the same as the original sprite, and
 			// this actor is attached to a player, use the player's skin's
 			// sprite. If a player is not attached, do not change the sprite
@@ -565,7 +565,7 @@ bool AActor::SetStateNF (FState *newstate)
 
 		if (state != NULL)
 		{
-			prevsprite = state->sprite.index;
+			prevsprite = state->sprite;
 		}
 		else
 		{
@@ -574,13 +574,13 @@ bool AActor::SetStateNF (FState *newstate)
 		state = newstate;
 		tics = GetTics(newstate);
 		renderflags = (renderflags & ~RF_FULLBRIGHT) | newstate->GetFullbright();
-		newsprite = newstate->sprite.index;
+		newsprite = newstate->sprite;
 		if (newsprite != 1)
 		{
 			// Sprite 1 is ----, which means "do not change the sprite"
 
 			frame = newstate->GetFrame();
-			if (!(flags4 & MF4_NOSKIN) && newsprite == SpawnState->sprite.index)
+			if (!(flags4 & MF4_NOSKIN) && newsprite == SpawnState->sprite)
 			{
 				if (player != NULL && gameinfo.gametype != GAME_Hexen)
 				{
@@ -800,13 +800,16 @@ AInventory *AActor::FindInventory (FName type)
 
 AInventory *AActor::GiveInventoryType (const PClass *type)
 {
-	AInventory *item;
+	AInventory *item = NULL;
 
-	item = static_cast<AInventory *>(Spawn (type, 0,0,0, NO_REPLACE));
-	if (!item->TryPickup (this))
+	if (type != NULL)
 	{
-		item->Destroy ();
-		return NULL;
+		item = static_cast<AInventory *>(Spawn (type, 0,0,0, NO_REPLACE));
+		if (!item->TryPickup (this))
+		{
+			item->Destroy ();
+			return NULL;
+		}
 	}
 	return item;
 }
@@ -2345,10 +2348,6 @@ angle_t AActor::AngleIncrements ()
 	return ANGLE_45;
 }
 
-void AActor::PreExplode ()
-{
-}
-
 void AActor::GetExplodeParms (int &damage, int &dist, bool &hurtSource)
 {
 }
@@ -2389,20 +2388,6 @@ void AActor::Howl ()
 	{
 		S_Sound (this, CHAN_BODY, howl, 1, ATTN_NORM);
 	}
-}
-
-void AActor::NoBlockingSet ()
-{
-}
-
-fixed_t AActor::GetSinkSpeed ()
-{
-	return FRACUNIT;
-}
-
-fixed_t AActor::GetRaiseSpeed ()
-{
-	return 2*FRACUNIT;
 }
 
 void AActor::HitFloor ()
@@ -2499,8 +2484,7 @@ bool AActor::IsOkayToAttack (AActor *link)
 			{
 				return false;
 			}
-			if ((link->IsKindOf (RUNTIME_CLASS(AMinotaur))) &&
-				(link->tracer == this))
+			if ((link->flags5 & MF5_SUMMONEDMONSTER) && (link->tracer == this))
 			{
 				return false;
 			}
@@ -2712,7 +2696,7 @@ void AActor::Tick ()
 		if (bglobal.botnum && consoleplayer == Net_Arbitrator && !demoplayback &&
 			((flags & (MF_SPECIAL|MF_MISSILE)) || (flags3 & MF3_ISMONSTER)))
 		{
-			clock (BotSupportCycles);
+			BotSupportCycles.Clock();
 			bglobal.m_Thinking = true;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
@@ -2747,7 +2731,7 @@ void AActor::Tick ()
 				}
 			}
 			bglobal.m_Thinking = false;
-			unclock (BotSupportCycles);
+			BotSupportCycles.Unclock();
 		}
 
 		//End of MC
@@ -3183,23 +3167,6 @@ bool AActor::UpdateWaterLevel (fixed_t oldz, bool dosplash)
 	return false;	// we did the splash ourselves! ;)
 }
 
-//----------------------------------------------------------------------------
-//
-// PROC A_FreeTargMobj
-//
-//----------------------------------------------------------------------------
-
-void A_FreeTargMobj (AActor *mo)
-{
-	mo->momx = mo->momy = mo->momz = 0;
-	mo->z = mo->ceilingz + 4*FRACUNIT;
-	mo->flags &= ~(MF_SHOOTABLE|MF_FLOAT|MF_SKULLFLY|MF_SOLID);
-	mo->flags |= MF_CORPSE|MF_DROPOFF|MF_NOGRAVITY;
-	mo->flags2 &= ~MF2_PASSMOBJ;
-	mo->gravity = FRACUNIT;
-	mo->player = NULL;
-}
-
 //==========================================================================
 //
 // A_GenericFreezeDeath
@@ -3211,45 +3178,6 @@ void A_GenericFreezeDeath (AActor *actor)
 	actor->Translation = TRANSLATION(TRANSLATION_Standard, 7);
 	A_FreezeDeath (actor);
 }
-
-//==========================================================================
-//
-// AActor stuff
-//
-//==========================================================================
-
-FState AActor::States[] =
-{
-	S_NORMAL (TNT1, 'A', -1, NULL, NULL),
-	S_NORMAL (TNT1, 'E', 1050, A_FreeTargMobj, NULL),
-	S_NORMAL (TNT1, 'A', 1, NULL, NULL),	// S_NULL
-
-	// Generic freeze death frames. Woo!
-	S_NORMAL (----, 'A', 5, A_GenericFreezeDeath, &States[4]),
-	S_NORMAL (----, 'A', 1, A_FreezeDeathChunks, &States[4])
-};
-
-BEGIN_DEFAULTS (AActor, Any, -1, 0)
-	PROP_XScale (FRACUNIT)
-	PROP_YScale (FRACUNIT)
-	PROP_SpawnState (2)
-	PROP_SpawnHealth (1000)
-	PROP_ReactionTime (8)
-	PROP_RadiusFixed (20)
-	PROP_HeightFixed (16)
-	PROP_Mass (100)
-	PROP_RenderStyle (STYLE_Normal)
-	PROP_Alpha (FRACUNIT)
-	PROP_MinMissileChance (200)
-	PROP_MeleeRange(44)		// MELEERANGE(64) - 20
-	PROP_MaxDropOffHeight(24)
-	PROP_MaxStepHeight(24)
-	PROP_BounceFactor(FRACUNIT*7/10)
-	PROP_WallBounceFactor(FRACUNIT*3/4)
-	PROP_BounceCount(-1)
-	PROP_FloatSpeed(4)
-	PROP_Gravity(FRACUNIT)
-END_DEFAULTS
 
 //==========================================================================
 //
@@ -3300,7 +3228,7 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 	actor->state = st;
 	actor->tics = st->GetTics();
 	
-	actor->sprite = st->sprite.index;
+	actor->sprite = st->sprite;
 	actor->frame = st->GetFrame();
 	actor->renderflags = (actor->renderflags & ~RF_FULLBRIGHT) | st->GetFullbright();
 	actor->touching_sectorlist = NULL;	// NULL head of sector list // phares 3/13/98
@@ -3490,7 +3418,15 @@ void AActor::Activate (AActor *activator)
 		if (flags2 & MF2_DORMANT)
 		{
 			flags2 &= ~MF2_DORMANT;
-			tics = 1;
+			FState *state = FindState("Active");
+			if (state != NULL) 
+			{
+				SetState(state);
+			}
+			else
+			{
+				tics = 1;
+			}
 		}
 	}
 }
@@ -3502,7 +3438,15 @@ void AActor::Deactivate (AActor *activator)
 		if (!(flags2 & MF2_DORMANT))
 		{
 			flags2 |= MF2_DORMANT;
-			tics = -1;
+			FState *state = FindState("Inactive");
+			if (state != NULL) 
+			{
+				SetState(state);
+			}
+			else
+			{
+				tics = -1;
+			}
 		}
 	}
 }
@@ -4027,13 +3971,9 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 	{
 		mthing->args[0] = mthing->type - 14000;
 		mthing->type = 14065;
-		i = RUNTIME_CLASS(AAmbientSound);
 	}
-	else
-	{
-		// find which type to spawn
-		i = DoomEdMap.FindType (mthing->type);
-	}
+	// find which type to spawn
+	i = DoomEdMap.FindType (mthing->type);
 
 	if (i == NULL)
 	{
@@ -4053,7 +3993,7 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 
 		const AActor *defaults = GetDefaultByType (i);
 		if (defaults->SpawnState == NULL ||
-			sprites[defaults->SpawnState->sprite.index].numframes == 0)
+			sprites[defaults->SpawnState->sprite].numframes == 0)
 		{
 			Printf ("%s at (%i, %i) has no frames\n",
 					i->TypeName.GetChars(), mthing->x>>FRACBITS, mthing->y>>FRACBITS);
@@ -5079,7 +5019,7 @@ int AActor::TakeSpecialDamage (AActor *inflictor, AActor *source, int damage, FN
 		if (death == NULL && !deh.NoAutofreeze && !(flags4 & MF4_NOICEDEATH) &&
 			(player || (flags3 & MF3_ISMONSTER)))
 		{
-			death = &AActor::States[S_GENERICFREEZEDEATH];
+			death = FindState(NAME_GenericFreezeDeath);
 		}
 	}
 	else

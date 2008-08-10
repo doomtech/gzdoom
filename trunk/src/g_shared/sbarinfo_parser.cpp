@@ -264,6 +264,10 @@ void SBarInfo::ParseSBarInfo(int lump)
 						{
 							this->huds[barNum].forceScaled = true;
 						}
+						else if(sc.Compare("fullscreenoffsets"))
+						{
+							this->huds[barNum].fullScreenOffsets = true;
+						}
 						else
 						{
 							sc.ScriptError("Unkown flag '%s'.", sc.String);
@@ -318,9 +322,9 @@ void SBarInfo::ParseSBarInfo(int lump)
 			{
 				int pop = 0;
 				sc.MustGetToken(TK_Identifier);
-				if(sc.Compare("keys"))
+				if(sc.Compare("log"))
 					pop = 0;
-				else if(sc.Compare("log"))
+				else if(sc.Compare("keys"))
 					pop = 1;
 				else if(sc.Compare("status"))
 					pop = 2;
@@ -385,6 +389,12 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 				{
 					cmd.flags = DRAWIMAGE_INVULNERABILITY;
 				}
+				else if(sc.Compare("keyslot"))
+				{
+					cmd.flags = DRAWIMAGE_KEYSLOT;
+					sc.MustGetToken(TK_IntConst);
+					cmd.value = sc.Number;
+				}
 				else
 				{
 					cmd.setString(sc, sc.String, 0);
@@ -397,12 +407,20 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 				if(sc.CheckToken(TK_AndAnd))
 				{
 					cmd.flags |= DRAWIMAGE_SWITCHABLE_AND;
-					sc.MustGetToken(TK_Identifier);
-					cmd.setString(sc, sc.String, 1);
-					const PClass* item = PClass::FindClass(sc.String);
-					if(item == NULL || !PClass::FindClass("Inventory")->IsAncestorOf(item)) //must be a kind of Inventory
+					if(cmd.flags & DRAWIMAGE_KEYSLOT)
 					{
-						sc.ScriptError("'%s' is not a type of inventory item.", sc.String);
+						sc.MustGetToken(TK_IntConst);
+						cmd.special4 = sc.Number;
+					}
+					else
+					{
+						sc.MustGetToken(TK_Identifier);
+						cmd.setString(sc, sc.String, 1);
+						const PClass* item = PClass::FindClass(sc.String);
+						if(item == NULL || !PClass::FindClass("Inventory")->IsAncestorOf(item)) //must be a kind of Inventory
+						{
+							sc.ScriptError("'%s' is not a type of inventory item.", sc.String);
+						}
 					}
 					sc.MustGetToken(',');
 					sc.MustGetToken(TK_StringConst);
@@ -440,6 +458,23 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 						cmd.flags |= DRAWIMAGE_WEAPONICON;
 					else if(sc.Compare("sigil"))
 						cmd.flags |= DRAWIMAGE_SIGIL;
+					else if(sc.Compare("hexenarmor"))
+					{
+						cmd.flags = DRAWIMAGE_HEXENARMOR;
+						sc.MustGetToken(TK_Identifier);
+						if(sc.Compare("armor"))
+							cmd.value = 0;
+						else if(sc.Compare("shield"))
+							cmd.value = 1;
+						else if(sc.Compare("helm"))
+							cmd.value = 2;
+						else if(sc.Compare("amulet"))
+							cmd.value = 3;
+						else
+							sc.ScriptError("Unkown armor type: '%s'", sc.String);
+						sc.MustGetToken(',');
+						getImage = true;
+					}
 					else if(sc.Compare("translatable"))
 					{
 						cmd.flags |= DRAWIMAGE_TRANSLATABLE;
@@ -465,14 +500,16 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 					cmd.sprite_index.SetInvalid();
 				}
 				sc.MustGetToken(',');
-				this->getCoordinates(sc, cmd);
+				this->getCoordinates(sc, cmd, block.fullScreenOffsets);
 				if(sc.CheckToken(','))
 				{
 					sc.MustGetToken(TK_Identifier);
 					if(sc.Compare("center"))
 						cmd.flags |= DRAWIMAGE_OFFSET_CENTER;
+					else if(sc.Compare("centerbottom"))
+						cmd.flags |= DRAWIMAGE_OFFSET_CENTERBOTTOM;
 					else
-						sc.ScriptError("Expected 'center' got '%s' instead.", sc.String);
+						sc.ScriptError("Expected 'center' or 'centerbottom' got '%s' instead.", sc.String);
 				}
 				sc.MustGetToken(';');
 				break;
@@ -589,12 +626,14 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 						cmd.flags |= DRAWNUMBER_FILLZEROS;
 					else if(sc.Compare("whennotzero"))
 						cmd.flags |= DRAWNUMBER_WHENNOTZERO;
+					else if(sc.Compare("drawshadow"))
+						cmd.flags |= DRAWNUMBER_DRAWSHADOW;
 					else
 						sc.ScriptError("Unknown flag '%s'.", sc.String);
 					if(!sc.CheckToken('|'))
 						sc.MustGetToken(',');
 				}
-				this->getCoordinates(sc, cmd);
+				this->getCoordinates(sc, cmd, block.fullScreenOffsets);
 				if(sc.CheckToken(','))
 				{
 					bool needsComma = false;
@@ -639,12 +678,21 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 						cmd.flags |= DRAWMUGSHOT_XDEATHFACE;
 					else if(sc.Compare("animatedgodmode"))
 						cmd.flags |= DRAWMUGSHOT_ANIMATEDGODMODE;
+					else if(sc.Compare("disablegrin"))
+						cmd.flags |= DRAWMUGSHOT_DISABLEGRIN;
+					else if(sc.Compare("disableouch"))
+						cmd.flags |= DRAWMUGSHOT_DISABLEOUCH;
+					else if(sc.Compare("disablepain"))
+						cmd.flags |= DRAWMUGSHOT_DISABLEPAIN;
+					else if(sc.Compare("disablerampage"))
+						cmd.flags |= DRAWMUGSHOT_DISABLERAMPAGE;
 					else
 						sc.ScriptError("Unknown flag '%s'.", sc.String);
 					if(!sc.CheckToken('|'))
 						sc.MustGetToken(',');
 				}
-				this->getCoordinates(sc, cmd);
+
+				this->getCoordinates(sc, cmd, block.fullScreenOffsets);
 				sc.MustGetToken(';');
 				break;
 			case SBARINFO_DRAWSELECTEDINVENTORY:
@@ -706,6 +754,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 				if(alternateonempty)
 				{
 					sc.MustGetToken('{');
+					cmd.subBlock.fullScreenOffsets = block.fullScreenOffsets;
 					this->ParseSBarInfoBlock(sc, cmd.subBlock);
 				}
 				else
@@ -746,6 +795,10 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 					{
 						cmd.flags |= DRAWINVENTORYBAR_ALWAYSSHOWCOUNTER;
 					}
+					else if(sc.Compare("translucent"))
+					{
+						cmd.flags |= DRAWINVENTORYBAR_TRANSLUCENT;
+					}
 					else
 					{
 						sc.ScriptError("Unknown flag '%s'.", sc.String);
@@ -762,7 +815,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 					sc.ScriptError("Unknown font '%s'.", sc.String);
 
 				sc.MustGetToken(',');
-				this->getCoordinates(sc, cmd);
+				this->getCoordinates(sc, cmd, block.fullScreenOffsets);
 				cmd.special2 = cmd.x + 26;
 				cmd.special3 = cmd.y + 22;
 				cmd.translation = CR_GOLD;
@@ -885,7 +938,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 					if(!sc.CheckToken('|'))
 						sc.MustGetToken(',');
 				}
-				this->getCoordinates(sc, cmd);
+				this->getCoordinates(sc, cmd, block.fullScreenOffsets);
 				if(sc.CheckToken(',')) //border
 				{
 					sc.MustGetToken(TK_IntConst);
@@ -925,7 +978,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 					sc.ScriptError("Chain size must be a positive number.");
 				cmd.special4 = sc.Number;
 				sc.MustGetToken(',');
-				this->getCoordinates(sc, cmd);
+				this->getCoordinates(sc, cmd, block.fullScreenOffsets);
 				sc.MustGetToken(';');
 				break;
 			case SBARINFO_DRAWSHADER:
@@ -954,7 +1007,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 					cmd.flags |= DRAWSHADER_REVERSE;
 					sc.MustGetToken(',');
 				}
-				this->getCoordinates(sc, cmd);
+				this->getCoordinates(sc, cmd, block.fullScreenOffsets);
 				sc.MustGetToken(';');
 				break;
 			case SBARINFO_DRAWSTRING:
@@ -969,7 +1022,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 				sc.MustGetToken(TK_StringConst);
 				cmd.setString(sc, sc.String, 0, -1, false);
 				sc.MustGetToken(',');
-				this->getCoordinates(sc, cmd);
+				this->getCoordinates(sc, cmd, block.fullScreenOffsets);
 				if(sc.CheckToken(',')) //spacing
 				{
 					sc.MustGetToken(TK_IntConst);
@@ -987,10 +1040,45 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 				else if(!sc.Compare("horizontal"))
 					sc.ScriptError("Unknown direction '%s'.", sc.String);
 				sc.MustGetToken(',');
-				sc.MustGetToken(TK_IntConst);
-				cmd.special = sc.Number;
+				while(sc.CheckToken(TK_Identifier))
+				{
+					if(sc.Compare("reverserows"))
+						cmd.flags |= DRAWKEYBAR_REVERSEROWS;
+					else
+						sc.ScriptError("Unknown flag '%s'.", sc.String);
+					if(!sc.CheckToken('|'))
+						sc.MustGetToken(',');
+				}
+				if(sc.CheckToken(TK_Auto))
+					cmd.special = -1;
+				else
+				{
+					sc.MustGetToken(TK_IntConst);
+					cmd.special = sc.Number;
+				}
 				sc.MustGetToken(',');
-				this->getCoordinates(sc, cmd);
+				this->getCoordinates(sc, cmd, block.fullScreenOffsets);
+				if(sc.CheckToken(','))
+				{
+					//key offset
+					sc.MustGetToken(TK_IntConst);
+					cmd.special2 = sc.Number;
+					if(sc.CheckToken(','))
+					{
+						//max per row/column
+						sc.MustGetToken(TK_IntConst);
+						cmd.special3 = sc.Number;
+						sc.MustGetToken(',');
+						//row/column spacing (opposite of previous)
+						if(sc.CheckToken(TK_Auto))
+							cmd.special4 = -1;
+						else
+						{
+							sc.MustGetToken(TK_IntConst);
+							cmd.special4 = sc.Number;
+						}
+					}
+				}
 				sc.MustGetToken(';');
 				break;
 			case SBARINFO_GAMEMODE:
@@ -1010,6 +1098,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 						break;
 					sc.MustGetToken(',');
 				}
+				cmd.subBlock.fullScreenOffsets = block.fullScreenOffsets;
 				this->ParseSBarInfoBlock(sc, cmd.subBlock);
 				break;
 			case SBARINFO_PLAYERCLASS:
@@ -1038,6 +1127,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 					sc.MustGetToken(',');
 				}
 			FinishPlayerClass:
+				cmd.subBlock.fullScreenOffsets = block.fullScreenOffsets;
 				this->ParseSBarInfoBlock(sc, cmd.subBlock);
 				break;
 			case SBARINFO_ASPECTRATIO:
@@ -1053,6 +1143,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 				else
 					sc.ScriptError("Unkown aspect ratio: %s", sc.String);
 				sc.MustGetToken('{');
+				cmd.subBlock.fullScreenOffsets = block.fullScreenOffsets;
 				this->ParseSBarInfoBlock(sc, cmd.subBlock);
 				break;
 			case SBARINFO_ISSELECTED:
@@ -1080,6 +1171,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 						break;
 				}
 				sc.MustGetToken('{');
+				cmd.subBlock.fullScreenOffsets = block.fullScreenOffsets;
 				this->ParseSBarInfoBlock(sc, cmd.subBlock);
 				break;
 			case SBARINFO_USESSECONDARYAMMO:
@@ -1091,6 +1183,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 						sc.ScriptError("Exspected 'not' got '%s' instead.", sc.String);
 				}
 				sc.MustGetToken('{');
+				cmd.subBlock.fullScreenOffsets = block.fullScreenOffsets;
 				this->ParseSBarInfoBlock(sc, cmd.subBlock);
 				break;
 			case SBARINFO_HASWEAPONPIECE:
@@ -1106,6 +1199,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 					sc.ScriptError("Weapon piece number can not be less than 1.");
 				cmd.value = sc.Number;
 				sc.MustGetToken('{');
+				cmd.subBlock.fullScreenOffsets = block.fullScreenOffsets;
 				this->ParseSBarInfoBlock(sc, cmd.subBlock);
 				break;
 			}
@@ -1138,6 +1232,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 						break;
 				}
 				sc.MustGetToken('{');
+				cmd.subBlock.fullScreenOffsets = block.fullScreenOffsets;
 				this->ParseSBarInfoBlock(sc, cmd.subBlock);
 				break;
 			case SBARINFO_ININVENTORY:
@@ -1169,6 +1264,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 						break;
 				}
 				sc.MustGetToken('{');
+				cmd.subBlock.fullScreenOffsets = block.fullScreenOffsets;
 				this->ParseSBarInfoBlock(sc, cmd.subBlock);
 				break;
 		}
@@ -1202,7 +1298,7 @@ void SBarInfo::ParseMugShotBlock(FScanner &sc, FMugShotState &state)
 	}
 }
 
-void SBarInfo::getCoordinates(FScanner &sc, SBarInfoCommand &cmd)
+void SBarInfo::getCoordinates(FScanner &sc, SBarInfoCommand &cmd, bool fullScreenOffsets)
 {
 	bool negative = false;
 	negative = sc.CheckToken('-');
@@ -1211,7 +1307,10 @@ void SBarInfo::getCoordinates(FScanner &sc, SBarInfoCommand &cmd)
 	sc.MustGetToken(',');
 	negative = sc.CheckToken('-');
 	sc.MustGetToken(TK_IntConst);
-	cmd.y = (negative ? -sc.Number : sc.Number) - (200 - this->height);
+	if(!fullScreenOffsets)
+		cmd.y = (negative ? -sc.Number : sc.Number) - (200 - this->height);
+	else
+		cmd.y = negative ? -sc.Number : sc.Number;
 }
 
 int SBarInfo::getSignedInteger(FScanner &sc)
@@ -1338,6 +1437,7 @@ SBarInfoCommand::~SBarInfoCommand()
 SBarInfoBlock::SBarInfoBlock()
 {
 	forceScaled = false;
+	fullScreenOffsets = false;
 	alpha = FRACUNIT;
 }
 
