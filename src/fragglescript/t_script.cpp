@@ -689,16 +689,19 @@ void FS_Close()
 	delete global_script;
 }
 
-AT_GAME_SET(FS_Init)
+void T_Init()
 {
 	void init_functions();
 
-	// I'd rather link the special here than make another source file depend on FS!
-	LineSpecials[FS_Execute]=LS_FS_Execute;
-	global_script = new DFsScript;
-	GC::AddSoftRoot(global_script);
-	init_functions();
-	atterm(FS_Close);
+	if (global_script == NULL)
+	{
+		// I'd rather link the special here than make another source file depend on FS!
+		LineSpecials[FS_Execute]=LS_FS_Execute;
+		global_script = new DFsScript;
+		GC::AddSoftRoot(global_script);
+		init_functions();
+		atterm(FS_Close);
+	}
 }
 
 //==========================================================================

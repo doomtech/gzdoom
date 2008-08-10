@@ -46,6 +46,7 @@
 #include "gi.h"
 #include "xlat/xlat.h"
 
+void T_Init();
 
 class FScriptLoader
 {
@@ -344,6 +345,8 @@ bool FScriptLoader::ParseInfo(MapData * map)
 void T_LoadScripts(MapData *map)
 {
 	FScriptLoader parser;
+	
+	T_Init();
 
 	bool HasScripts = parser.ParseInfo(map);
 
