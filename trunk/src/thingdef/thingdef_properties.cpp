@@ -456,9 +456,10 @@ static void HandleDeprecatedFlags(AActor *defaults, bool set, int index)
 // This cannot be placed in thingdef_codeptr because it needs the flag table
 //
 //===========================================================================
-DEFINE_ACTION_FUNCTION(AActor, A_ChangeFlag)
+DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ChangeFlag)
 {
 	int index=CheckIndex(2);
+	if (index < 0) return;
 	const char * flagname = FName((ENamedName)StateParameters[index]).GetChars();	
 	int expression = EvalExpressionI (StateParameters[index+1], self);
 
