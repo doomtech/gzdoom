@@ -8,10 +8,7 @@
 #include "m_bbox.h"
 #include "thingdef/thingdef.h"
 
-void A_PainAttack (AActor *);
-void A_PainDie (AActor *);
-
-void A_SkullAttack (AActor *self);
+DECLARE_ACTION(A_SkullAttack)
 
 static const PClass *GetSpawnType()
 {
@@ -130,7 +127,7 @@ void A_PainShootSkull (AActor *self, angle_t angle, const PClass *spawntype)
 	// [RH] Lost souls hate the same things as their pain elementals
 	other->CopyFriendliness (self, true);
 
-	A_SkullAttack (other);
+	CALL_ACTION(A_SkullAttack, other);
 }
 
 
@@ -138,7 +135,7 @@ void A_PainShootSkull (AActor *self, angle_t angle, const PClass *spawntype)
 // A_PainAttack
 // Spawn a lost soul and launch it at the target
 // 
-void A_PainAttack (AActor *self)
+DEFINE_ACTION_FUNCTION(AActor, A_PainAttack)
 {
 	if (!self->target)
 		return;
@@ -148,7 +145,7 @@ void A_PainAttack (AActor *self)
 	A_PainShootSkull (self, self->angle, spawntype);
 }
 
-void A_DualPainAttack (AActor *self)
+DEFINE_ACTION_FUNCTION(AActor, A_DualPainAttack)
 {
 	if (!self->target)
 		return;
@@ -159,14 +156,14 @@ void A_DualPainAttack (AActor *self)
 	A_PainShootSkull (self, self->angle - ANG45, spawntype);
 }
 
-void A_PainDie (AActor *self)
+DEFINE_ACTION_FUNCTION(AActor, A_PainDie)
 {
 	if (self->target != NULL && self->IsFriend (self->target))
 	{ // And I thought you were my friend!
 		self->flags &= ~MF_FRIENDLY;
 	}
 	const PClass *spawntype = GetSpawnType();
-	A_NoBlocking (self);
+	CALL_ACTION(A_NoBlocking, self);
 	A_PainShootSkull (self, self->angle + ANG90, spawntype);
 	A_PainShootSkull (self, self->angle + ANG180, spawntype);
 	A_PainShootSkull (self, self->angle + ANG270, spawntype);
