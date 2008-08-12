@@ -61,8 +61,8 @@ FreeList<gl_subsectorrendernode> SSR_List;
 // profiling data
 static int totalupper, totallower, totalsectors;
 static int lowershcount, uppershcount;
-static cycle_t totalms, showtotalms;
-static cycle_t totalssms;
+static glcycle_t totalms, showtotalms;
+static glcycle_t totalssms;
 static sector_t fakesec;
 
 //==========================================================================
@@ -921,7 +921,7 @@ ADD_STAT(missingtextures)
 {
 	FString out;
 	out.Format("Missing textures: %d upper, %d lower, %.3f ms\n", 
-		totalupper, totallower, showtotalms.Time());
+		totalupper, totallower, showtotalms.TimeMS());
 	return out;
 }
 
@@ -1222,7 +1222,7 @@ void GLDrawInfo::HandleHackedSubsectors()
 ADD_STAT(sectorhacks)
 {
 	FString out;
-	out.Format("sectorhacks = %.3f ms, %d upper, %d lower\n", totalssms.Time(), uppershcount, lowershcount);
+	out.Format("sectorhacks = %.3f ms, %d upper, %d lower\n", totalssms.TimeMS(), uppershcount, lowershcount);
 	return out;
 }
 
