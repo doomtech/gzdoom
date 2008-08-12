@@ -130,8 +130,6 @@ bool EvalExpressionN (int id, AActor *self, const PClass *cls=NULL);
 extern FState * CallingState;
 int CheckIndex(int paramsize, FState ** pcallstate=NULL);
 
-void A_ExplodeParms(AActor * self);
-
 enum
 {
 	ACMETA_BASE				= 0x83000,
@@ -155,6 +153,56 @@ enum EDefinitionType
 	DEF_Projectile,
 };
 
+#if defined(_MSC_VER)
+#pragma data_seg(".areg$u")
+#pragma data_seg()
+
+#define MSVC_ASEG __declspec(allocate(".areg$u"))
+#define GCC_ASEG
+#else
+#define MSVC_ASEG
+#define GCC_ASEG __attribute__((section(AREG_SECTION)))
+#endif
+
+
+// Macros to handle action functions. These are here so that I don't have to
+// change every single use in case the parameters change.
+#define DECLARE_ACTION(name) void AF_##name(AActor *self);
+
+#define DEFINE_ACTION_FUNCTION(cls, name) \
+	void AF_##name (AActor *); \
+	AFuncDesc info_##cls##_##name = { #name, AF_##name }; \
+	MSVC_ASEG AFuncDesc *infoptr_##cls##_##name GCC_ASEG = &info_##cls##_##name; \
+	void AF_##name (AActor *self)
+
+#define CALL_ACTION(name,self) AF_##name(self)
+#define GET_ACTION(name) AF_##name
+
+#define ACTION_PARAM_START(count) \
+	int index = CheckIndex(count); \
+	if (index <= 0) return;
+
+#define ACTION_PARAM_START_OPTIONAL(count) \
+	int index = CheckIndex(count); 
+
+#define ACTION_INT_PARAM(var) \
+	int var = EvalExpressionI(StateParameters[index++], self);
+#define ACTION_BOOL_PARAM(var) \
+	bool var = !!EvalExpressionI(StateParameters[index++], self);
+#define ACTION_NOT_BOOL_PARAM(var) \
+	bool var = EvalExpressionN(StateParameters[index++], self);
+#define ACTION_FIXED_PARAM(var) \
+	fixed_t var = fixed_t(EvalExpressionF(StateParameters[index++], self)*65536.f);
+#define ACTION_FLOAT_PARAM(var) \
+	float var = EvalExpressionF(StateParameters[index++], self);
+#define ACTION_CLASS_PARAM(var) \
+	const PClass *var = PClass::FindClass(ENamedName(StateParameters[index++]));
+#define ACTION_STATE_PARAM(var) \
+	int var = StateParameters[index++];
+#define ACTION_SOUND_PARAM(var) \
+	FSoundID var = StateParameters[index++];
+#define ACTION_STRING_PARAM(var) \
+	const char *var = FName(ENamedName(StateParameters[index++]));
 
 
 #endif

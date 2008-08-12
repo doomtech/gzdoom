@@ -54,9 +54,12 @@
 #include "a_sharedglobal.h"
 #include "s_sound.h"
 #include "i_system.h"
+#include "autosegs.h"
 
 TArray<int> StateParameters;
 TArray<FName> JumpParameters;
+static TArray<AFuncDesc> AFTable;
+static TArray<FState> StateArray;
 
 //==========================================================================
 //
@@ -64,28 +67,7 @@ TArray<FName> JumpParameters;
 //
 //==========================================================================
 
-
-
-#define FROM_THINGDEF
-// Prototype the code pointers
-#define WEAPON(x)	void A_##x(AActor*);	
-#define ACTOR(x)	void A_##x(AActor*);
-#include "codepointers.h"
-#include "d_dehackedactions.h"
-
-AFuncDesc AFTable[] =
-{
-#define WEAPON(x)	{ "A_" #x, A_##x },
-#define ACTOR(x)	{ "A_" #x, A_##x },
-#include "codepointers.h"
-#include "d_dehackedactions.h"
-	{ "A_Fall", A_NoBlocking },
-	{ "A_BasicAttack", A_ComboAttack },
-	{ "A_Explode", A_ExplodeParms }
-};
-
-
-static TArray<FState> StateArray;
+DECLARE_ACTION(A_CallSpecial)
 
 //==========================================================================
 //
@@ -103,11 +85,18 @@ AFuncDesc * FindFunction(const char * string)
 
 	if (!funcsorted) 
 	{
-		qsort(AFTable, countof(AFTable), sizeof(AFTable[0]), funccmp);
+		TAutoSegIterator<AFuncDesc *, &ARegHead, &ARegTail> probe;
+
+		while (++probe != NULL)
+		{
+			AFTable.Push(*probe);
+		}
+		AFTable.ShrinkToFit();
+		qsort(&AFTable[0], AFTable.Size(), sizeof(AFTable[0]), funccmp);
 		funcsorted=true;
 	}
 
-	int min = 0, max = countof(AFTable)-1;
+	int min = 0, max = AFTable.Size()-1;
 
 	while (min <= max)
 	{
@@ -382,6 +371,7 @@ int PrepareStateParameters(FState * state, int numparams)
 	return paramindex;
 }
 
+void A_CallSpecial(AActor * self);
 //==========================================================================
 //
 // DoActionSpecials
@@ -424,7 +414,7 @@ bool DoActionSpecials(FScanner &sc, FState & state, bool multistate, int * state
 		{
 			sc.ScriptError ("Too many arguments to %s", specname.GetChars());
 		}
-		state.Action = A_CallSpecial;
+		state.Action = GET_ACTION(A_CallSpecial);
 		return true;
 	}
 	return false;
@@ -502,7 +492,7 @@ int ParseStates(FScanner &sc, FActorInfo * actor, AActor * defaults, Baggage &ba
 	FState * laststate = NULL;
 	intptr_t lastlabel = -1;
 	int minrequiredstate = -1;
-	int spriteindex;
+	int spriteindex = 0;
 	char lastsprite[5]="";
 
 	sc.MustGetStringName ("{");

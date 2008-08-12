@@ -2348,10 +2348,6 @@ angle_t AActor::AngleIncrements ()
 	return ANGLE_45;
 }
 
-void AActor::GetExplodeParms (int &damage, int &dist, bool &hurtSource)
-{
-}
-
 //==========================================================================
 //
 // AActor :: GetMissileDamage
@@ -3165,18 +3161,6 @@ bool AActor::UpdateWaterLevel (fixed_t oldz, bool dosplash)
 	boomwaterlevel=waterlevel;
 	if (reset) waterlevel=lastwaterlevel;
 	return false;	// we did the splash ourselves! ;)
-}
-
-//==========================================================================
-//
-// A_GenericFreezeDeath
-//
-//==========================================================================
-
-void A_GenericFreezeDeath (AActor *actor)
-{
-	actor->Translation = TRANSLATION(TRANSLATION_Standard, 7);
-	A_FreezeDeath (actor);
 }
 
 //==========================================================================

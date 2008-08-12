@@ -456,7 +456,7 @@ static void HandleDeprecatedFlags(AActor *defaults, bool set, int index)
 // This cannot be placed in thingdef_codeptr because it needs the flag table
 //
 //===========================================================================
-void A_ChangeFlag(AActor * self)
+DEFINE_ACTION_FUNCTION(AActor, A_ChangeFlag)
 {
 	int index=CheckIndex(2);
 	const char * flagname = FName((ENamedName)StateParameters[index]).GetChars();	
@@ -2173,6 +2173,7 @@ static void PowerupColor (FScanner &sc, APowerupGiver *defaults, Baggage &bag)
 	else
 	{
 		sc.ScriptError("\"%s\" requires an actor of type \"Powerup\"\n", sc.String);
+		return;
 	}
 
 	if (sc.CheckNumber())
@@ -2231,6 +2232,7 @@ static void PowerupDuration (FScanner &sc, APowerupGiver *defaults, Baggage &bag
 {
 	int *pEffectTics;
 
+
 	if (bag.Info->Class->IsDescendantOf(RUNTIME_CLASS(APowerup)))
 	{
 		pEffectTics = &((APowerup*)defaults)->EffectTics;
@@ -2242,10 +2244,11 @@ static void PowerupDuration (FScanner &sc, APowerupGiver *defaults, Baggage &bag
 	else
 	{
 		sc.ScriptError("\"%s\" requires an actor of type \"Powerup\"\n", sc.String);
+		return;
 	}
 
 	sc.MustGetNumber();
-	*pEffectTics = sc.Number>=0? sc.Number : -sc.Number*TICRATE;
+	*pEffectTics = (sc.Number >= 0) ? sc.Number : -sc.Number * TICRATE;
 }
 
 //==========================================================================
