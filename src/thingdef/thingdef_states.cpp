@@ -67,8 +67,6 @@ static TArray<FState> StateArray;
 //
 //==========================================================================
 
-DECLARE_ACTION(A_CallSpecial)
-
 //==========================================================================
 //
 // Find a function by name using a binary search
@@ -367,6 +365,24 @@ static void MakeStateList(const FStateLabels *list, TArray<FStateDefine> &dest)
 void MakeStateDefines(const FStateLabels *list)
 {
 	MakeStateList(list, StateLabels);
+}
+
+void AddStateDefines(const FStateLabels *list)
+{
+	if (list != NULL) for(int i=0;i<list->NumLabels;i++)
+	{
+		if (list->Labels[i].Children == NULL)
+		{
+			if (!FindStateLabelInList(StateLabels, list->Labels[i].Label, false))
+			{
+				FStateDefine def;
+
+				def.Label = list->Labels[i].Label;
+				def.State = list->Labels[i].State;
+				StateLabels.Push(def);
+			}
+		}
+	}
 }
 
 //==========================================================================
