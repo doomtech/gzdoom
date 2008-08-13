@@ -530,6 +530,7 @@ bool AActor::SetState (FState *newstate)
 		newstate = newstate->GetNextState();
 	} while (tics == 0);
 
+	gl_SetActorLights(this);
 	return true;
 }
 
