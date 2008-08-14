@@ -128,9 +128,7 @@ void AdjustSpriteOffsets()
 					{
 						tex->LeftOffset=x;
 						tex->TopOffset=y;
-						FGLTexture *gltex = FGLTexture::ValidateTexture(tex);
-						gltex->LeftOffset[FGLTexture::GLUSE_PATCH]=x+1;
-						gltex->TopOffset[FGLTexture::GLUSE_PATCH]=y+1;
+						tex->KillNative();
 					}
 				}
 			}
