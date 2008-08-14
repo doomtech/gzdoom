@@ -1,4 +1,6 @@
 August 14, 2008 (Changes by Graf Zahl)
+- Removed game filters from old style decorations. No WAD in existence ever 
+  used them and removing them allows to make the parser more robust.
 - Added a few more macros so that the action function code doesn't have
   to reference its arguments directly, except 'self'. This may be helpful if it 
   becomes necessary to restructure this code once DoomScript becomes real.
