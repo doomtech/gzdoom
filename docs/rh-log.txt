@@ -1,4 +1,15 @@
-August 12, 2008 (Changes by Graf Zahl)
+August 14, 2008 (Changes by Graf Zahl)
+- Added a few more macros so that the action function code doesn't have
+  to reference its arguments directly, except 'self'. This may be helpful if it 
+  becomes necessary to restructure this code once DoomScript becomes real.
+- Removed the last remaining global variable related to action functions:
+  pStateCall. Everything is passed properly as function arguments now.
+- fixed: PlayerChunk was missing the NOSKIN flag.
+
+August 13, 2008 (Changes by Graf Zahl)
+- Macro-fied access to action function parameters.
+- Deactivated debug output code in d_Dehacked.cpp.
+- fixed: A_FreezeDeathChunks crashed when a player's head got spawned.
 - fixed: A_CallSpecial must be declared in DECORATE so that a symbol table
   entry can be generated for it.
 - fixed: Dehacked replaced pickups multiple times for changing its states.

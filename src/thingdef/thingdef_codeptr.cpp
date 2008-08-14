@@ -80,18 +80,6 @@ static FRandom pr_spawnitemex ("SpawnItemEx");
 static FRandom pr_burst ("Burst");
 
 
-// A truly awful hack to get to the state that called an action function
-// without knowing whether it has been called from a weapon or actor.
-
-struct StateCallData
-{
-	FState * State;
-	AActor * Item;
-	bool Result;
-};
-
-StateCallData * pStateCall;
-
 //==========================================================================
 //
 // ACustomInventory :: CallStateChain
@@ -104,18 +92,16 @@ StateCallData * pStateCall;
 bool ACustomInventory::CallStateChain (AActor *actor, FState * State)
 {
 	StateCallData StateCall;
-	StateCallData *pSavedCall = pStateCall;
 	bool result = false;
 	int counter = 0;
 
-	pStateCall = &StateCall;
 	StateCall.Item = this;
 	while (State != NULL)
 	{
 		// Assume success. The code pointer will set this to false if necessary
 		StateCall.State = State;
 		StateCall.Result = true;
-		if (State->CallAction(actor))
+		if (State->CallAction(actor, &StateCall))
 		{
 			// collect all the results. Even one successful call signifies overall success.
 			result |= StateCall.Result;
@@ -131,7 +117,6 @@ bool ACustomInventory::CallStateChain (AActor *actor, FState * State)
 			// Abort immediately if the state jumps to itself!
 			if (State == State->GetNextState()) 
 			{
-				pStateCall = pSavedCall;
 				return false;
 			}
 			
@@ -144,7 +129,6 @@ bool ACustomInventory::CallStateChain (AActor *actor, FState * State)
 			State = StateCall.State;
 		}
 	}
-	pStateCall = pSavedCall;
 	return result;
 }
 
@@ -240,16 +224,13 @@ DEFINE_ACTION_FUNCTION(AActor, A_ComboAttack)
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_BasicAttack)
 {
-	int index=CheckIndex(4);
-	if (index > 0)
-	{
-		int MeleeDamage=EvalExpressionI(StateParameters[index], self);
-		FSoundID MeleeSound=StateParameters[index+1];
-		const PClass *MissileType=PClass::FindClass((ENamedName)StateParameters[index+2]);
-		fixed_t MissileHeight=fixed_t(EvalExpressionF(StateParameters[index+3], self)/65536.f);
+	ACTION_PARAM_START(4);
+	ACTION_PARAM_INT(MeleeDamage, 0);
+	ACTION_PARAM_SOUND(MeleeSound, 1);
+	ACTION_PARAM_CLASS(MissileType, 2);
+	ACTION_PARAM_FIXED(MissileHeight, 3);
 
-		DoAttack(self, true, true, MeleeDamage, MeleeSound, MissileType, MissileHeight);
-	}
+	DoAttack(self, true, true, MeleeDamage, MeleeSound, MissileType, MissileHeight);
 }
 
 //==========================================================================
@@ -262,19 +243,17 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_BasicAttack)
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_PlaySound)
 {
-	int index=CheckIndex(1);
-	if (index<0) return;
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_SOUND(soundid, 0);
 
-	int soundid = StateParameters[index];
 	S_Sound (self, CHAN_BODY, soundid, 1, ATTN_NORM);
 }
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_PlayWeaponSound)
 {
-	int index=CheckIndex(1);
-	if (index<0) return;
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_SOUND(soundid, 0);
 
-	int soundid = StateParameters[index];
 	S_Sound (self, CHAN_WEAPON, soundid, 1, ATTN_NORM);
 }
 
@@ -285,13 +264,11 @@ DEFINE_ACTION_FUNCTION(AActor, A_StopSound)
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_PlaySoundEx)
 {
-	int index = CheckIndex(4);
-	if (index < 0) return;
-
-	int soundid = StateParameters[index];
-	ENamedName channel = ENamedName(StateParameters[index + 1]);
-	INTBOOL looping = EvalExpressionI(StateParameters[index + 2], self);
-	int attenuation_raw = EvalExpressionI(StateParameters[index + 3], self);
+	ACTION_PARAM_START(4);
+	ACTION_PARAM_SOUND(soundid, 0);
+	ACTION_PARAM_NAME(channel, 1);
+	ACTION_PARAM_BOOL(looping, 2);
+	ACTION_PARAM_INT(attenuation_raw, 3);
 
 	int attenuation;
 	switch (attenuation_raw)
@@ -310,27 +287,25 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_PlaySoundEx)
 
 	if (!looping)
 	{
-		S_Sound (self, channel - NAME_Auto, soundid, 1, attenuation);
+		S_Sound (self, int(channel) - NAME_Auto, soundid, 1, attenuation);
 	}
 	else
 	{
-		if (!S_IsActorPlayingSomething (self, channel - NAME_Auto, soundid))
+		if (!S_IsActorPlayingSomething (self, int(channel) - NAME_Auto, soundid))
 		{
-			S_Sound (self, (channel - NAME_Auto) | CHAN_LOOP, soundid, 1, attenuation);
+			S_Sound (self, (int(channel) - NAME_Auto) | CHAN_LOOP, soundid, 1, attenuation);
 		}
 	}
 }
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_StopSoundEx)
 {
-	int index = CheckIndex (1);
-	if (index < 0) return;
-
-	ENamedName channel = ENamedName(StateParameters[index]);
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_NAME(channel, 0);
 
 	if (channel > NAME_Auto && channel <= NAME_SoundSlot7)
 	{
-		S_StopSound (self, channel - NAME_Auto);
+		S_StopSound (self, int(channel) - NAME_Auto);
 	}
 }
 
@@ -341,12 +316,11 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_StopSoundEx)
 //==========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SeekerMissile)
 {
-	int index=CheckIndex(2);
-	if (index<0) return;
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_INT(ang1, 0);
+	ACTION_PARAM_INT(ang2, 1);
 
-	P_SeekerMissile(self,
-		clamp<int>(EvalExpressionI (StateParameters[index], self), 0, 90) * ANGLE_1,
-		clamp<int>(EvalExpressionI (StateParameters[index+1], self), 0, 90) * ANGLE_1);
+	P_SeekerMissile(self, clamp<int>(ang1, 0, 90) * ANGLE_1, clamp<int>(ang2, 0, 90) * ANGLE_1);
 }
 
 //==========================================================================
@@ -354,7 +328,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SeekerMissile)
 // Hitscan attack with a customizable amount of bullets (specified in damage)
 //
 //==========================================================================
-DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_BulletAttack)
+DEFINE_ACTION_FUNCTION(AActor, A_BulletAttack)
 {
 	int i;
 	int bangle;
@@ -428,14 +402,14 @@ FState *P_GetState(AActor *self, FState *CallingState, int offset)
 // Do the state jump
 //
 //==========================================================================
-static void DoJump(AActor * self, FState * CallingState, int offset)
+static void DoJump(AActor * self, FState * CallingState, int offset, StateCallData *statecall)
 {
 
-	if (pStateCall != NULL && CallingState == pStateCall->State)
+	if (statecall != NULL)
 	{
-		FState *jumpto = P_GetState(pStateCall->Item, CallingState, offset);
+		FState *jumpto = P_GetState(statecall->Item, CallingState, offset);
 		if (jumpto == NULL) return;
-		pStateCall->State = jumpto;
+		statecall->State = jumpto;
 	}
 	else if (self->player != NULL && CallingState == self->player->psprites[ps_weapon].state)
 	{
@@ -449,13 +423,23 @@ static void DoJump(AActor * self, FState * CallingState, int offset)
 		if (jumpto == NULL) return;
 		P_SetPsprite(self->player, ps_flash, jumpto);
 	}
-	else
+	else if (CallingState == self->state)
 	{
 		FState *jumpto = P_GetState(self, CallingState, offset);
 		if (jumpto == NULL) return;
 		self->SetState (jumpto);
 	}
+	else
+	{
+		// something went very wrong. This should never happen.
+		assert(false);
+	}
 }
+
+// This is just to avoid having to directly reference the internally defined
+// CallingState and statecall parameters in the code below.
+#define ACTION_JUMP(offset) DoJump(self, CallingState, offset, statecall)
+
 //==========================================================================
 //
 // State jump function
@@ -463,24 +447,23 @@ static void DoJump(AActor * self, FState * CallingState, int offset)
 //==========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Jump)
 {
-	int index = CheckIndex(3);
-	int maxchance;
+	ACTION_PARAM_START(3);
+	ACTION_PARAM_INT(count, 0);
+	ACTION_PARAM_INT(maxchance, 1);
+	ACTION_PARAM_VARARG(jumps, 2);
 
-	if (index >= 0 &&
-		StateParameters[index] >= 2 &&
-		(maxchance = clamp<int>(EvalExpressionI (StateParameters[index + 1], self), 0, 256),
-		 maxchance == 256 || pr_cajump() < maxchance))
+	if (count >= 2 && (maxchance >= 256 || pr_cajump() < maxchance))
 	{
-		if (StateParameters[index] == 2)
+		if (count == 2)
 		{
-			DoJump(self, CallingState, StateParameters[index + 2]);
+			ACTION_JUMP(*jumps);
 		}
 		else
 		{
-			DoJump(self, CallingState, StateParameters[index + (pr_cajump() % (StateParameters[index] - 1)) + 2]);
+			ACTION_JUMP(jumps[(pr_cajump() % (count - 1)) + 2]);
 		}
 	}
-	if (pStateCall != NULL) pStateCall->Result=false;	// Jumps should never set the result for inventory state chains!
+	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
 }
 
 //==========================================================================
@@ -490,12 +473,13 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Jump)
 //==========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfHealthLower)
 {
-	int index=CheckIndex(2);
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_INT(health, 0);
+	ACTION_PARAM_STATE(jump, 1);
 
-	if (index>=0 && self->health < EvalExpressionI (StateParameters[index], self))
-		DoJump(self, CallingState, StateParameters[index+1]);
+	if (self->health < health) ACTION_JUMP(jump);
 
-	if (pStateCall != NULL) pStateCall->Result=false;	// Jumps should never set the result for inventory state chains!
+	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
 }
 
 //==========================================================================
@@ -505,8 +489,11 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfHealthLower)
 //==========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfCloser)
 {
-	int index = CheckIndex(2);
-	AActor * target;
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_FIXED(dist, 0);
+	ACTION_PARAM_STATE(jump, 1);
+
+	AActor *target;
 
 	if (!self->player)
 	{
@@ -518,18 +505,19 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfCloser)
 		P_BulletSlope(self, &target);
 	}
 
-	if (pStateCall != NULL) pStateCall->Result=false;	// Jumps should never set the result for inventory state chains!
+	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
 
 	// No target - no jump
 	if (target==NULL) return;
 
-	fixed_t dist = fixed_t(EvalExpressionF (StateParameters[index], self) * FRACUNIT);
-	if (index > 0 && P_AproxDistance(self->x-target->x, self->y-target->y) < dist &&
+	if (P_AproxDistance(self->x-target->x, self->y-target->y) < dist &&
 		( (self->z > target->z && self->z - (target->z + target->height) < dist) || 
 		  (self->z <=target->z && target->z - (self->z + self->height) < dist) 
 		)
 	   )
-		DoJump(self, CallingState, StateParameters[index+1]);
+	{
+		ACTION_JUMP(jump);
+	}
 }
 
 //==========================================================================
@@ -539,15 +527,12 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfCloser)
 //==========================================================================
 void DoJumpIfInventory(AActor * self, AActor * owner, DECLARE_PARAMINFO)
 {
-	int index=CheckIndex(3);
-	if (index<0) return;
+	ACTION_PARAM_START(3);
+	ACTION_PARAM_CLASS(Type, 0);
+	ACTION_PARAM_INT(ItemAmount, 1);
+	ACTION_PARAM_STATE(JumpOffset, 2);
 
-	ENamedName ItemType=(ENamedName)StateParameters[index];
-	int ItemAmount = EvalExpressionI (StateParameters[index+1], self);
-	int JumpOffset = StateParameters[index+2];
-	const PClass * Type=PClass::FindClass(ItemType);
-
-	if (pStateCall != NULL) pStateCall->Result=false;	// Jumps should never set the result for inventory state chains!
+	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
 
 	if (!Type || owner == NULL) return;
 
@@ -555,8 +540,8 @@ void DoJumpIfInventory(AActor * self, AActor * owner, DECLARE_PARAMINFO)
 
 	if (Item)
 	{
-		if (ItemAmount>0 && Item->Amount>=ItemAmount) DoJump(self, CallingState, JumpOffset);
-		else if (Item->Amount>=Item->MaxAmount) DoJump(self, CallingState, JumpOffset);
+		if (ItemAmount>0 && Item->Amount>=ItemAmount) ACTION_JUMP(JumpOffset);
+		else if (Item->Amount>=Item->MaxAmount) ACTION_JUMP(JumpOffset);
 	}
 }
 
@@ -578,18 +563,11 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfInTargetInventory)
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Explode)
 {
-	int damage;
-	int distance;
-	bool hurtSource;
-	bool alert;
-
-	int index=CheckIndex(4);
-	if (index < 0) return;
-
-	damage = EvalExpressionI (StateParameters[index], self);
-	distance = EvalExpressionI (StateParameters[index+1], self);
-	hurtSource = !!EvalExpressionI (StateParameters[index+2], self);
-	alert = !!EvalExpressionI (StateParameters[index+3], self);
+	ACTION_PARAM_START(4);
+	ACTION_PARAM_INT(damage, 0);
+	ACTION_PARAM_FIXED(distance, 1);
+	ACTION_PARAM_BOOL(hurtSource, 2);
+	ACTION_PARAM_BOOL(alert, 3);
 
 	if (damage < 0)	// get parameters from metadata
 	{
@@ -623,16 +601,10 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Explode)
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_RadiusThrust)
 {
-	int force = 0;
-	int distance = 0;
-	bool affectSource = true;
-	
-	int index=CheckIndex(3);
-	if (index < 0) return;
-
-	force = EvalExpressionI (StateParameters[index], self);
-	distance = EvalExpressionI (StateParameters[index+1], self);
-	affectSource = !!EvalExpressionI (StateParameters[index+2], self);
+	ACTION_PARAM_START(3);
+	ACTION_PARAM_INT(force, 0);
+	ACTION_PARAM_FIXED(distance, 1);
+	ACTION_PARAM_BOOL(affectSource, 2);
 
 	if (force <= 0) force = 128;
 	if (distance <= 0) distance = force;
@@ -651,17 +623,17 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_RadiusThrust)
 //==========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CallSpecial)
 {
-	int index=CheckIndex(6);
-	if (index<0) return;
+	ACTION_PARAM_START(6);
+	ACTION_PARAM_INT(special, 0);
+	ACTION_PARAM_INT(arg1, 1);
+	ACTION_PARAM_INT(arg2, 2);
+	ACTION_PARAM_INT(arg3, 3);
+	ACTION_PARAM_INT(arg4, 4);
+	ACTION_PARAM_INT(arg5, 5);
 
-	bool res = !!LineSpecials[StateParameters[index]](NULL, self, false,
-		EvalExpressionI (StateParameters[index+1], self),
-		EvalExpressionI (StateParameters[index+2], self),
-		EvalExpressionI (StateParameters[index+3], self),
-		EvalExpressionI (StateParameters[index+4], self),
-		EvalExpressionI (StateParameters[index+5], self));
+	bool res = !!LineSpecials[special](NULL, self, false, arg1, arg2, arg3, arg4, arg5);
 
-	if (pStateCall != NULL) pStateCall->Result = res;
+	ACTION_SET_RESULT(res);
 }
 
 //==========================================================================
@@ -691,15 +663,14 @@ enum CM_Flags
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomMissile)
 {
-	int index=CheckIndex(6);
-	if (index<0) return;
+	ACTION_PARAM_START(6);
+	ACTION_PARAM_CLASS(ti, 0);
+	ACTION_PARAM_FIXED(SpawnHeight, 1);
+	ACTION_PARAM_INT(Spawnofs_XY, 2);
+	ACTION_PARAM_ANGLE(Angle, 3);
+	ACTION_PARAM_INT(flags, 4);
+	ACTION_PARAM_ANGLE(pitch, 5);
 
-	ENamedName MissileName=(ENamedName)StateParameters[index];
-	fixed_t SpawnHeight=fixed_t(EvalExpressionF (StateParameters[index+1], self) * FRACUNIT);
-	int Spawnofs_XY=EvalExpressionI (StateParameters[index+2], self);
-	angle_t Angle=angle_t(EvalExpressionF (StateParameters[index+3], self) * ANGLE_1);
-	int flags=EvalExpressionI (StateParameters[index+4], self);
-	angle_t pitch=angle_t(EvalExpressionF (StateParameters[index+5], self) * ANGLE_1);
 	int aimmode = flags & CMF_AIMMODE;
 
 	AActor * targ;
@@ -707,7 +678,6 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomMissile)
 
 	if (self->target != NULL || aimmode==2)
 	{
-		const PClass * ti=PClass::FindClass(MissileName);
 		if (ti) 
 		{
 			angle_t ang = (self->angle - ANGLE_90) >> ANGLETOFINESHIFT;
@@ -813,31 +783,26 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomMissile)
 //==========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomBulletAttack)
 {
-	int index=CheckIndex(7);
-	if (index<0) return;
-
-	angle_t Spread_XY=angle_t(EvalExpressionF (StateParameters[index], self) * ANGLE_1);
-	angle_t Spread_Z=angle_t(EvalExpressionF (StateParameters[index+1], self) * ANGLE_1);
-	int NumBullets=EvalExpressionI (StateParameters[index+2], self);
-	int DamagePerBullet=EvalExpressionI (StateParameters[index+3], self);
-	ENamedName PuffType=(ENamedName)StateParameters[index+4];
-	fixed_t Range = fixed_t(EvalExpressionF (StateParameters[index+5], self) * FRACUNIT);
-	bool AimFacing = !!EvalExpressionI (StateParameters[index+6], self);
+	ACTION_PARAM_START(7);
+	ACTION_PARAM_ANGLE(Spread_XY, 0);
+	ACTION_PARAM_ANGLE(Spread_Z, 1);
+	ACTION_PARAM_INT(NumBullets, 2);
+	ACTION_PARAM_INT(DamagePerBullet, 3);
+	ACTION_PARAM_CLASS(pufftype, 4);
+	ACTION_PARAM_FIXED(Range, 5);
+	ACTION_PARAM_BOOL(AimFacing, 6);
 
 	if(Range==0) Range=MISSILERANGE;
-
 
 	int i;
 	int bangle;
 	int bslope;
-	const PClass *pufftype;
 
 	if (self->target || AimFacing)
 	{
 		if (!AimFacing) A_FaceTarget (self);
 		bangle = self->angle;
 
-		pufftype = PClass::FindClass(PuffType);
 		if (!pufftype) pufftype = PClass::FindClass(NAME_BulletPuff);
 
 		bslope = P_AimLineAttack (self, bangle, MISSILERANGE);
@@ -860,14 +825,12 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomBulletAttack)
 //==========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomMeleeAttack)
 {
-	int index=CheckIndex(5);
-	if (index<0) return;
-
-	int damage = EvalExpressionI (StateParameters[index], self);
-	int MeleeSound = StateParameters[index+1];
-	int MissSound = StateParameters[index+2];
-	ENamedName DamageType = (ENamedName)StateParameters[index+3];
-	bool bleed = !!EvalExpressionI (StateParameters[index+4], self);
+	ACTION_PARAM_START(5);
+	ACTION_PARAM_INT(damage, 0);
+	ACTION_PARAM_SOUND(MeleeSound, 1);
+	ACTION_PARAM_SOUND(MissSound, 2);
+	ACTION_PARAM_NAME(DamageType, 3);
+	ACTION_PARAM_BOOL(bleed, 4);
 
 	if (DamageType==NAME_None) DamageType = NAME_Melee;	// Melee is the default type
 
@@ -894,16 +857,13 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomMeleeAttack)
 //==========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomComboAttack)
 {
-	int index=CheckIndex(6);
-	if (index<0) return;
-
-	ENamedName MissileName=(ENamedName)StateParameters[index];
-	fixed_t SpawnHeight=fixed_t(EvalExpressionF (StateParameters[index+1], self) * FRACUNIT);
-	int damage = EvalExpressionI (StateParameters[index+2], self);
-	int MeleeSound = StateParameters[index+3];
-	ENamedName DamageType = (ENamedName)StateParameters[index+4];
-	bool bleed = !!EvalExpressionI (StateParameters[index+5], self);
-
+	ACTION_PARAM_START(6);
+	ACTION_PARAM_CLASS(ti, 0);
+	ACTION_PARAM_FIXED(SpawnHeight, 1);
+	ACTION_PARAM_INT(damage, 2);
+	ACTION_PARAM_SOUND(MeleeSound, 3);
+	ACTION_PARAM_NAME(DamageType, 4);
+	ACTION_PARAM_BOOL(bleed, 5);
 
 	if (!self->target)
 		return;
@@ -916,30 +876,26 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomComboAttack)
 		P_DamageMobj (self->target, self, self, damage, DamageType);
 		if (bleed) P_TraceBleed (damage, self->target, self);
 	}
-	else
+	else if (ti) 
 	{
-		const PClass * ti=PClass::FindClass(MissileName);
-		if (ti) 
-		{
-			// This seemingly senseless code is needed for proper aiming.
-			self->z+=SpawnHeight-32*FRACUNIT;
-			AActor * missile = P_SpawnMissileXYZ (self->x, self->y, self->z + 32*FRACUNIT, self, self->target, ti, false);
-			self->z-=SpawnHeight-32*FRACUNIT;
+		// This seemingly senseless code is needed for proper aiming.
+		self->z+=SpawnHeight-32*FRACUNIT;
+		AActor * missile = P_SpawnMissileXYZ (self->x, self->y, self->z + 32*FRACUNIT, self, self->target, ti, false);
+		self->z-=SpawnHeight-32*FRACUNIT;
 
-			if (missile)
+		if (missile)
+		{
+			// automatic handling of seeker missiles
+			if (missile->flags2&MF2_SEEKERMISSILE)
 			{
-				// automatic handling of seeker missiles
-				if (missile->flags2&MF2_SEEKERMISSILE)
-				{
-					missile->tracer=self->target;
-				}
-				// set the health value so that the missile works properly
-				if (missile->flags4&MF4_SPECTRAL)
-				{
-					missile->health=-2;
-				}
-				P_CheckMissileSpawn(missile);
+				missile->tracer=self->target;
 			}
+			// set the health value so that the missile works properly
+			if (missile->flags4&MF4_SPECTRAL)
+			{
+				missile->health=-2;
+			}
+			P_CheckMissileSpawn(missile);
 		}
 	}
 }
@@ -951,13 +907,16 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomComboAttack)
 //==========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfNoAmmo)
 {
-	int index=CheckIndex(1);
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_STATE(jump, 0);
 
-	if (pStateCall != NULL) pStateCall->Result=false;	// Jumps should never set the result for inventory state chains!
-	if (index<0 || !self->player || !self->player->ReadyWeapon || pStateCall != NULL) return;	// only for weapons!
+	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
+	if (!ACTION_CALL_FROM_WEAPON()) return;
 
 	if (!self->player->ReadyWeapon->CheckAmmo(self->player->ReadyWeapon->bAltFire, false, true))
-		DoJump(self, CallingState, StateParameters[index]);
+	{
+		ACTION_JUMP(jump);
+	}
 
 }
 
@@ -969,18 +928,16 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfNoAmmo)
 //==========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FireBullets)
 {
-	int index=CheckIndex(7);
-	if (index<0 || !self->player) return;
+	ACTION_PARAM_START(7);
+	ACTION_PARAM_ANGLE(Spread_XY, 0);
+	ACTION_PARAM_ANGLE(Spread_Z, 1);
+	ACTION_PARAM_INT(NumberOfBullets, 2);
+	ACTION_PARAM_INT(DamagePerBullet, 3);
+	ACTION_PARAM_CLASS(PuffType, 4);
+	ACTION_PARAM_BOOL(UseAmmo, 5);
+	ACTION_PARAM_FIXED(Range, 6);
 
-	angle_t Spread_XY=angle_t(EvalExpressionF (StateParameters[index], self) * ANGLE_1);
-	angle_t Spread_Z=angle_t(EvalExpressionF (StateParameters[index+1], self) * ANGLE_1);
-	int NumberOfBullets=EvalExpressionI (StateParameters[index+2], self);
-	int DamagePerBullet=EvalExpressionI (StateParameters[index+3], self);
-	ENamedName PuffTypeName=(ENamedName)StateParameters[index+4];
-	bool UseAmmo=!!EvalExpressionI (StateParameters[index+5], self);
-	fixed_t Range=fixed_t(EvalExpressionF (StateParameters[index+6], self) * FRACUNIT);
-	
-	const PClass * PuffType;
+	if (!self->player) return;
 
 	player_t * player=self->player;
 	AWeapon * weapon=player->ReadyWeapon;
@@ -1001,7 +958,6 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FireBullets)
 	bslope = P_BulletSlope(self);
 	bangle = self->angle;
 
-	PuffType = PClass::FindClass(PuffTypeName);
 	if (!PuffType) PuffType = PClass::FindClass(NAME_BulletPuff);
 
 	S_Sound (self, CHAN_WEAPON, weapon->AttackSound, 1, ATTN_NORM);
@@ -1032,15 +988,15 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FireBullets)
 //==========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FireCustomMissile)
 {
-	int index=CheckIndex(6);
-	if (index<0 || !self->player) return;
+	ACTION_PARAM_START(6);
+	ACTION_PARAM_CLASS(ti, 0);
+	ACTION_PARAM_ANGLE(Angle, 1);
+	ACTION_PARAM_BOOL(UseAmmo, 2);
+	ACTION_PARAM_INT(SpawnOfs_XY, 3);
+	ACTION_PARAM_FIXED(SpawnHeight, 4);
+	ACTION_PARAM_BOOL(AimAtAngle, 5);
 
-	ENamedName MissileName=(ENamedName)StateParameters[index];
-	angle_t Angle=angle_t(EvalExpressionF (StateParameters[index+1], self) * ANGLE_1);
-	bool UseAmmo=!!EvalExpressionI (StateParameters[index+2], self);
-	int SpawnOfs_XY=EvalExpressionI (StateParameters[index+3], self);
-	fixed_t SpawnHeight=fixed_t(EvalExpressionF (StateParameters[index+4], self) * FRACUNIT);
-	INTBOOL AimAtAngle=EvalExpressionI (StateParameters[index+5], self);
+	if (!self->player) return;
 
 	player_t *player=self->player;
 	AWeapon * weapon=player->ReadyWeapon;
@@ -1051,7 +1007,6 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FireCustomMissile)
 		if (!weapon->DepleteAmmo(weapon->bAltFire, true)) return;	// out of ammo
 	}
 
-	const PClass * ti=PClass::FindClass(MissileName);
 	if (ti) 
 	{
 		angle_t ang = (self->angle - ANGLE_90) >> ANGLETOFINESHIFT;
@@ -1092,17 +1047,14 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FireCustomMissile)
 //==========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomPunch)
 {
-	int index=CheckIndex(5);
-	if (index<0 || !self->player) return;
+	ACTION_PARAM_START(5);
+	ACTION_PARAM_INT(Damage, 0);
+	ACTION_PARAM_BOOL(norandom, 1);
+	ACTION_PARAM_BOOL(UseAmmo, 2);
+	ACTION_PARAM_CLASS(PuffType, 3);
+	ACTION_PARAM_FIXED(Range, 4);
 
-	int Damage=EvalExpressionI (StateParameters[index], self);
-	bool norandom=!!EvalExpressionI (StateParameters[index+1], self);
-	bool UseAmmo=!!EvalExpressionI (StateParameters[index+2], self);
-	ENamedName PuffTypeName=(ENamedName)StateParameters[index+3];
-	fixed_t Range=fixed_t(EvalExpressionF (StateParameters[index+4], self) * FRACUNIT);
-
-	const PClass * PuffType;
-
+	if (!self->player) return;
 
 	player_t *player=self->player;
 	AWeapon * weapon=player->ReadyWeapon;
@@ -1124,7 +1076,6 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomPunch)
 		if (!weapon->DepleteAmmo(weapon->bAltFire, true)) return;	// out of ammo
 	}
 
-	PuffType = PClass::FindClass(PuffTypeName);
 	if (!PuffType) PuffType = PClass::FindClass(NAME_BulletPuff);
 
 	P_LineAttack (self, angle, Range, pitch, Damage, GetDefaultByType(PuffType)->DamageType, PuffType, true);
@@ -1149,17 +1100,17 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomPunch)
 //==========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_RailAttack)
 {
-	int index=CheckIndex(7);
-	if (index<0 || !self->player) return;
+	ACTION_PARAM_START(8);
+	ACTION_PARAM_INT(Damage, 0);
+	ACTION_PARAM_INT(Spawnofs_XY, 1);
+	ACTION_PARAM_BOOL(UseAmmo, 2);
+	ACTION_PARAM_COLOR(Color1, 3);
+	ACTION_PARAM_COLOR(Color2, 4);
+	ACTION_PARAM_BOOL(Silent, 5);
+	ACTION_PARAM_FLOAT(MaxDiff, 6);
+	ACTION_PARAM_NAME(PuffTypeName, 7);
 
-	int Damage=EvalExpressionI (StateParameters[index], self);
-	int Spawnofs_XY=EvalExpressionI (StateParameters[index+1], self);
-	bool UseAmmo=!!EvalExpressionI (StateParameters[index+2], self);
-	int Color1=StateParameters[index+3];
-	int Color2=StateParameters[index+4];
-	bool Silent=!!EvalExpressionI (StateParameters[index+5], self);
-	float MaxDiff=EvalExpressionF (StateParameters[index+6], self);
-	ENamedName PuffTypeName=(ENamedName)StateParameters[index+7];
+	if (!self->player) return;
 
 	AWeapon * weapon=self->player->ReadyWeapon;
 
@@ -1180,17 +1131,15 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_RailAttack)
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomRailgun)
 {
-	int index = CheckIndex(7);
-	if (index < 0) return;
-
-	int Damage = EvalExpressionI (StateParameters[index], self);
-	int Spawnofs_XY = EvalExpressionI (StateParameters[index+1], self);
-	int Color1 = StateParameters[index+2];
-	int Color2 = StateParameters[index+3];
-	bool Silent = !!EvalExpressionI (StateParameters[index+4], self);
-	bool aim = !!EvalExpressionI (StateParameters[index+5], self);
-	float MaxDiff = EvalExpressionF (StateParameters[index+6], self);
-	ENamedName PuffTypeName = (ENamedName)StateParameters[index+7];
+	ACTION_PARAM_START(8);
+	ACTION_PARAM_INT(Damage, 0);
+	ACTION_PARAM_INT(Spawnofs_XY, 1);
+	ACTION_PARAM_COLOR(Color1, 2);
+	ACTION_PARAM_COLOR(Color2, 3);
+	ACTION_PARAM_BOOL(Silent, 4);
+	ACTION_PARAM_BOOL(aim, 5);
+	ACTION_PARAM_FLOAT(MaxDiff, 6);
+	ACTION_PARAM_NAME(PuffTypeName, 7);
 
 	if (aim && self->target == NULL)
 	{
@@ -1239,15 +1188,14 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomRailgun)
 
 static void DoGiveInventory(AActor * self, AActor * receiver, DECLARE_PARAMINFO)
 {
-	int index=CheckIndex(2);
-	bool res=true;
-	if (index<0 || receiver == NULL) return;
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_CLASS(mi, 0);
+	ACTION_PARAM_INT(amount, 1);
 
-	ENamedName item =(ENamedName)StateParameters[index];
-	int amount=EvalExpressionI (StateParameters[index+1], self);
+	bool res=true;
+	if (receiver == NULL) return;
 
 	if (amount==0) amount=1;
-	const PClass * mi=PClass::FindClass(item);
 	if (mi) 
 	{
 		AInventory *item = static_cast<AInventory *>(Spawn (mi, 0, 0, 0, NO_REPLACE));
@@ -1273,7 +1221,7 @@ static void DoGiveInventory(AActor * self, AActor * receiver, DECLARE_PARAMINFO)
 		else res = true;
 	}
 	else res = false;
-	if (pStateCall != NULL) pStateCall->Result = res;
+	ACTION_SET_RESULT(res);
 
 }	
 
@@ -1295,19 +1243,22 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_GiveToTarget)
 
 void DoTakeInventory(AActor * self, AActor * receiver, DECLARE_PARAMINFO)
 {
-	int index=CheckIndex(2);
-	if (index<0 || receiver == NULL) return;
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_CLASS(item, 0);
+	ACTION_PARAM_INT(amount, 1);
+	
+	if (receiver == NULL) return;
 
-	ENamedName item =(ENamedName)StateParameters[index];
-	int amount=EvalExpressionI (StateParameters[index+1], self);
-
-	if (pStateCall != NULL) pStateCall->Result=false;
+	bool res = false;
 
 	AInventory * inv = receiver->FindInventory(item);
 
 	if (inv && !inv->IsKindOf(RUNTIME_CLASS(AHexenArmor)))
 	{
-		if (inv->Amount > 0 && pStateCall != NULL) pStateCall->Result=true;
+		if (inv->Amount > 0)
+		{
+			res = true;
+		}
 		if (!amount || amount>=inv->Amount) 
 		{
 			if (inv->ItemFlags&IF_KEEPDEPLETED) inv->Amount=0;
@@ -1315,6 +1266,7 @@ void DoTakeInventory(AActor * self, AActor * receiver, DECLARE_PARAMINFO)
 		}
 		else inv->Amount-=amount;
 	}
+	ACTION_SET_RESULT(res);
 }	
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_TakeInventory)
@@ -1346,7 +1298,7 @@ enum SIX_Flags
 };
 
 
-static void InitSpawnedItem(AActor *self, AActor *mo, int flags)
+static bool InitSpawnedItem(AActor *self, AActor *mo, int flags)
 {
 	if (mo)
 	{
@@ -1374,8 +1326,7 @@ static void InitSpawnedItem(AActor *self, AActor *mo, int flags)
 				// The monster is blocked so don't spawn it at all!
 				if (mo->CountsAsKill()) level.total_monsters--;
 				mo->Destroy();
-				if (pStateCall != NULL) pStateCall->Result=false;	// for an inventory item's use state
-				return;
+				return false;
 			}
 			else if (originator)
 			{
@@ -1410,6 +1361,7 @@ static void InitSpawnedItem(AActor *self, AActor *mo, int flags)
 			mo->target=originator? originator : self;
 		}
 	}
+	return true;
 }
 
 //===========================================================================
@@ -1422,18 +1374,16 @@ static void InitSpawnedItem(AActor *self, AActor *mo, int flags)
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SpawnItem)
 {
-	int index=CheckIndex(5);
-	if (index<0) return;
-
-	const PClass * missile= PClass::FindClass((ENamedName)StateParameters[index]);
-	fixed_t distance = fixed_t(EvalExpressionF (StateParameters[index+1], self) * FRACUNIT);
-	fixed_t zheight = fixed_t(EvalExpressionF (StateParameters[index+2], self) * FRACUNIT);
-	bool useammo = !!EvalExpressionI (StateParameters[index+3], self);
-	INTBOOL transfer_translation = EvalExpressionI (StateParameters[index+4], self);
+	ACTION_PARAM_START(5);
+	ACTION_PARAM_CLASS(missile, 0);
+	ACTION_PARAM_FIXED(distance, 1);
+	ACTION_PARAM_FIXED(zheight, 2);
+	ACTION_PARAM_BOOL(useammo, 3);
+	ACTION_PARAM_BOOL(transfer_translation, 4);
 
 	if (!missile) 
 	{
-		if (pStateCall != NULL) pStateCall->Result=false;
+		ACTION_SET_RESULT(false);
 		return;
 	}
 
@@ -1446,7 +1396,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SpawnItem)
 		distance=(self->radius+GetDefaultByType(missile)->radius)>>FRACBITS;
 	}
 
-	if (self->player && CallingState != self->state && (pStateCall==NULL || CallingState != pStateCall->State))
+	if (ACTION_CALL_FROM_WEAPON())
 	{
 		// Used from a weapon so use some ammo
 		AWeapon * weapon=self->player->ReadyWeapon;
@@ -1461,7 +1411,8 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SpawnItem)
 					self->z - self->floorclip + zheight, ALLOW_REPLACE);
 
 	int flags = (transfer_translation? SIXF_TRANSFERTRANSLATION:0) + (useammo? SIXF_SETMASTER:0);
-	InitSpawnedItem(self, mo, flags);
+	bool res = InitSpawnedItem(self, mo, flags);
+	ACTION_SET_RESULT(res);	// for an inventory item's use state
 }
 
 //===========================================================================
@@ -1473,23 +1424,21 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SpawnItem)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SpawnItemEx)
 {
-	int index=CheckIndex(9);
-	if (index<0) return;
-
-	const PClass * missile= PClass::FindClass((ENamedName)StateParameters[index]);
-	fixed_t xofs = fixed_t(EvalExpressionF (StateParameters[index+1], self) * FRACUNIT);
-	fixed_t yofs = fixed_t(EvalExpressionF (StateParameters[index+2], self) * FRACUNIT);
-	fixed_t zofs = fixed_t(EvalExpressionF (StateParameters[index+3], self) * FRACUNIT);
-	fixed_t xmom = fixed_t(EvalExpressionF (StateParameters[index+4], self) * FRACUNIT);
-	fixed_t ymom = fixed_t(EvalExpressionF (StateParameters[index+5], self) * FRACUNIT);
-	fixed_t zmom = fixed_t(EvalExpressionF (StateParameters[index+6], self) * FRACUNIT);
-	angle_t Angle= angle_t(EvalExpressionF (StateParameters[index+7], self) * ANGLE_1);
-	int flags = EvalExpressionI (StateParameters[index+8], self);
-	int chance = EvalExpressionI (StateParameters[index+9], self);
+	ACTION_PARAM_START(10);
+	ACTION_PARAM_CLASS(missile, 0);
+	ACTION_PARAM_FIXED(xofs, 1);
+	ACTION_PARAM_FIXED(yofs, 2);
+	ACTION_PARAM_FIXED(zofs, 3);
+	ACTION_PARAM_FIXED(xmom, 4);
+	ACTION_PARAM_FIXED(ymom, 5);
+	ACTION_PARAM_FIXED(zmom, 6);
+	ACTION_PARAM_ANGLE(Angle, 7);
+	ACTION_PARAM_INT(flags, 8);
+	ACTION_PARAM_INT(chance, 9);
 
 	if (!missile) 
 	{
-		if (pStateCall != NULL) pStateCall->Result=false;
+		ACTION_SET_RESULT(false);
 		return;
 	}
 
@@ -1529,7 +1478,8 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SpawnItemEx)
 	}
 
 	AActor * mo = Spawn( missile, x, y, self->z - self->floorclip + zofs, ALLOW_REPLACE);
-	InitSpawnedItem(self, mo, flags);
+	bool res = InitSpawnedItem(self, mo, flags);
+	ACTION_SET_RESULT(res);	// for an inventory item's use state
 	if (mo)
 	{
 		mo->momx=xmom;
@@ -1549,16 +1499,14 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SpawnItemEx)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ThrowGrenade)
 {
-	int index=CheckIndex(5);
-	if (index<0) return;
+	ACTION_PARAM_START(5);
+	ACTION_PARAM_CLASS(missile, 0);
+	ACTION_PARAM_FIXED(zheight, 1);
+	ACTION_PARAM_FIXED(xymom, 2);
+	ACTION_PARAM_FIXED(zmom, 3);
+	ACTION_PARAM_BOOL(useammo, 4);
 
-	const PClass * missile= PClass::FindClass((ENamedName)StateParameters[index]);
-	fixed_t zheight = fixed_t(EvalExpressionF (StateParameters[index+1], self) * FRACUNIT);
-	fixed_t xymom = fixed_t(EvalExpressionF (StateParameters[index+2], self) * FRACUNIT);
-	fixed_t zmom = fixed_t(EvalExpressionF (StateParameters[index+3], self) * FRACUNIT);
-	bool useammo = !!EvalExpressionI (StateParameters[index+4], self);
-
-	if (self->player && CallingState != self->state && (pStateCall==NULL || CallingState != pStateCall->State))
+	if (ACTION_CALL_FROM_WEAPON())
 	{
 		// Used from a weapon so use some ammo
 		AWeapon * weapon=self->player->ReadyWeapon;
@@ -1593,7 +1541,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ThrowGrenade)
 		}
 		P_CheckMissileSpawn (bo);
 	} 
-	else if (pStateCall != NULL) pStateCall->Result=false;
+	else ACTION_SET_RESULT(false);
 }
 
 
@@ -1604,9 +1552,8 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ThrowGrenade)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Recoil)
 {
-	int index=CheckIndex(1);
-	if (index<0) return;
-	fixed_t xymom = fixed_t(EvalExpressionF (StateParameters[index], self) * FRACUNIT);
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_FIXED(xymom, 0);
 
 	angle_t angle = self->angle + ANG180;
 	angle >>= ANGLETOFINESHIFT;
@@ -1622,10 +1569,12 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Recoil)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SelectWeapon)
 {
-	int index=CheckIndex(1);
-	if (index<0 || self->player == NULL) return;
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_CLASS(cls, 0);
 
-	AWeapon * weaponitem = static_cast<AWeapon*>(self->FindInventory((ENamedName)StateParameters[index]));
+	if (self->player == NULL) return;
+
+	AWeapon * weaponitem = static_cast<AWeapon*>(self->FindInventory(cls));
 
 	if (weaponitem != NULL && weaponitem->IsKindOf(RUNTIME_CLASS(AWeapon)))
 	{
@@ -1634,7 +1583,8 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SelectWeapon)
 			self->player->PendingWeapon = weaponitem;
 		}
 	}
-	else if (pStateCall != NULL) pStateCall->Result=false;
+	else ACTION_SET_RESULT(false);
+
 }
 
 
@@ -1647,14 +1597,14 @@ EXTERN_CVAR(Float, con_midtime)
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Print)
 {
-	int index=CheckIndex(3);
-	if (index<0) return;
+	ACTION_PARAM_START(3);
+	ACTION_PARAM_STRING(text, 0);
+	ACTION_PARAM_FLOAT(time, 1);
+	ACTION_PARAM_NAME(fontname, 2);
 
 	if (self->CheckLocalView (consoleplayer) ||
 		(self->target!=NULL && self->target->CheckLocalView (consoleplayer)))
 	{
-		float time = EvalExpressionF (StateParameters[index+1], self);
-		FName fontname = (ENamedName)StateParameters[index+2];
 		FFont * oldfont = screen->Font;
 		float saved = con_midtime;
 
@@ -1669,7 +1619,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Print)
 			con_midtime = time;
 		}
 		
-		C_MidPrint(FName((ENamedName)StateParameters[index]).GetChars());
+		C_MidPrint(text);
 		screen->SetFont(oldfont);
 		con_midtime = saved;
 	}
@@ -1683,11 +1633,10 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Print)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SetTranslucent)
 {
-	int index=CheckIndex(2);
-	if (index<0) return;
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_FIXED(alpha, 0);
+	ACTION_PARAM_INT(mode, 1);
 
-	fixed_t alpha = fixed_t(EvalExpressionF (StateParameters[index], self) * FRACUNIT);
-	int mode = EvalExpressionI (StateParameters[index+1], self);
 	mode = mode == 0 ? STYLE_Translucent : mode == 2 ? STYLE_Fuzzy : STYLE_Add;
 
 	self->RenderStyle.Flags &= ~STYLEF_Alpha1;
@@ -1704,14 +1653,9 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SetTranslucent)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FadeIn)
 {
-	fixed_t reduce = 0;
-	
-	int index=CheckIndex(1);
-	if (index>=0) 
-	{
-		reduce = fixed_t(EvalExpressionF (StateParameters[index], self) * FRACUNIT);
-	}
-	
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_FIXED(reduce, 0);
+
 	if (reduce == 0) reduce = FRACUNIT/10;
 
 	self->RenderStyle.Flags &= ~STYLEF_Alpha1;
@@ -1728,13 +1672,8 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FadeIn)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FadeOut)
 {
-	fixed_t reduce = 0;
-	
-	int index=CheckIndex(1);
-	if (index>=0) 
-	{
-		reduce = fixed_t(EvalExpressionF (StateParameters[index], self) * FRACUNIT);
-	}
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_FIXED(reduce, 0);
 	
 	if (reduce == 0) reduce = FRACUNIT/10;
 
@@ -1752,17 +1691,14 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SpawnDebris)
 {
 	int i;
 	AActor * mo;
-	const PClass * debris;
 
-	int index=CheckIndex(4);
-	if (index<0) return;
+	ACTION_PARAM_START(4);
+	ACTION_PARAM_CLASS(debris, 0);
+	ACTION_PARAM_BOOL(transfer_translation, 1);
+	ACTION_PARAM_FIXED(mult_h, 2);
+	ACTION_PARAM_FIXED(mult_v, 3);
 
-	debris = PClass::FindClass((ENamedName)StateParameters[index]);
 	if (debris == NULL) return;
-
-	INTBOOL transfer_translation = EvalExpressionI (StateParameters[index+1], self);
-	fixed_t mult_h = fixed_t(EvalExpressionF (StateParameters[index+2], self) * FRACUNIT);
-	fixed_t mult_v = fixed_t(EvalExpressionF (StateParameters[index+3], self) * FRACUNIT);
 
 	// only positive values make sense here
 	if (mult_v<=0) mult_v=FRACUNIT;
@@ -1796,16 +1732,17 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SpawnDebris)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CheckSight)
 {
-	if (pStateCall != NULL) pStateCall->Result=false;	// Jumps should never set the result for inventory state chains!
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_STATE(jump, 0);
+
+	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
 
 	for (int i=0;i<MAXPLAYERS;i++) 
 	{
 		if (playeringame[i] && P_CheckSight(players[i].camera,self,true)) return;
 	}
 
-	int index=CheckIndex(1);
-
-	if (index>=0) DoJump(self, CallingState, StateParameters[index]);
+	ACTION_JUMP(jump);
 
 }
 
@@ -1817,10 +1754,10 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CheckSight)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_DropInventory)
 {
-	int index=CheckIndex(1);
-	if (index<0) return;
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_CLASS(drop, 0);
 
-	AInventory * inv = self->FindInventory((ENamedName)StateParameters[index]);
+	AInventory * inv = self->FindInventory(drop);
 	if (inv)
 	{
 		self->DropInventory(inv);
@@ -1835,12 +1772,11 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_DropInventory)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SetBlend)
 {
-	int index=CheckIndex(3);
-	if (index<0) return;
-	PalEntry color = StateParameters[index];
-	float alpha = clamp<float> (EvalExpressionF (StateParameters[index+1], self), 0, 1);
-	int tics = EvalExpressionI (StateParameters[index+2], self);
-	PalEntry color2 = StateParameters[index+3];
+	ACTION_PARAM_START(4);
+	ACTION_PARAM_COLOR(color, 0);
+	ACTION_PARAM_FLOAT(alpha, 1);
+	ACTION_PARAM_INT(tics, 2);
+	ACTION_PARAM_COLOR(color2, 3);
 
 	if (color == MAKEARGB(255,255,255,255)) color=0;
 	if (color2 == MAKEARGB(255,255,255,255)) color2=0;
@@ -1860,12 +1796,12 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SetBlend)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIf)
 {
-	int index=CheckIndex(2);
-	if (index<0) return;
-	INTBOOL expression = EvalExpressionI (StateParameters[index], self);
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_BOOL(expression, 0);
+	ACTION_PARAM_STATE(jump, 1);
 
-	if (pStateCall != NULL) pStateCall->Result=false;	// Jumps should never set the result for inventory state chains!
-	if (expression) DoJump(self, CallingState, StateParameters[index+1]);
+	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
+	if (expression) ACTION_JUMP(jump);
 
 }
 
@@ -1908,12 +1844,11 @@ DEFINE_ACTION_FUNCTION(AActor, A_KillChildren)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CountdownArg)
 {
-	int index=CheckIndex(1);
-	if (index<0) return;
-	index = EvalExpressionI (StateParameters[index], self) - 1;
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_INT(cnt, 0);
 
-	if (index<0 || index>=5) return;
-	if (!self->args[index]--)
+	if (cnt<0 || cnt>=5) return;
+	if (!self->args[cnt]--)
 	{
 		if (self->flags&MF_MISSILE)
 		{
@@ -1939,11 +1874,12 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CountdownArg)
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Burst)
 {
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_CLASS(chunk, 0);
+
    int i, numChunks;
    AActor * mo;
-   int index=CheckIndex(1);
-   if (index<0) return;
-   const PClass * chunk = PClass::FindClass((ENamedName)StateParameters[index]);
+
    if (chunk == NULL) return;
 
    self->momx = self->momy = self->momz = 0;
@@ -1992,12 +1928,13 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Burst)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CheckFloor)
 {
-	int index = CheckIndex (1);
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_STATE(jump, 0);
 
-	if (pStateCall != NULL) pStateCall->Result=false;	// Jumps should never set the result for inventory state chains!
-	if (self->z <= self->floorz && index >= 0)
+	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
+	if (self->z <= self->floorz)
 	{
-		DoJump (self, CallingState, StateParameters[index]);
+		ACTION_JUMP(jump);
 	}
 
 }
@@ -2026,6 +1963,9 @@ DEFINE_ACTION_FUNCTION(AActor, A_Stop)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Respawn)
 {
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_BOOL(fog, 0);
+
 	fixed_t x = self->SpawnPoint[0];
 	fixed_t y = self->SpawnPoint[1];
 	sector_t *sec;
@@ -2047,8 +1987,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Respawn)
 		self->SetState (self->SpawnState);
 		self->renderflags &= ~RF_INVISIBLE;
 
-		int index=CheckIndex(1);
-		if (index<0 || EvalExpressionI (StateParameters[index], self))
+		if (fog)
 		{
 			Spawn<ATeleportFog> (x, y, self->z + TELEFOGHEIGHT, ALLOW_REPLACE);
 		}
@@ -2069,16 +2008,14 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Respawn)
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_PlayerSkinCheck)
 {
-	if (pStateCall != NULL) pStateCall->Result=false;	// Jumps should never set the result for inventory state chains!
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_STATE(jump, 0);
+
+	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
 	if (self->player != NULL &&
 		skins[self->player->userinfo.skin].othergame)
 	{
-		int index = CheckIndex(1);
-	
-		if (index >= 0)
-		{
-			DoJump(self, CallingState, StateParameters[index]);
-		}	
+		ACTION_JUMP(jump);
 	}
 }
 
@@ -2089,10 +2026,10 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_PlayerSkinCheck)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SetGravity)
 {
-	int index=CheckIndex(1);
-	if (index<0) return;
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_FIXED(val, 0);
 	
-	self->gravity = clamp<fixed_t> (fixed_t(EvalExpressionF (StateParameters[index], self)*FRACUNIT), 0, FRACUNIT); 
+	self->gravity = clamp<fixed_t> (val, 0, FRACUNIT*10); 
 }
 
 
@@ -2126,15 +2063,15 @@ DEFINE_ACTION_FUNCTION(AActor, A_ClearTarget)
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfTargetInLOS)
 {
-	int index = CheckIndex(3);
-	if (index < 0) return;
+	ACTION_PARAM_START(3);
+	ACTION_PARAM_STATE(jump, 0);
+	ACTION_PARAM_ANGLE(fov, 1);
+	ACTION_PARAM_BOOL(projtarg, 2);
 
 	angle_t an;
-	angle_t fov = angle_t(EvalExpressionF (StateParameters[index+1], self) * ANGLE_1);
-	INTBOOL projtarg = EvalExpressionI (StateParameters[index+2], self);
 	AActor *target;
 
-	if (pStateCall != NULL) pStateCall->Result=false;	// Jumps should never set the result for inventory state chains!
+	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
 
 	if (!self->player)
 	{
@@ -2178,7 +2115,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfTargetInLOS)
 
 	if (!target) return;
 
-	DoJump(self, CallingState, StateParameters[index]);
+	ACTION_JUMP(jump);
 }
 
 //===========================================================================
@@ -2189,11 +2126,9 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfTargetInLOS)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_DamageMaster)
 {
-	int index = CheckIndex(2);
-	if (index<0) return;
-
-	int amount = EvalExpressionI (StateParameters[index], self);
-	ENamedName DamageType = (ENamedName)StateParameters[index+1];
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_INT(amount, 0);
+	ACTION_PARAM_NAME(DamageType, 1);
 
 	if (self->master != NULL)
 	{
@@ -2220,11 +2155,9 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_DamageChildren)
 	TThinkerIterator<AActor> it;
 	AActor * mo;
 
-	int index = CheckIndex(2);
-	if (index<0) return;
-
-	int amount = EvalExpressionI (StateParameters[index], self);
-	ENamedName DamageType = (ENamedName)StateParameters[index+3];
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_INT(amount, 0);
+	ACTION_PARAM_NAME(DamageType, 1);
 
 	while ( (mo = it.Next()) )
 	{
@@ -2256,11 +2189,11 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CheckForReload)
 	if ( self->player == NULL || self->player->ReadyWeapon == NULL )
 		return;
 
-	int index = CheckIndex(2);
-	if (index<0) return;
-	
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_INT(count, 0);
+	ACTION_PARAM_STATE(jump, 1);
+
 	AWeapon *weapon = self->player->ReadyWeapon;
-	int count = EvalExpressionI (StateParameters[index], self);
 	
 	weapon->ReloadCounter = (weapon->ReloadCounter+1) % count;
 	
@@ -2268,7 +2201,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CheckForReload)
 	if (weapon->ReloadCounter != 0)
 	{
 		// Go back to the refire frames, instead of continuing on to the reload frames.
-		DoJump(self, CallingState, StateParameters[index + 1]);
+		ACTION_JUMP(jump);
 	}
 	else
 	{

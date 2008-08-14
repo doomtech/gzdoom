@@ -126,6 +126,7 @@ int ParseExpression (FScanner &sc, bool _not, PClass *cls);
 bool IsExpressionConst(int id);
 int EvalExpressionI (int id, AActor *self, const PClass *cls=NULL);
 float EvalExpressionF (int id, AActor *self, const PClass *cls=NULL);
+fixed_t EvalExpressionFix (int id, AActor *self, const PClass *cls=NULL);
 
 
 enum
@@ -163,53 +164,68 @@ enum EDefinitionType
 #endif
 
 
+struct StateCallData
+{
+	FState * State;
+	AActor * Item;
+	bool Result;
+};
+
 // Macros to handle action functions. These are here so that I don't have to
 // change every single use in case the parameters change.
-#define DECLARE_ACTION(name) void AF_##name(AActor *self, FState *, int);
+#define DECLARE_ACTION(name) void AF_##name(AActor *self, FState *, int, StateCallData *);
 
 // This distinction is here so that CALL_ACTION produces errors when trying to
 // access a function that requires parameters.
 #define DEFINE_ACTION_FUNCTION(cls, name) \
-	void AF_##name (AActor *self, FState *, int); \
+	void AF_##name (AActor *self, FState *, int, StateCallData *); \
 	AFuncDesc info_##cls##_##name = { #name, AF_##name }; \
 	MSVC_ASEG AFuncDesc *infoptr_##cls##_##name GCC_ASEG = &info_##cls##_##name; \
-	void AF_##name (AActor *self, FState *, int)
+	void AF_##name (AActor *self, FState *, int, StateCallData *statecall)
 
 #define DEFINE_ACTION_FUNCTION_PARAMS(cls, name) \
-	void AFP_##name (AActor *self, FState *CallingState, int ParameterIndex); \
+	void AFP_##name (AActor *self, FState *CallingState, int ParameterIndex, StateCallData *statecall); \
 	AFuncDesc info_##cls##_##name = { #name, AFP_##name }; \
 	MSVC_ASEG AFuncDesc *infoptr_##cls##_##name GCC_ASEG = &info_##cls##_##name; \
-	void AFP_##name (AActor *self, FState *CallingState, int ParameterIndex)
+	void AFP_##name (AActor *self, FState *CallingState, int ParameterIndex, StateCallData *statecall)
 
-#define DECLARE_PARAMINFO FState *CallingState, int ParameterIndex
-#define PUSH_PARAMINFO CallingState, ParameterIndex
+#define DECLARE_PARAMINFO FState *CallingState, int ParameterIndex, StateCallData *statecall
+#define PUSH_PARAMINFO CallingState, ParameterIndex, statecall
 
-#define CALL_ACTION(name,self) AF_##name(self, NULL, 0)
+#define CALL_ACTION(name,self) AF_##name(self, NULL, 0, NULL)
 
-#define CheckIndex(count) (ParameterIndex-1)
+#define ACTION_PARAM_START(count)
 
-#define ACTION_PARAM_START(count) \
-	int ap_index_ = CheckIndex(count); \
-	if (ap_index_ <= 0) return;
+#define ACTION_PARAM_INT(var, i) \
+	int var = EvalExpressionI(StateParameters[ParameterIndex+i], self);
+#define ACTION_PARAM_BOOL(var,i) \
+	bool var = !!EvalExpressionI(StateParameters[ParameterIndex+i], self);
+#define ACTION_PARAM_FIXED(var,i) \
+	fixed_t var = EvalExpressionFix(StateParameters[ParameterIndex+i], self);
+#define ACTION_PARAM_FLOAT(var,i) \
+	float var = EvalExpressionF(StateParameters[ParameterIndex+i], self);
+#define ACTION_PARAM_CLASS(var,i) \
+	const PClass *var = PClass::FindClass(ENamedName(StateParameters[ParameterIndex+i]));
+#define ACTION_PARAM_STATE(var,i) \
+	int var = StateParameters[ParameterIndex+i];
+#define ACTION_PARAM_COLOR(var,i) \
+	PalEntry var = StateParameters[ParameterIndex+i];
+#define ACTION_PARAM_SOUND(var,i) \
+	FSoundID var = StateParameters[ParameterIndex+i];
+#define ACTION_PARAM_STRING(var,i) \
+	const char *var = FName(ENamedName(StateParameters[ParameterIndex+i]));
+#define ACTION_PARAM_NAME(var,i) \
+	FName var = ENamedName(StateParameters[ParameterIndex+i]);
+#define ACTION_PARAM_VARARG(var, i) \
+	int *var = &StateParameters[ParameterIndex+i];
 
-#define ACTION_PARAM_START_OPTIONAL(count) \
-	int ap_index_ = CheckIndex(count); 
+#define ACTION_PARAM_ANGLE(var,i) \
+	angle_t var = angle_t(EvalExpressionF(StateParameters[ParameterIndex+i], self)*ANGLE_90/90.f);
 
-#define ACTION_PARAM_INT(var) \
-	int var = EvalExpressionI(StateParameters[ap_index_++], self);
-#define ACTION_PARAM_BOOL(var) \
-	bool var = !!EvalExpressionI(StateParameters[ap_index_++], self);
-#define ACTION_PARAM_FIXED(var) \
-	fixed_t var = fixed_t(EvalExpressionF(StateParameters[ap_index_++], self)*65536.f);
-#define ACTION_PARAM_FLOAT(var) \
-	float var = EvalExpressionF(StateParameters[ap_index_++], self);
-#define ACTION_PARAM_CLASS(var) \
-	const PClass *var = PClass::FindClass(ENamedName(StateParameters[ap_index_++]));
-#define ACTION_PARAM_STATE(var) \
-	int var = StateParameters[ap_index_++];
-#define ACTION_PARAM_SOUND(var) \
-	FSoundID var = StateParameters[ap_index_++];
-#define ACTION_PARAM_STRING(var) \
-	const char *var = FName(ENamedName(StateParameters[ap_index_++]));
+#define ACTION_SET_RESULT(v) if (statecall != NULL) statecall->Result = v;
 
+// Checks to see what called the current action function
+#define ACTION_CALL_FROM_ACTOR() (CallingState == self->state)
+#define ACTION_CALL_FROM_WEAPON() (self->player && CallingState != self->state && statecall == NULL)
+#define ACTION_CALL_FROM_INVENTORY() (statecall != NULL)
 #endif
