@@ -1788,7 +1788,7 @@ public:
 		m_Tag=tag;			
 		vertex_t * spot=CenterSpot(sec);
 		m_TopHeight=m_BottomHeight=sec->ceilingplane.PointToDist(spot,destheight);
-		m_Direction=destheight>sec->ceilingtexz? 1:-1;
+		m_Direction=destheight>sec->GetPlaneTexZ(sector_t::ceiling)? 1:-1;
 
 		// Do not interpolate instant movement ceilings.
 		fixed_t movedist = abs(sec->ceilingplane.d - m_BottomHeight);
@@ -2023,13 +2023,12 @@ void FParser::SF_FloorTexture(void)
 			// set all sectors with tag
 			while ((i = T_FindSectorFromTag(tagnum, i)) >= 0)
 			{
-				sectors[i].floorpic=picnum;
-				sectors[i].AdjustFloorClip();
+				sectors[i].SetTexture(sector_t::floor, picnum);
 			}
 		}
 		
 		t_return.type = svt_string;
-		FTexture * tex = TexMan[sector->floorpic];
+		FTexture * tex = TexMan[sector->GetTexture(sector_t::floor)];
 		t_return.string = tex? tex->Name : "";
 	}
 }
@@ -2112,12 +2111,12 @@ void FParser::SF_CeilingTexture(void)
 			// set all sectors with tag
 			while ((i = T_FindSectorFromTag(tagnum, i)) >= 0)
 			{
-				sectors[i].ceilingpic=picnum;
+				sectors[i].SetTexture(sector_t::ceiling, picnum);
 			}
 		}
 		
 		t_return.type = svt_string;
-		FTexture * tex = TexMan[sector->ceilingpic];
+		FTexture * tex = TexMan[sector->GetTexture(sector_t::ceiling)];
 		t_return.string = tex? tex->Name : "";
 	}
 }
