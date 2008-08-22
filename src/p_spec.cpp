@@ -688,12 +688,12 @@ DLightTransfer::DLightTransfer (sector_t *srcSec, int target, bool copyFloor)
 	if (copyFloor)
 	{
 		for (secnum = -1; (secnum = P_FindSectorFromTag (target, secnum)) >= 0; )
-			sectors[secnum].FloorFlags |= SECF_ABSLIGHTING;
+			sectors[secnum].ChangeFlags(sector_t::floor, 0, SECF_ABSLIGHTING);
 	}
 	else
 	{
 		for (secnum = -1; (secnum = P_FindSectorFromTag (target, secnum)) >= 0; )
-			sectors[secnum].CeilingFlags |= SECF_ABSLIGHTING;
+			sectors[secnum].ChangeFlags(sector_t::ceiling, 0, SECF_ABSLIGHTING);
 	}
 	ChangeStatNum (STAT_LIGHTTRANSFER);
 }
@@ -716,12 +716,12 @@ void DLightTransfer::DoTransfer (BYTE level, int target, bool floor)
 	if (floor)
 	{
 		for (secnum = -1; (secnum = P_FindSectorFromTag (target, secnum)) >= 0; )
-			sectors[secnum].FloorLight = level;
+			sectors[secnum].SetPlaneLight(sector_t::floor, level);
 	}
 	else
 	{
 		for (secnum = -1; (secnum = P_FindSectorFromTag (target, secnum)) >= 0; )
-			sectors[secnum].CeilingLight = level;
+			sectors[secnum].SetPlaneLight(sector_t::ceiling, level);
 	}
 }
 
@@ -769,20 +769,18 @@ DWallLightTransfer::DWallLightTransfer (sector_t *srcSec, int target, BYTE flags
 	Flags = flags;
 	DoTransfer (LastLight = srcSec->lightlevel, target, Flags);
 
-	if (!(flags&WLF_NOFAKECONTRAST)) wallflags = WALLF_AUTOCONTRAST|WALLF_ABSLIGHTING;
-	else wallflags = WALLF_ABSLIGHTING;
+	if (!(flags&WLF_NOFAKECONTRAST)) wallflags = WALLF_ABSLIGHTING;
+	else wallflags = WALLF_NOFAKECONTRAST|WALLF_ABSLIGHTING;
 
 	for (linenum = -1; (linenum = P_FindLineFromID (target, linenum)) >= 0; )
 	{
 		if (flags & WLF_SIDE1 && lines[linenum].sidenum[0]!=NO_SIDE)
 		{
-			sides[lines[linenum].sidenum[0]].Flags &= ~WALLF_AUTOCONTRAST;
 			sides[lines[linenum].sidenum[0]].Flags |= wallflags;
 		}
 
 		if (flags & WLF_SIDE2 && lines[linenum].sidenum[1]!=NO_SIDE)
 		{
-			sides[lines[linenum].sidenum[0]].Flags &= ~WALLF_AUTOCONTRAST;
 			sides[lines[linenum].sidenum[1]].Flags |= wallflags;
 		}
 	}
