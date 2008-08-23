@@ -82,6 +82,7 @@ CUSTOM_CVAR(Bool, gl_render_precise, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 void GLWall::PutWall(bool translucent)
 {
 	GLPortal * portal;
+	int list;
 
 	static char passflag[]={
 		0,		//RENDERWALL_NONE,             
@@ -126,37 +127,46 @@ void GLWall::PutWall(bool translucent)
 	}
 	else if (passflag[type]!=4)	// non-translucent walls
 	{
-		static DrawListType list_indices[2][2][2]={
-			{ { GLDL_PLAIN, GLDL_FOG      }, { GLDL_MASKED,      GLDL_FOGMASKED      } },
-			{ { GLDL_LIGHT, GLDL_LIGHTFOG }, { GLDL_LIGHTMASKED, GLDL_LIGHTFOGMASKED } }
-		};
-
-		bool masked;
-		bool light = gl_forcemultipass;
-
-		if (!gl_fixedcolormap)
+		if (!gl_glsl_renderer)
 		{
-			if (gl_lights)
+			static DrawListType list_indices[2][2][2]={
+				{ { GLDL_PLAIN, GLDL_FOG      }, { GLDL_MASKED,      GLDL_FOGMASKED      } },
+				{ { GLDL_LIGHT, GLDL_LIGHTFOG }, { GLDL_LIGHTMASKED, GLDL_LIGHTFOGMASKED } }
+			};
+
+			bool masked;
+			bool light = gl_forcemultipass;
+
+			if (!gl_fixedcolormap)
 			{
-				if (!seg->bPolySeg)
+				if (gl_lights)
 				{
-					light = (seg->sidedef != NULL && seg->sidedef->lighthead[0] != NULL);
-				}
-				else if (sub)
-				{
-					light = sub->lighthead[0] != NULL;
+					if (!seg->bPolySeg)
+					{
+						light = (seg->sidedef != NULL && seg->sidedef->lighthead[0] != NULL);
+					}
+					else if (sub)
+					{
+						light = sub->lighthead[0] != NULL;
+					}
 				}
 			}
+			else 
+			{
+				flags&=~GLWF_FOGGY;
+			}
+
+			masked = passflag[type]==1? false : (light && type!=RENDERWALL_FFBLOCK) || gltexture->tex->bMasked;
+
+			list = list_indices[light][masked][!!(flags&GLWF_FOGGY)];
+			if (list == GLDL_LIGHT && gltexture->tex->bm_info.Brightmap && gl_brightmap_shader) list = GLDL_LIGHTBRIGHT;
 		}
-		else 
+		else
 		{
-			flags&=~GLWF_FOGGY;
+			// The GLSL renderer only distinguishes between solid and masked geometry
+			bool masked = passflag[type]==1? false : gltexture->tex->bMasked;
+			list = masked? GLDL_MASKED : GLDL_PLAIN;
 		}
-
-		masked = passflag[type]==1? false : (light && type!=RENDERWALL_FFBLOCK) || gltexture->tex->bMasked;
-
-		int list = list_indices[light][masked][!!(flags&GLWF_FOGGY)];
-		if (list == GLDL_LIGHT && gltexture->tex->bm_info.Brightmap && gl_brightmap_shader) list = GLDL_LIGHTBRIGHT;
 		gl_drawinfo->drawlists[list].AddWall(this);
 
 	}
@@ -1625,7 +1635,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 						frontsector->GetTexture(sector_t::floor)!=skyflatnum &&
 						backsector->GetTexture(sector_t::floor)!=skyflatnum)
 				{
-					// render it anyway with the sector's GetTexture(sector_t::floor). With a background sky
+					// render it anyway with the sector's floor texture. With a background sky
 					// there are ugly holes otherwise and slopes are simply not precise enough
 					// to mach in any case.
 					gltexture=FGLTexture::ValidateTexture(frontsector->GetTexture(sector_t::floor));

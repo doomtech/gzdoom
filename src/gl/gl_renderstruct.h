@@ -288,9 +288,6 @@ public:
 	void Process(sector_t * sector, bool whichplane, bool notexture);
 	void ProcessSector(sector_t * frontsector, subsector_t * sub);
 	void Draw(int pass);
-
-	void DrawPassBase();
-	void DrawPassBaseMasked();
 };
 
 
@@ -437,12 +434,16 @@ public:
 	int CompareSprites(SortNode * a,SortNode * b);
 	SortNode * SortSpriteList(SortNode * head);
 	SortNode * DoSort(SortNode * head);
+	
 	void DoDraw(int pass, int index);
 	void DoDrawSorted(SortNode * node);
 	void DrawSorted();
 	void Draw(int pass);
-	void DrawPassBase();
-	void DrawPassBaseMasked();
+	
+	void DoDrawGLSL(int pass, int index);
+	void DoDrawSortedGLSL(SortNode * node);
+	void DrawSortedGLSL();
+	void DrawGLSL(int pass);
 
 	GLDrawList * next;
 } ;
@@ -573,6 +574,7 @@ public:
 };
 
 extern GLDrawInfo * gl_drawinfo;
+EXTERN_CVAR(Bool, gl_glsl_renderer)
 
 
 #endif
