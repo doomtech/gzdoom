@@ -56,6 +56,7 @@
 #include "gl/gl_functions.h"
 #include "gl/gl_shader.h"
 #include "gl/gl_translate.h"
+#include "gl/glsl_state.h"
 
 CUSTOM_CVAR(Bool, gl_warp_shader, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
 {
@@ -1227,7 +1228,8 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 			}
 			else
 			{
-				Shader->Bind(cm, usebright, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 0.f);
+				glsl->SetBrightmap(usebright);
+				glsl->SetWarp(tex->bWarped, static_cast<FWarpTexture*>(tex)->GetSpeed());
 				if (cm != CM_SHADE) cm = CM_DEFAULT;
 			}
 		}
@@ -1290,7 +1292,7 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 					delete brightmap;
 					tex->bm_info.Brightmap = NULL;
 				}
-				else 
+				else
 				{
 					usebright = true;
 				}
@@ -1331,7 +1333,8 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 			}
 			else
 			{
-				Shader->Bind(cm, usebright, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 0.f);
+				glsl->SetBrightmap(usebright);
+				glsl->SetWarp(tex->bWarped, static_cast<FWarpTexture*>(tex)->GetSpeed());
 				if (cm != CM_SHADE) cm = CM_DEFAULT;
 			}
 		}
