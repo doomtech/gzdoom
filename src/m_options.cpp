@@ -113,6 +113,7 @@ EXTERN_CVAR (Bool, cl_run)
 EXTERN_CVAR (Int, crosshair)
 EXTERN_CVAR (Bool, freelook)
 EXTERN_CVAR (Int, sv_smartaim)
+EXTERN_CVAR (Int, am_colorset)
 
 static void CalcIndent (menu_t *menu);
 
@@ -559,7 +560,6 @@ static void StartMapColorsMenu (void);
 
 EXTERN_CVAR (Int, am_rotate)
 EXTERN_CVAR (Int, am_overlay)
-EXTERN_CVAR (Bool, am_usecustomcolors)
 EXTERN_CVAR (Bool, am_showitems)
 EXTERN_CVAR (Bool, am_showmonsters)
 EXTERN_CVAR (Bool, am_showsecrets)
@@ -569,8 +569,9 @@ EXTERN_CVAR (Bool, am_showtotaltime)
 EXTERN_CVAR (Bool, am_drawmapback)
 
 static value_t MapColorTypes[] = {
-	{ 1, "Custom" },
-	{ 0, "Traditional Doom" }
+	{ 0, "Custom" },
+	{ 1, "Traditional Doom" },
+	{ 2, "Traditional Strife" }
 };
 
 static value_t SecretTypes[] = {
@@ -592,7 +593,7 @@ static value_t OverlayTypes[] = {
 };
 
 static menuitem_t AutomapItems[] = {
-	{ discrete, "Map color set",		{&am_usecustomcolors},	{2.0}, {0.0},	{0.0}, {MapColorTypes} },
+	{ discrete, "Map color set",		{&am_colorset},			{3.0}, {0.0},	{0.0}, {MapColorTypes} },
 	{ more,		"Set custom colors",	{NULL},					{0.0}, {0.0},	{0.0}, {(value_t*)StartMapColorsMenu} },
 	{ redtext,	" ",					{NULL},					{0.0}, {0.0},	{0.0}, {NULL} },
 	{ discrete, "Rotate automap",		{&am_rotate},		   	{3.0}, {0.0},	{0.0}, {RotateTypes} },

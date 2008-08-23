@@ -2881,7 +2881,7 @@ static void P_GroupLines (bool buildmap)
 		Printf ("---Group Lines Times---\n");
 		for (i = 0; i < 7; ++i)
 		{
-			Printf (" time %d:%9.4f ms\n", i, times[i].Time() * 1e3);
+			Printf (" time %d:%9.4f ms\n", i, times[i].TimeMS());
 		}
 	}
 }
@@ -3635,7 +3635,7 @@ void P_SetupLevel (char *lumpname, int position)
 				"init polys",
 				"precache"
 			};
-			Printf ("Time%3d:%9.4f ms (%s)\n", i, times[i].Time() * 1e3, timenames[i]);
+			Printf ("Time%3d:%9.4f ms (%s)\n", i, times[i].TimeMS(), timenames[i]);
 		}
 	}
 	MapThingsConverted.Clear();

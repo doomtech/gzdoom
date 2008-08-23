@@ -190,15 +190,11 @@ void gl_GetLightColor(int lightlevel, int rellight, const FColormap * cm, float 
 		}
 		else if (gl_fixedcolormap>=CM_TORCH)
 		{
-			if (gl_enhanced_lightamp) 
-			{
-				int flicker=gl_fixedcolormap-CM_TORCH;
-				r=(0.8f+(7-flicker)/70.0f);
-				if (r>1.0f) r=1.0f;
-				g=r;
-				b=r*0.75f;
-			}
-			else r=g=b=1.0f;
+			int flicker=gl_fixedcolormap-CM_TORCH;
+			r=(0.8f+(7-flicker)/70.0f);
+			if (r>1.0f) r=1.0f;
+			b=g=r;
+			if (gl_enhanced_lightamp) b*=0.75f;
 		}
 		else r=g=b=1.0f;
 		return;
