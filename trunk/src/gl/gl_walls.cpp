@@ -99,6 +99,7 @@ void GLWall::PutWall(bool translucent)
 		4,		//RENDERWALL_MIRROR,           // special
 		1,		//RENDERWALL_MIRRORSURFACE,    // needs special handling
 		2,		//RENDERWALL_M2SNF,            // depends on render and texture settings, no fog
+		2,		//RENDERWALL_M2SFOG,            // depends on render and texture settings, no fog
 		3,		//RENDERWALL_COLOR,            // translucent
 		2,		//RENDERWALL_FFBLOCK           // depends on render and texture settings
 		4,		//RENDERWALL_COLORLAYER        // color layer needs special handling
@@ -892,10 +893,17 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 	// 
 	if (drawfogboundary)
 	{
-		type=RENDERWALL_FOGBOUNDARY;
-		PutWall(true);
-		if (!gltexture) return;
-		type=RENDERWALL_M2SNF;
+		if (!gl_glsl_renderer)
+		{
+			type=RENDERWALL_FOGBOUNDARY;
+			PutWall(true);
+			if (!gltexture) return;
+			type=RENDERWALL_M2SNF;
+		}
+		else
+		{
+			type=RENDERWALL_M2SFOG;
+		}
 	}
 	else type=RENDERWALL_M2S;
 

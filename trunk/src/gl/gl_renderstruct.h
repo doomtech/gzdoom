@@ -228,11 +228,17 @@ private:
 	void RenderMirrorSurface();
 	void RenderTranslucentWall();
 
+	void RenderWallGLSL();
+	void RenderFogBoundaryGLSL();
+	void RenderMirrorSurfaceGLSL();
+	void RenderTranslucentWallGLSL();
+
 public:
 
 	void Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, subsector_t * polysub);
 	void ProcessLowerMiniseg(seg_t *seg, sector_t * frontsector, sector_t * backsector);
 	void Draw(int pass);
+	void DrawGLSL(int pass);
 
 	float PointOnSide(float x,float y)
 	{
@@ -288,6 +294,9 @@ public:
 	void Process(sector_t * sector, bool whichplane, bool notexture);
 	void ProcessSector(sector_t * frontsector, subsector_t * sub);
 	void Draw(int pass);
+
+	void DrawGLSL(int pass);
+
 };
 
 
@@ -334,6 +343,7 @@ public:
 public:
 
 	void Draw(int pass);
+	void DrawGLSL(int pass);
 	void PutSprite(bool translucent);
 	void Process(AActor* thing,sector_t * sector);
 	void ProcessParticle (particle_t *particle, sector_t *sector);//, int shade, int fakeside)

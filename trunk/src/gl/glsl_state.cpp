@@ -51,7 +51,15 @@ void GLSLRenderState::SetLight(int light, int rellight, FColormap *cm, float alp
 {
 }
 
-void GLSLRenderState::SetLight(int light, int rellight, FColormap *cm, float alpha, bool additive, PalEntry ThingColor, bool weapon)
+void GLSLRenderState::SetLight(int light, int rellight, FColormap *cm, float alpha, bool additive, PalEntry ThingColor)
+{
+}
+
+void GLSLRenderState::SetAddLight(float *f)
+{
+}
+
+void GLSLRenderState::SetLightAbsolute(float r, float g, float b, float a)
 {
 }
 
@@ -64,6 +72,14 @@ void GLSLRenderState::SetBrightmap(bool on)
 }
 
 void GLSLRenderState::EnableBrightmap(bool on)
+{
+}
+
+void GLSLRenderState::EnableTexture(bool on)
+{
+}
+
+void GLSLRenderState::EnableFogBoundary(bool on)
 {
 }
 
@@ -84,6 +100,18 @@ void GLSLRenderState::SetDynLight(int index, float x, float y, float z, float si
 }
 
 void GLSLRenderState::SetLightingMode(int mode)
+{
+}
+
+void GLSLRenderState::SetAlphaThreshold(float thresh)
+{
+}
+
+void GLSLRenderState::SetBlend(int src, int dst)
+{
+}
+
+void GLSLRenderState::SetTextureMode(int mode)
 {
 }
 

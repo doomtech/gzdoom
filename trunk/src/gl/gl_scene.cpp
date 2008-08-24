@@ -55,6 +55,7 @@
 #include "gl/gl_shader.h"
 #include "gl/gl_framebuffer.h"
 #include "gl/gl_models.h"
+#include "gl/glsl_state.h"
 
 //#define DEG2RAD( a ) ( a * M_PI ) / 180.0F
 //#define RAD2DEG( a ) ( a / M_PI ) * 180.0F
@@ -533,29 +534,22 @@ static void RenderSceneGLSL(int recursion)
 
 	gl_SetCamera(TO_MAP(viewx), TO_MAP(viewy), TO_MAP(viewz));
 
-	gl.BlendFunc(GL_ONE,GL_ZERO);
+	gl.DepthFunc(GL_LESS);
+	gl.Disable(GL_POLYGON_OFFSET_FILL);	// just in case
+
+
 
 	// Part 1: solid geometry. This is set up so that there are no transparent parts
-	gl.DepthFunc(GL_LESS);
-	gl.Disable(GL_ALPHA_TEST);
-	gl.Disable(GL_POLYGON_OFFSET_FILL);	// just in case
-	//if (!gl_texture) gl_EnableTexture(false);
+
+	glsl->SetBlend(GL_ONE,GL_ZERO);
+	glsl->SetAlphaThreshold(0);
 
 	gl_drawinfo->drawlists[GLDL_PLAIN].Sort();
 	gl_drawinfo->drawlists[GLDL_PLAIN].DrawGLSL(/*gl_texture?*/ GLPASS_PLAIN/* : GLPASS_BASE*/);
 
 
-	gl.Enable(GL_ALPHA_TEST);
-	gl.AlphaFunc(GL_GEQUAL,gl_mask_threshold);
+	glsl->SetAlphaThreshold(gl_mask_threshold);
 
-	// Part 2: masked geometry. This is set up so that only pixels with alpha>0.5 will show
-	/*
-	if (!gl_texture) 
-	{
-		gl_EnableTexture(true);
-		gl_SetTextureMode(TM_MASK);
-	}
-	*/
 	gl_drawinfo->drawlists[GLDL_MASKED].Sort();
 	gl_drawinfo->drawlists[GLDL_MASKED].DrawGLSL(/*gl_texture?*/ GLPASS_PLAIN /*: GLPASS_BASE_MASKED*/);
 
@@ -572,14 +566,15 @@ static void RenderSceneGLSL(int recursion)
 
 	gl.DepthMask(true);
 
-
 	// Push bleeding floor/ceiling textures back a little in the z-buffer
 	// so they don't interfere with overlapping mid textures.
 	gl.PolygonOffset(1.0f, 128.0f);
 
 	// ***LATER!***
 	// flood all the gaps with the back sector's flat texture
-	// This will always be drawn like GLDL_PLAIN or GLDL_FOG, depending on the fog settings
+	// This will always be drawn like GLDL_PLAIN
+	glsl->SetBlend(GL_ONE,GL_ZERO);
+	glsl->SetAlphaThreshold(0);
 	//gl_drawinfo->DrawUnhandledMissingTextures();
 
 	gl.PolygonOffset(0.0f, 0.0f);
@@ -600,6 +595,7 @@ static void RenderTranslucent()
 {
 	RenderAll.Clock();
 
+	gl.DepthMask(false);
 	gl_SetCamera(TO_MAP(viewx), TO_MAP(viewy), TO_MAP(viewz));
 
 	// final pass: translucent stuff
@@ -630,20 +626,19 @@ static void RenderTranslucentGLSL()
 {
 	RenderAll.Clock();
 
+	gl.DepthMask(false);
 	gl_SetCamera(TO_MAP(viewx), TO_MAP(viewy), TO_MAP(viewz));
 
 	// final pass: translucent stuff
-	gl.AlphaFunc(GL_GEQUAL,0.5f);
-	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glsl->SetBlend(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glsl->SetAlphaThreshold(0.5f);
 
-	gl_EnableBrightmap(true);
 	gl_drawinfo->drawlists[GLDL_TRANSLUCENTBORDER].DrawGLSL(GLPASS_TRANSLUCENT);
 	gl_drawinfo->drawlists[GLDL_TRANSLUCENT].DrawSortedGLSL();
-	gl_EnableBrightmap(false);
 
 	gl.DepthMask(true);
 
-	gl.AlphaFunc(GL_GEQUAL,0.5f);
+	glsl->SetAlphaThreshold(0.5f);
 	RenderAll.Unclock();
 }
 
@@ -674,11 +669,9 @@ void gl_DrawScene()
 
 	// Handle all portals after rendering the opaque objects but before
 	// doing all translucent stuff
-	gl.DepthMask(true);
 	recursion++;
 	GLPortal::EndFrame();
 	recursion--;
-	gl.DepthMask(false);
 
 	if (!gl_glsl_renderer)
 	{
