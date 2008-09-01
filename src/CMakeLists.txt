@@ -724,6 +724,8 @@ add_executable( zdoom WIN32
 	gl/gl_walls_draw.cpp
 	gl/gl_weapon.cpp
 	gl/gl_wipe.cpp
+	gl/glsl_state.cpp
+	gl/glsl_draw.cpp
 	gl/r_render/r_opengl.cpp
 	oplsynth/fmopl.cpp
 	oplsynth/mlopl.cpp
