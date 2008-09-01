@@ -1681,7 +1681,7 @@ void M_OptDrawer ()
 		if (BigFont && CurrentMenu->texttitle)
 		{
 			screen->SetFont (BigFont);
-			screen->DrawText (gameinfo.gametype == GAME_Doom ? CR_RED : CR_UNTRANSLATED,
+			screen->DrawText (gameinfo.gametype & GAME_DoomChex ? CR_RED : CR_UNTRANSLATED,
 				160-BigFont->StringWidth (CurrentMenu->texttitle)/2, 10,
 				CurrentMenu->texttitle, DTA_Clean, true, TAG_DONE);
 			screen->SetFont (SmallFont);
@@ -2208,7 +2208,7 @@ void M_OptResponder (event_t *ev)
 					{
 						maxitems = 15;
 					}
-					if (gameinfo.gametype != GAME_Doom)
+					if (!(gameinfo.gametype & GAME_DoomChex))
 					{
 						maxitems -= 2;
 						rowheight = 9;
