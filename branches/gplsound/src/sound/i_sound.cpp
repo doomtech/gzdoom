@@ -70,6 +70,7 @@ extern HINSTANCE g_hInst;
 #include "s_sound.h"
 #include "v_text.h"
 #include "gi.h"
+#include "c_console.h"
 
 #include "doomdef.h"
 
@@ -191,7 +192,7 @@ public:
 	void UpdateListener (SoundListener *)
 	{
 	}
-	void UpdateSounds ()
+	void UpdateSounds (int)
 	{
 	}
 
@@ -315,4 +316,19 @@ bool SoundStream::SetOrder(int order)
 FString SoundStream::GetStats()
 {
 	return "No stream stats available.";
+}
+
+
+long ReadSoundLump(int lumpnum, char *buffer, int bufferlen)
+{
+	FWadLump wlump = Wads.OpenLumpNum(lumpnum);
+	return wlump.Read(buffer, bufferlen);
+}
+
+void SoundMessage(int flags, const char *msg, ...)
+{
+	va_list ap;
+
+	va_start(ap, msg);
+	VPrintf(PRINT_HIGH, msg, ap);
 }
