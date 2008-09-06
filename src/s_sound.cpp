@@ -109,7 +109,6 @@ static void CalcSectorSoundOrg(const sector_t *sec, int channum, fixed_t *x, fix
 static void CalcPolyobjSoundOrg(const FPolyObj *poly, fixed_t *x, fixed_t *y, fixed_t *z);
 static FSoundChan *S_StartSound(AActor *mover, const sector_t *sec, const FPolyObj *poly,
 	const FVector3 *pt, int channel, FSoundID sound_id, float volume, float attenuation);
-static sfxinfo_t *S_LoadSound(sfxinfo_t *sfx);
 static void S_SetListener(SoundListener &listener, AActor *listenactor);
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
@@ -123,6 +122,7 @@ static int		RestartEvictionsAt;	// do not restart evicted channels before this l
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
 int sfx_empty;
+int sfx_empty_length;
 
 FSoundChan *Channels;
 FSoundChan *FreeChannels;
@@ -326,7 +326,7 @@ void S_Shutdown ()
 	{
 		GSnd->StopSound(Channels);
 	}
-	GSnd->UpdateSounds();
+	GSnd->UpdateSounds(TICRATE);
 	for (chan = FreeChannels; chan != NULL; chan = next)
 	{
 		next = chan->NextChan;
@@ -393,7 +393,7 @@ void S_Start ()
 			// First delete the old sound list
 			for(unsigned i = 1; i < S_sfx.Size(); i++) 
 			{
-				GSnd->UnloadSound(&S_sfx[i]);
+				S_UnloadSound(&S_sfx[i]);
 			}
 			
 			// Parse the global SNDINFO
@@ -482,7 +482,7 @@ void S_PrecacheLevel ()
 		{
 			if (!S_sfx[i].bUsed && S_sfx[i].link == sfxinfo_t::NO_LINK)
 			{
-				GSnd->UnloadSound (&S_sfx[i]);
+				S_UnloadSound (&S_sfx[i]);
 			}
 		}
 	}
@@ -513,8 +513,23 @@ void S_CacheSound (sfxinfo_t *sfx)
 				sfx = &S_sfx[sfx->link];
 			}
 			sfx->bUsed = true;
-			GSnd->LoadSound (sfx);
+			S_LoadSound (sfx);
 		}
+	}
+}
+
+//==========================================================================
+//
+// S_CacheSound
+//
+//==========================================================================
+
+void S_UnloadSound (sfxinfo_t *sfx)
+{
+	if (sfx->data != NULL)
+	{
+		GSnd->UnloadSound(sfx);
+		DPrintf("Unloaded sound \"%s\" (%td)\n", sfx->Name, sfx - &S_sfx[0]);
 	}
 }
 
@@ -1170,6 +1185,28 @@ sfxinfo_t *S_LoadSound(sfxinfo_t *sfx)
 {
 	if (sfx->data == NULL)
 	{
+		unsigned int i;
+
+		// If the sound doesn't exist, replace it with the empty sound.
+		if (sfx->lumpnum == -1)
+		{
+			sfx->lumpnum = sfx_empty;
+			sfx->lumplen = sfx_empty_length;
+		}
+		
+		// See if there is another sound already initialized with this lump. If so,
+		// then set this one up as a link, and don't load the sound again.
+		for (i = 0; i < S_sfx.Size(); i++)
+		{
+			if (S_sfx[i].data && S_sfx[i].link == sfxinfo_t::NO_LINK && S_sfx[i].lumpnum == sfx->lumpnum)
+			{
+				DPrintf ("Linked to %s (%d)\n", S_sfx[i].Name, i);
+				sfx->link = i;
+				return &S_sfx[i];
+			}
+		}
+
+		DPrintf("Loading sound \"%s\" (%td)\n", sfx->Name, sfx - &S_sfx[0]);
 		GSnd->LoadSound (sfx);
 		if (sfx->link != sfxinfo_t::NO_LINK)
 		{
@@ -1331,7 +1368,7 @@ void S_StopAllChannels ()
 	{
 		GSnd->StopSound(Channels);
 	}
-	GSnd->UpdateSounds();
+	GSnd->UpdateSounds(TICRATE);
 }
 
 //==========================================================================
@@ -1611,7 +1648,7 @@ void S_UpdateSounds (AActor *listenactor)
 
 
 	GSnd->UpdateListener(&listener);
-	GSnd->UpdateSounds();
+	GSnd->UpdateSounds(TICRATE);
 
 	if (level.time >= RestartEvictionsAt)
 	{
@@ -1641,7 +1678,7 @@ static void S_SetListener(SoundListener &listener, AActor *listenactor)
 		listener.position.Y = FIXED2FLOAT(listenactor->y);
 		listener.position.Z = FIXED2FLOAT(listenactor->z);
 		listener.underwater = listenactor->waterlevel == 3;
-		listener.ZoneNumber = listenactor->Sector->ZoneNumber;
+		listener.Environment = zones[listenactor->Sector->ZoneNumber].Environment;
 		listener.valid = true;
 	}
 	else
@@ -1650,7 +1687,7 @@ static void S_SetListener(SoundListener &listener, AActor *listenactor)
 		listener.position.Zero();
 		listener.velocity.Zero();
 		listener.underwater=false;
-		listener.ZoneNumber=0;
+		listener.Environment = NULL;
 		listener.valid = false;
 	}
 }
@@ -1777,7 +1814,7 @@ void S_SerializeSounds(FArchive &arc)
 	}
 	DSeqNode::SerializeSequences(arc);
 	GSnd->Sync(false);
-	GSnd->UpdateSounds();
+	GSnd->UpdateSounds(TICRATE);
 }
 
 //==========================================================================

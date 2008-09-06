@@ -51,7 +51,7 @@ struct SoundListener
 	float angle;
 	bool underwater;
 	bool valid;
-	int ZoneNumber;
+	ReverbContainer *Environment;
 };
 
 class SoundStream
@@ -123,7 +123,7 @@ public:
 	virtual void UpdateSoundParams3D (SoundListener *listener, FSoundChan *chan, const FVector3 &pos, const FVector3 &vel) = 0;
 
 	virtual void UpdateListener (SoundListener *) = 0;
-	virtual void UpdateSounds () = 0;
+	virtual void UpdateSounds (int) = 0;
 
 	virtual bool IsValid () = 0;
 	virtual void PrintStatus () = 0;

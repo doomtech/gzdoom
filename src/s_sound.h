@@ -36,8 +36,9 @@ struct sfxinfo_t
 	// A non-null data means the sound has been loaded.
 	void	   *data;
 
-	FString		name;					// [RH] Sound name defined in SNDINFO
+	const char * Name;					// [RH] Sound name defined in SNDINFO
 	int 		lumpnum;				// lump number of sfx
+	int			lumplen;
 
 	unsigned int next, index;			// [RH] For hashing
 //	unsigned int frequency;				// [RH] Preferred playback rate
@@ -77,7 +78,21 @@ enum
 int S_FindSound (const char *logicalname);
 
 // the complete set of sound effects
-extern TArray<sfxinfo_t> S_sfx;
+
+class SFXArray : public TArray<sfxinfo_t>
+{
+public:
+	SFXArray() : TArray<sfxinfo_t> (128) {}
+	~SFXArray()
+	{
+		for(unsigned i=0;i<Size();i++)
+		{
+			delete[] (*this)[i].Name;
+		}
+	}
+};
+
+extern SFXArray S_sfx;
 
 // An index into the S_sfx[] array.
 class FSoundID
@@ -124,11 +139,11 @@ public:
 	}
 	operator FString() const
 	{
-		return ID ? S_sfx[ID].name : "";
+		return ID ? S_sfx[ID].Name : "";
 	}
 	operator const char *() const
 	{
-		return ID ? S_sfx[ID].name.GetChars() : NULL;
+		return ID ? S_sfx[ID].Name : NULL;
 	}
 private:
 	int ID;
@@ -351,6 +366,8 @@ int S_AddPlayerSound (const char *playerclass, const int gender, int refid, cons
 int S_AddPlayerSound (const char *playerclass, const int gender, int refid, int lumpnum, bool fromskin=false);
 int S_AddPlayerSoundExisting (const char *playerclass, const int gender, int refid, int aliasto, bool fromskin=false);
 void S_ShrinkPlayerSoundLists ();
+void S_UnloadSound (sfxinfo_t *sfx);
+sfxinfo_t *S_LoadSound(sfxinfo_t *sfx);
 
 // [RH] Prints sound debug info to the screen.
 //		Modelled after Hexen's noise cheat.

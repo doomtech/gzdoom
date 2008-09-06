@@ -47,7 +47,7 @@ public:
 	void UpdateSoundParams3D (SoundListener *listener, FSoundChan *chan, const FVector3 &pos, const FVector3 &vel);
 
 	void UpdateListener (SoundListener *listener);
-	void UpdateSounds ();
+	void UpdateSounds (int);
 
 	void PrintStatus ();
 	void PrintDriversList ();

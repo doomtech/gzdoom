@@ -208,13 +208,12 @@ static int S_AddSound (const char *logicalname, int lumpnum, FScanner *sc=NULL);
 
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
-extern int sfx_sawup, sfx_sawidl, sfx_sawful, sfx_sawhit;
-extern int sfx_itemup, sfx_tink;
 extern int sfx_empty;
+extern int sfx_empty_length;
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
-TArray<sfxinfo_t> S_sfx (128);
+SFXArray S_sfx;
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
@@ -309,7 +308,7 @@ void S_HashSounds ()
 	// Now set up the chains
 	for (i = 1; i < size; i++)
 	{
-		j = MakeKey (S_sfx[i].name) % size;
+		j = MakeKey (S_sfx[i].Name) % size;
 		S_sfx[i].next = S_sfx[j].index;
 		S_sfx[j].index = i;
 	}
@@ -371,7 +370,7 @@ int S_FindSound (const char *logicalname)
 	{
 		i = S_sfx[MakeKey (logicalname) % S_sfx.Size ()].index;
 
-		while ((i != 0) && stricmp (S_sfx[i].name, logicalname))
+		while ((i != 0) && stricmp (S_sfx[i].Name, logicalname))
 			i = S_sfx[i].next;
 
 		return i;
@@ -396,7 +395,7 @@ int S_FindSoundNoHash (const char *logicalname)
 
 	for (i = 1; i < S_sfx.Size (); i++)
 	{
-		if (stricmp (S_sfx[i].name, logicalname) == 0)
+		if (stricmp (S_sfx[i].Name, logicalname) == 0)
 		{
 			return i;
 		}
@@ -436,8 +435,9 @@ int S_AddSoundLump (const char *logicalname, int lump)
 	sfxinfo_t newsfx;
 
 	newsfx.data = NULL;
-	newsfx.name = logicalname;
+	newsfx.Name = copystring(logicalname);
 	newsfx.lumpnum = lump;
+	newsfx.lumplen = Wads.LumpLength(lump);
 	newsfx.next = 0;
 	newsfx.index = 0;
 	newsfx.Volume = 1;
@@ -573,7 +573,7 @@ int S_AddPlayerSound (const char *pclass, int gender, int refid, int lumpnum, bo
 	fakename += '"';
 	fakename += '0' + gender;
 	fakename += '"';
-	fakename += S_sfx[refid].name;
+	fakename += S_sfx[refid].Name;
 
 	id = S_AddSoundLump (fakename, lumpnum);
 	int classnum = S_AddPlayerClass (pclass);
@@ -777,7 +777,7 @@ static void S_ClearSoundData()
 	S_StopAllChannels();
 	for (i = 0; i < S_sfx.Size(); ++i)
 	{
-		GSnd->UnloadSound(&S_sfx[i]);
+		S_UnloadSound(&S_sfx[i]);
 	}
 	S_sfx.Clear();
 
@@ -854,6 +854,7 @@ void S_ParseSndInfo ()
 	S_ShrinkPlayerSoundLists ();
 
 	sfx_empty = Wads.CheckNumForName ("dsempty", ns_sounds);
+	sfx_empty_length = Wads.LumpLength(sfx_empty);
 }
 
 //==========================================================================
@@ -1750,30 +1751,30 @@ CCMD (soundlist)
 		const sfxinfo_t *sfx = &S_sfx[i];
 		if (sfx->bRandomHeader)
 		{
-			Printf ("%3d. %s -> #%d {", i, sfx->name.GetChars(), sfx->link);
+			Printf ("%3d. %s -> #%d {", i, sfx->Name, sfx->link);
 			const FRandomSoundList *list = &S_rnd[sfx->link];
 			for (size_t j = 0; j < list->NumSounds; ++j)
 			{
-				Printf (" %s ", S_sfx[list->Sounds[j]].name.GetChars());
+				Printf (" %s ", S_sfx[list->Sounds[j]].Name);
 			}
 			Printf ("}\n");
 		}
 		else if (sfx->bPlayerReserve)
 		{
-			Printf ("%3d. %s <<player sound %d>>\n", i, sfx->name.GetChars(), sfx->link);
+			Printf ("%3d. %s <<player sound %d>>\n", i, sfx->Name, sfx->link);
 		}
 		else if (S_sfx[i].lumpnum != -1)
 		{
 			Wads.GetLumpName (lumpname, sfx->lumpnum);
-			Printf ("%3d. %s (%s)\n", i, sfx->name.GetChars(), lumpname);
+			Printf ("%3d. %s (%s)\n", i, sfx->Name, lumpname);
 		}
 		else if (S_sfx[i].link != sfxinfo_t::NO_LINK)
 		{
-			Printf ("%3d. %s -> %s\n", i, sfx->name.GetChars(), S_sfx[sfx->link].name.GetChars());
+			Printf ("%3d. %s -> %s\n", i, sfx->Name, S_sfx[sfx->link].Name);
 		}
 		else
 		{
-			Printf ("%3d. %s **not present**\n", i, sfx->name.GetChars());
+			Printf ("%3d. %s **not present**\n", i, sfx->Name);
 		}
 	}
 }
@@ -1796,7 +1797,7 @@ CCMD (soundlinks)
 			!sfx->bRandomHeader &&
 			!sfx->bPlayerReserve)
 		{
-			Printf ("%s -> %s\n", sfx->name.GetChars(), S_sfx[sfx->link].name.GetChars());
+			Printf ("%s -> %s\n", sfx->Name, S_sfx[sfx->link].Name);
 		}
 	}
 }
@@ -1820,7 +1821,7 @@ CCMD (playersounds)
 		if (S_sfx[i].bPlayerReserve)
 		{
 			++j;
-			reserveNames[S_sfx[i].link] = S_sfx[i].name;
+			reserveNames[S_sfx[i].link] = S_sfx[i].Name;
 		}
 	}
 
@@ -1833,7 +1834,7 @@ CCMD (playersounds)
 				Printf ("\n%s, %s:\n", PlayerClassLookups[i].Name.GetChars(), GenderNames[j]);
 				for (k = 0; k < NumPlayerReserves; ++k)
 				{
-					Printf (" %-16s%s\n", reserveNames[k], S_sfx[PlayerSounds[l].LookupSound (k)].name.GetChars());
+					Printf (" %-16s%s\n", reserveNames[k], S_sfx[PlayerSounds[l].LookupSound (k)].Name);
 				}
 			}
 		}
@@ -1956,7 +1957,7 @@ void AAmbientSound::Activate (AActor *activator)
 				Destroy ();
 				return;
 			}
-			amb->periodmin = Scale(GSnd->GetMSLength(&S_sfx[sndnum]), TICRATE, 1000);
+			amb->periodmin = Scale(GSnd->GetMSLength(S_LoadSound(&S_sfx[sndnum])), TICRATE, 1000);
 		}
 
 		NextCheck = gametic;
