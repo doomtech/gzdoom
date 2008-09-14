@@ -891,7 +891,7 @@ void AInventory::Touch (AActor *toucher)
 		toucher = toucher->player->mo;
 	}
 
-	if (!TryPickup (toucher))
+	if (!CallTryPickup (toucher))
 		return;
 
 	if (!(ItemFlags & IF_QUIET))
@@ -981,10 +981,24 @@ const char *AInventory::PickupMessage ()
 
 void AInventory::PlayPickupSound (AActor *toucher)
 {
-	S_Sound (toucher, CHAN_PICKUP, PickupSound, 1,
-		(ItemFlags & IF_FANCYPICKUPSOUND) &&
-		(toucher == NULL || toucher->CheckLocalView (consoleplayer))
-		? ATTN_NONE : ATTN_NORM);
+	float atten;
+
+	if (ItemFlags & IF_NOATTENPICKUPSOUND)
+	{
+		atten = ATTN_NONE;
+	}
+#if 0
+	else if ((ItemFlags & IF_FANCYPICKUPSOUND) &&
+		(toucher == NULL || toucher->CheckLocalView(consoeplayer)))
+	{
+		atten = ATTN_NONE;
+	}
+#endif
+	else
+	{
+		atten = ATTN_NORM;
+	}
+	S_Sound (toucher, CHAN_PICKUP, PickupSound, 1, atten);
 }
 
 //===========================================================================
@@ -1149,13 +1163,14 @@ void AInventory::GiveQuest (AActor *toucher)
 		toucher->GiveInventoryType (QuestItemClasses[quest-1]);
 	}
 }
+
 //===========================================================================
 //
 // AInventory :: TryPickup
 //
 //===========================================================================
 
-bool AInventory::TryPickup (AActor *toucher)
+bool AInventory::TryPickup (AActor *&toucher)
 {
 	AActor *newtoucher = toucher; // in case changed by the powerup
 
@@ -1187,7 +1202,7 @@ bool AInventory::TryPickup (AActor *toucher)
 		bool usegood = Use (true);
 		toucher->RemoveInventory (this);
 
-		if (usegood || (ItemFlags & IF_ALWAYSPICKUP))
+		if (usegood)
 		{
 			GoAwayAndDie ();
 		}
@@ -1234,10 +1249,29 @@ bool AInventory::TryPickup (AActor *toucher)
 			}
 		}
 	}
-
-	GiveQuest(newtoucher);
 	return true;
 }
+
+//===========================================================================
+//
+// AInventory :: TryPickup
+//
+//===========================================================================
+
+bool AInventory::CallTryPickup (AActor *toucher)
+{
+	bool res = TryPickup(toucher);
+
+	if (!res && (ItemFlags & IF_ALWAYSPICKUP))
+	{
+		res = true;
+		GoAwayAndDie();
+	}
+
+	if (res) GiveQuest(toucher);
+	return res;
+}
+
 
 //===========================================================================
 //
@@ -1330,7 +1364,7 @@ bool ACustomInventory::Use (bool pickup)
 //
 //===========================================================================
 
-bool ACustomInventory::TryPickup (AActor *toucher)
+bool ACustomInventory::TryPickup (AActor *&toucher)
 {
 	FState *pickupstate = FindState(NAME_Pickup);
 	bool useok = CallStateChain (toucher, pickupstate);
@@ -1338,9 +1372,8 @@ bool ACustomInventory::TryPickup (AActor *toucher)
 	{
 		useok = Super::TryPickup (toucher);
 	}
-	else if (useok || ItemFlags & IF_ALWAYSPICKUP)
+	else if (useok)
 	{
-		GiveQuest (toucher);
 		GoAwayAndDie();
 	}
 	return useok;
@@ -1375,7 +1408,7 @@ const char *AHealth::PickupMessage ()
 //
 //===========================================================================
 
-bool AHealth::TryPickup (AActor *other)
+bool AHealth::TryPickup (AActor *&other)
 {
 	player_t *player = other->player;
 	int max = MaxAmount;
@@ -1408,13 +1441,6 @@ bool AHealth::TryPickup (AActor *other)
 		}
 		if (player->health >= max)
 		{
-			// You should be able to pick up the Doom health bonus even if
-			// you are already full on health.
-			if (ItemFlags & IF_ALWAYSPICKUP)
-			{
-				GoAwayAndDie ();
-				return true;
-			}
 			return false;
 		}
 		player->health += Amount;
@@ -1427,7 +1453,7 @@ bool AHealth::TryPickup (AActor *other)
 	else
 	{
 		PrevHealth = INT_MAX;
-		if (P_GiveBody(other, Amount) || ItemFlags & IF_ALWAYSPICKUP)
+		if (P_GiveBody(other, Amount))
 		{
 			GoAwayAndDie ();
 			return true;
@@ -1679,10 +1705,9 @@ IMPLEMENT_CLASS (AMapRevealer)
 //
 //===========================================================================
 
-bool AMapRevealer::TryPickup (AActor *toucher)
+bool AMapRevealer::TryPickup (AActor *&toucher)
 {
 	level.flags |= LEVEL_ALLMAP;
-	GiveQuest (toucher);
 	GoAwayAndDie ();
 	return true;
 }

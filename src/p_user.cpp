@@ -704,7 +704,7 @@ void APlayerPawn::GiveDeathmatchInventory()
 			if (key->KeyNumber != 0)
 			{
 				key = static_cast<AKey *>(Spawn (PClass::m_Types[i], 0,0,0, NO_REPLACE));
-				if (!key->TryPickup (this))
+				if (!key->CallTryPickup (this))
 				{
 					key->Destroy ();
 				}
@@ -1013,7 +1013,7 @@ void APlayerPawn::GiveDefaultInventory ()
 					static_cast<AWeapon*>(item)->AmmoGive1 =
 					static_cast<AWeapon*>(item)->AmmoGive2 = 0;
 				}
-				if (!item->TryPickup(this))
+				if (!item->CallTryPickup(this))
 				{
 					item->Destroy ();
 					item = NULL;
@@ -1961,6 +1961,11 @@ void P_PlayerThink (player_t *player)
 		player->mo->flags &= ~MF_NOCLIP;
 	}
 	cmd = &player->cmd;
+
+	// Make unmodified copies for ACS's GetPlayerInput.
+	player->original_oldbuttons = player->original_cmd.buttons;
+	player->original_cmd = cmd->ucmd;
+
 	if (player->mo->flags & MF_JUSTATTACKED)
 	{ // Chainsaw/Gauntlets attack auto forward motion
 		cmd->ucmd.yaw = 0;
@@ -1996,7 +2001,10 @@ void P_PlayerThink (player_t *player)
 	}
 
 	// Handle crouching
-	if (player->cmd.ucmd.buttons & BT_JUMP) player->cmd.ucmd.buttons &= ~BT_DUCK;
+	if (player->cmd.ucmd.buttons & BT_JUMP)
+	{
+		player->cmd.ucmd.buttons &= ~BT_CROUCH;
+	}
 	if (player->morphTics == 0 && player->health > 0 && level.IsCrouchingAllowed())
 	{
 		if (!(player->cheats & CF_TOTALLYFROZEN))
@@ -2005,9 +2013,9 @@ void P_PlayerThink (player_t *player)
 		
 			if (crouchdir==0)
 			{
-				crouchdir = (player->cmd.ucmd.buttons & BT_DUCK)? -1 : 1;
+				crouchdir = (player->cmd.ucmd.buttons & BT_CROUCH)? -1 : 1;
 			}
-			else if (player->cmd.ucmd.buttons & BT_DUCK)
+			else if (player->cmd.ucmd.buttons & BT_CROUCH)
 			{
 				player->crouching=0;
 			}
@@ -2459,7 +2467,9 @@ void player_t::Serialize (FArchive &arc)
 	arc << crouchfactor
 		<< crouching 
 		<< crouchdir
-		<< crouchviewdelta;
+		<< crouchviewdelta
+		<< original_cmd
+		<< original_oldbuttons;
 
 	if (isbot)
 	{
@@ -2493,6 +2503,7 @@ void player_t::Serialize (FArchive &arc)
 		// If the player reloaded because they pressed +use after dying, we
 		// don't want +use to still be down after the game is loaded.
 		oldbuttons = ~0;
+		original_oldbuttons = ~0;
 	}
 }
 

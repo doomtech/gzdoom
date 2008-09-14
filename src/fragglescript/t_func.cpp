@@ -2578,7 +2578,7 @@ static void FS_GiveInventory (AActor *actor, const char * type, int amount)
 	{
 		item->Amount = amount;
 	}
-	if (!item->TryPickup (actor))
+	if (!item->CallTryPickup (actor))
 	{
 		item->Destroy ();
 	}
