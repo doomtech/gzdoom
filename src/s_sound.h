@@ -27,6 +27,22 @@
 class AActor;
 class FScanner;
 
+// Default rolloff information.
+struct FRolloffInfo
+{
+	int RolloffType;
+	float MinDistance;
+	union { float MaxDistance; float RolloffFactor; };
+};
+
+struct SoundHandle
+{
+	void *data;
+
+	bool isValid() const { return data != NULL; }
+	void Clear() { data = NULL; }
+};
+
 //
 // SoundFX struct.
 //
@@ -34,11 +50,10 @@ struct sfxinfo_t
 {
 	// Next field is for use by the system sound interface.
 	// A non-null data means the sound has been loaded.
-	void	   *data;
+	SoundHandle	data;
 
-	const char * Name;					// [RH] Sound name defined in SNDINFO
+	FString		name;					// [RH] Sound name defined in SNDINFO
 	int 		lumpnum;				// lump number of sfx
-	int			lumplen;
 
 	unsigned int next, index;			// [RH] For hashing
 //	unsigned int frequency;				// [RH] Preferred playback rate
@@ -57,13 +72,11 @@ struct sfxinfo_t
 	WORD		bUsed:1;
 	WORD		bSingular:1;
 	WORD		bTentative:1;
-	WORD		RolloffType:2;
 
 	unsigned int link;
 	enum { NO_LINK = 0xffffffff };
 
-	float		MinDistance;
-	union		{ float MaxDistance, RolloffFactor; };
+	FRolloffInfo	Rolloff;
 };
 
 // Rolloff types
@@ -78,21 +91,7 @@ enum
 int S_FindSound (const char *logicalname);
 
 // the complete set of sound effects
-
-class SFXArray : public TArray<sfxinfo_t>
-{
-public:
-	SFXArray() : TArray<sfxinfo_t> (128) {}
-	~SFXArray()
-	{
-		for(unsigned i=0;i<Size();i++)
-		{
-			delete[] (*this)[i].Name;
-		}
-	}
-};
-
-extern SFXArray S_sfx;
+extern TArray<sfxinfo_t> S_sfx;
 
 // An index into the S_sfx[] array.
 class FSoundID
@@ -139,11 +138,11 @@ public:
 	}
 	operator FString() const
 	{
-		return ID ? S_sfx[ID].Name : "";
+		return ID ? S_sfx[ID].name : "";
 	}
 	operator const char *() const
 	{
-		return ID ? S_sfx[ID].Name : NULL;
+		return ID ? S_sfx[ID].name.GetChars() : NULL;
 	}
 private:
 	int ID;
@@ -173,10 +172,7 @@ public:
 
 FArchive &operator<<(FArchive &arc, FSoundID &sid);
 
-// Default rolloff information.
-extern int S_RolloffType;
-extern float S_MinDistance;
-extern float S_MaxDistanceOrRolloffFactor;
+extern FRolloffInfo S_Rolloff;
 extern BYTE *S_SoundCurve;
 extern int S_SoundCurveSize;
 
@@ -186,13 +182,8 @@ struct FPolyObj;
 struct FSoundChan
 {
 	void		*SysChannel;// Channel information from the system interface.
-	FSoundChan	*NextChan;	// Next channel in this list.
-	FSoundChan **PrevChan;	// Previous channel in this list.
 	sfxinfo_t	*SfxInfo;	// Sound information.
 	QWORD_UNION	StartTime;	// Sound start time in DSP clocks.
-	FSoundID	SoundID;	// Sound ID of playing sound.
-	FSoundID	OrgID;		// Sound ID of sound used to start this channel.
-	float		Volume;
 	float		DistanceScale;
 	int			ChanFlags;
 	SWORD		Pitch;		// Pitch variation.
@@ -200,6 +191,12 @@ struct FSoundChan
 	SBYTE		Priority;
 	SWORD		NearLimit;
 	BYTE		SourceType;
+
+	FSoundChan	*NextChan;	// Next channel in this list.
+	FSoundChan **PrevChan;	// Previous channel in this list.
+	FSoundID	SoundID;	// Sound ID of playing sound.
+	FSoundID	OrgID;		// Sound ID of sound used to start this channel.
+	float		Volume;
 	union
 	{
 		AActor	*Actor;				// Used for position and velocity.
@@ -368,6 +365,7 @@ int S_AddPlayerSoundExisting (const char *playerclass, const int gender, int ref
 void S_ShrinkPlayerSoundLists ();
 void S_UnloadSound (sfxinfo_t *sfx);
 sfxinfo_t *S_LoadSound(sfxinfo_t *sfx);
+unsigned int S_GetMSLength(FSoundID sound);
 
 // [RH] Prints sound debug info to the screen.
 //		Modelled after Hexen's noise cheat.
