@@ -796,7 +796,7 @@ AInventory *AActor::GiveInventoryType (const PClass *type)
 	if (type != NULL)
 	{
 		item = static_cast<AInventory *>(Spawn (type, 0,0,0, NO_REPLACE));
-		if (!item->TryPickup (this))
+		if (!item->CallTryPickup (this))
 		{
 			item->Destroy ();
 			return NULL;
@@ -822,7 +822,7 @@ bool AActor::GiveAmmo (const PClass *type, int amount)
 		{
 			item->Amount = amount;
 			item->flags |= MF_DROPPED;
-			if (!item->TryPickup (this))
+			if (!item->CallTryPickup (this))
 			{
 				item->Destroy ();
 				return false;

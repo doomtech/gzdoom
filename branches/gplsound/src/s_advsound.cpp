@@ -209,11 +209,10 @@ static int S_AddSound (const char *logicalname, int lumpnum, FScanner *sc=NULL);
 // EXTERNAL DATA DECLARATIONS ----------------------------------------------
 
 extern int sfx_empty;
-extern int sfx_empty_length;
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
-SFXArray S_sfx;
+TArray<sfxinfo_t> S_sfx (128);
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
@@ -308,7 +307,7 @@ void S_HashSounds ()
 	// Now set up the chains
 	for (i = 1; i < size; i++)
 	{
-		j = MakeKey (S_sfx[i].Name) % size;
+		j = MakeKey (S_sfx[i].name) % size;
 		S_sfx[i].next = S_sfx[j].index;
 		S_sfx[j].index = i;
 	}
@@ -332,6 +331,56 @@ int S_PickReplacement (int refid)
 	}
 	return refid;
 }
+
+//==========================================================================
+//
+// S_GetSoundMSLength
+//
+// Returns duration of sound
+//
+//==========================================================================
+
+unsigned int S_GetMSLength(FSoundID sound)
+{
+	if (sound < 0 || sound >= S_sfx.Size()) return 0;
+
+	sfxinfo_t *sfx = &S_sfx[sound];
+
+	// Resolve player sounds, random sounds, and aliases
+	if (sfx->link != sfxinfo_t::NO_LINK)
+	{
+		if (sfx->bPlayerReserve)
+		{
+			sfx = &S_sfx[S_FindSkinnedSound (NULL, sound)];
+		}
+		else if (sfx->bRandomHeader)
+		{
+			// Hm... What should we do here?
+			// Pick the longest or the shortest sound?
+			// I think the longest one makes more sense.
+
+			int length = 0;
+			const FRandomSoundList *list = &S_rnd[sfx->link];
+
+			for (int i=0; i < list->NumSounds; i++)
+			{
+				// unfortunately we must load all sounds to find the longest one... :(
+				int thislen = S_GetMSLength(list->Sounds[i]);
+				if (thislen > length) length = thislen;
+			}
+			return length;
+		}
+		else
+		{
+			sfx = &S_sfx[sfx->link];
+		}
+	}
+
+	sfx = S_LoadSound(sfx);
+	if (sfx != NULL) return GSnd->GetMSLength(sfx->data);
+	else return 0;
+}
+
 
 //==========================================================================
 //
@@ -370,7 +419,7 @@ int S_FindSound (const char *logicalname)
 	{
 		i = S_sfx[MakeKey (logicalname) % S_sfx.Size ()].index;
 
-		while ((i != 0) && stricmp (S_sfx[i].Name, logicalname))
+		while ((i != 0) && stricmp (S_sfx[i].name, logicalname))
 			i = S_sfx[i].next;
 
 		return i;
@@ -395,7 +444,7 @@ int S_FindSoundNoHash (const char *logicalname)
 
 	for (i = 1; i < S_sfx.Size (); i++)
 	{
-		if (stricmp (S_sfx[i].Name, logicalname) == 0)
+		if (stricmp (S_sfx[i].name, logicalname) == 0)
 		{
 			return i;
 		}
@@ -434,10 +483,9 @@ int S_AddSoundLump (const char *logicalname, int lump)
 {
 	sfxinfo_t newsfx;
 
-	newsfx.data = NULL;
-	newsfx.Name = copystring(logicalname);
+	newsfx.data.Clear();
+	newsfx.name = logicalname;
 	newsfx.lumpnum = lump;
-	newsfx.lumplen = Wads.LumpLength(lump);
 	newsfx.next = 0;
 	newsfx.index = 0;
 	newsfx.Volume = 1;
@@ -453,10 +501,10 @@ int S_AddSoundLump (const char *logicalname, int lump)
 	newsfx.bUsed = false;
 	newsfx.bSingular = false;
 	newsfx.bTentative = false;
-	newsfx.RolloffType = ROLLOFF_Doom;
 	newsfx.link = sfxinfo_t::NO_LINK;
-	newsfx.MinDistance = 0;
-	newsfx.MaxDistance = 0;
+	newsfx.Rolloff.RolloffType = ROLLOFF_Doom;
+	newsfx.Rolloff.MinDistance = 0;
+	newsfx.Rolloff.MaxDistance = 0;
 
 	return (int)S_sfx.Push (newsfx);
 }
@@ -573,7 +621,7 @@ int S_AddPlayerSound (const char *pclass, int gender, int refid, int lumpnum, bo
 	fakename += '"';
 	fakename += '0' + gender;
 	fakename += '"';
-	fakename += S_sfx[refid].Name;
+	fakename += S_sfx[refid].name;
 
 	id = S_AddSoundLump (fakename, lumpnum);
 	int classnum = S_AddPlayerClass (pclass);
@@ -854,7 +902,6 @@ void S_ParseSndInfo ()
 	S_ShrinkPlayerSoundLists ();
 
 	sfx_empty = Wads.CheckNumForName ("dsempty", ns_sounds);
-	sfx_empty_length = Wads.LumpLength(sfx_empty);
 }
 
 //==========================================================================
@@ -1155,7 +1202,7 @@ static void S_AddSNDINFO (int lump)
 			case SI_Rolloff: {
 				// $rolloff *|<logical name> [linear|log|custom] <min dist> <max dist/rolloff factor>
 				// Using * for the name makes it the default for sounds that don't specify otherwise.
-				float *min, *max;
+				FRolloffInfo *rolloff;
 				int type;
 				int sfx;
 
@@ -1163,14 +1210,12 @@ static void S_AddSNDINFO (int lump)
 				if (sc.Compare("*"))
 				{
 					sfx = -1;
-					min = &S_MinDistance;
-					max = &S_MaxDistanceOrRolloffFactor;
+					rolloff = &S_Rolloff;
 				}
 				else
 				{
 					sfx = S_FindSoundTentative(sc.String);
-					min = &S_sfx[sfx].MinDistance;
-					max = &S_sfx[sfx].MaxDistance;
+					rolloff = &S_sfx[sfx].Rolloff;
 				}
 				type = ROLLOFF_Doom;
 				if (!sc.CheckFloat())
@@ -1178,15 +1223,15 @@ static void S_AddSNDINFO (int lump)
 					sc.MustGetString();
 					if (sc.Compare("linear"))
 					{
-						type = ROLLOFF_Linear;
+						rolloff->RolloffType = ROLLOFF_Linear;
 					}
 					else if (sc.Compare("log"))
 					{
-						type = ROLLOFF_Log;
+						rolloff->RolloffType = ROLLOFF_Log;
 					}
 					else if (sc.Compare("custom"))
 					{
-						type = ROLLOFF_Custom;
+						rolloff->RolloffType = ROLLOFF_Custom;
 					}
 					else
 					{
@@ -1194,17 +1239,9 @@ static void S_AddSNDINFO (int lump)
 					}
 					sc.MustGetFloat();
 				}
-				if (sfx < 0)
-				{
-					S_RolloffType = type;
-				}
-				else
-				{
-					S_sfx[sfx].RolloffType = type;
-				}
-				*min = sc.Float;
+				rolloff->MinDistance = sc.Float;
 				sc.MustGetFloat();
-				*max = sc.Float;
+				rolloff->MaxDistance = sc.Float;
 				break;
 			  }
 
@@ -1751,30 +1788,30 @@ CCMD (soundlist)
 		const sfxinfo_t *sfx = &S_sfx[i];
 		if (sfx->bRandomHeader)
 		{
-			Printf ("%3d. %s -> #%d {", i, sfx->Name, sfx->link);
+			Printf ("%3d. %s -> #%d {", i, sfx->name.GetChars(), sfx->link);
 			const FRandomSoundList *list = &S_rnd[sfx->link];
 			for (size_t j = 0; j < list->NumSounds; ++j)
 			{
-				Printf (" %s ", S_sfx[list->Sounds[j]].Name);
+				Printf (" %s ", S_sfx[list->Sounds[j]].name.GetChars());
 			}
 			Printf ("}\n");
 		}
 		else if (sfx->bPlayerReserve)
 		{
-			Printf ("%3d. %s <<player sound %d>>\n", i, sfx->Name, sfx->link);
+			Printf ("%3d. %s <<player sound %d>>\n", i, sfx->name.GetChars(), sfx->link);
 		}
 		else if (S_sfx[i].lumpnum != -1)
 		{
 			Wads.GetLumpName (lumpname, sfx->lumpnum);
-			Printf ("%3d. %s (%s)\n", i, sfx->Name, lumpname);
+			Printf ("%3d. %s (%s)\n", i, sfx->name.GetChars(), lumpname);
 		}
 		else if (S_sfx[i].link != sfxinfo_t::NO_LINK)
 		{
-			Printf ("%3d. %s -> %s\n", i, sfx->Name, S_sfx[sfx->link].Name);
+			Printf ("%3d. %s -> %s\n", i, sfx->name.GetChars(), S_sfx[sfx->link].name.GetChars());
 		}
 		else
 		{
-			Printf ("%3d. %s **not present**\n", i, sfx->Name);
+			Printf ("%3d. %s **not present**\n", i, sfx->name.GetChars());
 		}
 	}
 }
@@ -1797,7 +1834,7 @@ CCMD (soundlinks)
 			!sfx->bRandomHeader &&
 			!sfx->bPlayerReserve)
 		{
-			Printf ("%s -> %s\n", sfx->Name, S_sfx[sfx->link].Name);
+			Printf ("%s -> %s\n", sfx->name.GetChars(), S_sfx[sfx->link].name.GetChars());
 		}
 	}
 }
@@ -1821,7 +1858,7 @@ CCMD (playersounds)
 		if (S_sfx[i].bPlayerReserve)
 		{
 			++j;
-			reserveNames[S_sfx[i].link] = S_sfx[i].Name;
+			reserveNames[S_sfx[i].link] = S_sfx[i].name;
 		}
 	}
 
@@ -1834,7 +1871,7 @@ CCMD (playersounds)
 				Printf ("\n%s, %s:\n", PlayerClassLookups[i].Name.GetChars(), GenderNames[j]);
 				for (k = 0; k < NumPlayerReserves; ++k)
 				{
-					Printf (" %-16s%s\n", reserveNames[k], S_sfx[PlayerSounds[l].LookupSound (k)].Name);
+					Printf (" %-16s%s\n", reserveNames[k], S_sfx[PlayerSounds[l].LookupSound (k)].name.GetChars());
 				}
 			}
 		}
@@ -1957,7 +1994,7 @@ void AAmbientSound::Activate (AActor *activator)
 				Destroy ();
 				return;
 			}
-			amb->periodmin = Scale(GSnd->GetMSLength(S_LoadSound(&S_sfx[sndnum])), TICRATE, 1000);
+			amb->periodmin = Scale(S_GetMSLength(sndnum), TICRATE, 1000);
 		}
 
 		NextCheck = gametic;
