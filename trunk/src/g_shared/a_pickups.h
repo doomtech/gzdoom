@@ -99,6 +99,7 @@ enum
 	IF_IGNORESKILL		= 1<<14,	// Ignores any skill related multiplicators when giving this item.
 	IF_CREATECOPYMOVED	= 1<<15,	// CreateCopy changed the owner (copy's Owner field holds new owner).
 	IF_INITEFFECTFAILED	= 1<<16,	// CreateCopy tried to activate a powerup and activation failed (can happen with PowerMorph)
+	IF_NOATTENPICKUPSOUND = 1<<17,	// Play pickup sound with ATTN_NONE
 };
 
 struct vissprite_t;
@@ -117,7 +118,7 @@ public:
 	virtual bool ShouldRespawn ();
 	virtual bool ShouldStay ();
 	virtual void Hide ();
-	virtual bool TryPickup (AActor *toucher);
+	bool CallTryPickup (AActor *toucher);
 	virtual void DoPickupSpecial (AActor *toucher);
 	virtual bool SpecialDropAction (AActor *dropper);
 	virtual bool DrawPowerup (int x, int y);
@@ -165,6 +166,7 @@ public:
 	virtual PalEntry GetBlend ();
 
 protected:
+	virtual bool TryPickup (AActor *&toucher);
 	void GiveQuest(AActor * toucher);
 
 private:
@@ -181,7 +183,7 @@ public:
 	// This is used when an inventory item's use state sequence is executed.
 	bool CallStateChain (AActor *actor, FState *state);
 
-	bool TryPickup (AActor *toucher);
+	bool TryPickup (AActor *&toucher);
 	bool Use (bool pickup);
 	bool SpecialDropAction (AActor *dropper);
 };
@@ -234,7 +236,7 @@ public:
 	virtual bool HandlePickup (AInventory *item);
 	virtual AInventory *CreateCopy (AActor *other);
 	virtual AInventory *CreateTossable ();
-	virtual bool TryPickup (AActor *toucher);
+	virtual bool TryPickup (AActor *&toucher);
 	virtual bool PickupForAmmo (AWeapon *ownedWeapon);
 	virtual bool Use (bool pickup);
 	virtual void Destroy();
@@ -299,7 +301,7 @@ class AHealth : public AInventory
 
 	int PrevHealth;
 public:
-	virtual bool TryPickup (AActor *other);
+	virtual bool TryPickup (AActor *&other);
 	virtual const char *PickupMessage ();
 };
 
@@ -403,7 +405,7 @@ class AMapRevealer : public AInventory
 {
 	DECLARE_CLASS (AMapRevealer, AInventory)
 public:
-	bool TryPickup (AActor *toucher);
+	bool TryPickup (AActor *&toucher);
 };
 
 // A backpack gives you one clip of each ammo and doubles your
