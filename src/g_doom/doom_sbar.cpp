@@ -15,6 +15,8 @@
 #include "i_system.h"
 #include "r_translate.h"
 #include "sbarinfo.h"
+#include "g_level.h"
+#include "v_palette.h"
 
 
 #define ST_EVILGRINCOUNT		(2*TICRATE)

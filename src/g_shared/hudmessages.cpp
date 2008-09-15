@@ -38,6 +38,7 @@
 #include "c_cvars.h"
 #include "v_video.h"
 #include "cmdlib.h"
+#include "doomstat.h"
 
 EXTERN_CVAR (Int, con_scaletext)
 
@@ -52,6 +53,14 @@ IMPLEMENT_CLASS (DHUDMessageTypeOnFadeOut)
 /*************************************************************************
  * Basic HUD message. Appears and disappears without any special effects *
  *************************************************************************/
+
+inline FArchive &operator<< (FArchive &arc, EColorRange &i)
+{
+	BYTE val = (BYTE)i;
+	arc << val;
+	i = (EColorRange)val;
+	return arc;
+}
 
 //============================================================================
 //

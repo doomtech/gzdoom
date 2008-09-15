@@ -30,7 +30,6 @@
 #include "doomstat.h"
 #include "gstrings.h"
 #include "p_local.h"
-#include "a_doomglobal.h"
 #include "a_strifeglobal.h"
 #include "gi.h"
 #include "p_enemy.h"
@@ -40,9 +39,10 @@
 #include "w_wad.h"
 #include "a_keys.h"
 #include "templates.h"
-#include "p_lnspec.h"
 #include "c_console.h"
 #include "r_translate.h"
+#include "g_level.h"
+#include "d_net.h"
 
 // [RH] Actually handle the cheat. The cheat code in st_stuff.c now just
 // writes some bytes to the network data stream, and the network code
