@@ -29,7 +29,6 @@
 #endif
 
 #include "templates.h"
-#include "m_alloc.h"
 #include "m_argv.h"
 #include "m_swap.h"
 #include "m_bbox.h"
@@ -62,6 +61,9 @@
 #include "r_translate.h"
 #include "r_interpolate.h"
 #include "r_sky.h"
+#include "cmdlib.h"
+#include "g_level.h"
+
 #include "gl/gl_functions.h"
 
 #include "fragglescript/t_fs.h"

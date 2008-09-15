@@ -1,3 +1,4 @@
+/*
 #include "actor.h"
 #include "m_random.h"
 #include "a_action.h"
@@ -9,6 +10,8 @@
 #include "c_console.h"
 #include "gstrings.h"
 #include "thingdef/thingdef.h"
+#include "doomstat.h"
+*/
 
 static FRandom pr_spectrespawn ("AlienSpectreSpawn");
 static FRandom pr_spectrechunk ("212e4");

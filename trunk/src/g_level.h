@@ -36,9 +36,6 @@
 
 #include "doomtype.h"
 #include "doomdef.h"
-#include "m_fixed.h"
-#include "tarray.h"
-#include "name.h"
 
 #define NUM_WORLDVARS			256
 #define NUM_GLOBALVARS			64
@@ -125,7 +122,7 @@
 #define LEVEL_SMOOTHLIGHTING		UCONST64(0x100000000000000)	// Level uses the smooth lighting feature.
 
 
-struct acsdefered_s;
+struct acsdefered_t;
 
 struct FSpecialAction
 {
@@ -174,7 +171,7 @@ struct level_info_t
 	int			musicorder;
 	FCompressedMemFile	*snapshot;
 	DWORD		snapshotVer;
-	struct acsdefered_s *defered;
+	struct acsdefered_t *defered;
 	char		skypic2[9];
 	float		skyspeed1;
 	float		skyspeed2;
@@ -312,7 +309,7 @@ struct EndSequence
 
 extern TArray<EndSequence> EndSequences;
 
-struct cluster_info_s
+struct cluster_info_t
 {
 	int			cluster;
 	char		finaleflat[9];
@@ -325,7 +322,6 @@ struct cluster_info_s
 	char		*clustername;
 	unsigned int cdid;
 };
-typedef struct cluster_info_s cluster_info_t;
 
 // Cluster flags
 #define CLUSTER_HUB				0x00000001	// Cluster uses hub behavior

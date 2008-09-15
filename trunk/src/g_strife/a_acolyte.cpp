@@ -1,3 +1,4 @@
+/*
 #include "actor.h"
 #include "m_random.h"
 #include "a_action.h"
@@ -7,6 +8,8 @@
 #include "a_strifeglobal.h"
 #include "doomdata.h"
 #include "thingdef/thingdef.h"
+#include "doomstat.h"
+*/
 
 //============================================================================
 //

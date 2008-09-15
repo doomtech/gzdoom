@@ -1,3 +1,4 @@
+/*
 #include "actor.h"
 #include "p_enemy.h"
 #include "a_action.h"
@@ -8,6 +9,8 @@
 #include "s_sound.h"
 #include "r_translate.h"
 #include "thingdef/thingdef.h"
+#include "g_level.h"
+*/
 
 #define MARINE_PAIN_CHANCE 160
 

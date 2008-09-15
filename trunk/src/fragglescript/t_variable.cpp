@@ -54,6 +54,7 @@
 
 #include "t_script.h"
 #include "a_pickups.h"
+#include "farchive.h"
 
 
 //==========================================================================

@@ -45,6 +45,7 @@
 #include "doomstat.h"
 #include "c_dispatch.h"
 #include "sc_man.h"
+#include "g_level.h"
 #include "gl/gl_functions.h"
 
 //==========================================================================

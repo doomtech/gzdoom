@@ -61,6 +61,9 @@
 #include "gi.h"
 #include "zstring.h"
 #include "i_system.h"
+#include "doomstat.h"
+#include "g_level.h"
+#include "v_palette.h"
 
 #include "gl/gl_data.h"
 

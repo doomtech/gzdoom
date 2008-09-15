@@ -41,98 +41,24 @@
 #include "c_cvars.h"
 #include "c_dispatch.h"
 #include "sdlvideo.h"
-#ifndef NO_GL
-#include "sdlglvideo.h"
-#endif
 #include "v_text.h"
-#include "version.h"
+#include "doomstat.h"
+#include "m_argv.h"
 
 EXTERN_CVAR (Bool, ticker)
 EXTERN_CVAR (Bool, fullscreen)
 EXTERN_CVAR (Float, vid_winscale)
 
-#ifndef NO_GL
-#include "gl/gl_texture.h"
-
-bool ForceWindowed;
-#endif
-
 IVideo *Video;
-
-#ifndef NO_GL
-extern int NewWidth, NewHeight, NewBits, DisplayBits;
-bool V_DoModeSetup (int width, int height, int bits);
-void I_RestartRenderer();
-
-int currentrenderer=1;
-#else
-int currentrenderer=0;
-#endif
-bool changerenderer;
-bool gl_disabled;
-EXTERN_CVAR(Bool, gl_nogl)
-
-// [ZDoomGL]
-CUSTOM_CVAR (Int, vid_renderer, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)// | CVAR_NOINITCALL)
-{
-	// 0: Software renderer
-	// 1: OpenGL renderer
-	if (gl_disabled)
-	{
-		return;
-	}
-
-	if (self != currentrenderer)
-	{
-		switch (self)
-		{
-		case 0:
-			Printf("Switching to software renderer...\n");
-			break;
-		case 1:
-			Printf("Switching to OpenGL renderer...\n");
-			break;
-		default:
-			Printf("Unknown renderer (%d).  Falling back to software renderer...\n", (int) vid_renderer);
-			self = 0; // make sure to actually switch to the software renderer
-			break;
-		}
-#ifndef NO_GL
-		Printf("You must restart "GAMENAME" to switch the renderer\n");
-#else
-		changerenderer = true;
-#endif
-	}
-}
-
-CCMD (vid_restart)
-{
-	if (!gl_disabled) changerenderer = true;
-}
-
-/*
-void I_CheckRestartRenderer()
-{
-	if (gl_disabled) return;
-
-#ifndef NO_GL
-	while (changerenderer)
-	{
-		currentrenderer = vid_renderer;
-		I_RestartRenderer();
-		if (currentrenderer == vid_renderer) changerenderer = false;
-	}
-#endif
-}
-*/
 
 void I_ShutdownGraphics ()
 {
 	if (screen)
 	{
-		screen->ObjectFlags |= OF_YesReallyDelete;
-		delete screen;
+		DFrameBuffer *s = screen;
 		screen = NULL;
+		s->ObjectFlags |= OF_YesReallyDelete;
+		delete s;
 	}
 	if (Video)
 		delete Video, Video = NULL;
@@ -142,27 +68,10 @@ void I_InitGraphics ()
 {
 	UCVarValue val;
 
-#ifndef NO_GL
-	// hack by stevenaaus to force software mode if no 32bpp
-	const SDL_VideoInfo *i = SDL_GetVideoInfo();
-	if ((i->vfmt)->BytesPerPixel != 4) {
-		fprintf (stderr, "n32 bit colour not found, disabling OpenGL.n");
-		fprintf (stderr, "To enable OpenGL, restart X with 32 color (try 'startx -- :1 -depth 24'), and enable OpenGL in the Display Options.nn");
-		gl_nogl=true;
-	} 
-	gl_disabled = gl_nogl;
-#endif
 	val.Bool = !!Args->CheckParm ("-devparm");
 	ticker.SetGenericRepDefault (val, CVAR_Bool);
 
-#ifndef NO_GL
-	if (gl_disabled) currentrenderer=0;
-	else currentrenderer = vid_renderer;
-	if (currentrenderer==1) Video = new SDLGLVideo(0);
-	else Video = new SDLVideo (0);
-#else
 	Video = new SDLVideo (0);
-#endif
 	if (Video == NULL)
 		I_FatalError ("Failed to initialize display");
 
@@ -187,18 +96,7 @@ DFrameBuffer *I_SetMode (int &width, int &height, DFrameBuffer *old)
 		fs = true;
 		break;
 	case DISPLAY_Both:
-#ifndef NO_GL
-		if (ForceWindowed)
-		{
-			fs = false;
-		}
-		else
-		{
-			fs = fullscreen;
-		}
-#else
 		fs = fullscreen;
-#endif
 		break;
 	}
 	DFrameBuffer *res = Video->CreateFrameBuffer (width, height, fs, old);
@@ -262,17 +160,12 @@ void I_ClosestResolution (int *width, int *height, int bits)
 	}
 }	
 
-#ifndef NO_GL
-CUSTOM_CVAR (Bool, fullscreen, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
-#else
+extern int NewWidth, NewHeight, NewBits, DisplayBits;
+
 CUSTOM_CVAR (Bool, fullscreen, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-#endif
 {
-	if ( screen )
-	{
-		NewWidth = screen->GetWidth();
-		NewHeight = screen->GetHeight();
-	}
+	NewWidth = screen->GetWidth();
+	NewHeight = screen->GetHeight();
 	NewBits = DisplayBits;
 	setmodeneeded = true;
 }
@@ -289,11 +182,7 @@ CUSTOM_CVAR (Float, vid_winscale, 1.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 		NewWidth = screen->GetWidth();
 		NewHeight = screen->GetHeight();
 		NewBits = DisplayBits;
-#ifdef NO_GL
 		setmodeneeded = true;
-#else
-		//setmodeneeded = true;	// This CVAR doesn't do anything and only causes problems!
-#endif
 	}
 }
 

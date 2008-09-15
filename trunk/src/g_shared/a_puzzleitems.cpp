@@ -3,9 +3,9 @@
 #include "a_artifacts.h"
 #include "gstrings.h"
 #include "p_local.h"
-#include "p_enemy.h"
 #include "s_sound.h"
 #include "c_console.h"
+#include "doomstat.h"
 
 IMPLEMENT_CLASS (APuzzleItem)
 

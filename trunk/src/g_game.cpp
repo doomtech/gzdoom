@@ -30,7 +30,6 @@
 
 #include "templates.h"
 #include "version.h"
-#include "m_alloc.h"
 #include "doomdef.h" 
 #include "doomstat.h"
 #include "d_protocol.h"
@@ -42,9 +41,7 @@
 #include "m_random.h"
 #include "m_crc32.h"
 #include "i_system.h"
-#include "p_setup.h"
 #include "p_saveg.h"
-#include "p_effect.h"
 #include "p_tick.h"
 #include "d_main.h"
 #include "wi_stuff.h"
@@ -73,6 +70,9 @@
 #include "a_keys.h"
 #include "a_artifacts.h"
 #include "r_translate.h"
+#include "cmdlib.h"
+#include "d_net.h"
+#include "d_event.h"
 
 #include <zlib.h>
 
