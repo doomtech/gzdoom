@@ -27,8 +27,7 @@
 //
 // By Simon Howard
 //
-// This is just one vile piece of code with so many shortcuts and
-// side effects that it should be banished in HELL forever!
+// (completely redone and cleaned up in 2008 by Christoph Oelckers)
 //
 //---------------------------------------------------------------------------
 //
