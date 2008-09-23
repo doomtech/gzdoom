@@ -227,8 +227,8 @@ player_t::player_t()
   momy(0),
   centering(0),
   turnticks(0),
-  oldbuttons(0),
   attackdown(0),
+  oldbuttons(0),
   health(0),
   inventorytics(0),
   CurrentPlayerClass(0),
@@ -988,7 +988,7 @@ void APlayerPawn::GiveDefaultInventory ()
 	AddInventory (barmor);
 
 	// Now add the items from the DECORATE definition
-	FDropItem *di = GetDropItems(RUNTIME_TYPE(this));
+	FDropItem *di = GetDropItems();
 
 	while (di)
 	{

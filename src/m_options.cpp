@@ -1392,7 +1392,7 @@ static BYTE BitTranslate[32];
 
 void M_OptInit (void)
 {
-	if (gameinfo.gametype == GAME_Doom)
+	if (gameinfo.gametype & GAME_DoomChex)
 	{
 		LabelColor = CR_UNTRANSLATED;
 		ValueColor = CR_GRAY;
@@ -2999,6 +2999,7 @@ void UpdateJoystickMenu ()
 				JoystickItems[line].type = discrete;
 				JoystickItems[line].a.intcvar = cvars[i];
 				JoystickItems[line].b.numvalues = 6.f;
+				JoystickItems[line].d.graycheck = NULL;
 				JoystickItems[line].e.values = JoyAxisMapNames;
 				line++;
 			}
