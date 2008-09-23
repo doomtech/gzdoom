@@ -4968,10 +4968,6 @@ int AActor::DoSpecialDamage (AActor *target, int damage)
 
 int AActor::TakeSpecialDamage (AActor *inflictor, AActor *source, int damage, FName damagetype)
 {
-	// If the actor does not have a corresponding death state, then it does not take damage.
-	// Note that DeathState matches every kind of damagetype, so if an actor has that, it can
-	// be hurt with any type of damage. Exception: Massacre damage always succeeds, because
-	// it needs to work.
 	FState *death;
 
 	if (flags5 & MF5_NODAMAGE)
@@ -4985,7 +4981,7 @@ int AActor::TakeSpecialDamage (AActor *inflictor, AActor *source, int damage, FN
 	// it needs to work.
 
 	// Always kill if there is a regular death state or no death states at all.
-	if (FindState (NAME_Death) != NULL || !HasSpecialDeathStates())
+	if (FindState (NAME_Death) != NULL || !HasSpecialDeathStates() || damagetype == NAME_Massacre)
 	{
 		return damage;
 	}
@@ -5044,3 +5040,45 @@ void AActor::SetIdle()
 	if (idle == NULL) idle = SpawnState;
 	SetState(idle);
 }
+
+FDropItem *AActor::GetDropItems()
+{
+	unsigned int index = GetClass()->Meta.GetMetaInt (ACMETA_DropItems) - 1;
+
+	if (index >= 0 && index < DropItemList.Size())
+	{
+		return DropItemList[index];
+	}
+	return NULL;
+}
+
+//----------------------------------------------------------------------------
+//
+// DropItem handling
+//
+//----------------------------------------------------------------------------
+FDropItemPtrArray DropItemList;
+
+void FreeDropItemChain(FDropItem *chain)
+{
+	while (chain != NULL)
+	{
+		FDropItem *next = chain->Next;
+		delete chain;
+		chain = next;
+	}
+}
+
+FDropItemPtrArray::~FDropItemPtrArray()
+{
+	for (unsigned int i = 0; i < Size(); ++i)
+	{
+		FreeDropItemChain ((*this)[i]);
+	}
+}
+
+int StoreDropItemChain(FDropItem *chain)
+{
+	return DropItemList.Push (chain) + 1;
+}
+

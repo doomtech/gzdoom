@@ -848,13 +848,15 @@ static void G_DoParseMapInfo (int lump)
 				strcpy (levelinfo->skypic2, levelinfo->skypic1);
 			}
 			SetLevelNum (levelinfo, levelinfo->levelnum);	// Wipe out matching levelnums from other maps.
+			/* can't do this here.
 			if (levelinfo->pname[0] != 0)
 			{
-				if (!TexMan.AddPatch(levelinfo->pname).Exists())
+				if (!TexMan.CheckForTexture(levelinfo->pname, FTexture::TEX_MiscPatch).Exists())
 				{
 					levelinfo->pname[0] = 0;
 				}
 			}
+			*/
 			break;
 		  }
 
@@ -1722,7 +1724,7 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 	{
 		int cstype = SBarInfoScript->GetGameType();
 
-		if(cstype == GAME_Doom || cstype == GAME_Chex) //Did the user specify a "base"
+		if(cstype & GAME_DoomChex) //Did the user specify a "base"
 		{
 			StatusBar = CreateDoomStatusBar ();
 		}
@@ -1854,7 +1856,7 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 //
 // G_DoCompleted
 //
-static char		nextlevel[9];
+static FString	nextlevel;
 static int		startpos;	// [RH] Support for multiple starts per level
 extern int		NoWipe;		// [RH] Don't wipe when travelling in hubs
 static bool		startkeepfacing;	// [RH] Support for keeping your facing angle
@@ -1866,7 +1868,7 @@ static bool		g_nomonsters;
 //		match the first parameter of the single player start spots
 //		that should appear in the next map.
 
-void G_ChangeLevel(const char * levelname, int position, bool keepFacing, int nextSkill, 
+void G_ChangeLevel(const char *levelname, int position, bool keepFacing, int nextSkill, 
 				   bool nointermission, bool resetinv, bool nomonsters)
 {
 	if (unloading)
@@ -1875,15 +1877,14 @@ void G_ChangeLevel(const char * levelname, int position, bool keepFacing, int ne
 		return;
 	}
 
-	strncpy (nextlevel, levelname, 8);
-	nextlevel[8] = 0;
+	nextlevel = levelname;
 
-	if (strncmp(nextlevel, "enDSeQ", 6))
+	if (strncmp(levelname, "enDSeQ", 6))
 	{
 		level_info_t *nextinfo = CheckLevelRedirect (FindLevelInfo (nextlevel));
 		if (nextinfo)
 		{
-			strncpy(nextlevel, nextinfo->mapname, 8);
+			nextlevel = nextinfo->mapname;
 		}
 	}
 
@@ -1983,7 +1984,7 @@ void G_DoCompleted (void)
 
 	if (gamestate == GS_TITLELEVEL)
 	{
-		strncpy (level.mapname, nextlevel, 8);
+		strncpy (level.mapname, nextlevel, 255);
 		G_DoLoadLevel (startpos, false);
 		startpos = 0;
 		viewactive = true;
@@ -1998,7 +1999,7 @@ void G_DoCompleted (void)
 		AM_Stop ();
 
 	wminfo.finished_ep = level.cluster - 1;
-	wminfo.lname0 = level.info->pname;
+	wminfo.LName0 = TexMan[TexMan.CheckForTexture(level.info->pname, FTexture::TEX_MiscPatch)];
 	wminfo.current = level.mapname;
 
 	if (deathmatch &&
@@ -2006,26 +2007,27 @@ void G_DoCompleted (void)
 		!(level.flags & LEVEL_CHANGEMAPCHEAT))
 	{
 		wminfo.next = level.mapname;
-		wminfo.lname1 = level.info->pname;
+		wminfo.LName1 = wminfo.LName0;
 	}
 	else
 	{
 		if (strncmp (nextlevel, "enDSeQ", 6) == 0)
 		{
 			wminfo.next = FString(nextlevel, 8);
-			wminfo.lname1 = "";
+			wminfo.LName1 = NULL;
 		}
 		else
 		{
 			level_info_t *nextinfo = FindLevelInfo (nextlevel);
 			wminfo.next = nextinfo->mapname;
-			wminfo.lname1 = nextinfo->pname;
+			wminfo.LName1 = TexMan[TexMan.CheckForTexture(nextinfo->pname, FTexture::TEX_MiscPatch)];
 		}
 	}
 
 	CheckWarpTransMap (wminfo.next, true);
+	nextlevel = wminfo.next;
 
-	wminfo.next_ep = FindLevelInfo (nextlevel)->cluster - 1;
+	wminfo.next_ep = FindLevelInfo (wminfo.next)->cluster - 1;
 	wminfo.maxkills = level.total_monsters;
 	wminfo.maxitems = level.total_items;
 	wminfo.maxsecret = level.total_secrets;
@@ -2357,7 +2359,7 @@ void G_DoWorldDone (void)
 	}
 	else
 	{
-		strncpy (level.mapname, nextlevel, 8);
+		strncpy (level.mapname, nextlevel, 255);
 	}
 	G_StartTravel ();
 	G_DoLoadLevel (startpos, true);
