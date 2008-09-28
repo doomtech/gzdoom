@@ -824,7 +824,7 @@ DEFINE_PROPERTY(dropitem, S_i_i, Actor)
 		di->probability = prob;
 		if (PROP_PARM_COUNT > 2)
 		{
-			PROP_INT_PARM(amt, 1);
+			PROP_INT_PARM(amt, 2);
 			di->amount = amt;
 		}
 	}
@@ -1526,7 +1526,7 @@ DEFINE_CLASS_PROPERTY(ammogive1, I, Weapon)
 DEFINE_CLASS_PROPERTY(ammogive2, I, Weapon)
 {
 	PROP_INT_PARM(i, 0);
-	defaults->AmmoGive2 = 2;
+	defaults->AmmoGive2 = i;
 }
 
 //==========================================================================
