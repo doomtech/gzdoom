@@ -46,11 +46,13 @@
 
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
 
+void InitThingdef();
 void ParseActor(FScanner &sc);
 void FinishThingdef();
 void ParseOldDecoration(FScanner &sc, EDefinitionType def);
 
 // STATIC FUNCTION PROTOTYPES --------------------------------------------
+PSymbolTable		 GlobalSymbols;
 
 //==========================================================================
 //
@@ -82,11 +84,11 @@ static void ParseDecorate (FScanner &sc)
 		}
 
 		case TK_Const:
-			ParseConstant (sc, &RUNTIME_CLASS(AActor)->Symbols, RUNTIME_CLASS(AActor));
+			ParseConstant (sc, &GlobalSymbols, NULL);
 			break;
 
 		case TK_Enum:
-			ParseEnum (sc, &RUNTIME_CLASS(AActor)->Symbols, RUNTIME_CLASS(AActor));
+			ParseEnum (sc, &GlobalSymbols, NULL);
 			break;
 
 		case TK_Pickup:
@@ -99,6 +101,10 @@ static void ParseDecorate (FScanner &sc)
 
 		case TK_Projectile:
 			ParseOldDecoration (sc, DEF_Projectile);
+			break;
+
+		case TK_Native:
+			ParseVariable(sc, &GlobalSymbols, NULL);
 			break;
 
 		case ';':
@@ -141,6 +147,7 @@ void LoadDecorations ()
 {
 	int lastlump, lump;
 
+	InitThingdef();
 	lastlump = 0;
 	while ((lump = Wads.FindLump ("DECORATE", &lastlump)) != -1)
 	{

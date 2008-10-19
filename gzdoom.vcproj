@@ -1069,7 +1069,19 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\thingdef\thingdef_data.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\thingdef\thingdef_exp.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\thingdef\thingdef_exp.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\thingdef\thingdef_expression.cpp"
 					>
 				</File>
 				<File
@@ -1086,6 +1098,10 @@
 				</File>
 				<File
 					RelativePath=".\src\thingdef\thingdef_states.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\thingdef\thingdef_type.h"
 					>
 				</File>
 			</Filter>

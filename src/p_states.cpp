@@ -38,6 +38,7 @@
 #include "templates.h"
 #include "cmdlib.h"
 #include "i_system.h"
+#include "c_dispatch.h"
 #include "thingdef/thingdef.h"
 
 // Each state is owned by an actor. Actors can own any number of
@@ -540,6 +541,7 @@ void FStateDefinitions::MakeStateList(const FStateLabels *list, TArray<FStateDef
 
 		def.Label = list->Labels[i].Label;
 		def.State = list->Labels[i].State;
+		def.DefineFlags = SDF_STATE;
 		dest.Push(def);
 		if (list->Labels[i].Children != NULL)
 		{
@@ -580,6 +582,7 @@ void FStateDefinitions::AddStateDefines(const FStateLabels *list)
 
 				def.Label = list->Labels[i].Label;
 				def.State = list->Labels[i].State;
+				def.DefineFlags = SDF_STATE;
 				StateLabels.Push(def);
 			}
 		}
@@ -721,10 +724,11 @@ void FStateDefinitions::FixStatePointers (FActorInfo *actor, TArray<FStateDefine
 {
 	for(unsigned i=0;i<list.Size(); i++)
 	{
-		size_t v=(size_t)list[i].State;
-		if (v >= 1 && v < 0x10000)
+		if (list[i].DefineFlags == SDF_INDEX)
 		{
+			size_t v=(size_t)list[i].State;
 			list[i].State = actor->OwnedStates + v - 1;
+			list[i].DefineFlags = SDF_STATE;
 		}
 		if (list[i].Children.Size() > 0) FixStatePointers(actor, list[i].Children);
 	}
@@ -812,3 +816,38 @@ int FStateDefinitions::FinishStates (FActorInfo *actor, AActor *defaults, TArray
 	return count;
 }
 
+
+void DumpStateHelper(FStateLabels *StateList, const FString &prefix)
+{
+	for (int i = 0; i < StateList->NumLabels; i++)
+	{
+		if (StateList->Labels[i].State != NULL)
+		{
+			const PClass *owner = FState::StaticFindStateOwner(StateList->Labels[i].State);
+			if (owner == NULL)
+			{
+				Printf(PRINT_LOG, "%s%s: invalid\n", prefix.GetChars(), StateList->Labels[i].Label.GetChars());
+			}
+			else
+			{
+				Printf(PRINT_LOG, "%s%s: %s.%d\n", prefix.GetChars(), StateList->Labels[i].Label.GetChars(),
+					owner->TypeName.GetChars(), StateList->Labels[i].State - owner->ActorInfo->OwnedStates);
+			}
+		}
+		if (StateList->Labels[i].Children != NULL)
+		{
+			DumpStateHelper(StateList->Labels[i].Children, prefix + '.' + StateList->Labels[i].Label.GetChars());
+		}
+	}
+}
+
+CCMD(dumpstates)
+{
+	for (unsigned int i = 0; i < PClass::m_RuntimeActors.Size(); ++i)
+	{
+		FActorInfo *info = PClass::m_RuntimeActors[i]->ActorInfo;
+		Printf(PRINT_LOG, "State labels for %s\n", info->Class->TypeName.GetChars());
+		DumpStateHelper(info->StateList, "");
+		Printf(PRINT_LOG, "----------------------------\n");
+	}
+}
