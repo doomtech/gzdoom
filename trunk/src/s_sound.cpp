@@ -819,7 +819,6 @@ static FSoundChan *S_StartSound(AActor *actor, const sector_t *sec, const FPolyO
 
 	if (actor != NULL)
 	{
-		GC::ReadBarrier(actor);
 		type = SOURCE_Actor;
 	}
 	else if (sec != NULL)
@@ -1855,8 +1854,8 @@ void S_ChannelEnded(FISoundChannel *ichan)
 		{
 			evicted = true;
 		}
-		else
-		{
+		else if (schan->SfxInfo != NULL)
+		{ 
 			unsigned int pos = GSnd->GetPosition(schan);
 			unsigned int len = GSnd->GetSampleLength(schan->SfxInfo->data);
 			if (pos == 0)
@@ -1867,6 +1866,10 @@ void S_ChannelEnded(FISoundChannel *ichan)
 			{
 				evicted = (pos < len);
 			}
+		}
+		else
+		{
+			evicted = false;
 		}
 		if (!evicted)
 		{
