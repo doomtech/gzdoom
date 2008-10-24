@@ -1,3 +1,14 @@
+October 23, 2008  (Changes by Graf Zahl)
+- Fixed: The high level sound code must not rely on FMod immediately returning 
+  the sound channel data when a sound is being stopped. This caused
+  an endless loop when changing levels with Strife's Flamethrower active.
+
+October 20, 2008
+- Game time is now frozen during screen wipes. This obsoletes the DEM_WIPEON
+  and DEM_WIPEOFF commands. Fixes multimap demos desyncing when played back
+  or recorded with wipes enabled, and prevents multiplayer games from
+  starting until all players' wipes have finished.
+
 October 19, 2008  (Changes by Graf Zahl)
 - Added native variables to expression evaluator and replaced the previous
   handling of actor variables in expressions with it.
