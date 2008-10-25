@@ -73,19 +73,6 @@ DEFINE_MEMBER_VARIABLE(momx, AActor)
 DEFINE_MEMBER_VARIABLE(momy, AActor)
 DEFINE_MEMBER_VARIABLE(momz, AActor)
 
-static TDeletingArray<FxExpression *> StateExpressions;
-
-int AddExpression (FxExpression *data)
-{
-	if (StateExpressions.Size()==0)
-	{
-		// StateExpressions[0] always is const 0;
-		FxExpression *data = new FxConstant(0, FScriptPosition());
-		StateExpressions.Push (data);
-	}
-	return StateExpressions.Push (data);
-}
-
 //==========================================================================
 //
 // EvalExpression
@@ -94,32 +81,44 @@ int AddExpression (FxExpression *data)
 //==========================================================================
 
 
-bool IsExpressionConst(int id)
+int EvalExpressionI (DWORD xi, AActor *self)
 {
-	if (StateExpressions.Size() <= (unsigned int)id) return false;
+	FxExpression *x = StateParams.Get(xi);
+	if (x == NULL) return 0;
 
-	return StateExpressions[id]->isConstant();
+	return x->EvalExpression (self).GetInt();
 }
 
-int EvalExpressionI (int id, AActor *self)
+int EvalExpressionCol (DWORD xi, AActor *self)
 {
-	if (StateExpressions.Size() <= (unsigned int)id) return 0;
+	FxExpression *x = StateParams.Get(xi);
+	if (x == NULL) return 0;
 
-	return StateExpressions[id]->EvalExpression (self).GetInt();
+	return x->EvalExpression (self).GetColor();
 }
 
-double EvalExpressionF (int id, AActor *self)
+FSoundID EvalExpressionSnd (DWORD xi, AActor *self)
 {
-	if (StateExpressions.Size() <= (unsigned int)id) return 0.f;
+	FxExpression *x = StateParams.Get(xi);
+	if (x == NULL) return 0;
 
-	return StateExpressions[id]->EvalExpression (self).GetFloat();
+	return x->EvalExpression (self).GetSoundID();
 }
 
-fixed_t EvalExpressionFix (int id, AActor *self)
+double EvalExpressionF (DWORD xi, AActor *self)
 {
-	if (StateExpressions.Size() <= (unsigned int)id) return 0;
+	FxExpression *x = StateParams.Get(xi);
+	if (x == NULL) return 0;
 
-	ExpVal val = StateExpressions[id]->EvalExpression (self);
+	return x->EvalExpression (self).GetFloat();
+}
+
+fixed_t EvalExpressionFix (DWORD xi, AActor *self)
+{
+	FxExpression *x = StateParams.Get(xi);
+	if (x == NULL) return 0;
+
+	ExpVal val = x->EvalExpression (self);
 
 	switch (val.Type)
 	{
@@ -131,6 +130,31 @@ fixed_t EvalExpressionFix (int id, AActor *self)
 		return fixed_t(val.Float*FRACUNIT);
 	}
 }
+
+FName EvalExpressionName (DWORD xi, AActor *self)
+{
+	FxExpression *x = StateParams.Get(xi);
+	if (x == NULL) return 0;
+
+	return x->EvalExpression (self).GetName();
+}
+
+const PClass * EvalExpressionClass (DWORD xi, AActor *self)
+{
+	FxExpression *x = StateParams.Get(xi);
+	if (x == NULL) return 0;
+
+	return x->EvalExpression (self).GetClass();
+}
+
+FState *EvalExpressionState (DWORD xi, AActor *self)
+{
+	FxExpression *x = StateParams.Get(xi);
+	if (x == NULL) return 0;
+
+	return x->EvalExpression (self).GetState();
+}
+
 
 //==========================================================================
 //
@@ -148,6 +172,21 @@ static ExpVal GetVariableValue (void *address, FExpressionType &type)
 	{
 	case VAL_Int:
 		ret.Type = VAL_Int;
+		ret.Int = *(int*)address;
+		break;
+
+	case VAL_Sound:
+		ret.Type = VAL_Sound;
+		ret.Int = *(FSoundID*)address;
+		break;
+
+	case VAL_Name:
+		ret.Type = VAL_Name;
+		ret.Int = *(FName*)address;
+		break;
+
+	case VAL_Color:
+		ret.Type = VAL_Color;
 		ret.Int = *(int*)address;
 		break;
 
@@ -187,58 +226,70 @@ static ExpVal GetVariableValue (void *address, FExpressionType &type)
 
 //==========================================================================
 //
-// FScriptPosition::Message
+//
 //
 //==========================================================================
 
-void STACK_ARGS FScriptPosition::Message (int severity, const char *message, ...) const
+ExpVal FxExpression::EvalExpression (AActor *self)
 {
-	FString composed;
+	I_Error("Unresolved expression found");
+	ExpVal val;
 
-	if ((severity == MSG_DEBUG || severity == MSG_DEBUGLOG) && !developer) return;
-
-	if (message == NULL)
-	{
-		composed = "Bad syntax.";
-	}
-	else
-	{
-		va_list arglist;
-		va_start (arglist, message);
-		composed.VFormat (message, arglist);
-		va_end (arglist);
-	}
-	const char *type = "";
-	int level = PRINT_HIGH;
-
-	switch (severity)
-	{
-	default:
-		return;
-
-	case MSG_WARNING:
-		type = "warning";
-		break;
-
-	case MSG_ERROR:
-		type = "error";
-		break;
-
-	case MSG_DEBUG:
-		type = "message";
-		break;
-
-	case MSG_DEBUGLOG:
-	case MSG_LOG:
-		type = "message";
-		level = PRINT_LOG;
-		break;
-	}
-
-	Printf (level, "Script %s, \"%s\" line %d:\n%s\n", type,
-		FileName.GetChars(), ScriptLine, composed.GetChars());
+	val.Type = VAL_Int;
+	val.Int = 0;
+	return val;
 }
 
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+bool FxExpression::isConstant() const
+{
+	return false;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxExpression *FxExpression::Resolve(FCompileContext &ctx)
+{
+	isresolved = true;
+	return this;
+}
+
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxExpression *FxExpression::ResolveAsBoolean(FCompileContext &ctx)
+{
+	FxExpression *x = Resolve(ctx);
+	if (x != NULL)
+	{
+		switch (x->ValueType.Type)
+		{
+		case VAL_Sound:
+		case VAL_Color:
+		case VAL_Name:
+			x->ValueType = VAL_Int;
+			break;
+
+		default:
+			break;
+		}
+	}
+	return x;
+}
 
 //==========================================================================
 //
@@ -1072,11 +1123,22 @@ FxExpression *FxCompareEq::Resolve(FCompileContext& ctx)
 
 	if (!ValueType.isNumeric() && !ValueType.isPointer())
 	{
+		if (left->ValueType.Type == right->ValueType.Type)
+		{
+			// compare other types?
+			if (left->ValueType == VAL_Sound || left->ValueType == VAL_Color || left->ValueType == VAL_Name)
+			{
+				left->ValueType = right->ValueType = VAL_Int;
+				goto cont;
+			}
+		}
+
 		ScriptPosition.Message(MSG_ERROR, "Numeric type expected");
 		delete this;
 		return NULL;
 	}
-	else if (left->isConstant() && right->isConstant())
+cont:
+	if (left->isConstant() && right->isConstant())
 	{
 		int v;
 
@@ -2112,4 +2174,655 @@ ExpVal FxArrayElement::EvalExpression (AActor *self)
 }
 
 
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxFunctionCall::FxFunctionCall(FxExpression *self, FName methodname, FArgumentList *args, const FScriptPosition &pos)
+: FxExpression(pos)
+{
+	Self = self;
+	MethodName = methodname;
+	ArgList = args;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxFunctionCall::~FxFunctionCall()
+{
+	SAFE_DELETE(Self);
+	SAFE_DELETE(ArgList);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxExpression *FxFunctionCall::Resolve(FCompileContext& ctx)
+{
+	// There's currently only 2 global functions.
+	// This will have to change later!
+	if (MethodName == NAME_Sin || MethodName == NAME_Cos)
+	{
+		if (Self != NULL)
+		{
+			ScriptPosition.Message(MSG_ERROR, "Global variables cannot have a self pointer");
+			delete this;
+			return NULL;
+		}
+		FxExpression *x = new FxGlobalFunctionCall(MethodName, ArgList, ScriptPosition);
+		ArgList = NULL;
+		delete this;
+		return x->Resolve(ctx);
+	}
+
+	int min, max;
+	int special = P_FindLineSpecial(MethodName.GetChars(), &min, &max);
+	if (special > 0 && min >= 0)
+	{
+		int paramcount = ArgList? ArgList->Size() : 0;
+		if (paramcount < min)
+		{
+			ScriptPosition.Message(MSG_ERROR, "Not enough parameters for '%s' (expected %d, got %d)", 
+				MethodName.GetChars(), min, paramcount);
+			delete this;
+			return NULL;
+		}
+		else if (paramcount > max)
+		{
+			ScriptPosition.Message(MSG_ERROR, "too many parameters for '%s' (expected %d, got %d)", 
+				MethodName.GetChars(), max, paramcount);
+			delete this;
+			return NULL;
+		}
+		FxExpression *x = new FxActionSpecialCall(Self, special, ArgList, ScriptPosition);
+		ArgList = NULL;
+		delete this;
+		return x->Resolve(ctx);
+	}
+
+	ScriptPosition.Message(MSG_ERROR, "Call to unknown function '%s'", MethodName.GetChars());
+	delete this;
+	return NULL;
+}
+
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxActionSpecialCall::FxActionSpecialCall(FxExpression *self, int special, FArgumentList *args, const FScriptPosition &pos)
+: FxExpression(pos)
+{
+	Self = self;
+	Special = special;
+	ArgList = args;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxActionSpecialCall::~FxActionSpecialCall()
+{
+	SAFE_DELETE(Self);
+	SAFE_DELETE(ArgList);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxExpression *FxActionSpecialCall::Resolve(FCompileContext& ctx)
+{
+	CHECKRESOLVED();
+	bool failed = false;
+
+	if (ArgList != NULL)
+	{
+		for(unsigned i = 0; i < ArgList->Size(); i++)
+		{
+			(*ArgList)[i] = (*ArgList)[i]->Resolve(ctx);
+			if ((*ArgList)[i] == NULL) failed = true;
+			if ((*ArgList)[i]->ValueType != VAL_Int)
+			{
+				if (ctx.lax && ((*ArgList)[i]->ValueType == VAL_Float))
+				{
+					(*ArgList)[i] = new FxIntCast((*ArgList)[i]);
+				}
+				else
+				{
+					ScriptPosition.Message(MSG_ERROR, "Integer expected for parameter %d", i);
+					failed = true;
+				}
+			}
+		}
+		if (failed)
+		{
+			delete this;
+			return NULL;
+		}
+	}
+	ValueType = VAL_Int;
+	return this;
+}
+
+
+//==========================================================================
+//
+// 
+//
+//==========================================================================
+
+ExpVal FxActionSpecialCall::EvalExpression (AActor *self)
+{
+	int v[5] = {0,0,0,0,0};
+
+	if (Self != NULL)
+	{
+		self = Self->EvalExpression(self).GetPointer<AActor>();
+	}
+
+	if (ArgList != NULL)
+	{
+		for(unsigned i = 0; i < ArgList->Size(); i++)
+		{
+			v[i] = (*ArgList)[i]->EvalExpression(self).GetInt();
+		}
+	}
+	ExpVal ret;
+	ret.Type = VAL_Int;
+	ret.Int = LineSpecials[Special](NULL, self, false, v[0], v[1], v[2], v[3], v[4]);
+	return ret;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxGlobalFunctionCall::FxGlobalFunctionCall(FName fname, FArgumentList *args, const FScriptPosition &pos)
+: FxExpression(pos)
+{
+	Name = fname;
+	ArgList = args;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxGlobalFunctionCall::~FxGlobalFunctionCall()
+{
+	SAFE_DELETE(ArgList);
+}
+
+//==========================================================================
+//
+// // so far just a quick hack to handle sin and cos
+//
+//==========================================================================
+
+FxExpression *FxGlobalFunctionCall::Resolve(FCompileContext& ctx)
+{
+	CHECKRESOLVED();
+
+	if (ArgList == NULL || ArgList->Size() != 1)
+	{
+		ScriptPosition.Message(MSG_ERROR, "%s only has one parameter", Name.GetChars());
+		delete this;
+		return NULL;
+	}
+
+	(*ArgList)[0] = (*ArgList)[0]->Resolve(ctx);
+	if ((*ArgList)[0] == NULL)
+	{
+		delete this;
+		return NULL;
+	}
+
+	if (!(*ArgList)[0]->ValueType.isNumeric())
+	{
+		ScriptPosition.Message(MSG_ERROR, "numeric value expected for parameter");
+		delete this;
+		return NULL;
+	}
+	ValueType = VAL_Float;
+	return this;
+}
+
+
+//==========================================================================
+//
+// 
+//
+//==========================================================================
+
+ExpVal FxGlobalFunctionCall::EvalExpression (AActor *self)
+{
+	double v = (*ArgList)[0]->EvalExpression(self).GetFloat();
+	ExpVal ret;
+	ret.Type = VAL_Float;
+
+	// shall we use the CRT's sin and cos functions?
+	angle_t angle = angle_t(v * ANGLE_90/90.);
+	if (Name == NAME_Sin) ret.Float = FIXED2FLOAT (finesine[angle>>ANGLETOFINESHIFT]);
+	else ret.Float = FIXED2FLOAT (finecosine[angle>>ANGLETOFINESHIFT]);
+	return ret;
+}
+
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxClassTypeCast::FxClassTypeCast(const PClass *dtype, FxExpression *x)
+: FxExpression(x->ScriptPosition)
+{
+	desttype = dtype;
+	basex=x;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxClassTypeCast::~FxClassTypeCast()
+{
+	SAFE_DELETE(basex);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxExpression *FxClassTypeCast::Resolve(FCompileContext &ctx)
+{
+	CHECKRESOLVED();
+	SAFE_RESOLVE(basex, ctx);
+	
+	if (basex->ValueType != VAL_Name)
+	{
+		ScriptPosition.Message(MSG_ERROR, "Cannot convert to class type");
+		delete this;
+		return NULL;
+	}
+
+	if (basex->isConstant())
+	{
+		FName clsname = basex->EvalExpression(NULL).GetName();
+		const PClass *cls;
+		
+		if (clsname != NAME_None || !ctx.isconst)
+		{
+			cls= PClass::FindClass(clsname);
+			if (cls == NULL)
+			{
+				if (!ctx.lax)
+				{
+					ScriptPosition.Message(MSG_ERROR,"Unknown class name '%s'", clsname.GetChars());
+					delete this;
+					return NULL;
+				}
+				// Since this happens in released WADs it must pass without a terminal error... :(
+				ScriptPosition.Message(MSG_WARNING,
+					"Unknown class name '%s'", 
+					clsname.GetChars(), desttype->TypeName.GetChars());
+			}
+			else 
+			{
+				if (!cls->IsDescendantOf(desttype))
+				{
+					ScriptPosition.Message(MSG_ERROR,"class '%s' is not compatible with '%s'", clsname.GetChars(), desttype->TypeName.GetChars());
+					delete this;
+					return NULL;
+				}
+			}
+			ScriptPosition.Message(MSG_DEBUG,"resolving '%s' as class name", clsname.GetChars());
+		}
+		FxExpression *x = new FxConstant(cls, ScriptPosition);
+		delete this;
+		return x;
+	}
+	return this;
+}
+
+//==========================================================================
+//
+// 
+//
+//==========================================================================
+
+ExpVal FxClassTypeCast::EvalExpression (AActor *self)
+{
+	FName clsname = basex->EvalExpression(NULL).GetName();
+	const PClass *cls = PClass::FindClass(clsname);
+
+	if (!cls->IsDescendantOf(desttype))
+	{
+		Printf("class '%s' is not compatible with '%s'", clsname.GetChars(), desttype->TypeName.GetChars());
+		cls = NULL;
+	}
+
+	ExpVal ret;
+	ret.Type = VAL_Class;
+	ret.pointer = (void*)cls;
+	return ret;
+}
+
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxExpression *FxStateByIndex::Resolve(FCompileContext &ctx)
+{
+	CHECKRESOLVED();
+	if (ctx.cls->ActorInfo == NULL || ctx.cls->ActorInfo->NumOwnedStates == 0)
+	{
+		// This can't really happen
+		assert(false);
+	}
+	if (ctx.cls->ActorInfo->NumOwnedStates <= index)
+	{
+		ScriptPosition.Message(MSG_ERROR, "%s: Attempt to jump to non existing state index %d", 
+			ctx.cls->TypeName.GetChars(), index);
+		delete this;
+		return NULL;
+	}
+	FxExpression *x = new FxConstant(ctx.cls->ActorInfo->OwnedStates + index, ScriptPosition);
+	delete this;
+	return x;
+}
+	
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxMultiNameState::FxMultiNameState(const char *_statestring, const FScriptPosition &pos)
+	:FxExpression(pos)
+{
+	FName scopename;
+	FString statestring = _statestring;
+	int scopeindex = statestring.IndexOf("::");
+
+	if (scopeindex >= 0)
+	{
+		scopename = FName(statestring, scopeindex, false);
+		statestring = statestring.Right(statestring.Len() - scopeindex - 2);
+	}
+	else
+	{
+		scopename = NULL;
+	}
+	names = MakeStateNameList(statestring);
+	names.Insert(0, scopename);
+	scope = NULL;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxExpression *FxMultiNameState::Resolve(FCompileContext &ctx)
+{
+	CHECKRESOLVED();
+	if (names[0] == NAME_None)
+	{
+		scope = NULL;
+	}
+	else if (names[0] == NAME_Super)
+	{
+		scope = ctx.cls->ParentClass;
+	}
+	else
+	{
+		scope = PClass::FindClass(names[0]);
+		if (scope == NULL)
+		{
+			ScriptPosition.Message(MSG_ERROR, "Unknown class '%s' in state label", names[0].GetChars());
+			delete this;
+			return NULL;
+		}
+		else if (!scope->IsDescendantOf(ctx.cls))
+		{
+			ScriptPosition.Message(MSG_ERROR, "'%s' is not an ancestor of '%s'", names[0].GetChars(),ctx.cls->TypeName.GetChars());
+			delete this;
+			return NULL;
+		}
+	}
+	if (scope != NULL)
+	{
+		// If the label is class specific we can resolve it right here
+		if (scope->ActorInfo == NULL)
+		{
+			ScriptPosition.Message(MSG_ERROR, "'%s' has no actorinfo", names[0].GetChars());
+			delete this;
+			return NULL;
+		}
+		FState *destination = scope->ActorInfo->FindState(names.Size()-1, &names[1], false);
+		if (destination == NULL)
+		{
+			ScriptPosition.Message(ctx.lax? MSG_WARNING:MSG_ERROR, "Unknown state jump destination");
+			delete this;
+			return NULL;
+		}
+		FxExpression *x = new FxConstant(destination, ScriptPosition);
+		delete this;
+		return x;
+	}
+	names.Delete(0);
+	names.ShrinkToFit();
+	return this;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+ExpVal FxMultiNameState::EvalExpression (AActor *self)
+{
+	ExpVal ret;
+	ret.Type = VAL_State;
+	ret.pointer = self->GetClass()->ActorInfo->FindState(names.Size(), &names[0]);
+	if (ret.pointer == NULL)
+	{
+		const char *dot="";
+		Printf("Jump target '");
+		for (int i=0;i<names.Size();i++)
+		{
+			Printf("%s%s", dot, names[i].GetChars());
+			dot = ".";
+		}
+		Printf("' not found in %s\n", self->GetClass()->TypeName.GetChars());
+	}
+	return ret;
+}
+
+
+
+//==========================================================================
+//
+// NOTE: I don't expect any of the following to survive Doomscript ;)
+//
+//==========================================================================
+
+FStateExpressions StateParams;
+
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FStateExpressions::~FStateExpressions()
+{
+	for(unsigned i=0; i<Size(); i++)
+	{
+		if (expressions[i].expr != NULL && !expressions[i].cloned)
+		{
+			delete expressions[i].expr;
+		}
+	}
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+int FStateExpressions::Add(FxExpression *x, const PClass *o, bool c)
+{
+	int idx = expressions.Reserve(1);
+	FStateExpression &exp = expressions[idx];
+	exp.expr = x;
+	exp.owner = o;
+	exp.constant = c;
+	exp.cloned = false;
+	return idx;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+int FStateExpressions::Reserve(int num, const PClass *cls)
+{
+	int idx = expressions.Reserve(num);
+	FStateExpression *exp = &expressions[idx];
+	for(int i=0; i<num; i++)
+	{
+		exp[i].expr = NULL;
+		exp[i].owner = cls;
+		exp[i].constant = false;
+		exp[i].cloned = false;
+	}
+	return idx;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void FStateExpressions::Set(int num, FxExpression *x)
+{
+	if (num >= 0 && num < int(Size()))
+	{
+		assert(expressions[num].expr == NULL || expressions[num].cloned);
+		expressions[num].expr = x;
+		expressions[num].cloned = false;
+	}
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void FStateExpressions::Copy(int dest, int src, int cnt)
+{
+	for(int i=0; i<cnt; i++)
+	{
+		expressions[dest+i].expr = expressions[src+i].expr;
+		expressions[dest+i].cloned = true;
+	}
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+int FStateExpressions::ResolveAll()
+{
+	int errorcount = 0;
+
+	FCompileContext ctx;
+	ctx.lax = true;
+	for(unsigned i=0; i<Size(); i++)
+	{
+		if (expressions[i].expr != NULL && !expressions[i].cloned)
+		{
+			ctx.cls = expressions[i].owner;
+			ctx.isconst = expressions[i].constant;
+			expressions[i].expr = expressions[i].expr->Resolve(ctx);
+			if (expressions[i].expr == NULL)
+			{
+				errorcount++;
+			}
+			else if (expressions[i].constant && !expressions[i].expr->isConstant())
+			{
+				expressions[i].expr->ScriptPosition.Message(MSG_ERROR, "Constant expression expected");
+				errorcount++;
+			}
+		}
+	}
+
+	for(unsigned i=0; i<Size(); i++)
+	{
+		if (expressions[i].expr != NULL)
+		{
+			if (!expressions[i].expr->isresolved)
+			{
+				expressions[i].expr->ScriptPosition.Message(MSG_ERROR, "Expression at index %d not resolved\n", i);
+				errorcount++;
+			}
+		}
+	}
+
+	return errorcount;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxExpression *FStateExpressions::Get(int num)
+{
+	if (num >= 0 && num < int(Size()))
+		return expressions[num].expr;
+	return NULL;
+}
 
