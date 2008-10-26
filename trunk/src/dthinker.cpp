@@ -322,7 +322,6 @@ void DThinker::DestroyAllThinkers ()
 {
 	int i;
 
-	S_StopAllActorSounds();
 	for (i = 0; i <= MAX_STATNUM; i++)
 	{
 		if (i != STAT_TRAVELLING)
@@ -342,7 +341,6 @@ void DThinker::DestroyMostThinkers ()
 {
 	int i;
 
-	S_StopAllActorSounds();
 	for (i = 0; i <= MAX_STATNUM; i++)
 	{
 		if (i != STAT_TRAVELLING)
