@@ -1436,6 +1436,17 @@ void S_StopSound (const FPolyObj *poly, int channel)
 	}
 }
 
+void S_StopAllActorSounds()
+{
+	for (FSoundChan *chan = Channels; chan != NULL; chan = chan->NextChan)
+	{
+		if (chan->SourceType == SOURCE_Actor)
+		{
+			S_StopChannel(chan);
+		}
+	}
+}
+
 //==========================================================================
 //
 // S_StopAllChannels
