@@ -2643,6 +2643,7 @@ FxExpression *FxMultiNameState::Resolve(FCompileContext &ctx)
 	}
 	names.Delete(0);
 	names.ShrinkToFit();
+	ValueType = VAL_State;
 	return this;
 }
 
@@ -2762,7 +2763,8 @@ void FStateExpressions::Copy(int dest, int src, int cnt)
 {
 	for(int i=0; i<cnt; i++)
 	{
-		expressions[dest+i].expr = expressions[src+i].expr;
+		// For now set only a reference because these expressions may change when being resolved
+		expressions[dest+i].expr = (FxExpression*)intptr_t(src+i);
 		expressions[dest+i].cloned = true;
 	}
 }
@@ -2781,7 +2783,13 @@ int FStateExpressions::ResolveAll()
 	ctx.lax = true;
 	for(unsigned i=0; i<Size(); i++)
 	{
-		if (expressions[i].expr != NULL && !expressions[i].cloned)
+		if (expressions[i].cloned)
+		{
+			// Now that everything coming before has been resolved we may copy the actual pointer.
+			intptr_t ii = ((intptr_t)expressions[i].expr);
+			expressions[i].expr = expressions[ii].expr;
+		}
+		else if (expressions[i].expr != NULL)
 		{
 			ctx.cls = expressions[i].owner;
 			ctx.isconst = expressions[i].constant;
