@@ -162,7 +162,7 @@ void GLWall::DrawDecal(DBaseDecal *actor, seg_t *seg, sector_t *frontSector, sec
 	
 	float red, green, blue;
 	
-	if (actor->RenderStyle.Flags & STYLEF_ColorIsFixed)
+	if (actor->RenderStyle.Flags & STYLEF_RedIsAlpha)
 	{
 		loadAlpha = true;
 		p.LightColor.a=CM_SHADE;
@@ -334,13 +334,10 @@ void GLWall::DrawDecal(DBaseDecal *actor, seg_t *seg, sector_t *frontSector, sec
 		if (loadAlpha) glsl->SetLightAbsolute(red, green, blue, a);
 	}
 
-	FRenderStyle style = actor->RenderStyle;
-	style.Flags &= ~STYLEF_ColorIsFixed;	// this is handled differently for decals (see above)
-
-	gl_SetRenderStyle(style, false, false);
+	gl_SetRenderStyle(actor->RenderStyle, false, false);
 
 	// If srcalpha is one it looks better with a higher alpha threshold
-	if (style.SrcAlpha == STYLEALPHA_One) gl.AlphaFunc(GL_GEQUAL, 0.5f);
+	if (actor->RenderStyle.SrcAlpha == STYLEALPHA_One) gl.AlphaFunc(GL_GEQUAL, 0.5f);
 	else gl.AlphaFunc(GL_GREATER, 0.f);
 
 	if (gl_glsl_renderer) glsl->Apply();
