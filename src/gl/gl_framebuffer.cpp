@@ -454,12 +454,12 @@ void STACK_ARGS OpenGLFrameBuffer::DrawTextureV(FTexture *img, int x0, int y0, u
 				GLTranslationPalette * pal = static_cast<GLTranslationPalette*>(parms.remap->GetNative());
 				if (pal) translation = -pal->GetIndex();
 			}
-			pti = gltex->BindPatch(CM_DEFAULT, translation);
+			pti = gltex->BindPatch(CM_DEFAULT, translation, true);
 		}
 		else 
 		{
 			// This is an alpha texture
-			pti = gltex->BindPatch(CM_SHADE, 0);
+			pti = gltex->BindPatch(CM_SHADE, 0, true);
 		}
 
 		if (!pti) return;

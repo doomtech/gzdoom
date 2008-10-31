@@ -209,9 +209,12 @@ static void ParseFunc(FScanner &sc, level_info_t *info)
 	FOptionalMapinfoData *dat = info->opdata;
 
 	while (dat && dat->identifier != id) dat = dat->Next;
-	if (!dat) dat = new FGLROptions;
-	dat->Next = info->opdata;
-	info->opdata = dat;
+	if (!dat) 
+	{
+		dat = new FGLROptions;
+		dat->Next = info->opdata;
+		info->opdata = dat;
+	}
 
 	FGLROptions *opt = static_cast<FGLROptions*>(dat);
 

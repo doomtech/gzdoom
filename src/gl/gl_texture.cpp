@@ -100,7 +100,7 @@ CUSTOM_CVAR(Bool, gl_texture_usehires, true, CVAR_ARCHIVE|CVAR_NOINITCALL)
 }
 
 EXTERN_CVAR(Bool, gl_render_precise)
-EXTERN_CVAR(Bool, gl_depthfog)
+EXTERN_CVAR(Int, gl_fogmode)
 
 CVAR(Bool, gl_precache, false, CVAR_ARCHIVE)
 
@@ -568,7 +568,7 @@ void FTexture::PrecacheGL()
 		{
 			if (UseType==FTexture::TEX_Sprite) 
 			{
-				gltex->BindPatch(CM_DEFAULT);
+				gltex->BindPatch(CM_DEFAULT, 0, true);
 			}
 			else 
 			{
@@ -1214,7 +1214,7 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 					}
 						
 					if ((gl_warp_shader && tex->bWarped!=0) || 
-						(gl_fog_shader && !is2d && gl_depthfog) ||
+						(gl_fog_shader && !is2d && gl_fogmode != 0) ||
 						(usebright) ||
 						((tex->bHasCanvas || gl_colormap_shader) && cm!=CM_DEFAULT && /*!(cm>=CM_DESAT1 && cm<=CM_DESAT31) &&*/  cm!=CM_SHADE && gl_texturemode != TM_MASK))
 					{
@@ -1280,7 +1280,7 @@ const WorldTextureInfo * FGLTexture::Bind(int cm, int clampmode, int translation
 //	Binds a sprite to the renderer
 //
 //===========================================================================
-const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translation)
+const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translation, bool is2d)
 {
 	bool usebright = false;
 	int transparm = translation;
@@ -1297,7 +1297,7 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 				transparm >= 0 && cm >= CM_DEFAULT && cm <= CM_DESAT31 && gl_brightmapenabled)
 			{
 				FGLTexture *bmgltex = FGLTexture::ValidateTexture(brightmap);
-				bmgltex->BindPatch(1, CM_DEFAULT, 0);
+				bmgltex->BindPatch(1, CM_DEFAULT, 0, is2d);
 				if (brightmap->bm_info.bIsBrightmap == 0)
 				{
 					delete brightmap;
@@ -1320,6 +1320,7 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 					}
 
 					if ((gl_warp_shader && tex->bWarped!=0) || 
+						(gl_fog_shader && !is2d && gl_fogmode != 0) ||
 						(usebright) ||
 						((tex->bHasCanvas || gl_colormap_shader) && cm!=CM_DEFAULT && /*!(cm>=CM_DESAT1 && cm<=CM_DESAT31) &&*/ cm!=CM_SHADE && gl_texturemode != TM_MASK))
 					{
@@ -1377,9 +1378,9 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 	return NULL;
 }
 
-const PatchTextureInfo * FGLTexture::BindPatch(int cm, int translation)
+const PatchTextureInfo * FGLTexture::BindPatch(int cm, int translation, bool is2d)
 {
-	return BindPatch(0, cm, translation);
+	return BindPatch(0, cm, translation, is2d);
 }
 
 //==========================================================================
