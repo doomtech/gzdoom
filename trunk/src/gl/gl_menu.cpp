@@ -33,6 +33,7 @@ EXTERN_CVAR(Bool, gl_sprite_blend)
 EXTERN_CVAR(Bool, gl_fakecontrast)
 EXTERN_CVAR (Bool, gl_lights_additive)
 EXTERN_CVAR(Bool, gl_warp_shader)
+EXTERN_CVAR(Bool, gl_fog_shader)
 EXTERN_CVAR(Bool, gl_colormap_shader)
 EXTERN_CVAR(Bool, gl_brightmap_shader)
 EXTERN_CVAR (Float, gl_light_ambient)
@@ -143,6 +144,7 @@ menuitem_t OpenGLItems[] = {
 	{ discrete, "Particle style",			{&gl_particles_style},			{3.0}, {0.0}, {0.0}, {Particles} },
 	{ discrete, "Enable brightness maps",	{&gl_brightmap_shader},			{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Shaders for texture warp",	{&gl_warp_shader},				{2.0}, {0.0}, {0.0}, {OnOff} },
+	{ discrete, "Shaders for fog",			{&gl_fog_shader},				{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Shaders for colormaps",	{&gl_colormap_shader},			{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Depth Fog",				{&gl_depthfog},					{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Fake contrast",			{&gl_fakecontrast},				{2.0}, {0.0}, {0.0}, {OnOff} },

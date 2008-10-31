@@ -471,7 +471,7 @@ void STACK_ARGS OpenGLFrameBuffer::DrawTextureV(FTexture *img, int x0, int y0, u
 	}
 	else
 	{
-		gltex->Bind(CM_DEFAULT);
+		gltex->Bind(CM_DEFAULT, 0, 0, true);
 		cx=1.f;
 		cy=-1.f;
 		ox = oy = 0.f;
@@ -615,7 +615,7 @@ void OpenGLFrameBuffer::FlatFill (int left, int top, int right, int bottom, FTex
 	
 	if (!gltexture) return;
 
-	const WorldTextureInfo * wti = gltexture->Bind(CM_DEFAULT);
+	const WorldTextureInfo * wti = gltexture->Bind(CM_DEFAULT, 0, 0, true);
 	if (!wti) return;
 	
 	if (!local_origin)
