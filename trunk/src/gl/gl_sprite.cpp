@@ -565,7 +565,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 
 		if (gl_fixedcolormap==CM_LITE)
 		{
-			if (gl_enhanced_lightamp &&
+			if (gl_enhanced_nightvision &&
 				(thing->IsKindOf(RUNTIME_CLASS(AInventory)) || thing->flags3&MF3_ISMONSTER || thing->flags&MF_MISSILE || thing->flags&MF_CORPSE))
 			{
 				Colormap.LightColor.a=CM_INVERT;
@@ -649,7 +649,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 		hw_styleflags = STYLEHW_NoAlphaTest;
 	}
 
-	if (enhancedvision && gl_enhanced_lightamp)
+	if (enhancedvision && gl_enhanced_nightvision)
 	{
 		if (RenderStyle.BlendOp == STYLEOP_Fuzz)
 		{

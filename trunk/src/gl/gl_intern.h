@@ -11,7 +11,7 @@
 #endif
 
 EXTERN_CVAR(Bool, gl_vid_compatibility)
-EXTERN_CVAR(Bool,gl_enhanced_lightamp)
+EXTERN_CVAR(Bool,gl_enhanced_nightvision)
 EXTERN_CVAR(Int, screenblocks);
 EXTERN_CVAR(Bool, gl_texture)
 EXTERN_CVAR(Int, gl_texture_filter)
@@ -33,7 +33,7 @@ EXTERN_CVAR (Bool, gl_lights_additive);
 EXTERN_CVAR (Bool, gl_light_sprites);
 EXTERN_CVAR (Bool, gl_light_particles);
 
-EXTERN_CVAR(Bool, gl_depthfog)
+EXTERN_CVAR(Int, gl_fogmode)
 EXTERN_CVAR(Bool,gl_mirror_envmap)
 
 extern float pitch;

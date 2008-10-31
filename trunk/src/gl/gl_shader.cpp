@@ -39,6 +39,7 @@
 **
 */
 #include "gl/gl_include.h"
+#include "gl/gl_intern.h"
 #include "gl/gl_values.h"
 #include "c_cvars.h"
 #include "v_video.h"
@@ -54,6 +55,7 @@ bool gl_fogenabled;
 bool gl_textureenabled;
 int gl_texturemode;
 int gl_brightmapenabled;
+float gl_camerapos[3];
 
 class FShader
 {
@@ -72,6 +74,7 @@ class FShader
 	int desaturation_index;
 	int fogenabled_index;
 	int texturemode_index;
+	int camerapos_index;
 
 	int currentfogenabled;
 	int currenttexturemode;
@@ -108,6 +111,12 @@ public:
 			gl.Uniform1iARB(texturemode_index, mode); 
 		}
 	}
+
+	void SetCameraPos(float x, float y, float z)
+	{
+		gl.Uniform3fARB(camerapos_index, x, y, z); 
+	}
+
 	bool Bind(float Speed);
 
 };
@@ -157,6 +166,7 @@ bool FShader::Load(const char * name, const char * vert_prog, const char * frag_
 		desaturation_index = gl.GetUniformLocationARB(hShader, "desaturation_factor");
 		fogenabled_index = gl.GetUniformLocationARB(hShader, "fogenabled");
 		texturemode_index = gl.GetUniformLocationARB(hShader, "texturemode");
+		camerapos_index = gl.GetUniformLocationARB(hShader, "camerapos");
 
 		int brightmap_index = gl.GetUniformLocationARB(hShader, "brightmap");
 
@@ -262,7 +272,8 @@ bool FShader::Bind(float Speed)
 	{
 		gl.UseProgramObjectARB(hShader);
 		SetTextureMode(gl_texturemode);
-		SetFogEnabled(gl_fogenabled);
+		SetFogEnabled(gl_fogenabled? gl_fogmode : 0);
+		SetCameraPos(gl_camerapos[0], gl_camerapos[1], gl_camerapos[2]);
 		gl_activeShader=this;
 	}
 	if (timer_index >=0 && Speed > 0.f) gl.Uniform1fARB(timer_index, gl_frameMS*Speed/1000.f);
@@ -344,6 +355,9 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 	static Lighting default_light[]={
 		{ "Standard",	"shaders/light/light_eyefog.fp"		},
 		{ "Brightmap",	"shaders/light/light_brightmap.fp"	},
+
+		//{ "Radial",		"shaders/light/light_radialfog.fp"		},
+		//{ "BrightmapR",	"shaders/light/light_brightmap_radial.fp"	},
 		//{ "Doom",		"shaders/light/light_doom.fp"		},
 	};
 
@@ -646,7 +660,7 @@ void gl_EnableFog(bool on)
 		if (gl_fogenabled) gl.Disable(GL_FOG);
 	}
 	gl_fogenabled=on;
-	if (gl_activeShader) gl_activeShader->SetFogEnabled(on);
+	if (gl_activeShader) gl_activeShader->SetFogEnabled(on? gl_fogmode : 0);
 }
 
 
@@ -670,15 +684,11 @@ void gl_SetTextureMode(int which)
 //
 //==========================================================================
 
-bool i_useshaders;
-
 void gl_SetCamera(float x, float y, float z)
 {
-	/*
-	if (i_useshaders)
-	{
-		gl.Uniform4fARB(u_camera, x, z, y, 0);
-	}
-	*/
+	gl_camerapos[0] = x;
+	gl_camerapos[1] = z;
+	gl_camerapos[2] = y;
+	if (gl_activeShader) gl_activeShader->SetCameraPos(gl_camerapos[0], gl_camerapos[1], gl_camerapos[2]);
 }
 

@@ -124,6 +124,12 @@ static value_t Particles[] =
 	{ 2.0, "Smooth" },
 };
 
+static value_t FogMode[] =
+{
+	{ 0.0, "Off" },
+	{ 1.0, "Standard" },
+	{ 2.0, "Radial" },
+};
 
 
 menuitem_t OpenGLItems[] = {
@@ -137,7 +143,7 @@ menuitem_t OpenGLItems[] = {
 //	{ more,		"Apply Refresh rate setting",{NULL+},						{7.0}, {0.0}, {0.0}, {(value_t *)ApplyRefresh} },
 	{ discrete, "Rendering quality",		{&gl_render_precise},			{2.0}, {0.0}, {0.0}, {Precision} },
 	{ discrete, "Environment map on mirrors",{&gl_mirror_envmap},			{2.0}, {0.0}, {0.0}, {OnOff} },
-	{ discrete, "Enhanced night vision mode",{&gl_enhanced_lightamp},		{2.0}, {0.0}, {0.0}, {OnOff} },
+	{ discrete, "Enhanced night vision mode",{&gl_enhanced_nightvision},		{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Sector light mode",		{&gl_lightmode},				{4.0}, {0.0}, {0.0}, {LightingModes} },
 	{ discrete, "Adjust sprite clipping",	{&gl_spriteclip},				{3.0}, {0.0}, {0.0}, {SpriteclipModes} },
 	{ discrete, "Smooth sprite edges",		{&gl_sprite_blend},				{2.0}, {0.0}, {0.0}, {OnOff} },
@@ -146,7 +152,7 @@ menuitem_t OpenGLItems[] = {
 	{ discrete, "Shaders for texture warp",	{&gl_warp_shader},				{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Shaders for fog",			{&gl_fog_shader},				{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Shaders for colormaps",	{&gl_colormap_shader},			{2.0}, {0.0}, {0.0}, {OnOff} },
-	{ discrete, "Depth Fog",				{&gl_depthfog},					{2.0}, {0.0}, {0.0}, {OnOff} },
+	{ discrete, "Depth Fog mode",			{&gl_fogmode},					{2.0}, {0.0}, {0.0}, {FogMode} },
 	{ discrete, "Fake contrast",			{&gl_fakecontrast},				{2.0}, {0.0}, {0.0}, {OnOff} },
 	//{ discrete, "Boom colormap handling",	{&gl_blendcolormaps},			{2.0}, {0.0}, {0.0}, {Colormaps} },
 	{ slider,	"Ambient light level",		{&gl_light_ambient},			{0.0}, {255.0}, {5.0}, {NULL} },

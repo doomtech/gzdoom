@@ -1,4 +1,5 @@
 varying float fogcoord;
+varying vec3 pixelpos;
 
 
 void main()
@@ -7,6 +8,7 @@ void main()
 
 	vec4 eyeCoordPos = gl_ModelViewMatrix * gl_Vertex;
 	fogcoord = -eyeCoordPos.z/eyeCoordPos.w;
+	pixelpos = gl_Vertex.xyz;
 
 	gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 	gl_Position = ftransform();

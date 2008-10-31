@@ -490,7 +490,7 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 
 		// north
 		tex = FGLTexture::ValidateTexture(sb->faces[0]);
-		tex->BindPatch(CM_Index);
+		tex->BindPatch(CM_Index, 0, true);
 		gl.Begin(GL_TRIANGLE_FAN);
 		gl.TexCoord2f(0, 0);
 		gl.Vertex3f(128.f, 128.f, -128.f);
@@ -504,7 +504,7 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 
 		// east
 		tex = FGLTexture::ValidateTexture(sb->faces[1]);
-		tex->BindPatch(CM_Index);
+		tex->BindPatch(CM_Index, 0, true);
 		gl.Begin(GL_TRIANGLE_FAN);
 		gl.TexCoord2f(0, 0);
 		gl.Vertex3f(-128.f, 128.f, -128.f);
@@ -518,7 +518,7 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 
 		// south
 		tex = FGLTexture::ValidateTexture(sb->faces[2]);
-		tex->BindPatch(CM_Index);
+		tex->BindPatch(CM_Index, 0, true);
 		gl.Begin(GL_TRIANGLE_FAN);
 		gl.TexCoord2f(0, 0);
 		gl.Vertex3f(-128.f, 128.f, 128.f);
@@ -532,7 +532,7 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 
 		// west
 		tex = FGLTexture::ValidateTexture(sb->faces[3]);
-		tex->BindPatch(CM_Index);
+		tex->BindPatch(CM_Index, 0, true);
 		gl.Begin(GL_TRIANGLE_FAN);
 		gl.TexCoord2f(0, 0);
 		gl.Vertex3f(128.f, 128.f, 128.f);
@@ -549,7 +549,7 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 		faces=1;
 		// all 4 sides
 		tex = FGLTexture::ValidateTexture(sb->faces[0]);
-		tex->BindPatch(CM_Index);
+		tex->BindPatch(CM_Index, 0, true);
 
 		gl.Begin(GL_TRIANGLE_FAN);
 		gl.TexCoord2f(0, 0);
@@ -601,7 +601,7 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 
 	// top
 	tex = FGLTexture::ValidateTexture(sb->faces[faces]);
-	tex->BindPatch(CM_Index);
+	tex->BindPatch(CM_Index, 0, true);
 	gl.Begin(GL_TRIANGLE_FAN);
 	gl.TexCoord2f(0, 0);
 	gl.Vertex3f(128.f, 128.f, -128.f);
@@ -616,7 +616,7 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 
 	// bottom
 	tex = FGLTexture::ValidateTexture(sb->faces[faces+1]);
-	tex->BindPatch(CM_Index);
+	tex->BindPatch(CM_Index, 0, true);
 	gl.Begin(GL_TRIANGLE_FAN);
 	gl.TexCoord2f(0, 0);
 	gl.Vertex3f(128.f, -128.f, -128.f);

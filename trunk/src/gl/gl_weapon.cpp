@@ -83,7 +83,7 @@ static void DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy,
 	FGLTexture * tex=FGLTexture::ValidateTexture(lump, false);
 	if (!tex) return;
 
-	const PatchTextureInfo * pti = tex->BindPatch(cm_index);
+	const PatchTextureInfo * pti = tex->BindPatch(cm_index, 0, true);
 	if (!pti) return;
 
 	int vw = viewwidth;

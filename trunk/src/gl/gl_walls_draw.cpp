@@ -178,7 +178,7 @@ void GLWall::RenderWall(int textured, float * color2, ADynamicLight * light)
 
 void GLWall::RenderFogBoundary()
 {
-	if (gl_depthfog)
+	if (gl_fogmode)
 	{
 		float fogdensity=gl_GetFogDensity(lightlevel, Colormap.FadeColor);
 
@@ -234,7 +234,7 @@ void GLWall::RenderMirrorSurface()
 	gl_SetFog(lightlevel, Colormap.FadeColor, true, Colormap.LightColor.a);
 
 	FGLTexture * pat=FGLTexture::ValidateTexture(mirrortexture);
-	pat->BindPatch(Colormap.LightColor.a, 0);
+	pat->BindPatch(Colormap.LightColor.a, 0, true);
 
 	RenderWall(0,NULL);
 

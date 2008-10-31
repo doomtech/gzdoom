@@ -88,8 +88,12 @@ CUSTOM_CVAR (Bool, gl_lights_additive, false,  CVAR_ARCHIVE | CVAR_GLOBALCONFIG 
 	}
 }
 
-CVAR(Bool,gl_enhanced_lightamp,true,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-CVAR(Bool,gl_depthfog,true,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR(Bool,gl_enhanced_nightvision,true,CVAR_ARCHIVE)
+CUSTOM_CVAR(Int,gl_fogmode,1,CVAR_ARCHIVE)
+{
+	if (self>2) self=2;
+	if (self<0) self=0;
+}
 
 CUSTOM_CVAR(Int, gl_lightmode, 3 ,CVAR_ARCHIVE)
 {
@@ -187,7 +191,7 @@ void gl_GetLightColor(int lightlevel, int rellight, const FColormap * cm, float 
 	{
 		if (gl_fixedcolormap==CM_LITE)
 		{
-			if (gl_enhanced_lightamp) r=0.375f, g=1.0f, b=0.375f;
+			if (gl_enhanced_nightvision) r=0.375f, g=1.0f, b=0.375f;
 			else r=g=b=1.0f;
 		}
 		else if (gl_fixedcolormap>=CM_TORCH)
@@ -196,7 +200,7 @@ void gl_GetLightColor(int lightlevel, int rellight, const FColormap * cm, float 
 			r=(0.8f+(7-flicker)/70.0f);
 			if (r>1.0f) r=1.0f;
 			b=g=r;
-			if (gl_enhanced_lightamp) b*=0.75f;
+			if (gl_enhanced_nightvision) b*=0.75f;
 		}
 		else r=g=b=1.0f;
 		return;
@@ -380,7 +384,7 @@ void gl_SetFog(int lightlevel, PalEntry fogcolor, bool isadditive, int cm)
 
 
 	// no fog in enhanced vision modes!
-	if (fogdensity==0 || !gl_depthfog)
+	if (fogdensity==0 || gl_fogmode == 0)
 	{
 		gl_CurrentFogColor=-1;
 		gl_CurrentFogDensity=-1;
