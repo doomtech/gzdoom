@@ -1020,7 +1020,7 @@ void gl_RenderTextureView(FCanvasTexture *Texture, AActor * Viewpoint, int FOV)
 	gl.Flush();
 	gl_RenderView(Viewpoint, &bounds, FOV, (float)width/height, (float)width/height, false);
 	gl.Flush();
-	gltex->Bind(CM_DEFAULT);
+	gltex->Bind(CM_DEFAULT, 0, 0, true);
 	gl.CopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, bounds.width, bounds.height);
 	gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GLTexture::TexFilter[gl_texture_filter].magfilter);
 }

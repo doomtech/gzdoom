@@ -65,6 +65,11 @@ CUSTOM_CVAR(Bool, gl_warp_shader, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOI
 	if (self && !(gl.flags & RFL_GLSL)) self=0;
 }
 
+CUSTOM_CVAR(Bool, gl_fog_shader, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
+{
+	if (self && !(gl.flags & RFL_GLSL)) self=0;
+}
+
 CUSTOM_CVAR(Bool, gl_colormap_shader, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
 {
 	if (self && !(gl.flags & RFL_GLSL)) self=0;
@@ -95,6 +100,7 @@ CUSTOM_CVAR(Bool, gl_texture_usehires, true, CVAR_ARCHIVE|CVAR_NOINITCALL)
 }
 
 EXTERN_CVAR(Bool, gl_render_precise)
+EXTERN_CVAR(Bool, gl_depthfog)
 
 CVAR(Bool, gl_precache, false, CVAR_ARCHIVE)
 
@@ -566,7 +572,7 @@ void FTexture::PrecacheGL()
 			}
 			else 
 			{
-				gltex->Bind (CM_DEFAULT);
+				gltex->Bind (CM_DEFAULT, 0, 0, true);
 			}
 		}
 	}
@@ -1172,7 +1178,7 @@ const PatchTextureInfo * FGLTexture::GetPatchTextureInfo()
 //
 //===========================================================================
 
-const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, int translation)
+const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, int translation, bool is2d)
 {
 	bool usebright = false;
 
@@ -1184,7 +1190,7 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 		{
 			FTexture *brightmap = tex->bm_info.Brightmap;
 
-			if (brightmap && (gl_glsl_renderer || gl_brightmap_shader) && translation >= 0 &&
+			if (brightmap && (gl_glsl_renderer || (gl_brightmap_shader && !is2d)) && translation >= 0 &&
 				cm >= CM_DEFAULT && cm <= CM_DESAT31 && gl_brightmapenabled)
 			{
 				FGLTexture *bmgltex = FGLTexture::ValidateTexture(brightmap);
@@ -1208,6 +1214,7 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 					}
 						
 					if ((gl_warp_shader && tex->bWarped!=0) || 
+						(gl_fog_shader && !is2d && gl_depthfog) ||
 						(usebright) ||
 						((tex->bHasCanvas || gl_colormap_shader) && cm!=CM_DEFAULT && /*!(cm>=CM_DESAT1 && cm<=CM_DESAT31) &&*/  cm!=CM_SHADE && gl_texturemode != TM_MASK))
 					{
@@ -1264,9 +1271,9 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 	return NULL;
 }
 
-const WorldTextureInfo * FGLTexture::Bind(int cm, int clampmode, int translation)
+const WorldTextureInfo * FGLTexture::Bind(int cm, int clampmode, int translation, bool is2d)
 {
-	return Bind(0, cm, clampmode, translation);
+	return Bind(0, cm, clampmode, translation, is2d);
 }
 //===========================================================================
 // 

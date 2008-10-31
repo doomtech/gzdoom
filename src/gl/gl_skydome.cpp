@@ -377,7 +377,7 @@ static void RenderDome(FTextureID texno, FGLTexture * tex, float x_offset, float
 
 	if (tex)
 	{
-		tex->Bind(CM_Index);
+		tex->Bind(CM_Index, 0, 0, true);
 		texw = tex->TextureWidth(FGLTexture::GLUSE_TEXTURE);
 		texh = tex->TextureHeight(FGLTexture::GLUSE_TEXTURE);
 

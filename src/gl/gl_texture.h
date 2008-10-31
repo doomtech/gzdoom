@@ -164,7 +164,7 @@ private:
 
 	void CheckForAlpha(const unsigned char * buffer);
 
-	const WorldTextureInfo * Bind(int texunit, int cm, int clamp, int translation);
+	const WorldTextureInfo * Bind(int texunit, int cm, int clamp, int translation, bool is2d);
 	const PatchTextureInfo * BindPatch(int texunit, int cm, int translation);
 
 public:
@@ -172,7 +172,7 @@ public:
 	~FGLTexture();
 
 	unsigned char * CreateTexBuffer(ETexUse use, int cm, int translation, int & w, int & h, bool allowhires=true);
-	const WorldTextureInfo * Bind(int cm, int clamp=0, int translation=0);
+	const WorldTextureInfo * Bind(int cm, int clamp=0, int translation=0, bool is2d = false);
 	const PatchTextureInfo * BindPatch(int cm, int translation=0);
 
 	const WorldTextureInfo * GetWorldTextureInfo();
@@ -254,7 +254,7 @@ public:
 		if (bIsTransparent == -1) 
 		{
 			if (tex->UseType==FTexture::TEX_Sprite) BindPatch(CM_DEFAULT);
-			else Bind (CM_DEFAULT);
+			else Bind (CM_DEFAULT, 0, 0, true);
 		}
 		return !!bIsTransparent;
 	}
