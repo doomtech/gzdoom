@@ -718,7 +718,7 @@ void gl_SetShaderLight(float level, float olight)
 
 	if (olight < 96.f)
 	{
-		dist = level * 300.f/96.f;
+		dist = olight * 256.f/96.f;
 	}
 	gl_lightfactor = (olight/level)*0.75f;
 	gl_lightdist = dist;
