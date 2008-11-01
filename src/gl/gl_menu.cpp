@@ -88,7 +88,7 @@ static value_t Colormaps[] =
 	{ 1.0, "Blend" },
 };
 
-static value_t LightingModes[] =
+static value_t LightingModes2[] =
 {
 	{ 0.0, "Standard" },
 	{ 1.0, "Bright" },
@@ -96,7 +96,7 @@ static value_t LightingModes[] =
 	{ 4.0, "Legacy" },
 };
 
-static value_t LightingModes2[] =
+static value_t LightingModes[] =
 {
 	{ 0.0, "Standard" },
 	{ 1.0, "Bright" },
@@ -319,7 +319,7 @@ void gl_SetupMenu()
 		menuitem_t *fogmodeitem = &GLPrefItems[1];
 
 		lightmodeitem->e.values = LightingModes2;
-		lightmodeitem->b.numvalues = 3;
+		lightmodeitem->b.numvalues = 4;
 
 		fogmodeitem->b.numvalues = 2;
 
@@ -336,7 +336,7 @@ void gl_SetupMenu()
 		menuitem_t *fogmodeitem = &GLPrefItems[1];
 
 		lightmodeitem->e.values = LightingModes;
-		lightmodeitem->b.numvalues = 4;
+		lightmodeitem->b.numvalues = 5;
 
 		OpenGLMenu.numitems = sizeof(OpenGLItems)/sizeof(OpenGLItems[0]);
 		OpenGLMenu.items = OpenGLItems;
