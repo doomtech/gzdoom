@@ -503,6 +503,7 @@ static void RenderScene(int recursion)
 	{
 		gl_drawinfo->drawlists[i].Draw(GLPASS_DECALS);
 	}
+	gl_SetTextureMode(TM_MODULATE);
 
 	gl.DepthMask(true);
 
