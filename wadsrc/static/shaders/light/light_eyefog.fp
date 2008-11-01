@@ -16,7 +16,7 @@ vec4 lightpixel(vec4 pixin)
 		
 		if (lightfactor != 1.0 && fc < lightdist) 
 		{
-			pixin *= lightfactor - (fc / lightdist) * (lightfactor - 1.0);
+			pixin.rgb *= lightfactor - (fc / lightdist) * (lightfactor - 1.0);
 		}
 		
 		float factor = exp2 ( -gl_Fog.density * fc * LOG2E);

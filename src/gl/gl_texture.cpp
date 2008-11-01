@@ -609,6 +609,7 @@ FTexture::MiscGLInfo::MiscGLInfo() throw()
 	CeilingSkyColor = 0;
 	bSkyColorDone = false;
 	bBrightmapChecked = false;
+	bBrightmap = false;
 	bBrightmapDisablesFullbright = false;
 
 	GLTexture = NULL;
