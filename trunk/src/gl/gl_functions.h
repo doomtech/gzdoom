@@ -89,6 +89,7 @@ void gl_EnableShader(bool on);
 
 void gl_SetTextureMode(int which);
 void gl_EnableFog(bool on);
+void gl_SetShaderLight(float level, float factor);
 void gl_SetCamera(float x, float y, float z);
 void gl_SetFogLight(int lightlevel);
 void gl_EnableTexture(bool on);
