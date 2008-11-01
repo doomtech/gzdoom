@@ -517,7 +517,7 @@ static void PrepareTransparentDoors(sector_t * sector)
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
-	if (sector-sectors==590)
+	if (sector-sectors==9)
 	{
 		__asm nop
 	}
@@ -561,23 +561,26 @@ static void PrepareTransparentDoors(sector_t * sector)
 				if (!sides[sector->lines[i]->sidenum[1-side]].GetTexture(side_t::bottom).isValid()) nobtextures++;
 			}
 		}
-		if (selfref+notextures==sector->linecount || sector->GetTexture(sector_t::ceiling)==skyflatnum)
+		if (sector->GetTexture(sector_t::ceiling)==skyflatnum)
 		{
 			sector->transdoor=false;
 			return;
 		}
 
-		// This is a crude attempt to fix an incorrect transparent door effect I found in some
-		// WolfenDoom maps but considering the amount of code required to handle it I left it in.
-		// Do this only if the sector only contains one-sided walls or ones with no lower texture.
-		if (solidwall)
+		if (selfref+notextures!=sector->linecount)
 		{
-			if (solidwall+nobtextures+selfref==sector->linecount && nextsec)
+			// This is a crude attempt to fix an incorrect transparent door effect I found in some
+			// WolfenDoom maps but considering the amount of code required to handle it I left it in.
+			// Do this only if the sector only contains one-sided walls or ones with no lower texture.
+			if (solidwall)
 			{
-				sector->heightsec=nextsec;
-				sector->heightsec->MoreFlags=0;
+				if (solidwall+nobtextures+selfref==sector->linecount && nextsec)
+				{
+					sector->heightsec=nextsec;
+					sector->heightsec->MoreFlags=0;
+				}
+				sector->transdoor=false;
 			}
-			sector->transdoor=false;
 		}
 	}
 }

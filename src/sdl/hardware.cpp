@@ -34,6 +34,7 @@
 
 #include <SDL.h>
 
+#include "version.h"
 #include "hardware.h"
 #include "i_video.h"
 #include "i_system.h"
@@ -44,12 +45,50 @@
 #include "v_text.h"
 #include "doomstat.h"
 #include "m_argv.h"
+#include "sdlglvideo.h"
 
 EXTERN_CVAR (Bool, ticker)
 EXTERN_CVAR (Bool, fullscreen)
 EXTERN_CVAR (Float, vid_winscale)
 
 IVideo *Video;
+
+extern int NewWidth, NewHeight, NewBits, DisplayBits;
+bool V_DoModeSetup (int width, int height, int bits);
+void I_RestartRenderer();
+
+EXTERN_CVAR(Bool, gl_nogl)
+int currentrenderer;
+bool gl_disabled = gl_nogl;
+
+// [ZDoomGL]
+CUSTOM_CVAR (Int, vid_renderer, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)// | CVAR_NOINITCALL)
+{
+	// 0: Software renderer
+	// 1: OpenGL renderer
+	if (gl_disabled)
+	{
+		return;
+	}
+
+	if (self != currentrenderer)
+	{
+		switch (self)
+		{
+		case 0:
+			Printf("Switching to software renderer...\n");
+			break;
+		case 1:
+			Printf("Switching to OpenGL renderer...\n");
+			break;
+		default:
+			Printf("Unknown renderer (%d).  Falling back to software renderer...\n", (int) vid_renderer);
+			self = 0; // make sure to actually switch to the software renderer
+			break;
+		}
+		Printf("You must restart " GAMENAME " to switch the renderer\n");
+	}
+}
 
 void I_ShutdownGraphics ()
 {
@@ -70,8 +109,12 @@ void I_InitGraphics ()
 
 	val.Bool = !!Args->CheckParm ("-devparm");
 	ticker.SetGenericRepDefault (val, CVAR_Bool);
-
-	Video = new SDLVideo (0);
+	
+	if (gl_disabled) currentrenderer=0;
+	else currentrenderer = vid_renderer;
+	if (currentrenderer==1) Video = new SDLGLVideo(0);
+	else Video = new SDLVideo (0);
+	
 	if (Video == NULL)
 		I_FatalError ("Failed to initialize display");
 
