@@ -129,7 +129,7 @@ void gl_GetGlowColor(FTextureID texno, float * data)
 bool gl_isGlowingTexture(FTextureID texno)
 {
 	FTexture *tex = TexMan[texno];
-	if (tex) return tex->IsGlowing();
+	if (tex) return tex->gl_info.bGlowing;
 	else return false;
 }
 

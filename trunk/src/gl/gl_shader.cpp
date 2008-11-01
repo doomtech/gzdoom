@@ -356,8 +356,6 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 		{ "Standard",	"shaders/light/light_eyefog.fp"		},
 		{ "Brightmap",	"shaders/light/light_brightmap.fp"	},
 
-		//{ "Radial",		"shaders/light/light_radialfog.fp"		},
-		//{ "BrightmapR",	"shaders/light/light_brightmap_radial.fp"	},
 		//{ "Doom",		"shaders/light/light_doom.fp"		},
 	};
 

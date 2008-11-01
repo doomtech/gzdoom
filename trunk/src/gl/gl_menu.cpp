@@ -152,7 +152,7 @@ menuitem_t OpenGLItems[] = {
 	{ discrete, "Shaders for texture warp",	{&gl_warp_shader},				{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Shaders for fog",			{&gl_fog_shader},				{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Shaders for colormaps",	{&gl_colormap_shader},			{2.0}, {0.0}, {0.0}, {OnOff} },
-	{ discrete, "Depth Fog mode",			{&gl_fogmode},					{2.0}, {0.0}, {0.0}, {FogMode} },
+	{ discrete, "Depth Fog mode",			{&gl_fogmode},					{3.0}, {0.0}, {0.0}, {FogMode} },
 	{ discrete, "Fake contrast",			{&gl_fakecontrast},				{2.0}, {0.0}, {0.0}, {OnOff} },
 	//{ discrete, "Boom colormap handling",	{&gl_blendcolormaps},			{2.0}, {0.0}, {0.0}, {Colormaps} },
 	{ slider,	"Ambient light level",		{&gl_light_ambient},			{0.0}, {255.0}, {5.0}, {NULL} },

@@ -89,12 +89,6 @@ OpenGLFrameBuffer::~OpenGLFrameBuffer()
 	gl_FreeSpecialTextures();
 	// all native textures must be completely removed before destroying the frame buffer
 	FGLTexture::DeleteAll();
-	/*
-	for(int i=0; i<TexMan.NumTextures();i++)
-	{
-		TexMan.ByIndex(i)->KillNative();
-	}
-	*/
 	GLShader::Clear();
 }
 
@@ -336,19 +330,6 @@ void OpenGLFrameBuffer::GetFlash(PalEntry &rgb, int &amount)
 int OpenGLFrameBuffer::GetPageCount()
 {
 	return 1;
-}
-
-//==========================================================================
-//
-// DFrameBuffer :: CreateTexture
-//
-// Creates a native texture for a game texture, if supported.
-//
-//==========================================================================
-
-FNativeTexture *OpenGLFrameBuffer::CreateTexture(FTexture *gametex, bool wrapping)
-{
-	return new FGLTexture(gametex);
 }
 
 //==========================================================================

@@ -143,8 +143,8 @@ void gl_GenerateGlobalBrightmapFromColormap()
 	}
 	for(int i=0;i<256;i++)
 	{
-		HasGlobalBrightmap |= GlobalBrightmap.Remap[i] == black;
-		//if (GlobalBrightmap[i]) Printf("Marked color %d as fullbright\n",i);
+		HasGlobalBrightmap |= GlobalBrightmap.Remap[i] == white;
+		if (GlobalBrightmap.Remap[i] == white) DPrintf("Marked color %d as fullbright\n",i);
 	}
 }
 
@@ -593,6 +593,36 @@ void FTexture::UncacheGL()
 	}
 }
 
+
+//==========================================================================
+//
+// GL status data for a texture
+//
+//==========================================================================
+
+FTexture::MiscGLInfo::MiscGLInfo() throw()
+{
+	bGlowing = false;
+	GlowColor = 0;
+	bSkybox = false;
+	FloorSkyColor = 0;
+	CeilingSkyColor = 0;
+	bSkyColorDone = false;
+	bBrightmapChecked = false;
+	bBrightmapDisablesFullbright = false;
+
+	GLTexture = NULL;
+	Brightmap = NULL;
+}
+
+FTexture::MiscGLInfo::~MiscGLInfo()
+{
+	if (GLTexture != NULL) delete GLTexture;
+	GLTexture = NULL;
+	if (Brightmap != NULL) delete Brightmap;
+	Brightmap = NULL;
+}
+
 //===========================================================================
 //
 // fake brightness maps
@@ -611,6 +641,7 @@ FBrightmapTexture::FBrightmapTexture (FTexture *source)
 	bNoDecals = source->bNoDecals;
 	Rotations = source->Rotations;
 	UseType = source->UseType;
+	gl_info.bBrightmap = true;
 }
 
 FBrightmapTexture::~FBrightmapTexture ()
@@ -659,8 +690,6 @@ FGLTexture::FGLTexture(FTexture * tx)
 	glpatch=NULL;
 	gltexture=NULL;
 
-	Shader = NULL;
-
 	HiresLump=-1;
 	hirestexture = NULL;
 
@@ -683,6 +712,18 @@ FGLTexture::FGLTexture(FTexture * tx)
 	scalex = tex->xScale/(float)FRACUNIT;
 	scaley = tex->yScale/(float)FRACUNIT;
 
+	if (gl.flags & RFL_GLSL) switch(tex->bWarped)
+	{
+	default:
+		Shader = GLShader::Find("Default");
+		break;
+	case 1:
+		Shader = GLShader::Find("Warp 1");
+		break;
+	case 2:
+		Shader = GLShader::Find("Warp 2");
+		break;
+	}
 
 	// a little adjustment to make sprites look better with texture filtering:
 	// create a 1 pixel wide empty frame around them.
@@ -698,14 +739,23 @@ FGLTexture::FGLTexture(FTexture * tx)
 		TopOffset[GLUSE_PATCH]+=1;
 	}
 
-	if ((gl.flags & RFL_GLSL) && tx->UseBasePalette() && HasGlobalBrightmap &&
-		tx->UseType != FTexture::TEX_Autopage && tx->UseType != FTexture::TEX_Decal &&
-		tx->UseType != FTexture::TEX_MiscPatch && tx->UseType != FTexture::TEX_FontChar &&
-		tex->bm_info.Brightmap == NULL && tx->bWarped == 0
-		) 
+	if (!tex->gl_info.bBrightmapChecked)
 	{
-		tex->bm_info.Brightmap = new FBrightmapTexture(tx);
-		tex->bm_info.Brightmap->bm_info.bIsBrightmap=-1;
+		// Check for brightmaps
+		if ((gl.flags & RFL_GLSL) && tx->UseBasePalette() && HasGlobalBrightmap &&
+			tx->UseType != FTexture::TEX_Autopage && tx->UseType != FTexture::TEX_Decal &&
+			tx->UseType != FTexture::TEX_MiscPatch && tx->UseType != FTexture::TEX_FontChar &&
+			tex->gl_info.Brightmap == NULL && tx->bWarped == 0
+			) 
+		{
+			// May have one - let's check when we use this texture
+			tex->gl_info.bBrightmapChecked = -1;
+		}
+		else
+		{
+			// does not have one so set the flag to 'done'
+			tex->gl_info.bBrightmapChecked = 1;
+		}
 	}
 	bIsTransparent = -1;
 
@@ -913,30 +963,40 @@ bool FGLTexture::SmoothEdges(unsigned char * buffer,int w, int h, bool clampside
 
 //===========================================================================
 // 
+// Checks if the texture has a default brightmap and creates it if so
+//
+//===========================================================================
+void FGLTexture::CreateDefaultBrightmap()
+{
+	const BYTE *texbuf = tex->GetPixels();
+	const int white = ColorMatcher.Pick(255,255,255);
+
+	int size = tex->GetWidth()*tex->GetHeight();
+	for(int i=0;i<size;i++)
+	{
+		if (GlobalBrightmap.Remap[texbuf[i]] == white)
+		{
+			// Create a brightmap
+			DPrintf("brightmap created for texture '%s'\n", tex->Name);
+			tex->gl_info.Brightmap = new FBrightmapTexture(tex);
+			tex->gl_info.bBrightmapChecked = 1;
+			return;
+		}
+	}
+	// No bright pixels found
+	DPrintf("No bright pixels found in texture '%s'\n", tex->Name);
+	tex->gl_info.bBrightmapChecked = 1;
+}
+
+//===========================================================================
+// 
 // Post-process the texture data after the buffer has been created
 //
 //===========================================================================
+
 bool FGLTexture::ProcessData(unsigned char * buffer, int w, int h, int cm, bool ispatch)
 {
-	if (tex->bm_info.bIsBrightmap==-1)
-	{
-
-		DWORD * dwbuf = (DWORD*)buffer;
-		for(int i=0;i<w*h;i++)
-		{
-			if ((dwbuf[i]&0xffffff) != 0)
-			{
-				tex->bm_info.bIsBrightmap = 1;
-				break;
-			}
-		}
-		if (tex->bm_info.bIsBrightmap == -1) 
-		{
-			tex->bm_info.bIsBrightmap = 0;
-			return false;
-		}
-	}
-	else if (tex->bMasked && !tex->bm_info.bIsBrightmap) 
+	if (tex->bMasked && !tex->gl_info.bBrightmap) 
 	{
 		tex->bMasked=SmoothEdges(buffer, w, h, ispatch);
 		if (tex->bMasked && !ispatch) FindHoles(buffer, w, h);
@@ -1188,19 +1248,18 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 	{
 		if (texunit == 0)
 		{
-			FTexture *brightmap = tex->bm_info.Brightmap;
+			if (tex->gl_info.bBrightmapChecked == -1)
+			{
+				CreateDefaultBrightmap();
+			}
 
+			FTexture *brightmap = tex->gl_info.Brightmap;
 			if (brightmap && (gl_glsl_renderer || (gl_brightmap_shader && !is2d)) && translation >= 0 &&
 				cm >= CM_DEFAULT && cm <= CM_DESAT31 && gl_brightmapenabled)
 			{
 				FGLTexture *bmgltex = FGLTexture::ValidateTexture(brightmap);
-				bmgltex->Bind(1, CM_DEFAULT, clampmode, 0);
-				if (brightmap->bm_info.bIsBrightmap == 0)
-				{
-					delete brightmap;
-					tex->bm_info.Brightmap = NULL;
-				}
-				else usebright = true;
+				bmgltex->Bind(1, CM_DEFAULT, clampmode, 0, is2d);
+				usebright = true;
 			}
 
 			if (!gl_glsl_renderer)
@@ -1291,22 +1350,19 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 	{
 		if (texunit == 0)
 		{
-			FTexture *brightmap = tex->bm_info.Brightmap;
+			if (tex->gl_info.bBrightmapChecked == -1)
+			{
+				CreateDefaultBrightmap();
+			}
+
+			FTexture *brightmap = tex->gl_info.Brightmap;
 
 			if (brightmap && (gl_glsl_renderer || gl_brightmap_shader) && translation >= 0 && 
 				transparm >= 0 && cm >= CM_DEFAULT && cm <= CM_DESAT31 && gl_brightmapenabled)
 			{
 				FGLTexture *bmgltex = FGLTexture::ValidateTexture(brightmap);
 				bmgltex->BindPatch(1, CM_DEFAULT, 0, is2d);
-				if (brightmap->bm_info.bIsBrightmap == 0)
-				{
-					delete brightmap;
-					tex->bm_info.Brightmap = NULL;
-				}
-				else
-				{
-					usebright = true;
-				}
+				usebright = true;
 			}
 
 			if (!gl_glsl_renderer)
@@ -1407,7 +1463,8 @@ void FGLTexture::DeleteAll()
 {
 	for(int i=gltextures.Size()-1;i>=0;i--)
 	{
-		gltextures[i]->tex->KillNative();
+		gltextures[i]->tex->gl_info.GLTexture = NULL;
+		delete gltextures[i];
 	}
 	gltextures.Clear();
 }
@@ -1423,24 +1480,11 @@ FGLTexture * FGLTexture::ValidateTexture(FTexture * tex)
 {
 	if (tex	&& tex->UseType!=FTexture::TEX_Null)
 	{
-		FGLTexture *gltex = static_cast<FGLTexture*>(tex->GetNative(false));
-
-		if (gltex)
+		FGLTexture *gltex = tex->gl_info.GLTexture;
+		if (gltex == NULL) 
 		{
-			// This can't be put in the constructor because many
-			// textures are created before the GL renderer is operable
-			if ((gl.flags & RFL_GLSL) && !gltex->Shader) switch(tex->bWarped)
-			{
-			default:
-				gltex->Shader = GLShader::Find("Default");
-				break;
-			case 1:
-				gltex->Shader = GLShader::Find("Warp 1");
-				break;
-			case 2:
-				gltex->Shader = GLShader::Find("Warp 2");
-				break;
-			}
+			gltex = new FGLTexture(tex);
+			tex->gl_info.GLTexture = gltex;
 		}
 		return gltex;
 	}
@@ -1508,12 +1552,7 @@ void gl_ParseBrightmap(FScanner &sc, int deflump)
 				Printf("Multiple brightmap definitions in texture %s\n", tex? tex->Name : "(null)");
 			}
 
-			maplump = Wads.CheckNumForFullName(sc.String);
-
-			// Try a normal WAD name lookup only if it's a proper name without path separator and
-			// not longer than 8 characters.
-			if (maplump==-1 && strlen(sc.String) <= 8 && !strchr(sc.String, '/')) 
-				maplump = Wads.CheckNumForName(sc.String);
+			maplump = Wads.CheckNumForFullName(sc.String, true);
 
 			if (maplump==-1) 
 				Printf("Brightmap '%s' not found in texture '%s'\n", sc.String, tex? tex->Name : "(null)");
@@ -1547,8 +1586,8 @@ void gl_ParseBrightmap(FScanner &sc, int deflump)
 				maplumpname.GetChars(), tex->Name);
 			return;
 		}
-		tex->bm_info.Brightmap = brightmap;
-		brightmap->bm_info.bIsBrightmap = true;
+		tex->gl_info.Brightmap = brightmap;
+		brightmap->gl_info.bBrightmap = true;
 	}	
-	tex->bm_info.bBrightmapDisablesFullbright = disable_fullbright;
+	tex->gl_info.bBrightmapDisablesFullbright = disable_fullbright;
 }
