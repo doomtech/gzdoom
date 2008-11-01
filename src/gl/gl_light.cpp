@@ -224,12 +224,22 @@ void gl_GetLightColor(int lightlevel, int rellight, const FColormap * cm, float 
 	{
 		light=lightlevel;
 	}
+
 	if (light<gl_light_ambient) 
 	{
 		light=gl_light_ambient;
 		if (rellight<0) rellight>>=1;
 	}
 	light = clamp(light+rellight, 0.f, 255.f);
+
+	if (gl_lightmode == 2)
+	{
+		gl_SetShaderLight(light, lightlevel);
+	}
+	else
+	{
+		gl_SetShaderLight(1.f, 1.f);
+	}
 
 	if (cm!=NULL)
 	{
@@ -311,8 +321,8 @@ float gl_GetFogDensity(int lightlevel, PalEntry fogcolor)
 	}
 	else if (gl_isBlack(fogcolor))
 	{
-		// case 1
-		density=distfogtable[gl_lightmode&1][lightlevel];
+		// case 1: black fog
+		density=distfogtable[gl_lightmode!=0][lightlevel];
 	}
 	else if (outsidefogcolor.a!=0xff && 
 			fogcolor.r==outsidefogcolor.r && 
@@ -324,12 +334,12 @@ float gl_GetFogDensity(int lightlevel, PalEntry fogcolor)
 	}
 	else  if (fogdensity!=0)
 	{
-		// case 3
+		// case 3: level has fog density set
 		density=fogdensity;
 	}
 	else 
 	{
-		// case 4
+		// case 4: use light level
 		density=clamp<int>(255-lightlevel,30,255);
 	}
 	return density;
@@ -368,15 +378,18 @@ void gl_SetFog(int lightlevel, PalEntry fogcolor, bool isadditive, int cm)
 
 	float fogdensity;
 
+	// This must switch off light processing by the shader if it isn't black.
 	if (level.flags&LEVEL_HASFADETABLE)
 	{
 		fogdensity=70;
 		fogcolor=0x808080;
+		gl_SetShaderLight(1.0f, 1.0f);
 	}
 	else 
 	{
 		fogdensity = gl_GetFogDensity(lightlevel, fogcolor);
 		fogcolor.a=0;
+		if (!gl_isBlack(fogcolor)) gl_SetShaderLight(1.0f, 1.0f);
 	}
 
 	// Make fog a little denser when inside a skybox

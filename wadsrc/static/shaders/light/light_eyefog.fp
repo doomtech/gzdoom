@@ -2,6 +2,8 @@ varying float fogcoord;
 uniform int fogenabled;
 uniform vec3 camerapos;
 varying vec3 pixelpos;
+uniform float lightfactor;
+uniform float lightdist;
 
 vec4 lightpixel(vec4 pixin)
 {
@@ -11,6 +13,12 @@ vec4 lightpixel(vec4 pixin)
 		float fc;
 		if (fogenabled == 1) fc = fogcoord;
 		else fc = distance(pixelpos, camerapos);
+		
+		if (lightfactor != 1.0 && fc < lightdist) 
+		{
+			pixin *= lightfactor - (fc / lightdist) * (lightfactor - 1.0);
+		}
+		
 		float factor = exp2 ( -gl_Fog.density * fc * LOG2E);
 		pixin *= gl_Color;
 		return vec4(mix(gl_Fog.color, pixin, factor).rgb, pixin.a);

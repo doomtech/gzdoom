@@ -55,6 +55,8 @@ bool gl_fogenabled;
 bool gl_textureenabled;
 int gl_texturemode;
 int gl_brightmapenabled;
+float gl_lightfactor;
+float gl_lightdist;
 float gl_camerapos[3];
 
 class FShader
@@ -75,15 +77,20 @@ class FShader
 	int fogenabled_index;
 	int texturemode_index;
 	int camerapos_index;
+	int lightfactor_index;
+	int lightdist_index;
 
 	int currentfogenabled;
 	int currenttexturemode;
+	float currentlightfactor;
+	float currentlightdist;
 
 public:
 	FShader()
 	{
 		hShader = hVertProg = hFragProg = NULL;
 		currentfogenabled = currenttexturemode = 0;
+		currentlightfactor = currentlightdist = 0.0f;
 	}
 
 	~FShader();
@@ -109,6 +116,24 @@ public:
 		{
 			currenttexturemode = mode;
 			gl.Uniform1iARB(texturemode_index, mode); 
+		}
+	}
+
+	void SetLightDist(float dist)
+	{
+		if (dist != currentlightdist)
+		{
+			currentlightdist = dist;
+			gl.Uniform1fARB(lightdist_index, dist);
+		}
+	}
+
+	void SetLightFactor(float fac)
+	{
+		if (fac != currentlightfactor)
+		{
+			currentlightfactor = fac;
+			gl.Uniform1fARB(lightfactor_index, fac);
 		}
 	}
 
@@ -167,6 +192,8 @@ bool FShader::Load(const char * name, const char * vert_prog, const char * frag_
 		fogenabled_index = gl.GetUniformLocationARB(hShader, "fogenabled");
 		texturemode_index = gl.GetUniformLocationARB(hShader, "texturemode");
 		camerapos_index = gl.GetUniformLocationARB(hShader, "camerapos");
+		lightdist_index = gl.GetUniformLocationARB(hShader, "lightdist");
+		lightfactor_index = gl.GetUniformLocationARB(hShader, "lightfactor");
 
 		int brightmap_index = gl.GetUniformLocationARB(hShader, "brightmap");
 
@@ -274,6 +301,9 @@ bool FShader::Bind(float Speed)
 		SetTextureMode(gl_texturemode);
 		SetFogEnabled(gl_fogenabled? gl_fogmode : 0);
 		SetCameraPos(gl_camerapos[0], gl_camerapos[1], gl_camerapos[2]);
+		SetLightFactor(gl_lightfactor);
+		SetLightDist(gl_lightdist);
+
 		gl_activeShader=this;
 	}
 	if (timer_index >=0 && Speed > 0.f) gl.Uniform1fARB(timer_index, gl_frameMS*Speed/1000.f);
@@ -678,7 +708,30 @@ void gl_SetTextureMode(int which)
 
 //==========================================================================
 //
-// Lighting stuff (unused for now)
+// Lighting stuff 
+//
+//==========================================================================
+
+void gl_SetShaderLight(float level, float olight)
+{
+	float dist = 256.f;
+
+	if (olight < 96.f)
+	{
+		dist = level * 300.f/96.f;
+	}
+	gl_lightfactor = (olight/level)*0.75f;
+	gl_lightdist = dist;
+	if (gl_activeShader)
+	{
+		gl_activeShader->SetLightFactor(gl_lightfactor);
+		gl_activeShader->SetLightDist(dist);
+	}
+}
+
+//==========================================================================
+//
+// Sets camera position
 //
 //==========================================================================
 
