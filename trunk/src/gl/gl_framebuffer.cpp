@@ -62,6 +62,7 @@ EXTERN_CVAR (Float, vid_contrast)
 
 void gl_InitSpecialTextures();
 void gl_FreeSpecialTextures();
+void gl_SetupMenu();
 
 //==========================================================================
 //
@@ -104,6 +105,7 @@ void OpenGLFrameBuffer::InitializeState()
 
 	gl.LoadExtensions();
 	Super::InitializeState();
+	gl_SetupMenu();
 	if (first)
 	{
 		first=false;

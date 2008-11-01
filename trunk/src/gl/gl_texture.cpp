@@ -1234,6 +1234,18 @@ const PatchTextureInfo * FGLTexture::GetPatchTextureInfo()
 
 //===========================================================================
 // 
+//	Checls if a shader needs to be used for this texture
+//
+//===========================================================================
+
+#define UseShader() \
+	(gl_warp_shader && tex->bWarped!=0) || \
+	((gl_fog_shader || gl_fogmode == 2) && !is2d && gl_fogmode != 0) || \
+	(usebright) || \
+	((tex->bHasCanvas || gl_colormap_shader) && cm!=CM_DEFAULT && cm!=CM_SHADE && gl_texturemode != TM_MASK)
+
+//===========================================================================
+// 
 //	Binds a texture to the renderer
 //
 //===========================================================================
@@ -1272,10 +1284,7 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 						GetWorldTextureInfo();
 					}
 						
-					if ((gl_warp_shader && tex->bWarped!=0) || 
-						(gl_fog_shader && !is2d && gl_fogmode != 0) ||
-						(usebright) ||
-						((tex->bHasCanvas || gl_colormap_shader) && cm!=CM_DEFAULT && /*!(cm>=CM_DESAT1 && cm<=CM_DESAT31) &&*/  cm!=CM_SHADE && gl_texturemode != TM_MASK))
+					if (UseShader())
 					{
 						Shader->Bind(cm, usebright, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 0.f);
 						if (cm != CM_SHADE) cm = CM_DEFAULT;
@@ -1375,10 +1384,7 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 						GetPatchTextureInfo();
 					}
 
-					if ((gl_warp_shader && tex->bWarped!=0) || 
-						(gl_fog_shader && !is2d && gl_fogmode != 0) ||
-						(usebright) ||
-						((tex->bHasCanvas || gl_colormap_shader) && cm!=CM_DEFAULT && /*!(cm>=CM_DESAT1 && cm<=CM_DESAT31) &&*/ cm!=CM_SHADE && gl_texturemode != TM_MASK))
+					if (UseShader())
 					{
 						Shader->Bind(cm, usebright, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 0.f);
 						if (cm != CM_SHADE) cm = CM_DEFAULT;

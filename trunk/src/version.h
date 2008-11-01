@@ -41,7 +41,7 @@
 
 /** Lots of different version numbers **/
 
-#define DOTVERSIONSTR_NOREV "1.1.4"
+#define DOTVERSIONSTR_NOREV "1.1.5"
 #define ZDVER_STRING "2.2.0"
 
 // The version string the user actually sees.

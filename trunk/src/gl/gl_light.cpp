@@ -89,16 +89,18 @@ CUSTOM_CVAR (Bool, gl_lights_additive, false,  CVAR_ARCHIVE | CVAR_GLOBALCONFIG 
 }
 
 CVAR(Bool,gl_enhanced_nightvision,true,CVAR_ARCHIVE)
-CUSTOM_CVAR(Int,gl_fogmode,1,CVAR_ARCHIVE)
+CUSTOM_CVAR(Int,gl_fogmode,1,CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
 	if (self>2) self=2;
 	if (self<0) self=0;
+	if (self == 2 && !(gl.flags & RFL_GLSL)) self = 1;	// mode 2 requires GLSL
 }
 
-CUSTOM_CVAR(Int, gl_lightmode, 3 ,CVAR_ARCHIVE)
+CUSTOM_CVAR(Int, gl_lightmode, 3 ,CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
-	if (self>7) self=7;
+	if (self>4) self=4;
 	if (self<0) self=0;
+	if (self == 2 && !(gl.flags & RFL_GLSL)) self = 3;	// mode 2 requires GLSL
 }
 
 static float distfogtable[2][256];	// light to fog conversion table for black fog
