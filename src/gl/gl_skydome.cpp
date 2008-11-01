@@ -63,6 +63,7 @@ public:
 	{ 
 		faces[0]=faces[1]=faces[2]=faces[3]=faces[4]=faces[5]=NULL; 
 		UseType=TEX_Override;
+		gl_info.bSkybox = true;
 	}
 	~FSkyBox()
 	{
@@ -105,12 +106,6 @@ public:
 	{
 		for(int i=0;i<6;i++) if (faces[i]) faces[i]->PrecacheGL();
 	}
-
-	virtual bool IsSkybox() const 
-	{  
-		return true; 
-	}
-
 };
 
 //-----------------------------------------------------------------------------
@@ -659,7 +654,7 @@ void GLSkyPortal::DrawContents()
 	gl.PushMatrix();
 	gl_SetupView(0, 0, 0, viewangle, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1), true);
 
-	if (origin->texture[0] && origin->texture[0]->tex->IsSkybox())
+	if (origin->texture[0] && origin->texture[0]->tex->gl_info.bSkybox)
 	{
 		if (fixedcolormap)
 		{						

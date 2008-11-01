@@ -82,6 +82,7 @@ enum FTextureFormat
 };
 
 class FNativeTexture;
+class FGLTexture;
 
 // Base texture class
 class FTexture
@@ -225,52 +226,27 @@ protected:
 
 public:
 
-	struct FBrightmapInfo
-	{
-		FTexture *Brightmap;
-		signed char bIsBrightmap;
-		bool bBrightmapDisablesFullbright;
-
-		FBrightmapInfo()
-		{
-			Brightmap = NULL;
-			bIsBrightmap = false;
-			bBrightmapDisablesFullbright = false;
-		}
-
-		~FBrightmapInfo()
-		{
-			if (Brightmap) delete Brightmap;
-			Brightmap = NULL;
-		}
-	};
 	struct MiscGLInfo
 	{
+		FGLTexture *GLTexture;
+		FTexture *Brightmap;
 		PalEntry GlowColor;
 		PalEntry FloorSkyColor;
 		PalEntry CeilingSkyColor;
-		bool bGlowing;
-		bool bSkybox;
-		bool bSkyColorDone;
+		bool bGlowing;						// Texture glows
+		bool bSkybox;						// This is a skybox
+		bool bSkyColorDone;					// Fill color for sky
+		char bBrightmapChecked;				// 0: not initialized yet, -1 not checked, 1 checked
+		bool bBrightmap;					// This is a brightmap
+		bool bBrightmapDisablesFullbright;	// This disables fullbright display
 
-		MiscGLInfo()
-		{
-			bGlowing = false;
-			GlowColor = 0;
-			bSkybox = false;
-			FloorSkyColor = 0;
-			CeilingSkyColor = 0;
-			bSkyColorDone = false;
-		}
+		MiscGLInfo() throw ();
+		~MiscGLInfo();
 	};
-
-	bool IsGlowing() const { return gl_info.bGlowing; }
+	MiscGLInfo gl_info;
 
 	virtual void PrecacheGL();
 	virtual void UncacheGL();
-	virtual bool IsSkybox() const { return false; }
-	FBrightmapInfo bm_info;
-	MiscGLInfo gl_info;
 };
 
 // Texture manager

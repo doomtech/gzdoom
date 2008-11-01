@@ -397,7 +397,7 @@ inline void GLFlat::PutFlat()
 			else foggy = false;
 
 			list = list_indices[light][masked][foggy];
-			if (list == GLDL_LIGHT && gltexture->tex->bm_info.Brightmap && gl_brightmap_shader) list = GLDL_LIGHTBRIGHT;
+			if (list == GLDL_LIGHT && gltexture->tex->gl_info.Brightmap && gl_brightmap_shader) list = GLDL_LIGHTBRIGHT;
 		}
 		else
 		{

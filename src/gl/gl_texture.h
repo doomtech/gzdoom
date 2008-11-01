@@ -115,7 +115,7 @@ public:
 class GLShader;
 struct FRemapTable;
 
-class FGLTexture : public FNativeTexture, protected WorldTextureInfo, protected PatchTextureInfo
+class FGLTexture : protected WorldTextureInfo, protected PatchTextureInfo
 {
 	friend void AdjustSpriteOffsets();
 
@@ -162,6 +162,7 @@ private:
 
 	BYTE *WarpBuffer(BYTE *buffer, int Width, int Height, int warp);
 
+	void CreateDefaultBrightmap();
 	void CheckForAlpha(const unsigned char * buffer);
 
 	const WorldTextureInfo * Bind(int texunit, int cm, int clamp, int translation, bool is2d);
