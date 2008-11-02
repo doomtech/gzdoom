@@ -161,7 +161,11 @@ void GLWall::PutWall(bool translucent)
 			masked = passflag[type]==1? false : (light && type!=RENDERWALL_FFBLOCK) || gltexture->tex->bMasked;
 
 			list = list_indices[light][masked][!!(flags&GLWF_FOGGY)];
-			if (list == GLDL_LIGHT && gltexture->tex->gl_info.Brightmap && gl_brightmap_shader) list = GLDL_LIGHTBRIGHT;
+			if (list == GLDL_LIGHT)
+			{
+				if (gltexture->tex->gl_info.Brightmap && gl_brightmap_shader) list = GLDL_LIGHTBRIGHT;
+				if (flags & GLWF_GLOW) list = GLDL_LIGHTBRIGHT;
+			}
 		}
 		else
 		{

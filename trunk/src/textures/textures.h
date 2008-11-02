@@ -233,12 +233,14 @@ public:
 		PalEntry GlowColor;
 		PalEntry FloorSkyColor;
 		PalEntry CeilingSkyColor;
-		bool bGlowing;						// Texture glows
-		bool bSkybox;						// This is a skybox
-		bool bSkyColorDone;					// Fill color for sky
-		char bBrightmapChecked;				// 0: not initialized yet, -1 not checked, 1 checked
-		bool bBrightmap;					// This is a brightmap
-		bool bBrightmapDisablesFullbright;	// This disables fullbright display
+		int GlowHeight;
+		bool bGlowing:1;						// Texture glows
+		bool bFullbright:1;						// always draw fullbright
+		bool bSkybox:1;							// This is a skybox
+		bool bSkyColorDone:1;					// Fill color for sky
+		char bBrightmapChecked:2;				// 0: not initialized yet, -1 not checked, 1 checked
+		bool bBrightmap:1;						// This is a brightmap
+		bool bBrightmapDisablesFullbright:1;	// This disables fullbright display
 
 		MiscGLInfo() throw ();
 		~MiscGLInfo();
@@ -247,6 +249,9 @@ public:
 
 	virtual void PrecacheGL();
 	virtual void UncacheGL();
+	void GetGlowColor(float *data);
+	bool isGlowing() { return gl_info.bGlowing; }
+	bool isFullbright() { return gl_info.bFullbright; }
 };
 
 // Texture manager

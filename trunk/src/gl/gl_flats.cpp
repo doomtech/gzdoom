@@ -424,20 +424,18 @@ void GLFlat::Process(sector_t * sector, bool whichplane, bool notexture)
 		if (plane.texture==skyflatnum) return;
 
 		gltexture=FGLTexture::ValidateTexture(plane.texture);
-		if (!gltexture) 
+		if (!gltexture) return;
+		if (gltexture->tex->isFullbright()) 
 		{
-			return;
+			Colormap.LightColor.r = Colormap.LightColor.g = Colormap.LightColor.b = 0xff;
+			lightlevel=255;
 		}
 	}
-	else gltexture=NULL;
-
-	if (gltexture && gl_isGlowingTexture(plane.texture)) 
+	else 
 	{
-		// glowing textures are always drawn full bright without colored light
-		Colormap.LightColor.r = Colormap.LightColor.g = Colormap.LightColor.b = 0xff;
-		lightlevel=255;
+		gltexture=NULL;
+		lightlevel=abs(lightlevel);
 	}
-	else lightlevel=abs(lightlevel);
 
 	// get height from vplane
 	z=TO_GL(plane.texheight);

@@ -762,7 +762,7 @@ void GLHorizonPortal::DrawContents()
 	z=TO_GL(sp->texheight);
 
 
-	if (gltexture && gl_isGlowingTexture(sp->texture)) 
+	if (gltexture && gltexture->tex->isFullbright())
 	{
 		// glowing textures are always drawn full bright without color
 		gl_SetColor(255, 0, NULL, 1.f);

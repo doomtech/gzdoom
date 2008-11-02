@@ -165,7 +165,7 @@ private:
 	void CreateDefaultBrightmap();
 	void CheckForAlpha(const unsigned char * buffer);
 
-	const WorldTextureInfo * Bind(int texunit, int cm, int clamp, int translation, bool is2d);
+	const WorldTextureInfo * Bind(int texunit, int cm, int clamp, int translation, bool is2d, bool glow);
 	const PatchTextureInfo * BindPatch(int texunit, int cm, int translation, bool is2d);
 
 public:
@@ -173,7 +173,7 @@ public:
 	~FGLTexture();
 
 	unsigned char * CreateTexBuffer(ETexUse use, int cm, int translation, int & w, int & h, bool allowhires=true);
-	const WorldTextureInfo * Bind(int cm, int clamp=0, int translation=0, bool is2d = false);
+	const WorldTextureInfo * Bind(int cm, int clamp=0, int translation=0, bool is2d = false, bool glow = false);
 	const PatchTextureInfo * BindPatch(int cm, int translation=0, bool is2d = false);
 
 	const WorldTextureInfo * GetWorldTextureInfo();

@@ -53,32 +53,13 @@
 #include "colormatcher.h"
 
 #include "gl/gl_struct.h"
+#include "gl/gl_intern.h"
 #include "gl/gl_framebuffer.h"
 #include "gl/gl_texture.h"
 #include "gl/gl_functions.h"
 #include "gl/gl_shader.h"
 #include "gl/gl_translate.h"
 #include "gl/glsl_state.h"
-
-CUSTOM_CVAR(Bool, gl_warp_shader, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
-{
-	if (self && !(gl.flags & RFL_GLSL)) self=0;
-}
-
-CUSTOM_CVAR(Bool, gl_fog_shader, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
-{
-	if (self && !(gl.flags & RFL_GLSL)) self=0;
-}
-
-CUSTOM_CVAR(Bool, gl_colormap_shader, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
-{
-	if (self && !(gl.flags & RFL_GLSL)) self=0;
-}
-
-CUSTOM_CVAR(Bool, gl_brightmap_shader, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
-{
-	if (self && !(gl.flags & RFL_GLSL)) self=0;
-}
 
 // Only for testing for now. This isn't working fully yet.
 CUSTOM_CVAR(Bool, gl_glsl_renderer, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
@@ -594,6 +575,35 @@ void FTexture::UncacheGL()
 	}
 }
 
+//==========================================================================
+//
+// Calculates glow color for a texture
+//
+//==========================================================================
+
+void FTexture::GetGlowColor(float *data)
+{
+	if (gl_info.bGlowing && gl_info.GlowColor == 0)
+	{
+		FGLTexture * gltex = FGLTexture::ValidateTexture(this);
+		if (gltex)
+		{
+			int w, h;
+			unsigned char * buffer = gltex->CreateTexBuffer(FGLTexture::GLUSE_TEXTURE, CM_DEFAULT, 0, w, h);
+
+			if (buffer)
+			{
+				gl_info.GlowColor = averageColor((DWORD *) buffer, w*h, 6*FRACUNIT/10);
+				delete buffer;
+			}
+		}
+		// Black glow equals nothing so switch glowing off
+		if (gl_info.GlowColor == 0) gl_info.bGlowing = false;
+	}
+	data[0]=gl_info.GlowColor.r/255.0f;
+	data[1]=gl_info.GlowColor.g/255.0f;
+	data[2]=gl_info.GlowColor.b/255.0f;
+}
 
 //==========================================================================
 //
@@ -605,6 +615,7 @@ FTexture::MiscGLInfo::MiscGLInfo() throw()
 {
 	bGlowing = false;
 	GlowColor = 0;
+	GlowHeight = 128;
 	bSkybox = false;
 	FloorSkyColor = 0;
 	CeilingSkyColor = 0;
@@ -1252,9 +1263,9 @@ const PatchTextureInfo * FGLTexture::GetPatchTextureInfo()
 //
 //===========================================================================
 
-const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, int translation, bool is2d)
+const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, int translation, bool is2d, bool glow)
 {
-	bool usebright = false;
+	int usebright = false;
 
 	translation = GLTranslationPalette::GetInternalTranslation(translation);
 
@@ -1262,19 +1273,25 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 	{
 		if (texunit == 0)
 		{
-			if (tex->gl_info.bBrightmapChecked == -1)
+			if (!glow)
 			{
-				CreateDefaultBrightmap();
-			}
+				if (tex->gl_info.bBrightmapChecked == -1)
+				{
+					CreateDefaultBrightmap();
+				}
 
-			FTexture *brightmap = tex->gl_info.Brightmap;
-			if (brightmap && (gl_glsl_renderer || (gl_brightmap_shader && !is2d)) && translation >= 0 &&
-				cm >= CM_DEFAULT && cm <= CM_DESAT31 && gl_brightmapenabled)
-			{
-				FGLTexture *bmgltex = FGLTexture::ValidateTexture(brightmap);
-				bmgltex->Bind(1, CM_DEFAULT, clampmode, 0, is2d);
-				usebright = true;
+				FTexture *brightmap = tex->gl_info.Brightmap;
+				if (brightmap && (gl_glsl_renderer || (gl_brightmap_shader && !is2d)) && translation >= 0 &&
+					cm >= CM_DEFAULT && cm <= CM_DESAT31 && gl_brightmapenabled)
+				{
+					FGLTexture *bmgltex = FGLTexture::ValidateTexture(brightmap);
+					bmgltex->Bind(1, CM_DEFAULT, clampmode, 0, is2d, false);
+					usebright = true;
+				}
 			}
+			else
+				usebright = 2;
+
 
 			if (!gl_glsl_renderer)
 			{
@@ -1309,7 +1326,7 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 			}
 			else
 			{
-				glsl->SetBrightmap(usebright);
+				glsl->SetBrightmap(usebright==1);
 				glsl->SetWarp(tex->bWarped, static_cast<FWarpTexture*>(tex)->GetSpeed());
 				if (cm != CM_SHADE) cm = CM_DEFAULT;
 			}
@@ -1341,9 +1358,9 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 	return NULL;
 }
 
-const WorldTextureInfo * FGLTexture::Bind(int cm, int clampmode, int translation, bool is2d)
+const WorldTextureInfo * FGLTexture::Bind(int cm, int clampmode, int translation, bool is2d, bool glow)
 {
-	return Bind(0, cm, clampmode, translation, is2d);
+	return Bind(0, cm, clampmode, translation, is2d, glow);
 }
 //===========================================================================
 // 

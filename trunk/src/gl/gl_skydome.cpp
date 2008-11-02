@@ -178,10 +178,10 @@ static PalEntry SkyCapColor(FTextureID texno, bool bottom)
 
 			if (buffer)
 			{
-				tex->gl_info.CeilingSkyColor = averageColor((DWORD *) buffer, w * MIN(30, h), false);
+				tex->gl_info.CeilingSkyColor = averageColor((DWORD *) buffer, w * MIN(30, h), 0);
 				if (h>30)
 				{
-					tex->gl_info.FloorSkyColor = averageColor(((DWORD *) buffer)+(h-30)*w, w * 30, false);
+					tex->gl_info.FloorSkyColor = averageColor(((DWORD *) buffer)+(h-30)*w, w * 30, 0);
 				}
 				else tex->gl_info.FloorSkyColor = tex->gl_info.CeilingSkyColor;
 				delete buffer;

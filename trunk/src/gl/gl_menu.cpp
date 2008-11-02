@@ -36,10 +36,6 @@ EXTERN_CVAR(Bool, gl_render_precise)
 EXTERN_CVAR(Bool, gl_sprite_blend)
 EXTERN_CVAR(Bool, gl_fakecontrast)
 EXTERN_CVAR (Bool, gl_lights_additive)
-EXTERN_CVAR(Bool, gl_warp_shader)
-EXTERN_CVAR(Bool, gl_fog_shader)
-EXTERN_CVAR(Bool, gl_colormap_shader)
-EXTERN_CVAR(Bool, gl_brightmap_shader)
 EXTERN_CVAR (Float, gl_light_ambient)
 EXTERN_CVAR(Int, gl_billboard_mode)
 EXTERN_CVAR(Int, gl_particles_style)
@@ -204,6 +200,7 @@ menuitem_t GLShaderItems[] = {
 	{ discrete, "Shaders for texture warp",	{&gl_warp_shader},				{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Shaders for fog",			{&gl_fog_shader},				{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Shaders for colormaps",	{&gl_colormap_shader},			{2.0}, {0.0}, {0.0}, {OnOff} },
+	{ discrete, "Shaders for glowing textures",	{&gl_glow_shader},			{2.0}, {0.0}, {0.0}, {OnOff} },
 };
 
 menuitem_t OpenGLDisabled[] = {

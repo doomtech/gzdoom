@@ -49,6 +49,32 @@
 #include "i_system.h"
 #include "doomerrors.h"
 
+CUSTOM_CVAR(Bool, gl_warp_shader, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
+{
+	if (self && !(gl.flags & RFL_GLSL)) self=0;
+}
+
+CUSTOM_CVAR(Bool, gl_fog_shader, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
+{
+	if (self && !(gl.flags & RFL_GLSL)) self=0;
+}
+
+CUSTOM_CVAR(Bool, gl_colormap_shader, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
+{
+	if (self && !(gl.flags & RFL_GLSL)) self=0;
+}
+
+CUSTOM_CVAR(Bool, gl_brightmap_shader, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
+{
+	if (self && !(gl.flags & RFL_GLSL)) self=0;
+}
+
+CUSTOM_CVAR(Bool, gl_glow_shader, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
+{
+	if (self && !(gl.flags & RFL_GLSL)) self=0;
+}
+
+
 extern long gl_frameMS;
 
 bool gl_fogenabled;
@@ -67,11 +93,6 @@ class FShader
 	GLhandleARB hVertProg;
 	GLhandleARB hFragProg;
 
-	TArray<int> attribs;
-	TArray<int> attrib_names;
-	TArray<int> uniforms;
-	TArray<int> uniform_names;
-
 	int timer_index;
 	int desaturation_index;
 	int fogenabled_index;
@@ -79,6 +100,12 @@ class FShader
 	int camerapos_index;
 	int lightfactor_index;
 	int lightdist_index;
+
+	int glowbottomcolor_index;
+	int glowtopcolor_index;
+
+	int glowbottomdist_index;
+	int glowtopdist_index;
 
 	int currentfogenabled;
 	int currenttexturemode;
@@ -96,10 +123,6 @@ public:
 	~FShader();
 
 	bool Load(const char * name, const char * vertprog, const char * fragprog);
-	void AddAttrib(const char * pname);
-	int GetAttribIndex(FName pname);
-	void AddUniform(const char * pname);
-	int GetUniformIndex(FName pname);
 
 	void SetFogEnabled(int on)
 	{
@@ -140,6 +163,18 @@ public:
 	void SetCameraPos(float x, float y, float z)
 	{
 		gl.Uniform3fARB(camerapos_index, x, y, z); 
+	}
+
+	void SetGlowParams(float *topcolors, float topheight, float *bottomcolors, float bottomheight)
+	{
+		gl.Uniform4fARB(glowtopcolor_index, topcolors[0], topcolors[1], topcolors[2], topheight);
+		gl.Uniform4fARB(glowbottomcolor_index, bottomcolors[0], bottomcolors[1], bottomcolors[2], bottomheight);
+	}
+
+	void SetGlowPosition(float topdist, float bottomdist)
+	{
+		gl.VertexAttrib1fARB(glowtopdist_index, topdist);
+		gl.VertexAttrib1fARB(glowbottomdist_index, bottomdist);
 	}
 
 	bool Bind(float Speed);
@@ -195,6 +230,11 @@ bool FShader::Load(const char * name, const char * vert_prog, const char * frag_
 		lightdist_index = gl.GetUniformLocationARB(hShader, "lightdist");
 		lightfactor_index = gl.GetUniformLocationARB(hShader, "lightfactor");
 
+		glowbottomcolor_index = gl.GetUniformLocationARB(hShader, "bottomglowcolor");
+		glowbottomdist_index = gl.GetAttribLocationARB(hShader, "bottomdistance");
+		glowtopcolor_index = gl.GetUniformLocationARB(hShader, "topglowcolor");
+		glowtopdist_index = gl.GetAttribLocationARB(hShader, "topdistance");
+
 		int brightmap_index = gl.GetUniformLocationARB(hShader, "brightmap");
 
 		gl.UseProgramObjectARB(hShader);
@@ -219,73 +259,6 @@ FShader::~FShader()
 	gl.DeleteObjectARB(hFragProg);
 }
 
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void FShader::AddAttrib(const char * pname)
-{
-	FName nm = FName(pname);
-
-	for(unsigned int i=0;i<attribs.Size();i++)
-	{
-		if (attrib_names[i]==nm) return;
-	}
-	attrib_names.Push(nm);
-	attribs.Push(gl.GetAttribLocationARB(hShader, pname));
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-int FShader::GetAttribIndex(FName pname)
-{
-	for(unsigned int i=0;i<attribs.Size();i++)
-	{
-		if (attrib_names[i]==pname) return attribs[i];
-	}
-	return -1;
-}
-
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void FShader::AddUniform(const char * pname)
-{
-	FName nm = FName(pname);
-
-	for(unsigned int i=0;i<uniforms.Size();i++)
-	{
-		if (uniform_names[i]==nm) return;
-	}
-	uniform_names.Push(nm);
-	uniforms.Push(gl.GetUniformLocationARB(hShader, pname));
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-int FShader::GetUniformIndex(FName pname)
-{
-	for(unsigned int i=0;i<uniforms.Size();i++)
-	{
-		if (uniform_names[i]==pname) return uniforms[i];
-	}
-	return -1;
-}
 
 //==========================================================================
 //
@@ -371,22 +344,22 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 	struct Lighting
 	{
 		const char * LightingName;
+		const char * VertexShader;
 		const char * lightpixelfunc;
 	};
 
 	static Lighting default_cm[]={
-		{ "Standard",	"shaders/light/light_norm.fp"			},
-		{ "Inverse",	"shaders/light/light_inverse.fp"		},
-		{ "Gold",		"shaders/light/light_gold.fp"			},
-		{ "Red",		"shaders/light/light_red.fp"			},
-		{ "Green",		"shaders/light/light_green.fp"			},
+		{ "Standard",	"shaders/main_nofog.vp",	"shaders/light/light_norm.fp"		},
+		{ "Inverse",	"shaders/main_nofog.vp",	"shaders/light/light_inverse.fp"	},
+		{ "Gold",		"shaders/main_nofog.vp",	"shaders/light/light_gold.fp"		},
+		{ "Red",		"shaders/main_nofog.vp",	"shaders/light/light_red.fp"		},
+		{ "Green",		"shaders/main_nofog.vp",	"shaders/light/light_green.fp"		},
 	};
 
 	static Lighting default_light[]={
-		{ "Standard",	"shaders/light/light_eyefog.fp"		},
-		{ "Brightmap",	"shaders/light/light_brightmap.fp"	},
-
-		//{ "Doom",		"shaders/light/light_doom.fp"		},
+		{ "Standard",	"shaders/main.vp",			"shaders/light/light_eyefog.fp"		},
+		{ "Brightmap",	"shaders/main.vp",			"shaders/light/light_brightmap.fp"	},
+		{ "Glow",		"shaders/main_glow.vp",		"shaders/light/light_glow.fp"		},
 	};
 
 	static const char * main_fp2[]={ "shaders/main.fp", "shaders/main_desat.fp" };
@@ -404,7 +377,7 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 		{
 			FString frag = CombineFragmentShader(ShaderPath, default_cm[i].lightpixelfunc, "shaders/main.fp");
 
-			int vlump = Wads.GetNumForFullName("shaders/main_nofog.vp");
+			int vlump = Wads.GetNumForFullName(default_cm[i].VertexShader);
 			FMemLump vdata = Wads.ReadLump(vlump);
 
 			shader_cm[i] = new FShader;
@@ -422,7 +395,7 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 
 	}
 
-	for(int i=0;i<2;i++) for(int j=0;j<2;j++)
+	for(int i=0;i<3;i++) for(int j=0;j<2;j++)
 	{
 		FString name;
 
@@ -433,7 +406,7 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 		{
 			FString frag = CombineFragmentShader(ShaderPath, default_light[i].lightpixelfunc, main_fp2[j]);
 
-			int vlump = Wads.GetNumForFullName("shaders/main.vp");
+			int vlump = Wads.GetNumForFullName(default_light[i].VertexShader);
 			FMemLump vdata = Wads.ReadLump(vlump);
 
 			shader_light[i][j] = new FShader;
@@ -587,7 +560,7 @@ GLShader *GLShader::Find(const char * shn)
 }
 
 
-void GLShader::Bind(int cm, bool brightmap, float Speed)
+void GLShader::Bind(int cm, int lightmode, float Speed)
 {
 	FShader *sh=NULL;
 	switch(cm)
@@ -606,7 +579,7 @@ void GLShader::Bind(int cm, bool brightmap, float Speed)
 	default:
 
 		bool desat = cm>=CM_DESAT1 && cm<=CM_DESAT31;
-		sh = container->shader_light[brightmap][desat];
+		sh = container->shader_light[lightmode][desat];
 		// [BB] If there was a problem when loading the shader, sh is NULL here.
 		if( sh )
 		{
@@ -749,3 +722,18 @@ void gl_SetCamera(float x, float y, float z)
 	if (gl_activeShader) gl_activeShader->SetCameraPos(gl_camerapos[0], gl_camerapos[1], gl_camerapos[2]);
 }
 
+//==========================================================================
+//
+// Glow stuff
+//
+//==========================================================================
+
+void gl_SetGlowParams(float *topcolors, float topheight, float *bottomcolors, float bottomheight)
+{
+	if (gl_activeShader) gl_activeShader->SetGlowParams(topcolors, topheight, bottomcolors, bottomheight);
+}
+
+void gl_SetGlowPosition(float topdist, float bottomdist)
+{
+	if (gl_activeShader) gl_activeShader->SetGlowPosition(topdist, bottomdist);
+}

@@ -674,7 +674,8 @@ void OpenGLFrameBuffer::GetScreenshotBuffer(const BYTE *&buffer, int &pitch, ESS
 
 	ReleaseScreenshotBuffer();
 	ScreenshotBuffer = new BYTE[w * h * 3];
-	gl.ReadPixels(0,0,w,h,GL_RGB,GL_UNSIGNED_BYTE,ScreenshotBuffer);
+
+	gl.ReadPixels(0,(GetTrueHeight() - GetHeight()) / 2,w,h,GL_RGB,GL_UNSIGNED_BYTE,ScreenshotBuffer);
 	pitch = -w*3;
 	color_type = SS_RGB;
 	buffer = ScreenshotBuffer + w * 3 * (h - 1);
