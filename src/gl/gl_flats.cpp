@@ -258,14 +258,15 @@ void GLFlat::Draw(int pass)
 	{
 	case GLPASS_BASE:
 		gl_SetColor(lightlevel, extralight*gl_weaponlight, &Colormap,1.0f);
-		if (!foggy) gl_SetFog(lightlevel, Colormap.FadeColor, false, Colormap.LightColor.a);
+		if (!foggy) gl_SetFog(lightlevel, extralight*gl_weaponlight, Colormap.FadeColor, false, Colormap.LightColor.a);
 		DrawSubsectors(false);
 		break;
 
 	case GLPASS_BASE_MASKED:
 	case GLPASS_PLAIN:			// Single-pass rendering
 		gl_SetColor(lightlevel, extralight*gl_weaponlight, &Colormap,1.0f);
-		if (!foggy || pass == GLPASS_PLAIN) gl_SetFog(lightlevel, Colormap.FadeColor, false, Colormap.LightColor.a);
+		if (!foggy || pass == GLPASS_PLAIN) 
+			gl_SetFog(lightlevel, extralight*gl_weaponlight, Colormap.FadeColor, false, Colormap.LightColor.a);
 		// fall through
 	case GLPASS_TEXTURE:
 		gltexture->Bind(Colormap.LightColor.a);
@@ -274,16 +275,11 @@ void GLFlat::Draw(int pass)
 		gl.PopMatrix();
 		break;
 
-	case GLPASS_FOG:
-		gl_SetFog(lightlevel, Colormap.FadeColor, false, Colormap.LightColor.a);
-		DrawSubsectors(false);
-		break;
-
 	case GLPASS_LIGHT:
 	case GLPASS_LIGHT_ADDITIVE:
 
-		if (!foggy)	gl_SetFog((255+lightlevel)>>1, Colormap.FadeColor, false, Colormap.LightColor.a);
-		else gl_SetFog(lightlevel, Colormap.FadeColor, true, Colormap.LightColor.a);	
+		if (!foggy)	gl_SetFog((255+lightlevel)>>1, 0, Colormap.FadeColor, false, Colormap.LightColor.a);
+		else gl_SetFog(lightlevel, 0, Colormap.FadeColor, true, Colormap.LightColor.a);	
 
 		if (sub)
 		{
@@ -321,7 +317,7 @@ void GLFlat::Draw(int pass)
 	case GLPASS_TRANSLUCENT:
 		if (renderstyle==STYLE_Add) gl.BlendFunc(GL_SRC_ALPHA, GL_ONE);
 		gl_SetColor(lightlevel, extralight*gl_weaponlight, &Colormap, alpha);
-		gl_SetFog(lightlevel, Colormap.FadeColor, false, Colormap.LightColor.a);
+		gl_SetFog(lightlevel, extralight*gl_weaponlight, Colormap.FadeColor, false, Colormap.LightColor.a);
 		gl.AlphaFunc(GL_GEQUAL,0.5f*(alpha));
 		if (!gltexture)	gl_EnableTexture(false);
 

@@ -702,8 +702,8 @@ void GLDrawInfo::DrawFloodedPlane(wallseg * ws, float planez, sector_t * sec, bo
 		else lightlevel=abs(ceiling? GetCeilingLight(sec) : GetFloorLight(sec));
 	}
 
-	gl_SetFog(lightlevel, Colormap.FadeColor, false, Colormap.LightColor.a);
 	gl_SetColor(lightlevel, extralight*gl_weaponlight, &Colormap,1.0f);
+	gl_SetFog(lightlevel, extralight*gl_weaponlight, Colormap.FadeColor, false, Colormap.LightColor.a);
 	gltexture->Bind(Colormap.LightColor.a);
 	gl_SetPlaneTextureRotation(&plane, gltexture);
 

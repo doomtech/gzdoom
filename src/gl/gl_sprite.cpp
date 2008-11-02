@@ -176,7 +176,7 @@ void GLSprite::Draw(int pass)
 		additivefog=false;
 	}
 
-	gl_SetFog(foglevel,  Colormap.FadeColor, additivefog, Colormap.LightColor.a);
+	gl_SetFog(foglevel, extralight*gl_weaponlight, Colormap.FadeColor, additivefog, Colormap.LightColor.a);
 
 	if (gltexture) gltexture->BindPatch(Colormap.LightColor.a,translation);
 	else if (!modelframe) gl_EnableTexture(false);

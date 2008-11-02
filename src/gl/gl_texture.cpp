@@ -101,6 +101,7 @@ CUSTOM_CVAR(Bool, gl_texture_usehires, true, CVAR_ARCHIVE|CVAR_NOINITCALL)
 
 EXTERN_CVAR(Bool, gl_render_precise)
 EXTERN_CVAR(Int, gl_fogmode)
+EXTERN_CVAR(Int, gl_lightmode)
 
 CVAR(Bool, gl_precache, false, CVAR_ARCHIVE)
 
@@ -1241,7 +1242,7 @@ const PatchTextureInfo * FGLTexture::GetPatchTextureInfo()
 
 #define UseShader() \
 	(gl_warp_shader && tex->bWarped!=0) || \
-	((gl_fog_shader || gl_fogmode == 2) && !is2d && gl_fogmode != 0) || \
+	((gl_fog_shader || gl_fogmode == 2 || gl_lightmode == 2) && !is2d && gl_fogmode != 0) || \
 	(usebright) || \
 	((tex->bHasCanvas || gl_colormap_shader) && cm!=CM_DEFAULT && cm!=CM_SHADE && gl_texturemode != TM_MASK)
 

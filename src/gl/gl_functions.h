@@ -78,7 +78,7 @@ void gl_SetSpriteLight(particle_t * thing, int lightlevel, int rellight, FColorm
 void gl_InitFog();
 void gl_SetFogParams(int _fogdensity, PalEntry _outsidefogcolor, int _outsidefogdensity, int _skyfog);
 float gl_GetFogDensity(int lightlevel, PalEntry fogcolor);
-void gl_SetFog(int lightlevel, PalEntry pe, bool isadditive, int cm);
+void gl_SetFog(int lightlevel, int rellight, PalEntry pe, bool isadditive, int cm);
 
 // textures + sprites
 
