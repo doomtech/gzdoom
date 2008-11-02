@@ -65,10 +65,10 @@ EXTERN_CVAR (Bool, gl_lights_checkside);
 
 void gl_SetPlaneTextureRotation(const GLSectorPlane * secplane, FGLTexture * gltexture)
 {
-	float uoffs=TO_MAP(secplane->xoffs)/gltexture->TextureWidth(FGLTexture::GLUSE_TEXTURE);
-	float voffs=TO_MAP(secplane->yoffs)/gltexture->TextureHeight(FGLTexture::GLUSE_TEXTURE);
-	float xscale=TO_MAP(secplane->xscale)/gltexture->TextureWidth(FGLTexture::GLUSE_TEXTURE)*64.0f;
-	float yscale=TO_MAP(secplane->yscale)/gltexture->TextureHeight(FGLTexture::GLUSE_TEXTURE)*64.0f;
+	float uoffs=TO_GL(secplane->xoffs)/gltexture->TextureWidth(FGLTexture::GLUSE_TEXTURE);
+	float voffs=TO_GL(secplane->yoffs)/gltexture->TextureHeight(FGLTexture::GLUSE_TEXTURE);
+	float xscale=TO_GL(secplane->xscale)/gltexture->TextureWidth(FGLTexture::GLUSE_TEXTURE)*64.0f;
+	float yscale=TO_GL(secplane->yscale)/gltexture->TextureHeight(FGLTexture::GLUSE_TEXTURE)*64.0f;
 	float angle=-ANGLE_TO_FLOAT(secplane->angle);
 
 	gl.MatrixMode(GL_TEXTURE);
@@ -134,7 +134,7 @@ void GLFlat::DrawSubsectorLights(subsector_t * sub, int pass)
 			// Unfortunately the rendering inaccuracies prohibit any kind of plane translation
 			// This must be done on a per-vertex basis.
 			gl_vertices[sub->firstvertex + k].z =
-				TO_MAP(plane.plane.ZatPoint(gl_vertices[sub->firstvertex + k].vt));
+				TO_GL(plane.plane.ZatPoint(gl_vertices[sub->firstvertex + k].vt));
 		}
 		else for(k = 0; k < sub->numvertices; k++)
 		{
@@ -176,7 +176,7 @@ void GLFlat::DrawSubsector(subsector_t * sub)
 	{
 		// Unfortunately the rendering inaccuracies prohibit any kind of plane translation
 		// This must be done on a per-vertex basis.
-		gl_vertices[v].z = TO_MAP(plane.plane.ZatPoint(gl_vertices[v].vt));
+		gl_vertices[v].z = TO_GL(plane.plane.ZatPoint(gl_vertices[v].vt));
 	}
 	else for(k = 0, v = sub->firstvertex; k < sub->numvertices; k++, v++)
 	{
@@ -253,20 +253,21 @@ void GLFlat::DrawSubsectors(bool istrans)
 void GLFlat::Draw(int pass)
 {
 	int i;
+	int rel = extralight*gl_weaponlight;
 
 	switch (pass)
 	{
 	case GLPASS_BASE:
-		gl_SetColor(lightlevel, extralight*gl_weaponlight, &Colormap,1.0f);
-		if (!foggy) gl_SetFog(lightlevel, extralight*gl_weaponlight, Colormap.FadeColor, false, Colormap.LightColor.a);
+		gl_SetColor(lightlevel, rel, &Colormap,1.0f);
+		if (!foggy) gl_SetFog(lightlevel, rel, &Colormap, false);
 		DrawSubsectors(false);
 		break;
 
 	case GLPASS_BASE_MASKED:
 	case GLPASS_PLAIN:			// Single-pass rendering
-		gl_SetColor(lightlevel, extralight*gl_weaponlight, &Colormap,1.0f);
+		gl_SetColor(lightlevel, rel, &Colormap,1.0f);
 		if (!foggy || pass == GLPASS_PLAIN) 
-			gl_SetFog(lightlevel, extralight*gl_weaponlight, Colormap.FadeColor, false, Colormap.LightColor.a);
+			gl_SetFog(lightlevel, rel, &Colormap, false);
 		// fall through
 	case GLPASS_TEXTURE:
 		gltexture->Bind(Colormap.LightColor.a);
@@ -278,8 +279,8 @@ void GLFlat::Draw(int pass)
 	case GLPASS_LIGHT:
 	case GLPASS_LIGHT_ADDITIVE:
 
-		if (!foggy)	gl_SetFog((255+lightlevel)>>1, 0, Colormap.FadeColor, false, Colormap.LightColor.a);
-		else gl_SetFog(lightlevel, 0, Colormap.FadeColor, true, Colormap.LightColor.a);	
+		if (!foggy)	gl_SetFog((255+lightlevel)>>1, 0, &Colormap, false);
+		else gl_SetFog(lightlevel, 0, &Colormap, true);	
 
 		if (sub)
 		{
@@ -316,8 +317,8 @@ void GLFlat::Draw(int pass)
 
 	case GLPASS_TRANSLUCENT:
 		if (renderstyle==STYLE_Add) gl.BlendFunc(GL_SRC_ALPHA, GL_ONE);
-		gl_SetColor(lightlevel, extralight*gl_weaponlight, &Colormap, alpha);
-		gl_SetFog(lightlevel, extralight*gl_weaponlight, Colormap.FadeColor, false, Colormap.LightColor.a);
+		gl_SetColor(lightlevel, rel, &Colormap, alpha);
+		gl_SetFog(lightlevel, rel, &Colormap, false);
 		gl.AlphaFunc(GL_GEQUAL,0.5f*(alpha));
 		if (!gltexture)	gl_EnableTexture(false);
 
@@ -439,7 +440,7 @@ void GLFlat::Process(sector_t * sector, bool whichplane, bool notexture)
 	else lightlevel=abs(lightlevel);
 
 	// get height from vplane
-	z=TO_MAP(plane.texheight);
+	z=TO_GL(plane.texheight);
 
 	if (!whichplane && sector->transdoor) z -= 1;
 	

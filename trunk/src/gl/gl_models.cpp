@@ -617,9 +617,9 @@ void gl_RenderModel(GLSprite * spr, int cm)
 
 	// Scaling and model space offset.
 	gl.Scalef(	
-		TO_MAP(spr->actor->scaleX) * smf->xscale,
-		TO_MAP(spr->actor->scaleY) * smf->zscale,	// y scale for a sprite means height, i.e. z in the world!
-		TO_MAP(spr->actor->scaleX) * smf->yscale);
+		TO_GL(spr->actor->scaleX) * smf->xscale,
+		TO_GL(spr->actor->scaleY) * smf->zscale,	// y scale for a sprite means height, i.e. z in the world!
+		TO_GL(spr->actor->scaleX) * smf->yscale);
 
 	// [BB] Apply zoffset here, needs to be scaled by 1 / smf->zscale, so that zoffset doesn't depend on the z-scaling.
 	gl.Translatef(0., smf->zoffset / smf->zscale, 0.);
@@ -679,8 +679,8 @@ void gl_RenderHUDModel(pspdef_t *psp, fixed_t ofsx, fixed_t ofsy, int cm)
 	gl.Translatef(0., smf->zoffset / smf->zscale, 0.);
 
 	// [BB] Weapon bob, very similar to the normal Doom weapon bob.
-	gl.Rotatef(TO_MAP(ofsx)/4, 0, 1, 0);
-	gl.Rotatef(-TO_MAP(ofsy-WEAPONTOP)/4, 1, 0, 0);
+	gl.Rotatef(TO_GL(ofsx)/4, 0, 1, 0);
+	gl.Rotatef(-TO_GL(ofsy-WEAPONTOP)/4, 1, 0, 0);
 
 	// [BB] For some reason the jDoom models need to be rotated.
 	gl.Rotatef(90., 0, 1, 0);

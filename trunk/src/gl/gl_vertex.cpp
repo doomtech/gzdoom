@@ -149,8 +149,8 @@ void gl_RecalcVertexHeights(vertex_t * v)
 	{
 		for(j=0;j<2;j++)
 		{
-			if (j==0) height=TO_MAP(vi->sectors[i]->ceilingplane.ZatPoint(v));
-			else height=TO_MAP(vi->sectors[i]->floorplane.ZatPoint(v));
+			if (j==0) height=TO_GL(vi->sectors[i]->ceilingplane.ZatPoint(v));
+			else height=TO_GL(vi->sectors[i]->floorplane.ZatPoint(v));
 
 			for(k=0;k<vi->numheights;k++)
 			{

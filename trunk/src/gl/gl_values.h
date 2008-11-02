@@ -108,8 +108,8 @@ enum EColorManipulation
 	CM_TORCH=247,				// These are not real color manipulations
 };
 
-#define TO_MAP(v) ((float)(v)/FRACUNIT)
-#define FROM_MAP(f) (fixed_t)quickertoint((f)*FRACUNIT)
+#define TO_GL(v) ((float)(v)/FRACUNIT)
+#define TO_MAP(f) (fixed_t)quickertoint((f)*FRACUNIT)
 #define ANGLE_TO_FLOAT(ang) ((float)((ang) * 180.0f / ANGLE_180))
 #define FLOAT_TO_ANGLE(ang) (angle_t)((ang) / 180.f * ANGLE_180)
 

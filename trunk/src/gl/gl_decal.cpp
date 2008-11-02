@@ -200,13 +200,13 @@ void GLWall::DrawDecal(DBaseDecal *actor, seg_t *seg, sector_t *frontSector, sec
 	}
 	
 	
-	a = TO_MAP(actor->Alpha);
+	a = TO_GL(actor->Alpha);
 	
 	// now clip the decal to the actual polygon
-	float decalwidth = tex->TextureWidth(FGLTexture::GLUSE_PATCH)  * TO_MAP(actor->ScaleX);
-	float decalheight= tex->TextureHeight(FGLTexture::GLUSE_PATCH) * TO_MAP(actor->ScaleY);
-	float decallefto = tex->GetLeftOffset(FGLTexture::GLUSE_PATCH) * TO_MAP(actor->ScaleX);
-	float decaltopo  = tex->GetTopOffset(FGLTexture::GLUSE_PATCH)  * TO_MAP(actor->ScaleY);
+	float decalwidth = tex->TextureWidth(FGLTexture::GLUSE_PATCH)  * TO_GL(actor->ScaleX);
+	float decalheight= tex->TextureHeight(FGLTexture::GLUSE_PATCH) * TO_GL(actor->ScaleY);
+	float decallefto = tex->GetLeftOffset(FGLTexture::GLUSE_PATCH) * TO_GL(actor->ScaleX);
+	float decaltopo  = tex->GetTopOffset(FGLTexture::GLUSE_PATCH)  * TO_GL(actor->ScaleY);
 
 	
 	float leftedge = glseg.fracleft * side->TexelLength;
@@ -257,12 +257,12 @@ void GLWall::DrawDecal(DBaseDecal *actor, seg_t *seg, sector_t *frontSector, sec
 
 	const PatchTextureInfo * pti=tex->BindPatch(p.LightColor.a, actor->Translation);
 
-	dv[1].z=dv[2].z = TO_MAP(zpos);
+	dv[1].z=dv[2].z = TO_GL(zpos);
 	dv[0].z=dv[3].z = dv[1].z - decalheight;
 	dv[1].v=dv[2].v=pti->GetVT();
 
-	dv[1].u=dv[0].u=pti->GetU(lefttex / TO_MAP(actor->ScaleX));
-	dv[3].u=dv[2].u=pti->GetU(righttex / TO_MAP(actor->ScaleX));
+	dv[1].u=dv[0].u=pti->GetU(lefttex / TO_GL(actor->ScaleX));
+	dv[3].u=dv[2].u=pti->GetU(righttex / TO_GL(actor->ScaleX));
 	dv[0].v=dv[3].v=pti->GetVB();
 
 

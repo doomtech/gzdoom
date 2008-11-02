@@ -254,9 +254,9 @@ static void SkyVertex(int r, int c)
 		gl.TexCoord2f(u, v);
 	}
 	// And finally the vertex.
-	fx =-TO_MAP(x);	// Doom mirrors the sky vertically!
-	fy = TO_MAP(y);
-	fz = TO_MAP(z);
+	fx =-TO_GL(x);	// Doom mirrors the sky vertically!
+	fy = TO_GL(y);
+	fz = TO_GL(z);
 	gl.Vertex3f(fx, fy - 1.f, fz);
 }
 

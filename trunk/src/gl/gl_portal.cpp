@@ -276,10 +276,10 @@ inline void GLPortal::ClearClipper()
 	for(unsigned int i=0;i<lines.Size();i++)
 	{
 		angle_t startAngle = R_PointToAngle2(savedviewx, savedviewy, 
-												FROM_MAP(lines[i].glseg.x2), FROM_MAP(lines[i].glseg.y2));
+												TO_MAP(lines[i].glseg.x2), TO_MAP(lines[i].glseg.y2));
 
 		angle_t endAngle = R_PointToAngle2(savedviewx, savedviewy, 
-												FROM_MAP(lines[i].glseg.x1), FROM_MAP(lines[i].glseg.y1));
+												TO_MAP(lines[i].glseg.x1), TO_MAP(lines[i].glseg.y1));
 
 		if (startAngle-endAngle>0) 
 		{
@@ -603,8 +603,8 @@ void GLPlaneMirrorPortal::DrawContents()
 
 	gl.Enable(GL_CLIP_PLANE0+renderdepth);
 	// This only works properly for non-sloped planes so don't bother with the math.
-	//double d[4]={origin->a/65536., origin->c/65536., origin->b/65536., TO_MAP(origin->d)};
-	double d[4]={0, PlaneMirrorMode, 0, TO_MAP(origin->d)};
+	//double d[4]={origin->a/65536., origin->c/65536., origin->b/65536., TO_GL(origin->d)};
+	double d[4]={0, PlaneMirrorMode, 0, TO_GL(origin->d)};
 	gl.ClipPlane(GL_CLIP_PLANE0+renderdepth, d);
 
 	gl_DrawScene();
@@ -668,25 +668,25 @@ void GLMirrorPortal::DrawContents()
 	{ 
 		// any mirror--use floats to avoid integer overflow
 
-		float dx = TO_MAP(v2->x - v1->x);
-		float dy = TO_MAP(v2->y - v1->y);
-		float x1 = TO_MAP(v1->x);
-		float y1 = TO_MAP(v1->y);
-		float x = TO_MAP(startx);
-		float y = TO_MAP(starty);
+		float dx = TO_GL(v2->x - v1->x);
+		float dy = TO_GL(v2->y - v1->y);
+		float x1 = TO_GL(v1->x);
+		float y1 = TO_GL(v1->y);
+		float x = TO_GL(startx);
+		float y = TO_GL(starty);
 
 		// the above two cases catch len == 0
 		float r = ((x - x1)*dx + (y - y1)*dy) / (dx*dx + dy*dy);
 
-		viewx = FROM_MAP((x1 + r * dx)*2 - x);
-		viewy = FROM_MAP((y1 + r * dy)*2 - y);
+		viewx = TO_MAP((x1 + r * dx)*2 - x);
+		viewy = TO_MAP((y1 + r * dy)*2 - y);
 
 		// Compensation for reendering inaccuracies
 		FVector2 v(-dx, dy);
 		v.MakeUnit();
 
-		viewx+= FROM_MAP(v[1] * renderdepth / 2);
-		viewy+= FROM_MAP(v[0] * renderdepth / 2);
+		viewx+= TO_MAP(v[1] * renderdepth / 2);
+		viewy+= TO_MAP(v[0] * renderdepth / 2);
 	}
 	viewangle = 2*R_PointToAngle2 (mirrorline->v1->x, mirrorline->v1->y,
 										mirrorline->v2->x, mirrorline->v2->y) - startang;
@@ -759,19 +759,20 @@ void GLHorizonPortal::DrawContents()
 	}
 
 
-	z=TO_MAP(sp->texheight);
+	z=TO_GL(sp->texheight);
 
 
 	if (gltexture && gl_isGlowingTexture(sp->texture)) 
 	{
 		// glowing textures are always drawn full bright without color
 		gl_SetColor(255, 0, NULL, 1.f);
-		gl_SetFog(255, 0, origin->colormap.FadeColor, false, origin->colormap.LightColor.a);
+		gl_SetFog(255, 0, &origin->colormap, false);
 	}
 	else 
 	{
-		gl_SetColor(origin->lightlevel, extralight*gl_weaponlight, &origin->colormap, 1.0f);
-		gl_SetFog(origin->lightlevel, extralight*gl_weaponlight, origin->colormap.FadeColor, false, origin->colormap.LightColor.a);
+		int rel = extralight * gl_weaponlight;
+		gl_SetColor(origin->lightlevel, rel, &origin->colormap, 1.0f);
+		gl_SetFog(origin->lightlevel, rel, &origin->colormap, false);
 	}
 
 
@@ -782,8 +783,8 @@ void GLHorizonPortal::DrawContents()
 	gl.BlendFunc(GL_ONE,GL_ZERO);
 
 
-	float vx=TO_MAP(viewx);
-	float vy=TO_MAP(viewy);
+	float vx=TO_GL(viewx);
+	float vy=TO_GL(viewy);
 
 	// Draw to some far away boundary
 	for(float x=-32768+vx; x<32768+vx; x+=4096)
@@ -809,7 +810,7 @@ void GLHorizonPortal::DrawContents()
 		}
 	}
 
-	float vz=TO_MAP(viewz);
+	float vz=TO_GL(viewz);
 	float tz=(z-vz);///64.0f;
 
 	// fill the gap between the polygon and the true horizon

@@ -680,10 +680,10 @@ void gl_PreprocessLevel()
 			vertex_t * vtx = seg->v1;
 			GLVertex * vt=&gl_vertices[gl_vertices.Reserve(1)];
 
-			vt->u =  TO_MAP(vtx->x)/64.0f;
-			vt->v = -TO_MAP(vtx->y)/64.0f;
-			vt->x =  TO_MAP(vtx->x);
-			vt->y =  TO_MAP(vtx->y);
+			vt->u =  TO_GL(vtx->x)/64.0f;
+			vt->v = -TO_GL(vtx->y)/64.0f;
+			vt->x =  TO_GL(vtx->x);
+			vt->y =  TO_GL(vtx->y);
 			vt->z = 0.0f;
 			vt->vt = vtx;
 		}
@@ -761,13 +761,13 @@ CCMD(dumpgeometry)
 				if (seg->linedef)
 				{
 				Printf("      (%4.4f, %4.4f), (%4.4f, %4.4f) - seg %d, linedef %d, side %d", 
-					TO_MAP(seg->v1->x), TO_MAP(seg->v1->y), TO_MAP(seg->v2->x), TO_MAP(seg->v2->y),
+					TO_GL(seg->v1->x), TO_GL(seg->v1->y), TO_GL(seg->v2->x), TO_GL(seg->v2->y),
 					seg-segs, seg->linedef-lines, seg->sidedef!=&sides[seg->linedef->sidenum[0]]);
 				}
 				else
 				{
 					Printf("      (%4.4f, %4.4f), (%4.4f, %4.4f) - seg %d, miniseg", 
-						TO_MAP(seg->v1->x), TO_MAP(seg->v1->y), TO_MAP(seg->v2->x), TO_MAP(seg->v2->y),
+						TO_GL(seg->v1->x), TO_GL(seg->v1->y), TO_GL(seg->v2->x), TO_GL(seg->v2->y),
 						seg-segs);
 				}
 				if (seg->PartnerSeg) 

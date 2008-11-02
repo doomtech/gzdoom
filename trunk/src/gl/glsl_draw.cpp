@@ -261,7 +261,7 @@ void GLFlat::DrawSubsectorLights(subsector_t * sub, int pass)
 			// Unfortunately the rendering inaccuracies prohibit any kind of plane translation
 			// This must be done on a per-vertex basis.
 			gl_vertices[sub->firstvertex + k].z =
-				TO_MAP(plane.plane.ZatPoint(gl_vertices[sub->firstvertex + k].vt));
+				TO_GL(plane.plane.ZatPoint(gl_vertices[sub->firstvertex + k].vt));
 		}
 		else for(k = 0; k < sub->numvertices; k++)
 		{
@@ -362,8 +362,8 @@ void GLSprite::DrawGLSL(int pass)
 			// fog + fuzz don't work well without some fiddling with the alpha value!
 			if (!gl_isBlack(Colormap.FadeColor))
 			{
-				float xcamera=TO_MAP(viewx);
-				float ycamera=TO_MAP(viewy);
+				float xcamera=TO_GL(viewx);
+				float ycamera=TO_GL(viewy);
 
 				float dist=Dist2(xcamera,ycamera, x,y);
 
