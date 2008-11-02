@@ -210,15 +210,9 @@ void gl_DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 			cm=fakesec->ColorMap;
 			if (gl_nocoloredspritelighting) cm.ClearColor();
 		}
-		if (!fullbright)
-		{
-			lightlevel = gl_CalcLightLevel(lightlevel);
-		}
-		else 
+		if (fullbright)
 		{
 			lightlevel=255;
-			//if (area!=area_below) cm.ClearColor();
-			// keep desaturation/colormap!
 		}
 	}
 
@@ -244,7 +238,7 @@ void gl_DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 	}
 	else
 	{
-		trans = TO_MAP(vis.alpha);
+		trans = TO_GL(vis.alpha);
 	}
 
 

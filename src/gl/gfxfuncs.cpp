@@ -21,8 +21,6 @@
 **    covered by the terms of the GNU Lesser General Public License as published
 **    by the Free Software Foundation; either version 2.1 of the License, or (at
 **    your option) any later version.
-** 5. Full disclosure of the entire project's source code, except for third
-**    party libraries is mandatory. (NOTE: This clause is non-negotiable!)
 **
 ** THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
 ** IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -37,6 +35,8 @@
 **---------------------------------------------------------------------------
 **
 */
+#include "gl_values.h"
+#include "gl_functions.h"
 #include "r_main.h"
 #include "m_swap.h"
 #include "m_png.h"
@@ -88,4 +88,34 @@ PalEntry averageColor(const DWORD *data, int size, bool maxout)
 }
 
 
+//==========================================================================
+//
+// Modifies a color according to a specified colormap
+//
+//==========================================================================
+
+void gl_ModifyColor(BYTE & red, BYTE & green, BYTE & blue, int cm)
+{
+	int gray = (red*77 + green*143 + blue*36)>>8;
+	if (cm == CM_INVERT /* || cm == CM_LITE*/)
+	{
+		gl_InverseMap(gray, red, green, blue);
+	}
+	else if (cm == CM_GOLDMAP)
+	{
+		gl_GoldMap(gray, red, green, blue);
+	}
+	else if (cm == CM_REDMAP)
+	{
+		gl_RedMap(gray, red, green, blue);
+	}
+	else if (cm == CM_GREENMAP)
+	{
+		gl_GreenMap(gray, red, green, blue);
+	}
+	else if (cm >= CM_DESAT1 && cm <= CM_DESAT31)
+	{
+		gl_Desaturate(gray, red, green, blue, red, green, blue, cm - CM_DESAT0);
+	}
+}
 

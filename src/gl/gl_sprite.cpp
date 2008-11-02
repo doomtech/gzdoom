@@ -73,6 +73,7 @@ const BYTE SF_FRAMEMASK  = 0x1f;
 void GLSprite::Draw(int pass)
 {
 	bool additivefog = false;
+	int rel = extralight*gl_weaponlight;
 
 	if (pass!=GLPASS_PLAIN && pass!=GLPASS_TRANSLUCENT) return;
 
@@ -119,8 +120,8 @@ void GLSprite::Draw(int pass)
 			// fog + fuzz don't work well without some fiddling with the alpha value!
 			if (!gl_isBlack(Colormap.FadeColor))
 			{
-				float xcamera=TO_MAP(viewx);
-				float ycamera=TO_MAP(viewy);
+				float xcamera=TO_GL(viewx);
+				float ycamera=TO_GL(viewy);
 
 				float dist=Dist2(xcamera,ycamera, x,y);
 
@@ -145,18 +146,18 @@ void GLSprite::Draw(int pass)
 	{
 		if (actor)
 		{
-			gl_SetSpriteLighting(RenderStyle, actor, lightlevel, extralight*gl_weaponlight, &Colormap, ThingColor, 
+			gl_SetSpriteLighting(RenderStyle, actor, lightlevel, rel, &Colormap, ThingColor, 
 								 trans, !!(actor->renderflags & RF_FULLBRIGHT), false);
 		}
 		else if (particle)
 		{
 			if (gl_light_particles)
 			{
-				gl_SetSpriteLight(particle, lightlevel, extralight*gl_weaponlight, &Colormap, trans, ThingColor);
+				gl_SetSpriteLight(particle, lightlevel, rel, &Colormap, trans, ThingColor);
 			}
 			else 
 			{
-				gl_SetColor(lightlevel, extralight*gl_weaponlight, &Colormap, trans, ThingColor);
+				gl_SetColor(lightlevel, rel, &Colormap, trans, ThingColor);
 			}
 		}
 		else return;
@@ -176,7 +177,7 @@ void GLSprite::Draw(int pass)
 		additivefog=false;
 	}
 
-	gl_SetFog(foglevel, extralight*gl_weaponlight, Colormap.FadeColor, additivefog, Colormap.LightColor.a);
+	gl_SetFog(foglevel, rel, &Colormap, additivefog);
 
 	if (gltexture) gltexture->BindPatch(Colormap.LightColor.a,translation);
 	else if (!modelframe) gl_EnableTexture(false);
@@ -307,8 +308,8 @@ void GLSprite::SplitSprite(sector_t * frontsector, bool translucent)
 		if (i<lightlist.Size()-1) lightbottom=lightlist[i+1].plane.ZatPoint(actor->x,actor->y);
 		else lightbottom=frontsector->floorplane.ZatPoint(actor->x,actor->y);
 
-		//maplighttop=TO_MAP(lightlist[i].height);
-		maplightbottom=TO_MAP(lightbottom);
+		//maplighttop=TO_GL(lightlist[i].height);
+		maplightbottom=TO_GL(lightbottom);
 		if (maplightbottom<z2) maplightbottom=z2;
 
 		if (maplightbottom<z1)
@@ -356,8 +357,8 @@ void GLSprite::SetSpriteColor(sector_t *sector, fixed_t center_y)
 		if (i<lightlist.Size()-1) lightbottom=lightlist[i+1].plane.ZatPoint(actor->x,actor->y);
 		else lightbottom=sector->floorplane.ZatPoint(actor->x,actor->y);
 
-		//maplighttop=TO_MAP(lightlist[i].height);
-		maplightbottom=TO_MAP(lightbottom);
+		//maplighttop=TO_GL(lightlist[i].height);
+		maplightbottom=TO_GL(lightbottom);
 		if (maplightbottom<z2) maplightbottom=z2;
 
 		if (maplightbottom<center_y)
@@ -445,9 +446,9 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 	}
 	
 
-	x = TO_MAP(thingx);
-	z = TO_MAP(thingz-thing->floorclip);
-	y = TO_MAP(thingy);
+	x = TO_GL(thingx);
+	z = TO_GL(thingz-thing->floorclip);
+	y = TO_GL(thingy);
 	
 	modelframe = gl_FindModelFrame(RUNTIME_TYPE(thing), thing->sprite, thing->frame /*, thing->state*/);
 	if (!modelframe)
@@ -476,7 +477,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 			ul=pti->GetUR();
 			ur=pti->GetUL();
 		}
-		r.Scale(TO_MAP(thing->scaleX),TO_MAP(thing->scaleY));
+		r.Scale(TO_GL(thing->scaleX),TO_GL(thing->scaleY));
 
 		float rightfac=-r.left;
 		float leftfac=rightfac-r.width;
@@ -501,7 +502,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 						fixed_t floorh=ff->top.plane->ZatPoint(thingx, thingy);
 						if (floorh==thing->floorz) 
 						{
-							btm=TO_MAP(floorh);
+							btm=TO_GL(floorh);
 							break;
 						}
 					}
@@ -511,11 +512,11 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 					if (thing->flags2&MF2_ONMOBJ && thing->floorz==
 						thing->Sector->heightsec->floorplane.ZatPoint(thingx, thingy))
 					{
-						btm=TO_MAP(thing->floorz);
+						btm=TO_GL(thing->floorz);
 					}
 				}
 				if (btm==1000000.0f) 
-					btm= TO_MAP(thing->Sector->floorplane.ZatPoint(thingx, thingy)-thing->floorclip);
+					btm= TO_GL(thing->Sector->floorplane.ZatPoint(thingx, thingy)-thing->floorclip);
 
 				float diff = z2 - btm;
 				if (diff >= 0 /*|| !gl_sprite_clip_to_floor*/) diff = 0;
@@ -622,7 +623,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 
 	RenderStyle = thing->RenderStyle;
 	RenderStyle.CheckFuzz();
-	trans = TO_MAP(thing->alpha);
+	trans = TO_GL(thing->alpha);
 	hw_styleflags = STYLEHW_Normal;
 
 	if (RenderStyle.Flags & STYLEF_TransSoulsAlpha)
@@ -775,9 +776,9 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 		}
 	}
 
-	x= TO_MAP(particle->x);
-	y= TO_MAP(particle->y);
-	z= TO_MAP(particle->z);
+	x= TO_GL(particle->x);
+	y= TO_GL(particle->y);
+	z= TO_GL(particle->z);
 	
 	float scalefac=particle->size/4.0f;
 	// [BB] The smooth particles are smaller than the other ones. Compensate for this here.

@@ -107,8 +107,6 @@ struct GLHorizonInfo
 	FColormap colormap;
 };
 
-
-
 //==========================================================================
 //
 // One wall segment in the draw list

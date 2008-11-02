@@ -278,9 +278,9 @@ void gl_SetupView(fixed_t viewx, fixed_t viewy, fixed_t viewz, angle_t viewangle
 	viewvecX= cos(DEG2RAD(fviewangle));
 
 	// Player coordinates
-	xCamera=TO_MAP(viewx);
-	yCamera=TO_MAP(viewy);
-	zCamera=TO_MAP(viewz);
+	xCamera=TO_GL(viewx);
+	yCamera=TO_GL(viewy);
+	zCamera=TO_GL(viewz);
 	
 	gl.MatrixMode(GL_MODELVIEW);
 	gl.LoadIdentity();
@@ -377,7 +377,7 @@ static void RenderScene(int recursion)
 
 	if (!gl_no_skyclear) GLPortal::RenderFirstSkyPortal(recursion);
 
-	gl_SetCamera(TO_MAP(viewx), TO_MAP(viewy), TO_MAP(viewz));
+	gl_SetCamera(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
 
 	gl_EnableFog(true);
 	gl.BlendFunc(GL_ONE,GL_ZERO);
@@ -536,7 +536,7 @@ static void RenderSceneGLSL(int recursion)
 
 	if (!gl_no_skyclear) GLPortal::RenderFirstSkyPortal(recursion);
 
-	gl_SetCamera(TO_MAP(viewx), TO_MAP(viewy), TO_MAP(viewz));
+	gl_SetCamera(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
 
 	gl.DepthFunc(GL_LESS);
 	gl.Disable(GL_POLYGON_OFFSET_FILL);	// just in case
@@ -600,7 +600,7 @@ static void RenderTranslucent()
 	RenderAll.Clock();
 
 	gl.DepthMask(false);
-	gl_SetCamera(TO_MAP(viewx), TO_MAP(viewy), TO_MAP(viewz));
+	gl_SetCamera(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
 
 	// final pass: translucent stuff
 	gl.AlphaFunc(GL_GEQUAL,0.5f);
@@ -631,7 +631,7 @@ static void RenderTranslucentGLSL()
 	RenderAll.Clock();
 
 	gl.DepthMask(false);
-	gl_SetCamera(TO_MAP(viewx), TO_MAP(viewy), TO_MAP(viewz));
+	gl_SetCamera(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
 
 	// final pass: translucent stuff
 	glsl->SetBlend(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

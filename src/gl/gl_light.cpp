@@ -61,7 +61,6 @@ EXTERN_CVAR (Float, transsouls)
 //
 //==========================================================================
 
-CVAR (Bool, gl_lights_debug, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CUSTOM_CVAR (Bool, gl_lights, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 {
 	if (self) gl_RecreateAllAttachedLights();
@@ -163,37 +162,6 @@ void gl_SetFogParams(int _fogdensity, PalEntry _outsidefogcolor, int _outsidefog
 
 	outsidefogdensity>>=1;
 	fogdensity>>=1;
-}
-
-//==========================================================================
-//
-// Modifies a color according to a specified colormap
-//
-//==========================================================================
-
-void gl_ModifyColor(BYTE & red, BYTE & green, BYTE & blue, int cm)
-{
-	int gray = (red*77 + green*143 + blue*36)>>8;
-	if (cm == CM_INVERT /* || cm == CM_LITE*/)
-	{
-		gl_InverseMap(gray, red, green, blue);
-	}
-	else if (cm == CM_GOLDMAP)
-	{
-		gl_GoldMap(gray, red, green, blue);
-	}
-	else if (cm == CM_REDMAP)
-	{
-		gl_RedMap(gray, red, green, blue);
-	}
-	else if (cm == CM_GREENMAP)
-	{
-		gl_GreenMap(gray, red, green, blue);
-	}
-	else if (cm >= CM_DESAT1 && cm <= CM_DESAT31)
-	{
-		gl_Desaturate(gray, red, green, blue, red, green, blue, cm - CM_DESAT0);
-	}
 }
 
 //==========================================================================
@@ -383,9 +351,9 @@ void gl_InitFog()
 //
 //==========================================================================
 
-void gl_SetFog(int lightlevel, int rellight, PalEntry fogcolor, bool isadditive, int cm)
+void gl_SetFog(int lightlevel, int rellight, const FColormap *cmap, bool isadditive)
 {
-
+	PalEntry fogcolor;
 	float fogdensity;
 
 	if (level.flags&LEVEL_HASFADETABLE)
@@ -393,10 +361,16 @@ void gl_SetFog(int lightlevel, int rellight, PalEntry fogcolor, bool isadditive,
 		fogdensity=70;
 		fogcolor=0x808080;
 	}
-	else 
+	else if (cmap != NULL)
 	{
+		fogcolor = cmap->FadeColor;
 		fogdensity = gl_GetFogDensity(lightlevel, fogcolor);
 		fogcolor.a=0;
+	}
+	else
+	{
+		fogcolor = 0;
+		fogdensity = 0;
 	}
 
 	// Make fog a little denser when inside a skybox
@@ -445,7 +419,8 @@ void gl_SetFog(int lightlevel, int rellight, PalEntry fogcolor, bool isadditive,
 		{
 			fogcolor=0;
 		}
-		gl_ModifyColor(fogcolor.r, fogcolor.g, fogcolor.b, cm);
+		// Handle desaturation
+		gl_ModifyColor(fogcolor.r, fogcolor.g, fogcolor.b, cmap->LightColor.a);
 
 		gl_EnableFog(fogcolor!=-1);
 		if (fogcolor!=gl_CurrentFogColor)
@@ -475,9 +450,9 @@ bool gl_SetupLight(Plane & p, ADynamicLight * light, Vector & nearPt, Vector & u
 {
 	Vector fn, pos;
 
-    float x = TO_MAP(light->x);
-	float y = TO_MAP(light->y);
-	float z = TO_MAP(light->z);
+    float x = TO_GL(light->x);
+	float y = TO_GL(light->y);
+	float z = TO_GL(light->z);
 	
 	float dist = fabsf(p.DistToPoint(x, z, y));
 	float radius = (light->GetRadius() * gl_lights_size);
@@ -588,7 +563,7 @@ void gl_GetSpriteLight(AActor *self, fixed_t x, fixed_t y, fixed_t z, subsector_
 			if (!(light->flags2&MF2_DORMANT) &&
 				(!(light->flags4&MF4_DONTLIGHTSELF) || light->target != self))
 			{
-				float dist = FVector3( TO_MAP(x - light->x), TO_MAP(y - light->y), TO_MAP(z - light->z) ).Length();
+				float dist = FVector3( TO_GL(x - light->x), TO_GL(y - light->y), TO_GL(z - light->z) ).Length();
 				radius = light->GetRadius() * gl_lights_size;
 				
 				if (dist < radius)

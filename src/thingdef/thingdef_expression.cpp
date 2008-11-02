@@ -2634,8 +2634,12 @@ FxExpression *FxMultiNameState::Resolve(FCompileContext &ctx)
 		if (destination == NULL)
 		{
 			ScriptPosition.Message(ctx.lax? MSG_WARNING:MSG_ERROR, "Unknown state jump destination");
-			delete this;
-			return NULL;
+			if (!ctx.lax)
+			{
+				delete this;
+				return NULL;
+			}
+			return this;
 		}
 		FxExpression *x = new FxConstant(destination, ScriptPosition);
 		delete this;
@@ -2793,6 +2797,8 @@ int FStateExpressions::ResolveAll()
 		{
 			ctx.cls = expressions[i].owner;
 			ctx.isconst = expressions[i].constant;
+			if (i==24352)
+				__asm nop
 			expressions[i].expr = expressions[i].expr->Resolve(ctx);
 			if (expressions[i].expr == NULL)
 			{

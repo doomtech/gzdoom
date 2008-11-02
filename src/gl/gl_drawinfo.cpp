@@ -288,7 +288,7 @@ void GLDrawList::SortWallIntoPlane(SortNode * head,SortNode * sort)
 	GLWall * ws=&walls[drawitems[sort->itemindex].index];
 	GLWall * ws1;
 
-	bool ceiling = fh->z > TO_MAP(viewz);
+	bool ceiling = fh->z > TO_GL(viewz);
 
 
 	if (ws->ztop[0]>fh->z && ws->zbottom[0]<fh->z)
@@ -347,7 +347,7 @@ void GLDrawList::SortSpriteIntoPlane(SortNode * head,SortNode * sort)
 	GLSprite * ss=&sprites[drawitems[sort->itemindex].index];
 	GLSprite * ss1;
 
-	bool ceiling = fh->z > TO_MAP(viewz);
+	bool ceiling = fh->z > TO_GL(viewz);
 
 	if (ss->z1>fh->z && ss->z2<fh->z)
 	{

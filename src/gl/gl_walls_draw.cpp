@@ -182,8 +182,8 @@ void GLWall::RenderFogBoundary()
 	{
 		float fogdensity=gl_GetFogDensity(lightlevel, Colormap.FadeColor);
 
-		float xcamera=TO_MAP(viewx);
-		float ycamera=TO_MAP(viewy);
+		float xcamera=TO_GL(viewx);
+		float ycamera=TO_GL(viewy);
 
 		float dist1=Dist2(xcamera,ycamera, glseg.x1,glseg.y1);
 		float dist2=Dist2(xcamera,ycamera, glseg.x2,glseg.y2);
@@ -231,7 +231,7 @@ void GLWall::RenderMirrorSurface()
 	gl.BlendFunc(GL_SRC_ALPHA,GL_ONE);
 	gl.AlphaFunc(GL_GREATER,0);
 	gl.DepthFunc(GL_LEQUAL);
-	gl_SetFog(lightlevel, extralight*gl_weaponlight, Colormap.FadeColor, true, Colormap.LightColor.a);
+	gl_SetFog(lightlevel, extralight*gl_weaponlight, &Colormap, true);
 
 	FGLTexture * pat=FGLTexture::ValidateTexture(mirrortexture);
 	pat->BindPatch(Colormap.LightColor.a, 0, true);
@@ -294,8 +294,8 @@ void GLWall::RenderTranslucentWall()
 	}
 
 	gl_SetColor(lightlevel, extra, &Colormap, fabsf(alpha));
-	if (type!=RENDERWALL_M2SNF) gl_SetFog(lightlevel, extralight*gl_weaponlight, Colormap.FadeColor, isadditive, Colormap.LightColor.a);
-	else gl_SetFog(255, 0, 0, false, CM_DEFAULT);
+	if (type!=RENDERWALL_M2SNF) gl_SetFog(lightlevel, extra, &Colormap, isadditive);
+	else gl_SetFog(255, 0, NULL, false);
 
 	RenderWall(1,NULL);
 
@@ -318,6 +318,7 @@ void GLWall::RenderTranslucentWall()
 void GLWall::Draw(int pass)
 {
 	FLightNode * node;
+	int rel;
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
@@ -343,11 +344,12 @@ void GLWall::Draw(int pass)
 	case GLPASS_BASE_MASKED:	// Base pass for masked polygons (2sided mid-textures and transparent 3D floors)
 	case GLPASS_PLAIN:			// Single-pass rendering
 
-		gl_SetColor(lightlevel, rellight + (extralight * gl_weaponlight), &Colormap,1.0f);
+		rel = rellight + (extralight * gl_weaponlight);
+		gl_SetColor(lightlevel, rel, &Colormap,1.0f);
 		if (!(flags&GLWF_FOGGY) || pass == GLPASS_PLAIN) 
 		{
-			if (type!=RENDERWALL_M2SNF) gl_SetFog(lightlevel, (extralight * gl_weaponlight), Colormap.FadeColor, false, Colormap.LightColor.a);
-			else gl_SetFog(255, 0, 0, false, CM_DEFAULT);
+			if (type!=RENDERWALL_M2SNF) gl_SetFog(lightlevel, rel, &Colormap, false);
+			else gl_SetFog(255, 0, NULL, false);
 		}
 
 		// fall through
@@ -363,8 +365,8 @@ void GLWall::Draw(int pass)
 	case GLPASS_LIGHT:
 	case GLPASS_LIGHT_ADDITIVE:
 		// black fog is diminishing light and should affect lights less than the rest!
-		if (!(flags&GLWF_FOGGY)) gl_SetFog((255+lightlevel)>>1, 0, 0, false, CM_DEFAULT);
-		else gl_SetFog(lightlevel, 0, Colormap.FadeColor, true, Colormap.LightColor.a);	
+		if (!(flags&GLWF_FOGGY)) gl_SetFog((255+lightlevel)>>1, 0, NULL, false);
+		else gl_SetFog(lightlevel, 0, &Colormap, true);	
 
 		if (!seg->bPolySeg)
 		{
@@ -398,7 +400,7 @@ void GLWall::Draw(int pass)
 		{
 			if (pass==GLPASS_DECALS) 
 			{
-				gl_SetFog(lightlevel, extralight*gl_weaponlight, Colormap.FadeColor, false, Colormap.LightColor.a);
+				gl_SetFog(lightlevel, rellight + extralight*gl_weaponlight, &Colormap, false);
 			}
 			DoDrawDecals(seg->sidedef->AttachedDecals, seg);
 		}

@@ -715,18 +715,23 @@ void gl_SetTextureMode(int which)
 
 void gl_SetShaderLight(float level, float olight)
 {
-	float dist = 256.f;
-
-	if (olight < 96.f)
+	const float MAXDIST = 256.f;
+	const float THRESHOLD = 96.f;
+	const float FACTOR = 0.75f;
+		
+	if (olight < THRESHOLD)
 	{
-		dist = olight * 256.f/96.f;
+		gl_lightdist = olight * MAXDIST / THRESHOLD;
+		olight = THRESHOLD;
 	}
-	gl_lightfactor = (olight/level)*0.75f;
-	gl_lightdist = dist;
+	else gl_lightdist = MAXDIST;
+
+	gl_lightfactor = (olight/level);
+	gl_lightfactor = 1.f + (gl_lightfactor - 1.f) * FACTOR;
 	if (gl_activeShader)
 	{
 		gl_activeShader->SetLightFactor(gl_lightfactor);
-		gl_activeShader->SetLightDist(dist);
+		gl_activeShader->SetLightDist(gl_lightdist);
 	}
 }
 
