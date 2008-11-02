@@ -2797,8 +2797,6 @@ int FStateExpressions::ResolveAll()
 		{
 			ctx.cls = expressions[i].owner;
 			ctx.isconst = expressions[i].constant;
-			if (i==24352)
-				__asm nop
 			expressions[i].expr = expressions[i].expr->Resolve(ctx);
 			if (expressions[i].expr == NULL)
 			{

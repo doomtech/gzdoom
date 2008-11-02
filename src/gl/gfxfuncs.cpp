@@ -52,7 +52,7 @@
 //	component becomes one.
 //
 //===========================================================================
-PalEntry averageColor(const DWORD *data, int size, bool maxout)
+PalEntry averageColor(const DWORD *data, int size, fixed_t maxout_factor)
 {
 	int				i;
 	unsigned int	r, g, b;
@@ -78,11 +78,12 @@ PalEntry averageColor(const DWORD *data, int size, bool maxout)
 
 	int maxv=MAX(MAX(r,g),b);
 
-	if(maxv && maxout)
+	if(maxv && maxout_factor)
 	{
-		r = Scale(r, 255, maxv);
-		g = Scale(g, 255, maxv);
-		b = Scale(b, 255, maxv);
+		maxout_factor = FixedMul(maxout_factor, 255);
+		r = Scale(r, maxout_factor, maxv);
+		g = Scale(g, maxout_factor, maxv);
+		b = Scale(b, maxout_factor, maxv);
 	}
 	return PalEntry(r,g,b);
 }

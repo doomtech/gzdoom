@@ -90,8 +90,12 @@ void gl_SetTextureMode(int which);
 void gl_EnableFog(bool on);
 void gl_SetShaderLight(float level, float factor);
 void gl_SetCamera(float x, float y, float z);
-void gl_SetFogLight(int lightlevel);
+
+void gl_SetGlowParams(float *topcolors, float topheight, float *bottomcolors, float bottomheight);
+void gl_SetGlowPosition(float topdist, float bottomdist);
+
 void gl_EnableTexture(bool on);
+
 
 
 FTextureID gl_GetSpriteFrame(unsigned sprite, int frame, int rot, angle_t angle, bool *mirror);
@@ -130,8 +134,8 @@ void gl_RecreateAllAttachedLights();
 void gl_ParseDefs();
 
 
-void gl_SplitLeftEdge(GLWall * wall, texcoord * tcs);
-void gl_SplitRightEdge(GLWall * wall, texcoord * tcs);
+void gl_SplitLeftEdge(GLWall * wall, texcoord * tcs, bool glow);
+void gl_SplitRightEdge(GLWall * wall, texcoord * tcs, bool glow);
 void gl_RecalcVertexHeights(vertex_t * v);
 void gl_InitVertexData();
 void gl_CleanVertexData();
@@ -176,7 +180,7 @@ __forceinline void gl_Desaturate(int gray, int ired, int igreen, int iblue, BYTE
 }
 
 void gl_ModifyColor(BYTE & red, BYTE & green, BYTE & blue, int cm);
-PalEntry averageColor(const DWORD *data, int size, bool maxout);
+PalEntry averageColor(const DWORD *data, int size, fixed_t maxout);
 
 
 extern int currentrenderer;

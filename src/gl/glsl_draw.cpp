@@ -29,8 +29,6 @@ EXTERN_CVAR(Int, gl_billboard_mode)
 //==========================================================================
 //
 // General purpose wall rendering function
-// with the exception of walls lit by glowing flats 
-// everything goes through here
 //
 // Tests have shown that precalculating this data
 // doesn't give any noticable performance improvements
@@ -55,7 +53,7 @@ void GLWall::RenderWallGLSL()
 	gl.TexCoord2f(tcs[0].u,tcs[0].v);
 	gl.Vertex3f(glseg.x1,zbottom[0],glseg.y1);
 
-	if (gl_seamless && glseg.fracleft==0) gl_SplitLeftEdge(this, tcs);
+	if (gl_seamless && glseg.fracleft==0) gl_SplitLeftEdge(this, tcs, false);
 
 	// upper left corner
 	gl.TexCoord2f(tcs[1].u,tcs[1].v);
@@ -65,7 +63,7 @@ void GLWall::RenderWallGLSL()
 	gl.TexCoord2f(tcs[2].u,tcs[2].v);
 	gl.Vertex3f(glseg.x2,ztop[1],glseg.y2);
 
-	if (gl_seamless && glseg.fracright==1) gl_SplitRightEdge(this, tcs);
+	if (gl_seamless && glseg.fracright==1) gl_SplitRightEdge(this, tcs, false);
 
 	// lower right corner
 	gl.TexCoord2f(tcs[3].u,tcs[3].v); 

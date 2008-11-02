@@ -693,9 +693,8 @@ void GLDrawInfo::DrawFloodedPlane(wallseg * ws, float planez, sector_t * sec, bo
 	else
 	{
 		Colormap=sec->ColorMap;
-		if (gl_isGlowingTexture(plane.texture)) 
+		if (gltexture->tex->isFullbright())
 		{
-			// glowing textures are always drawn full bright without colored light
 			Colormap.LightColor.r = Colormap.LightColor.g = Colormap.LightColor.b = 0xff;
 			lightlevel=255;
 		}

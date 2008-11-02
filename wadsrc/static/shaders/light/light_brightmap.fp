@@ -15,11 +15,11 @@ vec4 lightpixel(vec4 pixin)
 		const float LOG2E = 1.442692;	// = 1/log(2)
 		float fc;
 		if (fogenabled == 1) fc = fogcoord;
-		else fc = distance(pixelpos, camerapos);
+		else fc = max(16.0, distance(pixelpos, camerapos));
 		
 		if (lightfactor != 1.0 && fc < lightdist) 
 		{
-			pixin *= lightfactor - (fc / lightdist) * (lightfactor - 1.0);
+			pixin.rgb *= lightfactor - (fc / lightdist) * (lightfactor - 1.0);
 		}
 		
 		float factor = exp2 ( -gl_Fog.density * fc * LOG2E);

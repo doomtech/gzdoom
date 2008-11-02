@@ -147,6 +147,11 @@ public:
 	byte flags;
 	short rellight;
 
+	float topglowcolor[3];
+	float bottomglowcolor[3];
+	float topglowheight;
+	float bottomglowheight;
+
 	union
 	{
 		// it's either one of them but never more!
