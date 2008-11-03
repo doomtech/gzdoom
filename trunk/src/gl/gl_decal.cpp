@@ -45,7 +45,6 @@
 #include "gl/gl_texture.h"
 #include "gl/gl_functions.h"
 #include "gl/gl_intern.h"
-#include "gl/glsl_state.h"
 
 EXTERN_CVAR(Bool, gl_nocoloredspritelighting)
 
@@ -317,21 +316,13 @@ void GLWall::DrawDecal(DBaseDecal *actor, seg_t *seg, sector_t *frontSector, sec
 	}
 	// fog is set once per wall in the calling function and not per decal!
 
-	if (!gl_glsl_renderer)
+	if (loadAlpha)
 	{
-		if (loadAlpha)
-		{
-			gl.Color4f(red, green, blue, a);
-		}
-		else
-		{
-			gl_SetColor(light, rel, &p, a);
-		}
+		gl.Color4f(red, green, blue, a);
 	}
 	else
 	{
-		glsl->SetLight(light, rel, &p, a, false);
-		if (loadAlpha) glsl->SetLightAbsolute(red, green, blue, a);
+		gl_SetColor(light, rel, &p, a);
 	}
 
 	gl_SetRenderStyle(actor->RenderStyle, false, false);
@@ -349,7 +340,6 @@ void GLWall::DrawDecal(DBaseDecal *actor, seg_t *seg, sector_t *frontSector, sec
 	}
 	gl.End();
 	rendered_decals++;
-	if (loadAlpha && gl_glsl_renderer) glsl->SetLightAbsolute(-1,-1,-1,-1);
 }
 
 //==========================================================================

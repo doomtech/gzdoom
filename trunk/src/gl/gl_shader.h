@@ -2,8 +2,6 @@
 #ifndef __GL_SHADERS_H__
 #define __GL_SHADERS_H__
 
-EXTERN_CVAR(Bool, gl_glsl_renderer)
-
 extern bool gl_fogenabled;
 extern bool gl_textureenabled;
 extern bool gl_glowenabled;

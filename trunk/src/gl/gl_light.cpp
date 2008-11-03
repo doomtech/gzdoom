@@ -49,7 +49,6 @@
 #include "gl/gl_texture.h"
 #include "gl/gl_functions.h"
 #include "gl/gl_portal.h"
-#include "gl/glsl_state.h"
 #include "g_level.h"
 
 
@@ -676,16 +675,8 @@ void gl_SetRenderStyle(FRenderStyle style, bool drawopaque, bool allowcolorblend
 	}
 
 	gl.BlendEquation(blendequation);
-	if (!gl_glsl_renderer)
-	{
-		gl.BlendFunc(srcblend, dstblend);
-		gl_SetTextureMode(texturemode);
-	}
-	else
-	{
-		glsl->SetBlend(srcblend, dstblend);
-		glsl->SetTextureMode(texturemode);
-	}
+	gl.BlendFunc(srcblend, dstblend);
+	gl_SetTextureMode(texturemode);
 }
 
 //==========================================================================

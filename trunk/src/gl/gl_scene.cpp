@@ -58,7 +58,6 @@
 #include "gl/gl_shader.h"
 #include "gl/gl_framebuffer.h"
 #include "gl/gl_models.h"
-#include "gl/glsl_state.h"
 
 //#define DEG2RAD( a ) ( a * M_PI ) / 180.0F
 //#define RAD2DEG( a ) ( a / M_PI ) * 180.0F
@@ -524,71 +523,6 @@ static void RenderScene(int recursion)
 
 //-----------------------------------------------------------------------------
 //
-// RenderSceneGLSL
-//
-// Draws the current draw lists for the GLSL renderer
-//
-//-----------------------------------------------------------------------------
-
-static void RenderSceneGLSL(int recursion)
-{
-	RenderAll.Clock();
-
-	if (!gl_no_skyclear) GLPortal::RenderFirstSkyPortal(recursion);
-
-	gl_SetCamera(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
-
-	gl.DepthFunc(GL_LESS);
-	gl.Disable(GL_POLYGON_OFFSET_FILL);	// just in case
-
-
-
-	// Part 1: solid geometry. This is set up so that there are no transparent parts
-
-	glsl->SetBlend(GL_ONE,GL_ZERO);
-	glsl->SetAlphaThreshold(0);
-
-	gl_drawinfo->drawlists[GLDL_PLAIN].Sort();
-	gl_drawinfo->drawlists[GLDL_PLAIN].DrawGLSL(/*gl_texture?*/ GLPASS_PLAIN/* : GLPASS_BASE*/);
-
-
-	glsl->SetAlphaThreshold(gl_mask_threshold);
-
-	gl_drawinfo->drawlists[GLDL_MASKED].Sort();
-	gl_drawinfo->drawlists[GLDL_MASKED].DrawGLSL(/*gl_texture?*/ GLPASS_PLAIN /*: GLPASS_BASE_MASKED*/);
-
-	// Draw decals (not a real pass)
-	gl.DepthFunc(GL_LEQUAL);
-	gl.Enable(GL_POLYGON_OFFSET_FILL);
-	gl.PolygonOffset(-1.0f, -128.0f);
-	gl.DepthMask(false);
-
-	for(int i=0; i<GLDL_TRANSLUCENT; i++)
-	{
-		gl_drawinfo->drawlists[GLDL_PLAIN].Draw(GLPASS_DECALS);
-	}
-
-	gl.DepthMask(true);
-
-	// Push bleeding floor/ceiling textures back a little in the z-buffer
-	// so they don't interfere with overlapping mid textures.
-	gl.PolygonOffset(1.0f, 128.0f);
-
-	// ***LATER!***
-	// flood all the gaps with the back sector's flat texture
-	// This will always be drawn like GLDL_PLAIN
-	glsl->SetBlend(GL_ONE,GL_ZERO);
-	glsl->SetAlphaThreshold(0);
-	//gl_drawinfo->DrawUnhandledMissingTextures();
-
-	gl.PolygonOffset(0.0f, 0.0f);
-	gl.Disable(GL_POLYGON_OFFSET_FILL);
-
-	RenderAll.Unclock();
-}
-
-//-----------------------------------------------------------------------------
-//
 // RenderTranslucent
 //
 // Draws the current draw lists for the non GLSL renderer
@@ -620,35 +554,6 @@ static void RenderTranslucent()
 
 //-----------------------------------------------------------------------------
 //
-// RenderTranslucentGLSL
-//
-// Draws the current draw lists for the GLSL renderer
-//
-//-----------------------------------------------------------------------------
-
-static void RenderTranslucentGLSL()
-{
-	RenderAll.Clock();
-
-	gl.DepthMask(false);
-	gl_SetCamera(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
-
-	// final pass: translucent stuff
-	glsl->SetBlend(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glsl->SetAlphaThreshold(0.5f);
-
-	gl_drawinfo->drawlists[GLDL_TRANSLUCENTBORDER].DrawGLSL(GLPASS_TRANSLUCENT);
-	gl_drawinfo->drawlists[GLDL_TRANSLUCENT].DrawSortedGLSL();
-
-	gl.DepthMask(true);
-
-	glsl->SetAlphaThreshold(0.5f);
-	RenderAll.Unclock();
-}
-
-
-//-----------------------------------------------------------------------------
-//
 // gl_drawscene - this function renders the scene from the current
 // viewpoint, including mirrors and skyboxes and other portals
 // It is assumed that the GLPortal::EndFrame returns with the 
@@ -662,14 +567,7 @@ void gl_DrawScene()
 
 	ProcessScene();
 
-	if (!gl_glsl_renderer)
-	{
-		RenderScene(recursion);
-	}
-	else
-	{
-		RenderSceneGLSL(recursion);
-	}
+	RenderScene(recursion);
 
 	// Handle all portals after rendering the opaque objects but before
 	// doing all translucent stuff
@@ -677,14 +575,7 @@ void gl_DrawScene()
 	GLPortal::EndFrame();
 	recursion--;
 
-	if (!gl_glsl_renderer)
-	{
-		RenderTranslucent();
-	}
-	else
-	{
-		RenderTranslucentGLSL();
-	}
+	RenderTranslucent();
 }
 
 
