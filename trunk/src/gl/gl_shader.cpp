@@ -780,7 +780,7 @@ void gl_ApplyShader()
 	{
 		if (
 			(gl_fogenabled && (gl_fogmode == 2 || gl_fog_shader) && gl_fogmode != 0) || // fog requires a shader
-			(gl_textureenabled && (gl_warpstate != 0 || gl_brightmapstate)) ||		// warp or brightmap
+			(gl_textureenabled && (gl_warpstate != 0 || gl_brightmapstate || gl_colormapstate)) ||		// warp or brightmap
 			(gl_glowenabled)		// glow requires a shader
 			)
 		{
