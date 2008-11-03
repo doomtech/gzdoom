@@ -6,35 +6,13 @@ EXTERN_CVAR(Bool, gl_glsl_renderer)
 
 extern bool gl_fogenabled;
 extern bool gl_textureenabled;
+extern bool gl_glowenabled;
 extern int gl_texturemode;
 extern int gl_brightmapenabled;
 
-struct FShaderContainer;
-
-class GLShader
-{
-	FName Name;
-	FShaderContainer *container;
-	// additional parameters
-
-	static GLShader * lastshader;
-	static int lastcm;
-
-public:
-
-	static void Initialize();
-	static void Clear();
-	static GLShader *Find(const char * shn);
-	void Bind(int cm, int lightmode, float Speed);
-	static void Unbind();
-	static void Rebind();
-
-};
-
-
 //==========================================================================
 //
-// set brightness map status
+// set brightness map and glowstatus
 // Change will only take effect when the texture is rebound!
 //
 //==========================================================================
@@ -44,6 +22,15 @@ inline void gl_EnableBrightmap(bool on)
 	gl_brightmapenabled = on;
 }
 
+inline void gl_EnableGlow(bool on)
+{
+	gl_glowenabled = on;
+}
+
+void gl_ApplyShader();
+void gl_DisableShader();
+void gl_ClearShaders();
+void gl_InitShaders();
 
 
 #endif

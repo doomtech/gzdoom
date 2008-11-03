@@ -83,7 +83,7 @@ static void DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy,
 	FGLTexture * tex=FGLTexture::ValidateTexture(lump, false);
 	if (!tex) return;
 
-	const PatchTextureInfo * pti = tex->BindPatch(cm_index, 0, true);
+	const PatchTextureInfo * pti = tex->BindPatch(cm_index, 0);
 	if (!pti) return;
 
 	int vw = viewwidth;
@@ -127,6 +127,7 @@ static void DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy,
 		fV2=pti->GetVB();
 	}
 
+	gl_ApplyShader();
 	gl.Begin(GL_TRIANGLE_STRIP);
 	gl.TexCoord2f(fU1, fV1); gl.Vertex2f(x1,y1);
 	gl.TexCoord2f(fU1, fV2); gl.Vertex2f(x1,y2);

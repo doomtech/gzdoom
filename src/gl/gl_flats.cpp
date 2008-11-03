@@ -93,14 +93,8 @@ void GLFlat::DrawSubsectorLights(subsector_t * sub, int pass)
 	float scale;
 	int k;
 
-#ifdef DEBUG
-	if (sub-subsectors==314)
-	{
-		__asm nop
-	}
-#endif
-
 	FLightNode * node = sub->lighthead[pass==GLPASS_LIGHT_ADDITIVE];
+	gl_DisableShader();
 	while (node)
 	{
 		ADynamicLight * light = node->lightsource;
@@ -210,6 +204,7 @@ void GLFlat::DrawSubsector(subsector_t * sub)
 
 void GLFlat::DrawSubsectors(bool istrans)
 {
+	gl_ApplyShader();
 	if (sub)
 	{
 		// This represents a single subsector
@@ -254,6 +249,14 @@ void GLFlat::Draw(int pass)
 {
 	int i;
 	int rel = extralight*gl_weaponlight;
+
+#ifdef _MSC_VER
+#ifdef _DEBUG
+	if (sector->sectornum == 249 || sector->sectornum == 287)
+		__asm nop
+#endif
+#endif
+
 
 	switch (pass)
 	{

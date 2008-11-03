@@ -68,11 +68,6 @@ CUSTOM_CVAR(Bool, gl_glsl_renderer, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_N
 	{
 		if (self) self=0;
 	}
-	else
-	{
-		GLShader::Unbind();
-		FGLTexture::FlushAll();
-	}
 }
 
 CUSTOM_CVAR(Bool, gl_texture_usehires, true, CVAR_ARCHIVE|CVAR_NOINITCALL)
@@ -550,11 +545,11 @@ void FTexture::PrecacheGL()
 		{
 			if (UseType==FTexture::TEX_Sprite) 
 			{
-				gltex->BindPatch(CM_DEFAULT, 0, true);
+				gltex->BindPatch(CM_DEFAULT, 0);
 			}
 			else 
 			{
-				gltex->Bind (CM_DEFAULT, 0, 0, true);
+				gltex->Bind (CM_DEFAULT, 0, 0);
 			}
 		}
 	}
@@ -619,6 +614,7 @@ FTexture::MiscGLInfo::MiscGLInfo() throw()
 	bSkybox = false;
 	FloorSkyColor = 0;
 	CeilingSkyColor = 0;
+	bFullbright = false;
 	bSkyColorDone = false;
 	bBrightmapChecked = false;
 	bBrightmap = false;
@@ -724,19 +720,6 @@ FGLTexture::FGLTexture(FTexture * tx)
 
 	scalex = tex->xScale/(float)FRACUNIT;
 	scaley = tex->yScale/(float)FRACUNIT;
-
-	if (gl.flags & RFL_GLSL) switch(tex->bWarped)
-	{
-	default:
-		Shader = GLShader::Find("Default");
-		break;
-	case 1:
-		Shader = GLShader::Find("Warp 1");
-		break;
-	case 2:
-		Shader = GLShader::Find("Warp 2");
-		break;
-	}
 
 	// a little adjustment to make sprites look better with texture filtering:
 	// create a 1 pixel wide empty frame around them.
@@ -1251,11 +1234,35 @@ const PatchTextureInfo * FGLTexture::GetPatchTextureInfo()
 //
 //===========================================================================
 
-#define UseShader() \
-	(gl_warp_shader && tex->bWarped!=0) || \
-	((gl_fog_shader || gl_fogmode == 2 || gl_lightmode == 2) && !is2d && gl_fogmode != 0) || \
-	(usebright) || \
-	((tex->bHasCanvas || gl_colormap_shader) && cm!=CM_DEFAULT && cm!=CM_SHADE && gl_texturemode != TM_MASK)
+void FGLTexture::SetupShader(int clampmode, int warped, int &cm, int translation)
+{
+	bool usebright;
+
+	if (gl.flags & RFL_GLSL)
+	{
+		if (tex->gl_info.bBrightmapChecked == -1)
+		{
+			CreateDefaultBrightmap();
+		}
+
+		FTexture *brightmap = tex->gl_info.Brightmap;
+		if (brightmap && gl_brightmap_shader && translation >= 0 &&
+			cm >= CM_DEFAULT && cm <= CM_DESAT31 && gl_brightmapenabled)
+		{
+			FGLTexture *bmgltex = FGLTexture::ValidateTexture(brightmap);
+			if (clampmode != -1) bmgltex->Bind(1, CM_DEFAULT, clampmode, 0);
+			else bmgltex->BindPatch(1, CM_DEFAULT, 0);
+			usebright = true;
+		}
+		else usebright = false;
+
+		bool usecmshader = (tex->bHasCanvas || gl_colormap_shader) && cm > CM_DEFAULT && cm < CM_SHADE && gl_texturemode != TM_MASK;
+
+		float warptime = warped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 0.f;
+		gl_SetTextureShader(warped, usecmshader? cm : CM_DEFAULT, usebright, warptime);
+		if (usecmshader) cm = CM_DEFAULT;
+	}
+}
 
 //===========================================================================
 // 
@@ -1263,7 +1270,7 @@ const PatchTextureInfo * FGLTexture::GetPatchTextureInfo()
 //
 //===========================================================================
 
-const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, int translation, bool is2d, bool glow)
+const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, int translation)
 {
 	int usebright = false;
 
@@ -1273,62 +1280,23 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 	{
 		if (texunit == 0)
 		{
-			if (!glow)
-			{
-				if (tex->gl_info.bBrightmapChecked == -1)
-				{
-					CreateDefaultBrightmap();
-				}
+			int warped = gl_warp_shader? tex->bWarped : 0;
 
-				FTexture *brightmap = tex->gl_info.Brightmap;
-				if (brightmap && (gl_glsl_renderer || (gl_brightmap_shader && !is2d)) && translation >= 0 &&
-					cm >= CM_DEFAULT && cm <= CM_DESAT31 && gl_brightmapenabled)
+			SetupShader(clampmode, warped, cm, translation);
+
+			if (warped == 0)
+			{
+				// If this is a warped texture that needs updating
+				// delete all system textures created for this
+				if (tex->CheckModified() && !tex->bHasCanvas && HiresLump<0 && HiresLump!=-2)
 				{
-					FGLTexture *bmgltex = FGLTexture::ValidateTexture(brightmap);
-					bmgltex->Bind(1, CM_DEFAULT, clampmode, 0, is2d, false);
-					usebright = true;
+					gltexture->Clean(true);
 				}
 			}
-			else
-				usebright = 2;
-
-
-			if (!gl_glsl_renderer)
+			else if (createWarped)
 			{
-				if (gl.flags & RFL_GLSL)
-				{
-					if (createWarped && gl_warp_shader && tex->bWarped!=0)
-					{
-						Clean(true);
-						GetWorldTextureInfo();
-					}
-						
-					if (UseShader())
-					{
-						Shader->Bind(cm, usebright, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 0.f);
-						if (cm != CM_SHADE) cm = CM_DEFAULT;
-					}
-					else
-					{
-						GLShader::Unbind();
-					}
-				}
-
-				if (tex->bWarped == 0 || !gl_warp_shader)
-				{
-					// If this is a warped texture that needs updating
-					// delete all system textures created for this
-					if (tex->CheckModified() && !tex->bHasCanvas && HiresLump<0 && HiresLump!=-2)
-					{
-						gltexture->Clean(true);
-					}
-				}
-			}
-			else
-			{
-				glsl->SetBrightmap(usebright==1);
-				glsl->SetWarp(tex->bWarped, static_cast<FWarpTexture*>(tex)->GetSpeed());
-				if (cm != CM_SHADE) cm = CM_DEFAULT;
+				Clean(true);
+				GetWorldTextureInfo();
 			}
 		}
 
@@ -1358,16 +1326,16 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 	return NULL;
 }
 
-const WorldTextureInfo * FGLTexture::Bind(int cm, int clampmode, int translation, bool is2d, bool glow)
+const WorldTextureInfo * FGLTexture::Bind(int cm, int clampmode, int translation)
 {
-	return Bind(0, cm, clampmode, translation, is2d, glow);
+	return Bind(0, cm, clampmode, translation);
 }
 //===========================================================================
 // 
 //	Binds a sprite to the renderer
 //
 //===========================================================================
-const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translation, bool is2d)
+const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translation)
 {
 	bool usebright = false;
 	int transparm = translation;
@@ -1378,57 +1346,23 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 	{
 		if (texunit == 0)
 		{
-			if (tex->gl_info.bBrightmapChecked == -1)
-			{
-				CreateDefaultBrightmap();
-			}
+			int warped = gl_warp_shader? tex->bWarped : 0;
 
-			FTexture *brightmap = tex->gl_info.Brightmap;
+			SetupShader(-1, warped, cm, translation);
 
-			if (brightmap && (gl_glsl_renderer || gl_brightmap_shader) && translation >= 0 && 
-				transparm >= 0 && cm >= CM_DEFAULT && cm <= CM_DESAT31 && gl_brightmapenabled)
+			if (warped == 0)
 			{
-				FGLTexture *bmgltex = FGLTexture::ValidateTexture(brightmap);
-				bmgltex->BindPatch(1, CM_DEFAULT, 0, is2d);
-				usebright = true;
-			}
-
-			if (!gl_glsl_renderer)
-			{
-				if (gl.flags & RFL_GLSL)
+				// If this is a warped texture that needs updating
+				// delete all system textures created for this
+				if (tex->CheckModified() && !tex->bHasCanvas && HiresLump<0 && HiresLump!=-2)
 				{
-					if (createWarped && gl_warp_shader && tex->bWarped!=0)
-					{
-						Clean(true);
-						GetPatchTextureInfo();
-					}
-
-					if (UseShader())
-					{
-						Shader->Bind(cm, usebright, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 0.f);
-						if (cm != CM_SHADE) cm = CM_DEFAULT;
-					}
-					else
-					{
-						GLShader::Unbind();
-					}
-				}
-
-				if (tex->bWarped == 0 || !gl_warp_shader)
-				{
-					// If this is a warped texture that needs updating
-					// delete all system textures created for this
-					if (tex->CheckModified() && !tex->bHasCanvas && HiresLump<0 && HiresLump!=-2)
-					{
-						glpatch->Clean(true);
-					}
+					glpatch->Clean(true);
 				}
 			}
-			else
+			else if (createWarped)
 			{
-				glsl->SetBrightmap(usebright);
-				glsl->SetWarp(tex->bWarped, static_cast<FWarpTexture*>(tex)->GetSpeed());
-				if (cm != CM_SHADE) cm = CM_DEFAULT;
+				Clean(true);
+				GetPatchTextureInfo();
 			}
 		}
 
@@ -1459,9 +1393,9 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 	return NULL;
 }
 
-const PatchTextureInfo * FGLTexture::BindPatch(int cm, int translation, bool is2d)
+const PatchTextureInfo * FGLTexture::BindPatch(int cm, int translation)
 {
-	return BindPatch(0, cm, translation, is2d);
+	return BindPatch(0, cm, translation);
 }
 
 //==========================================================================

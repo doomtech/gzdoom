@@ -204,6 +204,7 @@ void GLSprite::Draw(int pass)
 			gl.Rotatef(-ANGLE_TO_FLOAT(players[consoleplayer].camera->pitch), -sin(angleRad), 0, cos(angleRad));
 			gl.Translatef( -xcenter, -zcenter, -ycenter);
 		}
+		gl_ApplyShader();
 		gl.Begin(GL_TRIANGLE_STRIP);
 		if (gltexture)
 		{

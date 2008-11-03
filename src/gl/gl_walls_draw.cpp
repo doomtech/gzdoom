@@ -126,7 +126,7 @@ void GLWall::RenderWall(int textured, float * color2, ADynamicLight * light)
 		tcs[1]=uplft;
 		tcs[2]=uprgt;
 		tcs[3]=lorgt;
-		glowing = !!(flags&GLWF_GLOW);
+		glowing = !!(flags&GLWF_GLOW) && (textured & 2);
 	}
 	else
 	{
@@ -134,8 +134,11 @@ void GLWall::RenderWall(int textured, float * color2, ADynamicLight * light)
 		glowing = false;
 	}
 
+	gl_ApplyShader();
+
 	if (glowing)
 	{
+		// must be done after gl_ApplyShader!
 		gl_SetGlowParams(topglowcolor, topglowheight, bottomglowcolor, bottomglowheight);
 	}
 
@@ -242,7 +245,7 @@ void GLWall::RenderMirrorSurface()
 	gl_SetFog(lightlevel, extralight*gl_weaponlight, &Colormap, true);
 
 	FGLTexture * pat=FGLTexture::ValidateTexture(mirrortexture);
-	pat->BindPatch(Colormap.LightColor.a, 0, true);
+	pat->BindPatch(Colormap.LightColor.a, 0);
 
 	flags &= ~GLWF_GLOW;
 	RenderWall(0,NULL);
@@ -293,7 +296,8 @@ void GLWall::RenderTranslucentWall()
 	if (gltexture) 
 	{
 		if (flags&GLWF_FOGGY) gl_EnableBrightmap(false);
-		gltexture->Bind(Colormap.LightColor.a, flags, 0, false, !!(flags & GLWF_GLOW));
+		gl_EnableGlow(!!(flags & GLWF_GLOW));
+		gltexture->Bind(Colormap.LightColor.a, flags, 0);
 		extra = (extralight * gl_weaponlight);
 	}
 	else 
@@ -317,6 +321,7 @@ void GLWall::RenderTranslucentWall()
 		gl_EnableTexture(true);
 	}
 	gl_EnableBrightmap(true);
+	gl_EnableGlow(false);
 }
 
 //==========================================================================
@@ -360,15 +365,16 @@ void GLWall::Draw(int pass)
 			if (type!=RENDERWALL_M2SNF) gl_SetFog(lightlevel, rel, &Colormap, false);
 			else gl_SetFog(255, 0, NULL, false);
 		}
+		gl_EnableGlow(!!(flags & GLWF_GLOW));
 
 		// fall through
 	case GLPASS_TEXTURE:		// modulated texture
 		if (pass != GLPASS_BASE)
 		{
-			gltexture->Bind(Colormap.LightColor.a, flags, 0, false, !!(flags & GLWF_GLOW));
+			gltexture->Bind(Colormap.LightColor.a, flags, 0);
 		}
-		
 		RenderWall((pass!=GLPASS_BASE) + 2*(pass!=GLPASS_TEXTURE), NULL);
+		gl_EnableGlow(false);
 		break;
 
 	case GLPASS_LIGHT:

@@ -46,6 +46,7 @@
 #include "gl_texture.h"
 #include "gl_values.h"
 #include "gl_renderstruct.h"
+#include "gl/gl_shader.h"
 
 static float   avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "tab_anorms.h"
@@ -265,6 +266,7 @@ void FDMDModel::RenderGLCommands(void *glCommands, unsigned int numVertices,FMod
 	FGLCommandVertex * v;
 	int     count;
 
+	gl_ApplyShader();
 	for(pos = (char*)glCommands; *pos;)
 	{
 		count = *(int *) pos;

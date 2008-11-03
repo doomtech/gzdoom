@@ -53,6 +53,7 @@
 #include "gl/gl_basic.h"
 #include "gl/gl_data.h"
 #include "gl/gl_geometric.h"
+#include "gl/gl_shader.h"
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -121,7 +122,7 @@ void GLPortal::DrawPortalStencil()
 	if (NeedCap() && lines.Size() > 1)
 	{
 		// Cap the stencil at the top and bottom 
-		// (cheap ass version
+		// (cheap ass version)
 		gl.Begin(GL_TRIANGLE_FAN);
 		gl.Vertex3f(-32767.0f,32767.0f,-32767.0f);
 		gl.Vertex3f(-32767.0f,32767.0f, 32767.0f);
@@ -161,6 +162,7 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 		gl_EnableTexture(false);
 		gl.Color3f(1,1,1);
 		gl.DepthFunc(GL_LESS);
+		gl_DisableShader();
 
 		if (NeedDepthBuffer())
 		{
@@ -320,6 +322,7 @@ void GLPortal::End(bool usestencil)
 		gl.ColorMask(0,0,0,0);						// no graphics
 		gl.Color3f(1,1,1);
 		gl_EnableTexture(false);
+		gl_DisableShader();
 
 		if (needdepth) 
 		{
@@ -781,6 +784,7 @@ void GLHorizonPortal::DrawContents()
 
 	gl.Disable(GL_ALPHA_TEST);
 	gl.BlendFunc(GL_ONE,GL_ZERO);
+	gl_ApplyShader();
 
 
 	float vx=TO_GL(viewx);

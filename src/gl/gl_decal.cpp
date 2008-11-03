@@ -340,7 +340,7 @@ void GLWall::DrawDecal(DBaseDecal *actor, seg_t *seg, sector_t *frontSector, sec
 	if (actor->RenderStyle.SrcAlpha == STYLEALPHA_One) gl.AlphaFunc(GL_GEQUAL, 0.5f);
 	else gl.AlphaFunc(GL_GREATER, 0.f);
 
-	if (gl_glsl_renderer) glsl->Apply();
+	gl_ApplyShader();
 	gl.Begin(GL_TRIANGLE_FAN);
 	for(i=0;i<4;i++)
 	{

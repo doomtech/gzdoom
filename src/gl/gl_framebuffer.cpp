@@ -90,7 +90,7 @@ OpenGLFrameBuffer::~OpenGLFrameBuffer()
 	gl_FreeSpecialTextures();
 	// all native textures must be completely removed before destroying the frame buffer
 	FGLTexture::DeleteAll();
-	GLShader::Clear();
+	gl_ClearShaders();
 }
 
 //==========================================================================
@@ -157,7 +157,7 @@ void OpenGLFrameBuffer::InitializeState()
 
 	gl.Viewport(0, (GetTrueHeight()-GetHeight())/2, GetWidth(), GetHeight()); 
 
-	GLShader::Initialize();
+	gl_InitShaders();
 	gl_InitFog();
 	Begin2D(false);
 
@@ -193,6 +193,7 @@ void OpenGLFrameBuffer::Update()
 		gl.MatrixMode(GL_MODELVIEW);
 		gl.Color3f(0.f, 0.f, 0.f);
 		gl_EnableTexture(false);
+		gl_DisableShader();
 
 		gl.Begin(GL_QUADS);
 		// upper quad
@@ -391,7 +392,6 @@ bool OpenGLFrameBuffer::Begin2D(bool)
 	gl.Disable(GL_DEPTH_TEST);
 	gl.Disable(GL_MULTISAMPLE);
 	gl_EnableFog(false);
-	GLShader::Unbind();
 	return true;
 }
 
@@ -437,12 +437,12 @@ void STACK_ARGS OpenGLFrameBuffer::DrawTextureV(FTexture *img, int x0, int y0, u
 				GLTranslationPalette * pal = static_cast<GLTranslationPalette*>(parms.remap->GetNative());
 				if (pal) translation = -pal->GetIndex();
 			}
-			pti = gltex->BindPatch(CM_DEFAULT, translation, true);
+			pti = gltex->BindPatch(CM_DEFAULT, translation);
 		}
 		else 
 		{
 			// This is an alpha texture
-			pti = gltex->BindPatch(CM_SHADE, 0, true);
+			pti = gltex->BindPatch(CM_SHADE, 0);
 		}
 
 		if (!pti) return;
@@ -454,7 +454,7 @@ void STACK_ARGS OpenGLFrameBuffer::DrawTextureV(FTexture *img, int x0, int y0, u
 	}
 	else
 	{
-		gltex->Bind(CM_DEFAULT, 0, 0, true);
+		gltex->Bind(CM_DEFAULT, 0, 0);
 		cx=1.f;
 		cy=-1.f;
 		ox = oy = 0.f;
@@ -495,6 +495,7 @@ void STACK_ARGS OpenGLFrameBuffer::DrawTextureV(FTexture *img, int x0, int y0, u
 	gl.Color4f(r, g, b, FIXED2FLOAT(parms.alpha));
 	
 	gl.Disable(GL_ALPHA_TEST);
+	gl_ApplyShader();
 	gl.Begin(GL_TRIANGLE_STRIP);
 	gl.TexCoord2f(ox, oy);
 	gl.Vertex2i(x, y);
@@ -523,7 +524,7 @@ void OpenGLFrameBuffer::DrawLine(int x1, int y1, int x2, int y2, int palcolor, u
 {
 	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[color];
 	gl_EnableTexture(false);
-	GLShader::Unbind();
+	gl_DisableShader();
 	gl.Color3ub(p.r, p.g, p.b);
 	gl.Begin(GL_LINES);
 	gl.Vertex2i(x1, y1);
@@ -541,7 +542,7 @@ void OpenGLFrameBuffer::DrawPixel(int x1, int y1, int palcolor, uint32 color)
 {
 	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[color];
 	gl_EnableTexture(false);
-	GLShader::Unbind();
+	gl_DisableShader();
 	gl.Color3ub(p.r, p.g, p.b);
 	gl.Begin(GL_POINTS);
 	gl.Vertex2i(x1, y1);
@@ -566,7 +567,7 @@ void OpenGLFrameBuffer::Dim(PalEntry color, float damount, int x1, int y1, int w
 	float r, g, b;
 	
 	gl_EnableTexture(false);
-	GLShader::Unbind();
+	gl_DisableShader();
 	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	gl.AlphaFunc(GL_GREATER,0);
 	
@@ -598,7 +599,7 @@ void OpenGLFrameBuffer::FlatFill (int left, int top, int right, int bottom, FTex
 	
 	if (!gltexture) return;
 
-	const WorldTextureInfo * wti = gltexture->Bind(CM_DEFAULT, 0, 0, true);
+	const WorldTextureInfo * wti = gltexture->Bind(CM_DEFAULT, 0, 0);
 	if (!wti) return;
 	
 	if (!local_origin)
@@ -615,6 +616,7 @@ void OpenGLFrameBuffer::FlatFill (int left, int top, int right, int bottom, FTex
 		fU2=wti->GetU(right-left);
 		fV2=wti->GetV(bottom-top);
 	}
+	gl_ApplyShader();
 	gl.Begin(GL_TRIANGLE_STRIP);
 	gl.TexCoord2f(fU1, fV1); gl.Vertex2f(left, top);
 	gl.TexCoord2f(fU1, fV2); gl.Vertex2f(left, bottom);
@@ -649,7 +651,7 @@ void OpenGLFrameBuffer::Clear(int left, int top, int right, int bottom, int palc
 	}
 	*/
 	
-	GLShader::Unbind();
+	gl_DisableShader();
 
 	gl.Enable(GL_SCISSOR_TEST);
 	gl.Scissor(left, rt - height, width, height);
