@@ -129,49 +129,40 @@ void GLWall::PutWall(bool translucent)
 	}
 	else if (passflag[type]!=4)	// non-translucent walls
 	{
-		if (!gl_glsl_renderer)
+		static DrawListType list_indices[2][2][2]={
+			{ { GLDL_PLAIN, GLDL_FOG      }, { GLDL_MASKED,      GLDL_FOGMASKED      } },
+			{ { GLDL_LIGHT, GLDL_LIGHTFOG }, { GLDL_LIGHTMASKED, GLDL_LIGHTFOGMASKED } }
+		};
+
+		bool masked;
+		bool light = gl_forcemultipass;
+
+		if (!gl_fixedcolormap)
 		{
-			static DrawListType list_indices[2][2][2]={
-				{ { GLDL_PLAIN, GLDL_FOG      }, { GLDL_MASKED,      GLDL_FOGMASKED      } },
-				{ { GLDL_LIGHT, GLDL_LIGHTFOG }, { GLDL_LIGHTMASKED, GLDL_LIGHTFOGMASKED } }
-			};
-
-			bool masked;
-			bool light = gl_forcemultipass;
-
-			if (!gl_fixedcolormap)
+			if (gl_lights)
 			{
-				if (gl_lights)
+				if (!seg->bPolySeg)
 				{
-					if (!seg->bPolySeg)
-					{
-						light = (seg->sidedef != NULL && seg->sidedef->lighthead[0] != NULL);
-					}
-					else if (sub)
-					{
-						light = sub->lighthead[0] != NULL;
-					}
+					light = (seg->sidedef != NULL && seg->sidedef->lighthead[0] != NULL);
+				}
+				else if (sub)
+				{
+					light = sub->lighthead[0] != NULL;
 				}
 			}
-			else 
-			{
-				flags&=~GLWF_FOGGY;
-			}
-
-			masked = passflag[type]==1? false : (light && type!=RENDERWALL_FFBLOCK) || gltexture->tex->bMasked;
-
-			list = list_indices[light][masked][!!(flags&GLWF_FOGGY)];
-			if (list == GLDL_LIGHT)
-			{
-				if (gltexture->tex->gl_info.Brightmap && gl_brightmap_shader) list = GLDL_LIGHTBRIGHT;
-				if (flags & GLWF_GLOW) list = GLDL_LIGHTBRIGHT;
-			}
 		}
-		else
+		else 
 		{
-			// The GLSL renderer only distinguishes between solid and masked geometry
-			bool masked = passflag[type]==1? false : gltexture->tex->bMasked;
-			list = masked? GLDL_MASKED : GLDL_PLAIN;
+			flags&=~GLWF_FOGGY;
+		}
+
+		masked = passflag[type]==1? false : (light && type!=RENDERWALL_FFBLOCK) || gltexture->tex->bMasked;
+
+		list = list_indices[light][masked][!!(flags&GLWF_FOGGY)];
+		if (list == GLDL_LIGHT)
+		{
+			if (gltexture->tex->gl_info.Brightmap && gl_brightmap_shader) list = GLDL_LIGHTBRIGHT;
+			if (flags & GLWF_GLOW) list = GLDL_LIGHTBRIGHT;
 		}
 		gl_drawinfo->drawlists[list].AddWall(this);
 
@@ -898,17 +889,10 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 	// 
 	if (drawfogboundary)
 	{
-		if (!gl_glsl_renderer)
-		{
-			type=RENDERWALL_FOGBOUNDARY;
-			PutWall(true);
-			if (!gltexture) return;
-			type=RENDERWALL_M2SNF;
-		}
-		else
-		{
-			type=RENDERWALL_M2SFOG;
-		}
+		type=RENDERWALL_FOGBOUNDARY;
+		PutWall(true);
+		if (!gltexture) return;
+		type=RENDERWALL_M2SNF;
 	}
 	else type=RENDERWALL_M2S;
 

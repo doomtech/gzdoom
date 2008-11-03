@@ -372,39 +372,31 @@ inline void GLFlat::PutFlat()
 	}
 	else if (gltexture != NULL)
 	{
-		if (!gl_glsl_renderer)
+		static DrawListType list_indices[2][2][2]={
+			{ { GLDL_PLAIN, GLDL_FOG      }, { GLDL_MASKED,      GLDL_FOGMASKED      } },
+			{ { GLDL_LIGHT, GLDL_LIGHTFOG }, { GLDL_LIGHTMASKED, GLDL_LIGHTFOGMASKED } }
+		};
+
+		bool light = gl_forcemultipass;
+		bool masked = gltexture->tex->bMasked && ((renderflags&SSRF_RENDER3DPLANES) || stack);
+
+		if (!gl_fixedcolormap)
 		{
-			static DrawListType list_indices[2][2][2]={
-				{ { GLDL_PLAIN, GLDL_FOG      }, { GLDL_MASKED,      GLDL_FOGMASKED      } },
-				{ { GLDL_LIGHT, GLDL_LIGHTFOG }, { GLDL_LIGHTMASKED, GLDL_LIGHTFOGMASKED } }
-			};
+			foggy = !gl_isBlack (Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE;
 
-			bool light = gl_forcemultipass;
-			bool masked = gltexture->tex->bMasked && ((renderflags&SSRF_RENDER3DPLANES) || stack);
-
-			if (!gl_fixedcolormap)
+			if (gl_lights && gl_lightcount)	// Are lights touching this sector?
 			{
-				foggy = !gl_isBlack (Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE;
-
-				if (gl_lights && gl_lightcount)	// Are lights touching this sector?
+				for(int i=0;i<sector->subsectorcount;i++) if (sector->subsectors[i]->lighthead[0] != NULL)
 				{
-					for(int i=0;i<sector->subsectorcount;i++) if (sector->subsectors[i]->lighthead[0] != NULL)
-					{
-						light=true;
-					}
+					light=true;
 				}
 			}
-			else foggy = false;
+		}
+		else foggy = false;
 
-			list = list_indices[light][masked][foggy];
-			if (list == GLDL_LIGHT && gltexture->tex->gl_info.Brightmap && gl_brightmap_shader) list = GLDL_LIGHTBRIGHT;
-		}
-		else
-		{
-			// The GLSL renderer only distinguishes between solid and masked geometry
-			bool masked = gltexture->tex->bMasked && ((renderflags&SSRF_RENDER3DPLANES) || stack);
-			list = masked? GLDL_MASKED : GLDL_PLAIN;
-		}
+		list = list_indices[light][masked][foggy];
+		if (list == GLDL_LIGHT && gltexture->tex->gl_info.Brightmap && gl_brightmap_shader) list = GLDL_LIGHTBRIGHT;
+
 		gl_drawinfo->drawlists[list].AddFlat (this);
 	}
 }

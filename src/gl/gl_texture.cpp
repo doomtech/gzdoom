@@ -59,16 +59,6 @@
 #include "gl/gl_functions.h"
 #include "gl/gl_shader.h"
 #include "gl/gl_translate.h"
-#include "gl/glsl_state.h"
-
-// Only for testing for now. This isn't working fully yet.
-CUSTOM_CVAR(Bool, gl_glsl_renderer, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
-{
-	if (!(gl.flags & RFL_GLSL)) 
-	{
-		if (self) self=0;
-	}
-}
 
 CUSTOM_CVAR(Bool, gl_texture_usehires, true, CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
