@@ -794,6 +794,7 @@ static void gl_DrawBlend(sector_t * viewsector)
 			gl_EnableTexture(false);
 			gl.BlendFunc(GL_DST_COLOR,GL_ZERO);
 			gl.Color4f(extra_red, extra_green, extra_blue, 1.0f);
+			gl_DisableShader();
 			gl.Begin(GL_TRIANGLE_STRIP);
 			gl.Vertex2f( 0.0f, 0.0f);
 			gl.Vertex2f( 0.0f, (float)SCREENHEIGHT);
@@ -869,6 +870,7 @@ static void gl_DrawBlend(sector_t * viewsector)
 		gl.Disable(GL_ALPHA_TEST);
 		gl_EnableTexture(false);
 		gl.Color4fv(blend);
+		gl_DisableShader();
 		gl.Begin(GL_TRIANGLE_STRIP);
 		gl.Vertex2f( 0.0f, 0.0f);
 		gl.Vertex2f( 0.0f, (float)SCREENHEIGHT);
@@ -1021,7 +1023,7 @@ void gl_RenderTextureView(FCanvasTexture *Texture, AActor * Viewpoint, int FOV)
 	gl.Flush();
 	gl_RenderView(Viewpoint, &bounds, FOV, (float)width/height, (float)width/height, false);
 	gl.Flush();
-	gltex->Bind(CM_DEFAULT, 0, 0, true);
+	gltex->Bind(CM_DEFAULT, 0, 0);
 	gl.CopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, bounds.width, bounds.height);
 	gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GLTexture::TexFilter[gl_texture_filter].magfilter);
 }

@@ -112,7 +112,6 @@ public:
 // this is the texture maintenance class for OpenGL. 
 //
 //===========================================================================
-class GLShader;
 struct FRemapTable;
 
 class FGLTexture : protected WorldTextureInfo, protected PatchTextureInfo
@@ -139,8 +138,6 @@ private:
 	signed char areacount;
 	bool bHasColorkey;		// only for hires
 	GL_RECT * areas;
-	GLShader * Shader;
-	bool ShaderSet;
 
 	short LeftOffset[2];
 	short TopOffset[2];
@@ -164,17 +161,18 @@ private:
 
 	void CreateDefaultBrightmap();
 	void CheckForAlpha(const unsigned char * buffer);
+	void SetupShader(int clampmode, int warped, int &cm, int translation);
 
-	const WorldTextureInfo * Bind(int texunit, int cm, int clamp, int translation, bool is2d, bool glow);
-	const PatchTextureInfo * BindPatch(int texunit, int cm, int translation, bool is2d);
+	const WorldTextureInfo * Bind(int texunit, int cm, int clamp, int translation);
+	const PatchTextureInfo * BindPatch(int texunit, int cm, int translation);
 
 public:
 	FGLTexture(FTexture * tx);
 	~FGLTexture();
 
 	unsigned char * CreateTexBuffer(ETexUse use, int cm, int translation, int & w, int & h, bool allowhires=true);
-	const WorldTextureInfo * Bind(int cm, int clamp=0, int translation=0, bool is2d = false, bool glow = false);
-	const PatchTextureInfo * BindPatch(int cm, int translation=0, bool is2d = false);
+	const WorldTextureInfo * Bind(int cm, int clamp=0, int translation=0);
+	const PatchTextureInfo * BindPatch(int cm, int translation=0);
 
 	const WorldTextureInfo * GetWorldTextureInfo();
 	const PatchTextureInfo * GetPatchTextureInfo();

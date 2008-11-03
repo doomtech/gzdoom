@@ -44,6 +44,7 @@
 #include "gl/gl_texture.h"
 #include "gl/gl_functions.h"
 #include "gl/gl_intern.h"
+#include "gl/gl_shader.h"
 
 
 //-----------------------------------------------------------------------------
@@ -292,6 +293,8 @@ static void RenderSkyHemisphere(int hemi)
 		return;
 	}
 
+	gl_DisableShader();
+
 	// Draw the cap as one solid color polygon
 	if (!foglayer)
 	{
@@ -313,6 +316,7 @@ static void RenderSkyHemisphere(int hemi)
 
 		gl_EnableTexture(true);
 		foglayer=false;
+		gl_ApplyShader();
 	}
 	else
 	{
@@ -372,7 +376,7 @@ static void RenderDome(FTextureID texno, FGLTexture * tex, float x_offset, float
 
 	if (tex)
 	{
-		tex->Bind(CM_Index, 0, 0, true);
+		tex->Bind(CM_Index, 0, 0);
 		texw = tex->TextureWidth(FGLTexture::GLUSE_TEXTURE);
 		texh = tex->TextureHeight(FGLTexture::GLUSE_TEXTURE);
 
@@ -485,7 +489,8 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 
 		// north
 		tex = FGLTexture::ValidateTexture(sb->faces[0]);
-		tex->BindPatch(CM_Index, 0, true);
+		tex->BindPatch(CM_Index, 0);
+		gl_ApplyShader();
 		gl.Begin(GL_TRIANGLE_FAN);
 		gl.TexCoord2f(0, 0);
 		gl.Vertex3f(128.f, 128.f, -128.f);
@@ -499,7 +504,8 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 
 		// east
 		tex = FGLTexture::ValidateTexture(sb->faces[1]);
-		tex->BindPatch(CM_Index, 0, true);
+		tex->BindPatch(CM_Index, 0);
+		gl_ApplyShader();
 		gl.Begin(GL_TRIANGLE_FAN);
 		gl.TexCoord2f(0, 0);
 		gl.Vertex3f(-128.f, 128.f, -128.f);
@@ -513,7 +519,8 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 
 		// south
 		tex = FGLTexture::ValidateTexture(sb->faces[2]);
-		tex->BindPatch(CM_Index, 0, true);
+		tex->BindPatch(CM_Index, 0);
+		gl_ApplyShader();
 		gl.Begin(GL_TRIANGLE_FAN);
 		gl.TexCoord2f(0, 0);
 		gl.Vertex3f(-128.f, 128.f, 128.f);
@@ -527,7 +534,8 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 
 		// west
 		tex = FGLTexture::ValidateTexture(sb->faces[3]);
-		tex->BindPatch(CM_Index, 0, true);
+		tex->BindPatch(CM_Index, 0);
+		gl_ApplyShader();
 		gl.Begin(GL_TRIANGLE_FAN);
 		gl.TexCoord2f(0, 0);
 		gl.Vertex3f(128.f, 128.f, 128.f);
@@ -544,8 +552,9 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 		faces=1;
 		// all 4 sides
 		tex = FGLTexture::ValidateTexture(sb->faces[0]);
-		tex->BindPatch(CM_Index, 0, true);
+		tex->BindPatch(CM_Index, 0);
 
+		gl_ApplyShader();
 		gl.Begin(GL_TRIANGLE_FAN);
 		gl.TexCoord2f(0, 0);
 		gl.Vertex3f(128.f, 128.f, -128.f);
@@ -596,7 +605,8 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 
 	// top
 	tex = FGLTexture::ValidateTexture(sb->faces[faces]);
-	tex->BindPatch(CM_Index, 0, true);
+	tex->BindPatch(CM_Index, 0);
+	gl_ApplyShader();
 	gl.Begin(GL_TRIANGLE_FAN);
 	gl.TexCoord2f(0, 0);
 	gl.Vertex3f(128.f, 128.f, -128.f);
@@ -611,7 +621,8 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 
 	// bottom
 	tex = FGLTexture::ValidateTexture(sb->faces[faces+1]);
-	tex->BindPatch(CM_Index, 0, true);
+	tex->BindPatch(CM_Index, 0);
+	gl_ApplyShader();
 	gl.Begin(GL_TRIANGLE_FAN);
 	gl.TexCoord2f(0, 0);
 	gl.Vertex3f(128.f, -128.f, -128.f);

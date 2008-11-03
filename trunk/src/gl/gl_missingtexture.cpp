@@ -48,6 +48,7 @@
 #include "gl/gl_data.h"
 #include "gl/gl_texture.h"
 #include "gl/gl_basic.h"
+#include "gl/gl_shader.h"
 #include "gl/gl_functions.h"
 #include "r_sky.h"
 #include "g_level.h"
@@ -627,6 +628,7 @@ void GLDrawInfo::SetupFloodStencil(wallseg * ws)
 	gl.Enable(GL_DEPTH_TEST);
 	gl.DepthMask(true);
 
+	gl_DisableShader();
 	gl.Begin(GL_TRIANGLE_FAN);
 	gl.Vertex3f(ws->x1, ws->z1, ws->y1);
 	gl.Vertex3f(ws->x1, ws->z2, ws->y1);
@@ -652,6 +654,7 @@ void GLDrawInfo::ClearFloodStencil(wallseg * ws)
 	gl.ColorMask(0,0,0,0);						// don't write to the graphics buffer
 	gl.Color3f(1,1,1);
 
+	gl_DisableShader();
 	gl.Begin(GL_TRIANGLE_FAN);
 	gl.Vertex3f(ws->x1, ws->z1, ws->y1);
 	gl.Vertex3f(ws->x1, ws->z2, ws->y1);
@@ -711,6 +714,7 @@ void GLDrawInfo::DrawFloodedPlane(wallseg * ws, float planez, sector_t * sec, bo
 	float fviewy = TO_GL(viewy);
 	float fviewz = TO_GL(viewz);
 
+	gl_ApplyShader();
 	gl.Begin(GL_TRIANGLE_FAN);
 	float prj_fac1 = (planez-fviewz)/(ws->z1-fviewz);
 	float prj_fac2 = (planez-fviewz)/(ws->z2-fviewz);

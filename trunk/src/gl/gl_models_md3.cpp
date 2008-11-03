@@ -44,6 +44,7 @@
 #include "gl_texture.h"
 #include "gl_values.h"
 #include "gl_renderstruct.h"
+#include "gl/gl_shader.h"
 
 #define MAX_QPATH 64
 
@@ -213,6 +214,7 @@ int FMD3Model::FindFrame(const char * name)
 
 void FMD3Model::RenderTriangles(MD3Surface * surf, MD3Vertex * vert)
 {
+	gl_ApplyShader();
 	gl.Begin(GL_TRIANGLES);
 	for(int i=0; i<surf->numTriangles;i++)
 	{

@@ -94,6 +94,10 @@ void gl_SetCamera(float x, float y, float z);
 void gl_SetGlowParams(float *topcolors, float topheight, float *bottomcolors, float bottomheight);
 void gl_SetGlowPosition(float topdist, float bottomdist);
 
+void gl_SetTextureShader(int warped, int cm, bool usebright, float warptime);
+
+void gl_ApplyShader();
+
 void gl_EnableTexture(bool on);
 
 
