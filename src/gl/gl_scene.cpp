@@ -135,14 +135,6 @@ angle_t gl_FrustumAngle()
 	angle_t a1 = ANGLE_1*toint(floatangle);
 	if (a1>=ANGLE_180) return 0xffffffff;
 	return a1;
-
-	// This is ZDoomGL's code which works better for a larger pitch
-	//float vp = clamp<float>(tilt + (currentFoV / 2), 0.f, 90.f);
-	//angle_t a2 = (angle_t)(2.f * vp * ANGLE_1);
-
-	// return the smaller one of the 2 values!
-	//return min(a1,a2);
-	
 }
 
 

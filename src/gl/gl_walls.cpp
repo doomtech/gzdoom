@@ -43,6 +43,7 @@
 #include "p_lnspec.h"
 #include "a_sharedglobal.h"
 #include "g_level.h"
+#include "templates.h"
 #include "gl/gl_struct.h"
 #include "gl/gl_renderstruct.h"
 #include "gl/gl_portal.h"
@@ -740,12 +741,12 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 		fixed_t rowoffset=gltexture->RowOffset(seg->sidedef->GetTextureYOffset(side_t::mid));
 		if ( (seg->linedef->flags & ML_DONTPEGBOTTOM) >0)
 		{
-			texturebottom=max(realfront->GetPlaneTexZ(sector_t::floor),realback->GetPlaneTexZ(sector_t::floor))+rowoffset;
+			texturebottom = MAX(realfront->GetPlaneTexZ(sector_t::floor),realback->GetPlaneTexZ(sector_t::floor))+rowoffset;
 			texturetop=texturebottom+(gltexture->TextureHeight(FGLTexture::GLUSE_TEXTURE)<<FRACBITS);
 		}
 		else
 		{
-			texturetop=min(realfront->GetPlaneTexZ(sector_t::ceiling),realback->GetPlaneTexZ(sector_t::ceiling))+rowoffset;
+			texturetop = MIN(realfront->GetPlaneTexZ(sector_t::ceiling),realback->GetPlaneTexZ(sector_t::ceiling))+rowoffset;
 			texturebottom=texturetop-(gltexture->TextureHeight(FGLTexture::GLUSE_TEXTURE)<<FRACBITS);
 		}
 	}
@@ -770,22 +771,22 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 		if (!tex || tex->UseType==FTexture::TEX_Null)
 		{
 			// texture is missing - use the higher plane
-			topleft=max(bch1,fch1);
-			topright=max(bch2,fch2);
+			topleft = MAX(bch1,fch1);
+			topright = MAX(bch2,fch2);
 		}
 		else if ((bch1>fch1 || bch2>fch2) && 
 				 (seg->frontsector->GetTexture(sector_t::ceiling)!=skyflatnum || seg->backsector->GetTexture(sector_t::ceiling)==skyflatnum)) 
 				 // (!((bch1<=fch1 && bch2<=fch2) || (bch1>=fch1 && bch2>=fch2)))
 		{
 			// Use the higher plane and let the geometry clip the extruding part
-			topleft=bch1;
-			topright=bch2;
+			topleft = bch1;
+			topright = bch2;
 		}
 		else
 		{
 			// But not if there can be visual artifacts.
-			topleft=min(bch1,fch1);
-			topright=min(bch2,fch2);
+			topleft = MIN(bch1,fch1);
+			topright = MIN(bch2,fch2);
 		}
 		
 		//
@@ -797,21 +798,21 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 		if (!tex || tex->UseType==FTexture::TEX_Null)
 		{
 			// texture is missing - use the lower plane
-			bottomleft=min(bfh1,ffh1);
-			bottomright=min(bfh2,ffh2);
+			bottomleft = MIN(bfh1,ffh1);
+			bottomright = MIN(bfh2,ffh2);
 		}
 		else if (bfh1<ffh1 || bfh2<ffh2) // (!((bfh1<=ffh1 && bfh2<=ffh2) || (bfh1>=ffh1 && bfh2>=ffh2)))
 		{
 			// the floor planes intersect. Use the backsector's floor for drawing so that
 			// drawing the front sector's plane clips the polygon automatically.
-			bottomleft=bfh1;
-			bottomright=bfh2;
+			bottomleft = bfh1;
+			bottomright = bfh2;
 		}
 		else
 		{
 			// normal case - use the higher plane
-			bottomleft=max(bfh1,ffh1);
-			bottomright=max(bfh2,ffh2);
+			bottomleft = MAX(bfh1,ffh1);
+			bottomright = MAX(bfh2,ffh2);
 		}
 		
 		//
@@ -937,8 +938,8 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 			GL_RECT * splitrect=gltexture->GetAreas();
 			float v_factor=(zbottom[0]-ztop[0])/(lolft.v-uplft.v);
 			// only split the vertical area of the polygon that does not contain slopes!
-			float splittopv=max(uplft.v, uprgt.v);
-			float splitbotv=min(lolft.v, lorgt.v);
+			float splittopv = MAX(uplft.v, uprgt.v);
+			float splitbotv = MIN(lolft.v, lorgt.v);
 
 			// this is split vertically into sections.
 			for(i=0;i<v;i++)
