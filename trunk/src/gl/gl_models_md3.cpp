@@ -212,7 +212,7 @@ int FMD3Model::FindFrame(const char * name)
 	return -1;
 }
 
-void FMD3Model::RenderTriangles(MD3Surface * surf, MD3Vertex * vert)
+void FMD3Model::RenderTriangles(MD3Surface * surf, MD3Vertex * vert, Matrix3x4 *modeltoworld)
 {
 	gl_ApplyShader();
 	gl.Begin(GL_TRIANGLES);
@@ -223,13 +223,21 @@ void FMD3Model::RenderTriangles(MD3Surface * surf, MD3Vertex * vert)
 			int x = surf->tris[i].VertIndex[j];
 
 			gl.TexCoord2fv(&surf->texcoords[x].s);
-			gl.Vertex3f(vert[x].x, vert[x].z, vert[x].y);
+			if (modeltoworld == NULL)
+			{
+				gl.Vertex3f(vert[x].x, vert[x].z, vert[x].y);
+			}
+			else
+			{
+				Vector v = *modeltoworld * Vector(vert[x].x, vert[x].z, vert[x].y);
+				gl.Vertex3fv(&v[0]);
+			}
 		}
 	}
 	gl.End();
 }
 
-void FMD3Model::RenderFrame(FTexture * skin, int frameno, int cm, int translation)
+void FMD3Model::RenderFrame(FTexture * skin, int frameno, int cm, Matrix3x4 *modeltoworld, int translation)
 {
 	if (frameno>=numFrames) return;
 
@@ -253,11 +261,11 @@ void FMD3Model::RenderFrame(FTexture * skin, int frameno, int cm, int translatio
 		FGLTexture * tex = FGLTexture::ValidateTexture(skin);
 
 		tex->Bind(cm, 0, translation);
-		RenderTriangles(surf, surf->vertices + frameno * surf->numVertices);
+		RenderTriangles(surf, surf->vertices + frameno * surf->numVertices, modeltoworld);
 	}
 }
 
-void FMD3Model::RenderFrameInterpolated(FTexture * skin, int frameno, int frameno2, double inter, int cm, int translation)
+void FMD3Model::RenderFrameInterpolated(FTexture * skin, int frameno, int frameno2, double inter, int cm, Matrix3x4 *modeltoworld, int translation)
 {
 	if (frameno>=numFrames || frameno2>=numFrames) return;
 
@@ -289,7 +297,7 @@ void FMD3Model::RenderFrameInterpolated(FTexture * skin, int frameno, int framen
 			// [BB] Apparently RenderTriangles doesn't use nx, ny, nz, so don't interpolate them.
 		}
 
-		RenderTriangles(surf, verticesInterpolated);
+		RenderTriangles(surf, verticesInterpolated, modeltoworld);
 
 		delete[] verticesInterpolated;
 	}

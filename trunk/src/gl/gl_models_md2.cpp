@@ -260,7 +260,7 @@ int FDMDModel::FindFrame(const char * name)
 // Render a set of GL commands using the given data.
 //
 //===========================================================================
-void FDMDModel::RenderGLCommands(void *glCommands, unsigned int numVertices,FModelVertex * vertices)
+void FDMDModel::RenderGLCommands(void *glCommands, unsigned int numVertices,FModelVertex * vertices, Matrix3x4 *modeltoworld)
 {
 	char   *pos;
 	FGLCommandVertex * v;
@@ -282,7 +282,19 @@ void FDMDModel::RenderGLCommands(void *glCommands, unsigned int numVertices,FMod
 			pos += sizeof(FGLCommandVertex);
 
 			gl.TexCoord2fv(&v->s);
-			gl.Vertex3fv((float*)&vertices[v->index]);
+
+			if (modeltoworld == NULL)
+			{
+				gl.Vertex3fv((float*)&vertices[v->index]);
+			}
+			else
+			{
+				float *f = (float*)&vertices[v->index];
+
+				Vector v = *modeltoworld * Vector(f[0], f[1], f[2]);
+				gl.Vertex3fv(&v[0]);
+			}
+
 		}
 
 		gl.End();
@@ -290,7 +302,7 @@ void FDMDModel::RenderGLCommands(void *glCommands, unsigned int numVertices,FMod
 }
 
 
-void FDMDModel::RenderFrame(FTexture * skin, int frameno, int cm, int translation)
+void FDMDModel::RenderFrame(FTexture * skin, int frameno, int cm, Matrix3x4 *modeltoworld, int translation)
 {
 	int activeLod;
 
@@ -331,10 +343,10 @@ void FDMDModel::RenderFrame(FTexture * skin, int frameno, int cm, int translatio
 		activeLod = 0;
 	}
 
-	RenderGLCommands(lods[activeLod].glCommands, numVerts, frame->vertices/*, modelColors, NULL*/);
+	RenderGLCommands(lods[activeLod].glCommands, numVerts, frame->vertices, modeltoworld/*, modelColors, NULL*/);
 }
 
-void FDMDModel::RenderFrameInterpolated(FTexture * skin, int frameno, int frameno2, double inter, int cm, int translation)
+void FDMDModel::RenderFrameInterpolated(FTexture * skin, int frameno, int frameno2, double inter, int cm, Matrix3x4 *modeltoworld, int translation)
 {
 	int activeLod = 0;
 
@@ -364,7 +376,7 @@ void FDMDModel::RenderFrameInterpolated(FTexture * skin, int frameno, int framen
 			verticesInterpolated[k].xyz[i] = (1-inter)*vertices1[k].xyz[i]+ (inter)*vertices2[k].xyz[i];
 	}
 
-	RenderGLCommands(lods[activeLod].glCommands, numVerts, verticesInterpolated/*, modelColors, NULL*/);
+	RenderGLCommands(lods[activeLod].glCommands, numVerts, verticesInterpolated, modeltoworld/*, modelColors, NULL*/);
 	delete[] verticesInterpolated;
 }
 

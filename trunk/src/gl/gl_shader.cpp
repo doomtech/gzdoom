@@ -773,10 +773,11 @@ void gl_SetTextureShader(int warped, int cm, bool usebright, float warptime)
 // Apply shader settings
 //
 //==========================================================================
+CVAR(Bool, gl_no_shaders, 0, 0) // For shader debugging.
 
 void gl_ApplyShader()
 {
-	if (gl.flags & RFL_GLSL)
+	if (gl.flags & RFL_GLSL && !gl_no_shaders)
 	{
 		if (
 			(gl_fogenabled && (gl_fogmode == 2 || gl_fog_shader) && gl_fogmode != 0) || // fog requires a shader
