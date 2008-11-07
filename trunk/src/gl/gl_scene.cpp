@@ -284,8 +284,6 @@ void gl_SetupView(fixed_t viewx, fixed_t viewy, fixed_t viewz, angle_t viewangle
 	gl.Rotatef(yaw,   0.0f, mult, 0.0f);
 	gl.Translatef( xCamera*mult, -zCamera*planemult, -yCamera);
 	gl.Scalef(-mult, planemult, 1);
-
-	// Clear the flat render info 
 }
 
 //-----------------------------------------------------------------------------
@@ -494,6 +492,7 @@ static void RenderScene(int recursion)
 	{
 		gl_drawinfo->drawlists[i].Draw(GLPASS_DECALS);
 	}
+
 	gl_SetTextureMode(TM_MODULATE);
 
 	gl.DepthMask(true);
