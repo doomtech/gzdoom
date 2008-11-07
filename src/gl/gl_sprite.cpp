@@ -188,46 +188,62 @@ void GLSprite::Draw(int pass)
 		const bool drawWithXYBillboard = ( !(actor && actor->renderflags & RF_FORCEYBILLBOARD)
 		                                   && players[consoleplayer].camera
 		                                   && (gl_billboard_mode == 1 || (actor && actor->renderflags & RF_FORCEXYBILLBOARD )) );
+		gl_ApplyShader();
+		gl.Begin(GL_TRIANGLE_STRIP);
 		if ( drawWithXYBillboard )
 		{
-			// Save the current view matrix.
-			gl.MatrixMode(GL_MODELVIEW);
-			gl.PushMatrix();
 			// Rotate the sprite about the vector starting at the center of the sprite
 			// triangle strip and with direction orthogonal to where the player is looking
 			// in the x/y plane.
 			float xcenter = (x1+x2)*0.5;
 			float ycenter = (y1+y2)*0.5;
 			float zcenter = (z1+z2)*0.5;
-			float angleRad = ANGLE_TO_FLOAT(players[consoleplayer].camera->angle)/180.*M_PI;
-			gl.Translatef( xcenter, zcenter, ycenter);
-			gl.Rotatef(-ANGLE_TO_FLOAT(players[consoleplayer].camera->pitch), -sin(angleRad), 0, cos(angleRad));
-			gl.Translatef( -xcenter, -zcenter, -ycenter);
+			float angleRad = ANGLE_TO_RAD(players[consoleplayer].camera->angle);
+			
+			Matrix3x4 mat;
+			mat.MakeIdentity();
+			mat.Translate( xcenter, zcenter, ycenter);
+			mat.Rotate(-sin(angleRad), 0, cos(angleRad),-ANGLE_TO_FLOAT(players[consoleplayer].camera->pitch));
+			mat.Translate( -xcenter, -zcenter, -ycenter);
+			Vector v1 = mat * Vector(x1,z1,y1);
+			Vector v2 = mat * Vector(x2,z1,y2);
+			Vector v3 = mat * Vector(x1,z2,y1);
+			Vector v4 = mat * Vector(x2,z2,y2);
+
+			if (gltexture)
+			{
+				gl.TexCoord2f(ul, vt); gl.Vertex3fv(&v1[0]);
+				gl.TexCoord2f(ur, vt); gl.Vertex3fv(&v2[0]);
+				gl.TexCoord2f(ul, vb); gl.Vertex3fv(&v3[0]);
+				gl.TexCoord2f(ur, vb); gl.Vertex3fv(&v4[0]);
+			}
+			else	// Particle
+			{
+				gl.Vertex3fv(&v1[0]);
+				gl.Vertex3fv(&v2[0]);
+				gl.Vertex3fv(&v3[0]);
+				gl.Vertex3fv(&v4[0]);
+			}
+
 		}
-		gl_ApplyShader();
-		gl.Begin(GL_TRIANGLE_STRIP);
-		if (gltexture)
+		else
 		{
-			gl.TexCoord2f(ul, vt); gl.Vertex3f(x1, z1, y1);
-			gl.TexCoord2f(ur, vt); gl.Vertex3f(x2, z1, y2);
-			gl.TexCoord2f(ul, vb); gl.Vertex3f(x1, z2, y1);
-			gl.TexCoord2f(ur, vb); gl.Vertex3f(x2, z2, y2);
-		}
-		else	// Particle
-		{
-			gl.Vertex3f(x1, z1, y1);
-			gl.Vertex3f(x2, z1, y2);
-			gl.Vertex3f(x1, z2, y1);
-			gl.Vertex3f(x2, z2, y2);
+			if (gltexture)
+			{
+				gl.TexCoord2f(ul, vt); gl.Vertex3f(x1, z1, y1);
+				gl.TexCoord2f(ur, vt); gl.Vertex3f(x2, z1, y2);
+				gl.TexCoord2f(ul, vb); gl.Vertex3f(x1, z2, y1);
+				gl.TexCoord2f(ur, vb); gl.Vertex3f(x2, z2, y2);
+			}
+			else	// Particle
+			{
+				gl.Vertex3f(x1, z1, y1);
+				gl.Vertex3f(x2, z1, y2);
+				gl.Vertex3f(x1, z2, y1);
+				gl.Vertex3f(x2, z2, y2);
+			}
 		}
 		gl.End();
-		// [BB] Billboard stuff
-		if ( drawWithXYBillboard )
-		{
-			// Restore the view matrix.
-			gl.MatrixMode(GL_MODELVIEW);
-			gl.PopMatrix();
-		}
 	}
 	else
 	{
