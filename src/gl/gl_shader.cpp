@@ -701,7 +701,7 @@ void gl_SetTextureMode(int which)
 
 void gl_SetShaderLight(float level, float olight)
 {
-#ifndef _DEBUG
+#if 1 //ndef _DEBUG
 	const float MAXDIST = 256.f;
 	const float THRESHOLD = 96.f;
 	const float FACTOR = 0.75f;
