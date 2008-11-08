@@ -59,9 +59,6 @@
 #include "gl/gl_framebuffer.h"
 #include "gl/gl_models.h"
 
-//#define DEG2RAD( a ) ( a * M_PI ) / 180.0F
-//#define RAD2DEG( a ) ( a / M_PI ) * 180.0F
-
 //==========================================================================
 //
 //
@@ -110,7 +107,6 @@ float yaw      = 0.0f;
 float pitch    = 0.0f;
 
 DWORD			gl_fixedcolormap;
-DWORD			gl_boomcolormap;
 float			currentFoV;
 AActor *		viewactor;
 area_t			in_area;
@@ -835,25 +831,6 @@ sector_t * gl_RenderView (AActor * camera, GL_IRECT * bounds, float fov, float r
 	gl_sky1pos = (float)fmod(gl_frameMS * level.skyspeed1, 1024.f) * 90.f/256.f;
 	gl_sky2pos = (float)fmod(gl_frameMS * level.skyspeed2, 1024.f) * 90.f/256.f;
 
-	// Handle Boom colormaps
-	gl_boomcolormap=CM_DEFAULT;
-	/* doesn't work as intended
-	if (mainview && !gl_blendcolormaps)
-	{
-		if (!viewsector->e->ffloors.Size() && gl_fixedcolormap==CM_DEFAULT && 
-			viewsector->heightsec && !(viewsector->MoreFlags&SECF_IGNOREHEIGHTSEC))
-		{
-			PalEntry blendv;
-			
-			if (in_area == area_above)  blendv=viewsector->heightsec->topmap;
-			if (in_area == area_below)  blendv=viewsector->heightsec->bottommap;
-			else						blendv=viewsector->heightsec->midmap;
-
-			// Is it a colormap lump?
-			if (blendv.a==0 && blendv<numfakecmaps) gl_boomcolormap=blendv+CM_FIRSTCOLORMAP;
-		}
-	}
-	*/
 	retval = viewsector;
 
 
