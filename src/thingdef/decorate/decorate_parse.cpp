@@ -42,7 +42,7 @@
 #include "actor.h"
 #include "a_pickups.h"
 #include "sc_man.h"
-#include "thingdef.h"
+#include "thingdef/thingdef.h"
 #include "a_morph.h"
 #include "cmdlib.h"
 #include "templates.h"
@@ -50,7 +50,7 @@
 #include "doomerrors.h"
 #include "autosegs.h"
 #include "i_system.h"
-#include "thingdef_exp.h"
+#include "thingdef/thingdef_exp.h"
 #include "w_wad.h"
 #include "v_video.h"
 

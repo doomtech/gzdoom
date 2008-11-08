@@ -50,12 +50,12 @@
 #include "p_local.h"
 #include "v_palette.h"
 #include "doomerrors.h"
-#include "thingdef.h"
+#include "thingdef/thingdef.h"
 #include "a_sharedglobal.h"
 #include "s_sound.h"
 #include "i_system.h"
 #include "colormatcher.h"
-#include "thingdef_exp.h"
+#include "thingdef/thingdef_exp.h"
 
 //==========================================================================
 //***

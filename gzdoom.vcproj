@@ -1071,6 +1071,42 @@
 				<Filter
 					Name="Doomscript"
 					>
+					<File
+						RelativePath=".\src\thingdef\ds\ds-parser.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\thingdef\ds\ds-parser.y"
+						>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCustomBuildTool"
+								Description="Processing ds-parser.y"
+								CommandLine="tools\lemon\lemon.exe &quot;$(InputPath)&quot;&#x0D;&#x0A;"
+								Outputs="$(InputDir)xlat_parser.c;$(InputDir)xlat_parser.h"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCustomBuildTool"
+								Description="Processing ds-parser.y"
+								CommandLine="tools\lemon\lemon.exe &quot;$(InputPath)&quot;&#x0D;&#x0A;"
+								Outputs="$(InputDir)xlat_parser.c;$(InputDir)xlat_parser.h"
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath=".\src\thingdef\ds\ds_.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\thingdef\ds\ds_main.cpp"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="Common"
