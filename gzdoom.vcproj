@@ -1052,19 +1052,19 @@
 					Name="DECORATE"
 					>
 					<File
-						RelativePath=".\src\thingdef\decorate_exp.cpp"
+						RelativePath=".\src\thingdef\decorate\decorate_exp.cpp"
 						>
 					</File>
 					<File
-						RelativePath=".\src\thingdef\decorate_parse.cpp"
+						RelativePath=".\src\thingdef\decorate\decorate_parse.cpp"
 						>
 					</File>
 					<File
-						RelativePath=".\src\thingdef\decorate_states.cpp"
+						RelativePath=".\src\thingdef\decorate\decorate_states.cpp"
 						>
 					</File>
 					<File
-						RelativePath=".\src\thingdef\olddecorations.cpp"
+						RelativePath=".\src\thingdef\decorate\olddecorations.cpp"
 						>
 					</File>
 				</Filter>
