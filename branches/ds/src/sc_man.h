@@ -29,7 +29,7 @@ public:
 	const SavedPos SavePos();
 	void RestorePos(const SavedPos &pos);
 
-	FString TokenName(int token, const char *string=NULL);
+	static FString TokenName(int token, const char *string=NULL);
 
 	bool GetString();
 	void MustGetString();
@@ -211,6 +211,9 @@ enum
 	TK_Include,
 	TK_Fixed_t,
 	TK_Angle_t,
+	TK_Abs,
+	TK_Random,
+	TK_Random2,
 
 	TK_LastToken
 };

@@ -145,7 +145,6 @@ FActorInfo *CreateNewActor(const FScriptPosition &sc, FName typeName, FName pare
 		info = ti->ActorInfo;
 	}
 
-	info->DoomEdNum = -1;
 	if (parent->ActorInfo->DamageFactors != NULL)
 	{
 		// copy damage factors from parent
@@ -166,6 +165,7 @@ FActorInfo *CreateNewActor(const FScriptPosition &sc, FName typeName, FName pare
 	}
 
 	if (DoomEdNum > 0) info->DoomEdNum = DoomEdNum;
+	else info->DoomEdNum = -1;
 	return info;
 }
 

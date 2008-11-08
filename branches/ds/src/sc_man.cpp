@@ -917,6 +917,9 @@ FString FScanner::TokenName (int token, const char *string)
 		"'#include'",
 		"'fixed_t'",
 		"'angle_t'",
+		"'abs'",
+		"'random'",
+		"'random2'"
 	};
 
 	FString work;

@@ -48,7 +48,7 @@
 #include "a_action.h"
 #include "decallib.h"
 #include "i_system.h"
-#include "thingdef.h"
+#include "thingdef/thingdef.h"
 #include "r_translate.h"
 
 // TYPES -------------------------------------------------------------------

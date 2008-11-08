@@ -62,6 +62,12 @@ struct FCompileContext
 	bool lax;
 	bool isconst;
 
+	FCompileContext(const PClass *_cls = NULL, bool _lax = false, bool _isconst = false)
+	{
+		cls = _cls;
+		lax = _lax;
+		isconst = _isconst;
+	}
 
 	PSymbol *FindInClass(FName identifier)
 	{
@@ -289,6 +295,33 @@ public:
 
 //==========================================================================
 //
+//	FxStringConstant
+//
+//==========================================================================
+
+class FxStringConstant : public FxExpression
+{
+	FString stringval;
+public:
+	FxStringConstant(FString val, const FScriptPosition &pos) : FxExpression(pos)
+	{
+		ValueType = VAL_String;
+		stringval = val;
+	}
+
+	FxStringConstant(const char *val, const FScriptPosition &pos) : FxExpression(pos)
+	{
+		ValueType = VAL_String;
+		stringval = val;
+	}
+
+	virtual const FString *GetConstString() const;
+	//void GenerateCode(FCompileContext&);
+	//void GenerateConstant(FCompileContext& ctx);
+};
+
+//==========================================================================
+//
 //
 //
 //==========================================================================
@@ -306,6 +339,24 @@ public:
 	ExpVal EvalExpression (AActor *self);
 };
 
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+class FxFloatCast : public FxExpression
+{
+	FxExpression *basex;
+
+public:
+
+	FxFloatCast(FxExpression *x);
+	~FxFloatCast();
+	FxExpression *Resolve(FCompileContext&);
+	virtual void GenerateCode(FCompileContext&);
+};
 
 //==========================================================================
 //

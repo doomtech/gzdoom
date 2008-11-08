@@ -232,6 +232,9 @@ xx(PoisonCloud)	// makes monsters howl.
 // a damage type if you wanted to force an extreme death.
 xx(Extreme)
 
+xx(Color)
+xx(State)
+
 // Special names for thingdef_exp.cpp
 xx(Random)
 xx(Random2)

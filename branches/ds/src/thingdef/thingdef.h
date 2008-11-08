@@ -165,7 +165,28 @@ struct Baggage
 	TArray<FState> StateArray;
 
 	FDropItem *DropItemList;
+
+	// all strings used by the tokens are stored here.
+	TArray<FString> CollectedStrings;
+	FScriptPosition ScriptPosition;
+
+	Baggage() 
+	{
+		CollectedStrings.Push(FString(""));
+	}
+
+	int AddString(FString str)
+	{
+		return CollectedStrings.Push(str);
+	}
+
+	const FString &GetString(int index) const
+	{
+		return CollectedStrings[index];
+	}
 };
+
+#define FParseContext Baggage
 
 inline void ResetBaggage (Baggage *bag, const PClass *stateclass)
 {
