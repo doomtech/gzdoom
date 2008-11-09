@@ -377,7 +377,7 @@ static void RenderScene(int recursion)
 
 	gl.Disable(GL_POLYGON_OFFSET_FILL);	// just in case
 
-	if (!gl_texture) gl_EnableTexture(false);
+	gl_EnableTexture(gl_texture);
 	gl_EnableBrightmap(true);
 	gl_drawinfo->drawlists[GLDL_PLAIN].Sort();
 	gl_drawinfo->drawlists[GLDL_PLAIN].Draw(gl_texture? GLPASS_PLAIN : GLPASS_BASE);
