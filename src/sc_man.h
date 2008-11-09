@@ -203,8 +203,6 @@ enum
 	TK_Global,
 	TK_Self,
 	TK_Stop,
-	TK_Eval,
-	TK_EvalNot,
 	TK_Pickup,
 	TK_Breakable,
 	TK_Projectile,

@@ -64,7 +64,7 @@ void InitParserTokens()
 	ParserTokens[':'] = DS_COLON;
 	ParserTokens[TK_Const] = DS_CONST;
 	ParserTokens[TK_Identifier] = DS_IDENTIFIER;
-	//ParserTokens['='] = DS_ASSIGN;
+	ParserTokens['='] = DS_ASSIGN;
 	ParserTokens[TK_Enum] = DS_ENUM;
 	ParserTokens[','] = DS_COMMA;
 	ParserTokens[TK_StringConst] = DS_STRINGCONST;
@@ -225,6 +225,7 @@ void LoadDS()
 		int lastlump, lump;
 
 		lastlump = 0;
+		InitParserTokens();
 		while ((lump = Wads.FindLump ("DSCRIPT", &lastlump)) != -1)
 		{
 			FScanner sc(lump);
