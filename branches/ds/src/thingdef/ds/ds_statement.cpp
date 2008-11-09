@@ -122,7 +122,7 @@ bool FsConstant::AddSymbol(FCompileContext &ctx, PSymbol *sym, bool notlocal)
 		
 		if (sym->SymbolType == SYM_Const)
 		{
-			if (static_cast<PSymbolConst*>(sym)->ValueType == TK_Int) 
+			if (static_cast<PSymbolConst*>(sym)->ValueType == VAL_Int) 
 				Printf(PRINT_LOG, " int, %d\n", static_cast<PSymbolConst*>(sym)->Value);
 			else 
 				Printf(PRINT_LOG, " float, %f\n", static_cast<PSymbolConst*>(sym)->Float);

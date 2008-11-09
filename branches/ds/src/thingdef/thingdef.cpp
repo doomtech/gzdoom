@@ -383,6 +383,7 @@ static void FinishThingdef()
 // Called from FActor::StaticInit()
 //
 //==========================================================================
+void LoadDS();
 
 void LoadActors ()
 {
@@ -395,6 +396,7 @@ void LoadActors ()
 		FScanner sc(lump);
 		ParseDecorate (sc);
 	}
+	LoadDS();
 	FinishThingdef();
 }
 
