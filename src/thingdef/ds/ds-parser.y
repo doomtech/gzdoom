@@ -99,7 +99,7 @@ toplevel_declaration ::= global_function_prototype(A).
 
 constant_definition(A) ::= CONST const_type_expression(B) IDENTIFIER(C) ASSIGN value_expression(D) SEMICOLON.
 {
-	A = new FsConstant(B, &C, D);
+	A = new FsConstant(B, C.NameValue(), D, C.ScriptPosition());
 }
 
 // ===========================================================================
@@ -120,14 +120,14 @@ enum_definition(A) ::= ENUM LBRACE enum_list(B) RBRACE.
 	A = B;
 }
 
-enum_list(A) ::= enum_list(B) COMMA enum_line(C).
+enum_definition(A) ::= ENUM LBRACE enum_list(B) COMMA RBRACE.
 {
-	B->Append(C);
 	A = B;
 }
 
-enum_list(A) ::= enum_list(B) COMMA.
+enum_list(A) ::= enum_list(B) COMMA enum_line(C).
 {
+	B->Append(C);
 	A = B;
 }
 
@@ -139,12 +139,12 @@ enum_list(A) ::= enum_line(B).
 
 enum_line(A) ::= IDENTIFIER(B) ASSIGN value_expression(C).
 {
-	A = new FsConstant(TK_Int, &B, C);
+	A = new FsConstant(TK_Int, B.NameValue(), C, B.ScriptPosition());
 }
 
 enum_line(A) ::= IDENTIFIER(B).
 {
-	A = new FsConstant(TK_Int, &B, NULL);
+	A = new FsConstant(TK_Int, B.NameValue(), NULL, B.ScriptPosition());
 }
 
 // ===========================================================================

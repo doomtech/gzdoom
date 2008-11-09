@@ -190,7 +190,7 @@ static void ParseConstant (FScanner &sc, PSymbolTable * symt, PClass *cls)
 		else
 		{
 			sym->ValueType = VAL_Float;
-			sym->Value = val.GetFloat();
+			sym->Float = val.GetFloat();
 		}
 		if (symt->AddSymbol (sym) == NULL)
 		{
