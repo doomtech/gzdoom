@@ -21,6 +21,7 @@ enum ExpValType
 	VAL_Color,		// A color.
 	VAL_State,		// A State pointer
 	VAL_String,		// String
+	VAL_Null,		// NULL pointer
 
 	// only used for accessing external variables to ensure proper conversion
 	VAL_Fixed,

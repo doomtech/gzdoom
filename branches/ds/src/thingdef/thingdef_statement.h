@@ -90,6 +90,18 @@ public:
 };
 
 
+class FsClass : FsStatement
+{
+public:
+
+	FsClass(FName clsname, FName parentname, bool actordef, bool native, const FScriptPosition &pos);
+
+	void DefineClass();
+	void DefineConstant(FsStatement *c);
+
+};
+
+
 
 
 #endif

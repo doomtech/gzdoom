@@ -50,6 +50,8 @@
 #include "doomstat.h"
 #include "thingdef_exp.h"
 #include "autosegs.h"
+#include "v_video.h"
+#include "v_palette.h"
 
 int testglobalvar = 1337;	// just for having one global variable to test with
 DEFINE_GLOBAL_VARIABLE(testglobalvar)
@@ -258,6 +260,17 @@ bool FxExpression::isConstant() const
 //
 //==========================================================================
 
+const FString *FxExpression::GetConstString() const
+{
+	return NULL;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 FxExpression *FxExpression::Resolve(FCompileContext &ctx)
 {
 	isresolved = true;
@@ -309,6 +322,91 @@ void FxExpression::RequestAddress()
 //
 //==========================================================================
 
+FxExpression *FxExpression::CreateCast(FCompileContext &ctx, const FExpressionType &castType)
+{
+	FxExpression *cast = NULL;
+	if (ValueType.Type == castType.Type)
+	{
+		return this;	// there's nothing to cast
+	}
+
+	int thistype = ValueType.Type;
+	int casttype = castType.Type;
+
+	if (casttype == VAL_Int)
+	{
+		if (thistype == VAL_Float)
+		{
+			if (!ctx.lax)	// needed to parse converted DECORATE
+			{
+				ScriptPosition.Message(MSG_ERROR , "Implicit cast from float to int");
+			}
+			cast = new FxIntCast(this);
+		}
+	}
+	else if (casttype == VAL_Float)
+	{
+		if (thistype == VAL_Int)
+		{
+			cast = new FxFloatCast(this);
+		}
+	}
+	else if (casttype == VAL_State)
+	{
+		if (thistype == VAL_Name || thistype == VAL_String)
+		{
+			cast = new FxStateCast(this);
+		}
+	}
+	else if (casttype == VAL_Name)
+	{
+		if (thistype == VAL_String)
+		{
+			cast = new FxNameCast(this);
+		}
+	}
+	else if (casttype == VAL_Name)
+	{
+		if (thistype == VAL_String)
+		{
+			cast = new FxColorCast(this);
+		}
+	}
+	else if (casttype == VAL_Sound)
+	{
+		if (thistype == VAL_Name || thistype == VAL_String)
+		{
+			cast = new FxStringToSound(this);
+		}
+	}
+	if (cast != NULL)
+	{
+		//CLOG(CL_RESOLVE, LPrintf("Casting expression from %s to %s\n", ValueType.GetTypeString().GetChars(), castType->GetTypeString().GetChars()));
+		return cast->Resolve(ctx);
+	}
+	else
+	{
+		ScriptPosition.Message(MSG_ERROR, "Unable to convert from '%s' to '%s'", 
+			"", "");
+			//ValueType.GetTypeString().GetChars(), castType->GetTypeString().GetChars());
+		delete this;
+		return NULL;
+	}
+}
+
+FxExpression *FxExpression::CreateCast(FCompileContext &ctx, int type)
+{
+	FExpressionType typex;
+	typex = type;
+	return CreateCast(ctx, typex );
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 ExpVal FxConstant::EvalExpression (AActor *self)
 {
 	return value;
@@ -349,6 +447,17 @@ FxExpression *FxConstant::MakeConstant(PSymbol *sym, const FScriptPosition &pos)
 	return x;
 }
 
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+const FString *FxStringConstant::GetConstString() const
+{
+	return &stringval;
+}
 
 
 //==========================================================================
@@ -497,9 +606,256 @@ FxExpression *FxFloatCast::Resolve(FCompileContext &ctx)
 ExpVal FxFloatCast::EvalExpression (AActor *self)
 {
 	ExpVal baseval = basex->EvalExpression(self);
-	baseval.Int = baseval.GetFloat();
+	baseval.Float = baseval.GetFloat();
 	baseval.Type = VAL_Float;
 	return baseval;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxNameCast::FxNameCast(FxExpression *x)
+: FxExpression(x->ScriptPosition)
+{
+	basex=x;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxNameCast::~FxNameCast()
+{
+	SAFE_DELETE(basex);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxExpression *FxNameCast::Resolve(FCompileContext &ctx)
+{
+	CHECKRESOLVED();
+	if (basex)
+	{
+		basex=basex->Resolve(ctx);
+	}
+	if (!basex)
+	{
+		delete this;
+		return NULL;
+	}
+
+	const FString *cv=basex->GetConstString();
+	if (cv)
+	{
+		FxExpression *b = new FxConstant(FName(*cv), ScriptPosition);
+		delete this;
+		return b;
+	}
+	// not supported yet
+	ScriptPosition.Message(MSG_ERROR, "name not constant");
+	delete this;
+	return NULL;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxColorCast::FxColorCast(FxExpression *x)
+: FxExpression(x->ScriptPosition)
+{
+	basex=x;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxColorCast::~FxColorCast()
+{
+	SAFE_DELETE(basex);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxExpression *FxColorCast::Resolve(FCompileContext &ctx)
+{
+	CHECKRESOLVED();
+	if (basex)
+	{
+		basex=basex->Resolve(ctx);
+	}
+	if (!basex)
+	{
+		delete this;
+		return NULL;
+	}
+
+	const FString *cv=basex->GetConstString();
+	if (cv)
+	{
+		int v;
+		if (cv->CompareNoCase("none"))
+		{
+			v = -1;
+		}
+		else if (cv->IsEmpty())
+		{
+			v = 0;
+		}
+		else
+		{
+			int c = V_GetColor (NULL, *cv);
+			// 0 needs to be the default so we have to mark the color.
+			v = MAKEARGB(1, RPART(c), GPART(c), BPART(c));
+		}
+		ExpVal val;
+		val.Type = VAL_Color;
+		val.Int = v;
+		FxExpression *x = new FxConstant(val, ScriptPosition);
+		delete this;
+		return x;
+	}
+	// not supported yet
+	ScriptPosition.Message(MSG_ERROR, "color name not constant");
+	delete this;
+	return NULL;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxStateCast::FxStateCast(FxExpression *x)
+: FxExpression(x->ScriptPosition)
+{
+	basex=x;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxStateCast::~FxStateCast()
+{
+	SAFE_DELETE(basex);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+FxExpression *FxStateCast::Resolve(FCompileContext &ctx)
+{
+	CHECKRESOLVED();
+	if (basex)
+	{
+		basex=basex->Resolve(ctx);
+	}
+	if (!basex)
+	{
+		delete this;
+		return NULL;
+	}
+
+	if (basex->isConstant())
+	{
+		const char *string;
+
+		if (ValueType == VAL_Name)
+		{
+			ExpVal ex = EvalExpression(NULL);
+			string = ex.GetName().GetChars();
+		}
+		else
+		{
+			const FString *sv = basex->GetConstString();
+
+			if (sv) string = sv->GetChars();
+			else ScriptPosition.Message(MSG_ERROR, "Cannot cast to state");
+		}
+		FxExpression *newex = new FxMultiNameState(string, ScriptPosition);
+		delete this;
+		return newex->Resolve(ctx);
+	}
+	// not supported yet
+	ScriptPosition.Message(MSG_ERROR, "state name not constant");
+	delete this;
+	return NULL;
+}
+
+
+
+
+
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxStringToSound::FxStringToSound(FxExpression *x)
+: FxExpression(x->ScriptPosition)
+{
+	basex=x;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxStringToSound::~FxStringToSound()
+{
+	SAFE_DELETE(basex);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FxExpression *FxStringToSound::Resolve(FCompileContext &ctx)
+{
+	CHECKRESOLVED();
+	SAFE_RESOLVE(basex, ctx)
+
+	const FString *cv=basex->GetConstString();
+	if (cv)
+	{
+		FxExpression *x = new FxConstant(FSoundID(*cv), ScriptPosition);
+		delete this;
+		return x;
+	}
+	// not supported yet
+	ScriptPosition.Message(MSG_ERROR, "sound name not constant");
+	delete this;
+	return NULL;
 }
 
 //==========================================================================
