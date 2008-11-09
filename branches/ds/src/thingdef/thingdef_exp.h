@@ -315,7 +315,12 @@ public:
 		stringval = val;
 	}
 
-	virtual const FString *GetConstString() const;
+	bool isConstant() const
+	{
+		return true;
+	}
+
+	//virtual const FString *GetConstString() const;
 	//void GenerateCode(FCompileContext&);
 	//void GenerateConstant(FCompileContext& ctx);
 };
@@ -355,7 +360,7 @@ public:
 	FxFloatCast(FxExpression *x);
 	~FxFloatCast();
 	FxExpression *Resolve(FCompileContext&);
-	virtual void GenerateCode(FCompileContext&);
+	ExpVal EvalExpression (AActor *self);
 };
 
 //==========================================================================

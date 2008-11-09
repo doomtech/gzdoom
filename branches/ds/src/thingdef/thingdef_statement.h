@@ -16,7 +16,7 @@ public:
 
 protected:
 	FsStatement();
-	FsStatement(FScriptPosition pos);
+	FsStatement(const FScriptPosition &pos);
 
 public:
 	virtual ~FsStatement();
@@ -42,7 +42,7 @@ private:
 	bool AddSymbol(FCompileContext &ctx, PSymbol *sym, bool notlocal);
 
 public:
-	FsConstant(int t, FToken *tk, FxExpression *x);
+	FsConstant(int t, FName name, FxExpression *x, const FScriptPosition &pos);
 	bool Resolve(FCompileContext &ctx, bool notlocal = false);
 };
 

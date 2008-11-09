@@ -1107,6 +1107,10 @@
 						RelativePath=".\src\thingdef\ds\ds_main.cpp"
 						>
 					</File>
+					<File
+						RelativePath=".\src\thingdef\ds\ds_statement.cpp"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="Common"
