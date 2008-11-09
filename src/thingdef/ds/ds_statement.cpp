@@ -214,15 +214,19 @@ bool FsEnum::Resolve(FCompileContext &ctx, bool notlocal)
 	{
 		if (values[i]->Exp != NULL)
 		{
-			FxExpression *Exp = new FxIntCast(values[i]->Exp);
-			Exp = Exp->Resolve(ctx);
+			FxExpression *Exp = values[i]->Exp->CreateCast(ctx, VAL_Int);
 			if (Exp != NULL)
 			{
-				ExpVal x = Exp->EvalExpression(NULL);
-				delete Exp;
-				if (x.Type == VAL_Int)
+				Exp = Exp->Resolve(ctx);
+				if (Exp != NULL)
 				{
-					value = x.GetInt();
+					ExpVal x = Exp->EvalExpression(NULL);
+					delete Exp;
+					if (x.Type == VAL_Int)
+					{
+						value = x.GetInt();
+					}
+					else res = false;
 				}
 				else res = false;
 			}

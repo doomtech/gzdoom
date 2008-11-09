@@ -40,8 +40,8 @@
 
 %token_type    {FToken}
 %token_prefix	DS_
-%extra_argument { Baggage *bag }
-%syntax_error { bag->ScriptPosition.Message(MSG_ERROR, "Syntax Error"); }
+%extra_argument { Baggage *context }
+%syntax_error { context->ScriptPosition.Message(MSG_ERROR, "Syntax Error"); }
 %name DSParse
 
 
@@ -75,12 +75,12 @@ toplevel_declaration ::= enum_definition(A).
 	DefineGlobalConstant(A);
 }
 
-/*
 toplevel_declaration ::= class_definition(A).
 {
 	A->DefineClass();
 }
 
+/*
 toplevel_declaration ::= global_function_prototype(A).
 {
 	DefineGlobalFunction(A);
@@ -149,14 +149,115 @@ enum_line(A) ::= IDENTIFIER(B).
 
 // ===========================================================================
 //
+// Class definition
+//
+// ===========================================================================
+
+%type class_definition { FsClass* }
+%destructor class_definition { delete $$; }
+%type class_header { FsClass* }
+%destructor class_header { delete $$; }
+%type class_body { FsClass* } // intentionally no destructor!
+
+class_definition(A) ::= class_header(B) LBRACE class_body RBRACE.
+{
+	A = B;
+	context->Class = NULL;
+}
+
+class_header(A) ::= CLASS quotable_identifier(B) maybe_native(C).
+{
+	A = new FsClass(B.NameValue(), NULL, false, !!C, B.ScriptPosition());
+	context->Class = A;
+}
+
+class_header(A) ::= CLASS quotable_identifier(B) COLON quotable_identifier(C) maybe_native(D).
+{
+	A = new FsClass(B.NameValue(), C.NameValue(), false, !!D, B.ScriptPosition());
+	context->Class = A;
+}
+
+class_header(A) ::= ACTOR quotable_identifier(B) maybe_native(C).
+{
+	A = new FsClass(B.NameValue(), NAME_None, true, !!C, B.ScriptPosition());
+	context->Class = A;
+}
+
+class_header(A) ::= ACTOR quotable_identifier(B) COLON quotable_identifier(C) maybe_native(D).
+{
+	A = new FsClass(B.NameValue(), C.NameValue(), true, !!D, B.ScriptPosition());
+	context->Class = A;
+}
+
+class_body(A) ::= .
+{
+	A = context->GetClass();
+}
+
+
+class_body(A) ::= class_body(B) constant_definition(C).
+{
+	B->DefineConstant(C);
+	A = B;
+}
+
+class_body(A) ::= class_body(B) enum_definition(C).
+{
+	B->DefineConstant(C);
+	A = B;
+}
+
+/*
+class_body(A) ::= class_body(B) info_definition.
+{
+	A = B;
+}
+
+class_body(A) ::= class_body(B) properties_definition.
+{
+	A = B;
+}
+
+class_body(A) ::= class_body(B) function_prototype(C).
+{
+	B->AddFunction(C);
+	A = B;
+}
+
+class_body(A) ::= class_body(B) states_definition.
+{
+	A = B;
+}
+*/
+
+
+// ===========================================================================
+//
+// Function modifiers
+//
+// ===========================================================================
+
+%type maybe_native { int }
+
+maybe_native(A) ::=.
+{
+	A = 0;
+}
+
+maybe_native(A) ::= NATIVE.
+{
+	A = 1;
+}
+
+// ===========================================================================
+//
 // Quotable identifiers are needed so that actor classes can use non
 // alphanumeric characters. This was allowed previously and is needed
 // for compatibility.
 //
 // ===========================================================================
 
-/*
-%type quotable_identifier { ZToken }
+%type quotable_identifier { FToken }
  
 quotable_identifier(A) ::= IDENTIFIER(B).
 {
@@ -168,21 +269,26 @@ quotable_identifier(A) ::= STRINGCONST(B).
 	A = B.MakeIdentifier();
 }
 
+// 'Actor' needs to be both a valid identifier for class names and a keyword.
+quotable_identifier(A) ::= ACTOR(B).	
+{
+	A = B.MakeIdentifier();
+}
+
+// ===========================================================================
+//
+// For the property parser we also need some keywords as valid identifiers
+//
+// ===========================================================================
+
+/*
 %type property_identifier { ZToken }
 
 property_identifier(A) ::= IDENTIFIER(B).
 {
 	A = B;
 }
-*/
 
-// ===========================================================================
-//
-// For the property parser we need some keywords as valid identifiers
-//
-// ===========================================================================
-
-/*
 property_identifier(A) ::= COLOR(B).
 {
 	A = B.MakeIdentifier();
@@ -220,12 +326,12 @@ const_type_expression(A) ::= basic_type_expression(B).
 	A = B;
 }
 
-/*
 const_type_expression(A) ::= STRING.
 {
-	A = TK_String;
+	A = VAL_String;
 }
 
+/*
 const_type_expression(A) ::= VECTOR.
 {
 	A = TK_Vector;

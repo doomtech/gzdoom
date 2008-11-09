@@ -68,7 +68,7 @@ void ParseOldDecoration(FScanner &sc, EDefinitionType def);
 FxExpression *ParseParameter(FScanner &sc, PClass *cls, char type, bool constant)
 {
 	FxExpression *x = NULL;
-	int v;
+	//int v;
 
 	switch(type)
 	{
@@ -97,6 +97,9 @@ FxExpression *ParseParameter(FScanner &sc, PClass *cls, char type, bool constant
 	case 'C':
 	case 'c':		// Color
 		sc.MustGetString ();
+		x = new FxColorCast(new FxStringConstant(sc.String, sc));
+
+		/*
 		if (sc.Compare("none"))
 		{
 			v = -1;
@@ -118,6 +121,8 @@ FxExpression *ParseParameter(FScanner &sc, PClass *cls, char type, bool constant
 			x = new FxConstant(val, sc);
 			break;
 		}
+		*/
+		break;
 
 	case 'L':
 	case 'l':

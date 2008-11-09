@@ -162,7 +162,11 @@ public:
 	virtual FxExpression *Resolve(FCompileContext &ctx);
 	FxExpression *ResolveAsBoolean(FCompileContext &ctx);
 	
+	FxExpression *CreateCast(FCompileContext &ctx, const FExpressionType &castType);
+	FxExpression *CreateCast(FCompileContext &ctx, int type);
+
 	virtual ExpVal EvalExpression (AActor *self);
+	virtual const FString *GetConstString() const;
 	virtual bool isConstant() const;
 	virtual void RequestAddress();
 
@@ -320,7 +324,8 @@ public:
 		return true;
 	}
 
-	//virtual const FString *GetConstString() const;
+	virtual const FString *GetConstString() const;
+
 	//void GenerateCode(FCompileContext&);
 	//void GenerateConstant(FCompileContext& ctx);
 };
@@ -361,6 +366,74 @@ public:
 	~FxFloatCast();
 	FxExpression *Resolve(FCompileContext&);
 	ExpVal EvalExpression (AActor *self);
+};
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+class FxNameCast : public FxExpression
+{
+	FxExpression *basex;
+
+public:
+
+	FxNameCast(FxExpression *x);
+	~FxNameCast();
+	FxExpression *Resolve(FCompileContext&);
+};
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+class FxStateCast : public FxExpression
+{
+	FxExpression *basex;
+
+public:
+
+	FxStateCast(FxExpression *x);
+	~FxStateCast();
+	FxExpression *Resolve(FCompileContext&);
+};
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+class FxColorCast : public FxExpression
+{
+	FxExpression *basex;
+
+public:
+
+	FxColorCast(FxExpression *x);
+	~FxColorCast();
+	FxExpression *Resolve(FCompileContext&);
+};
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+class FxStringToSound : public FxExpression
+{
+	FxExpression *basex;
+
+public:
+
+	FxStringToSound(FxExpression *x);
+	~FxStringToSound();
+	FxExpression *Resolve(FCompileContext&);
 };
 
 //==========================================================================

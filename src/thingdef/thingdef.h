@@ -150,6 +150,7 @@ extern FStateExpressions StateParams;
 //
 //==========================================================================
 struct FDropItem;
+class FsClass;
 
 struct Baggage
 {
@@ -163,6 +164,7 @@ struct Baggage
 	int Lumpnum;
 	FStateDefinitions statedef;
 	TArray<FState> StateArray;
+	FsClass *Class;
 
 	FDropItem *DropItemList;
 
@@ -183,6 +185,10 @@ struct Baggage
 	const FString &GetString(int index) const
 	{
 		return CollectedStrings[index];
+	}
+	FsClass *GetClass() const
+	{
+		return Class;
 	}
 };
 
