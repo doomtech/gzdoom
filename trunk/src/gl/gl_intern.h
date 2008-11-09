@@ -38,6 +38,7 @@ EXTERN_CVAR (Bool, gl_light_sprites);
 EXTERN_CVAR (Bool, gl_light_particles);
 
 EXTERN_CVAR(Int, gl_fogmode)
+EXTERN_CVAR(Int, gl_lightmode)
 EXTERN_CVAR(Bool,gl_mirror_envmap)
 
 extern float pitch;
