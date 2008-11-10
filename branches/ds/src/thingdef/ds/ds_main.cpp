@@ -60,7 +60,7 @@ void InitParserTokens()
 	ParserTokens[';'] = DS_SEMICOLON;
 	ParserTokens['{'] = DS_LBRACE;
 	ParserTokens['}'] = DS_RBRACE;
-	//ParserTokens[TK_Class] = DS_CLASS;
+	ParserTokens[TK_Class] = DS_CLASS;
 	ParserTokens[':'] = DS_COLON;
 	ParserTokens[TK_Const] = DS_CONST;
 	ParserTokens[TK_Identifier] = DS_IDENTIFIER;
@@ -196,6 +196,12 @@ void ParseDS(FScanner &sc, void *pParser, Baggage *context)
 		{
 
 			int ptoken = ParserTokens[sc.TokenType];
+			if (sc.TokenType == TK_Identifier && sc.Compare("ACTOR"))
+			{
+				// Problem: We need ACTOR as a keyword but the scanner cannot do that
+				// because in other places ACTOR needs to be an identifier.
+				ptoken = DS_ACTOR;
+			}
 			if (ptoken == 0)
 			{
 				I_FatalError("Unknown token %s found!", 
