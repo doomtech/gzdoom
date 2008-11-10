@@ -73,6 +73,8 @@ extern FILE *Logfile;
 
 FRandom pr_acs ("ACS");
 
+FString strbin1 (const char *start);
+
 
 // I imagine this much stack space is probably overkill, but it could
 // potentially get used with recursive functions.
@@ -3987,9 +3989,7 @@ int DLevelScript::RunScript ()
 		case PCD_ENDPRINTBOLD:
 		case PCD_MOREHUDMESSAGE:
 		case PCD_ENDLOG:
-			strbin (work.LockBuffer());
-			work.Truncate ((long)strlen(work));
-			work.UnlockBuffer();
+			work = strbin1 (work);
 			if (pcd == PCD_ENDLOG)
 			{
 				Printf ("%s\n", work.GetChars());
