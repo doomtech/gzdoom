@@ -90,13 +90,16 @@ public:
 };
 
 
-class FsClass : FsStatement
+class FsClass : public FsStatement
 {
+	const PClass *Class;
+	FActorInfo *Info;
+	FScriptPosition Position;
 public:
 
-	FsClass(FName clsname, FName parentname, bool actordef, bool native, const FScriptPosition &pos);
+	FsClass(FName clsname, FName parentname, bool actordef, bool native, const FScriptPosition &pos, Baggage *bag);
 
-	void DefineClass();
+	void DefineClass(Baggage &bag);
 	void DefineConstant(FsStatement *c);
 
 };

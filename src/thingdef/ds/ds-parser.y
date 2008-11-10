@@ -77,7 +77,7 @@ toplevel_declaration ::= enum_definition(A).
 
 toplevel_declaration ::= class_definition(A).
 {
-	A->DefineClass();
+	A->DefineClass(*context);
 }
 
 /*
@@ -167,26 +167,22 @@ class_definition(A) ::= class_header(B) LBRACE class_body RBRACE.
 
 class_header(A) ::= CLASS quotable_identifier(B) maybe_native(C).
 {
-	A = new FsClass(B.NameValue(), NULL, false, !!C, B.ScriptPosition());
-	context->Class = A;
+	A = new FsClass(B.NameValue(), NULL, false, !!C, B.ScriptPosition(), context);
 }
 
 class_header(A) ::= CLASS quotable_identifier(B) COLON quotable_identifier(C) maybe_native(D).
 {
-	A = new FsClass(B.NameValue(), C.NameValue(), false, !!D, B.ScriptPosition());
-	context->Class = A;
+	A = new FsClass(B.NameValue(), C.NameValue(), false, !!D, B.ScriptPosition(), context);
 }
 
 class_header(A) ::= ACTOR quotable_identifier(B) maybe_native(C).
 {
-	A = new FsClass(B.NameValue(), NAME_None, true, !!C, B.ScriptPosition());
-	context->Class = A;
+	A = new FsClass(B.NameValue(), NAME_None, true, !!C, B.ScriptPosition(), context);
 }
 
 class_header(A) ::= ACTOR quotable_identifier(B) COLON quotable_identifier(C) maybe_native(D).
 {
-	A = new FsClass(B.NameValue(), C.NameValue(), true, !!D, B.ScriptPosition());
-	context->Class = A;
+	A = new FsClass(B.NameValue(), C.NameValue(), true, !!D, B.ScriptPosition(), context);
 }
 
 class_body(A) ::= .
