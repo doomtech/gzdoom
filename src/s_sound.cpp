@@ -1514,6 +1514,11 @@ void S_RelinkSound (AActor *from, AActor *to)
 			}
 		}
 	}
+	if (to != NULL)
+	{
+		to->SoundChans = from->SoundChans;
+	}
+	from->SoundChans = 0;
 }
 
 //==========================================================================
@@ -1697,6 +1702,10 @@ void S_RestoreEvictedChannel(FSoundChan *chan)
 				chan->ChanFlags |= CHAN_FORGETTABLE;
 			}
 		}
+	}
+	else if (chan->SysChannel == NULL && (chan->ChanFlags & (CHAN_FORGETTABLE | CHAN_LOOP)) == CHAN_FORGETTABLE)
+	{
+		S_ReturnChannel(chan);
 	}
 }
 

@@ -417,7 +417,12 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 
  	// invisible things
 	if (thing->sprite==0) return;
-	if (thing->renderflags & RF_INVISIBLE || !thing->RenderStyle.IsVisible(thing->alpha)) return; 
+
+	if (thing->renderflags & RF_INVISIBLE || !thing->RenderStyle.IsVisible(thing->alpha)) 
+	{
+		if (!(thing->flags & MF_STEALTH) || !gl_fixedcolormap || !gl_enhanced_nightvision)
+			return; 
+	}
 
 	// [RH] Interpolate the sprite's position to make it look smooth
 	fixed_t thingx = thing->PrevX + FixedMul (r_TicFrac, thing->x - thing->PrevX);
