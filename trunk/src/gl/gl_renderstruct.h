@@ -123,7 +123,8 @@ public:
 		//GLWF_CLAMPY=2,
 		GLWF_SKYHACK=4,
 		GLWF_FOGGY=8,
-		GLWF_GLOW=16,	// illuminated by glowing flats
+		GLWF_GLOW=16,		// illuminated by glowing flats
+		GLWF_NOSHADER=32,	// cannot be drawn with shaders.
 	};
 
 	friend struct GLDrawList;
