@@ -56,12 +56,21 @@ FsClass::FsClass(FName clsname, FName parentname, bool actordef, bool native, co
 	Position = pos;
 	if (actordef || clsname == NAME_Actor)
 	{
-		Info = CreateNewActor(pos, clsname, parentname, NAME_None, -1, native);
-		Class = Info->Class;
-		ResetBaggage(bag, Class->ParentClass);
-		bag->Info = Info;
-		bag->Class = this;
-		bag->ClassName = clsname;
+		try
+		{
+			Info = CreateNewActor(clsname, parentname, native);
+			Class = Info->Class;
+			ResetBaggage(bag, Class->ParentClass);
+			bag->Info = Info;
+			bag->Class = this;
+	#ifdef _DEBUG
+			bag->ClassName = clsname;
+	#endif
+		}
+		catch(CRecoverableError &err)
+		{
+			Position.Message(MSG_FATAL, "%s", err.GetMessage());
+		}
 	}
 	else
 	{
@@ -280,7 +289,7 @@ bool FsClass::ParsePropertyParams(FPropertyInfo *prop, FPropArgs *arguments, Bag
 	// call the handler
 	try
 	{
-		prop->Handler((AActor *)Class->Defaults, bag, &params[0]);
+		prop->Handler((AActor *)Class->Defaults, Class->ActorInfo, bag, &params[0]);
 	}
 	catch (CRecoverableError &error)
 	{
@@ -352,7 +361,7 @@ void FsClass::AddExpressionProperty(Baggage &bag, FName name1, FName name2, FxEx
 		// call the handler
 		try
 		{
-			prop->Handler((AActor *)Class->Defaults, bag, params);
+			prop->Handler((AActor *)Class->Defaults, Class->ActorInfo, bag, params);
 		}
 		catch (CRecoverableError &error)
 		{

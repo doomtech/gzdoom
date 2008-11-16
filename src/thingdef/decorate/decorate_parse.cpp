@@ -659,7 +659,7 @@ static bool ParsePropertyParams(FScanner &sc, FPropertyInfo *prop, AActor *defau
 	// call the handler
 	try
 	{
-		prop->Handler(defaults, bag, &params[0]);
+		prop->Handler(defaults, bag.Info, bag, &params[0]);
 	}
 	catch (CRecoverableError &error)
 	{
@@ -945,7 +945,10 @@ static FActorInfo *ParseActorHeader(FScanner &sc, Baggage *bag)
 
 	try
 	{
-		FActorInfo *info =  CreateNewActor(sc, typeName, parentName, replaceName, DoomEdNum, native);
+		FActorInfo *info =  CreateNewActor(typeName, parentName, native);
+		info->DoomEdNum = DoomEdNum > 0? DoomEdNum : -1;
+		SetReplacement(info, replaceName);
+
 		ResetBaggage (bag, info->Class->ParentClass);
 		bag->Info = info;
 		bag->Lumpnum = sc.LumpNum;

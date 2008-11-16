@@ -240,14 +240,21 @@ void LoadDS()
 			FScanner sc(lump);
 			Baggage bag;
 			void *pParser = DSParseAlloc(malloc);
-			ParseDS (sc, pParser, &bag);
-			// Send a terminator token to the parser.
-			FToken tok;
-			tok.tokentype = 0;
-			tok.bag = NULL;
-			DSParse(pParser, 0, tok, &bag);
+			try
+			{
+				ParseDS (sc, pParser, &bag);
+				// Send a terminator token to the parser.
+				FToken tok;
+				tok.tokentype = 0;
+				tok.bag = NULL;
+				DSParse(pParser, 0, tok, &bag);
+			}
+			catch (...)
+			{
+				DSParseFree(pParser, free);
+				throw;
+			}
 			DSParseFree(pParser, free);
-
 		}
 	}
 }
