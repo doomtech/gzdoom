@@ -234,6 +234,7 @@ xx(Extreme)
 
 xx(Color)
 xx(State)
+xx(Damage)
 
 // Special names for thingdef_exp.cpp
 xx(Random)
@@ -413,3 +414,7 @@ xx(nofakecontrast)
 xx(smoothlighting)
 
 xx(Renderstyle)
+
+// Needed for converting keywords to identifiers
+xx(Float)
+xx(Projectile)

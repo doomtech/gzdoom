@@ -90,17 +90,33 @@ public:
 };
 
 
+struct FPropArgs
+{
+	TDeletingArray<FxExpression *> arguments;
+
+	void Push(FxExpression *ex)
+	{
+		arguments.Push(ex);
+	}
+};
+
 class FsClass : public FsStatement
 {
 	const PClass *Class;
 	FActorInfo *Info;
 	FScriptPosition Position;
+
+	bool ParsePropertyParams(FPropertyInfo *prop, FPropArgs *arguments, Baggage &bag);
+
 public:
 
 	FsClass(FName clsname, FName parentname, bool actordef, bool native, const FScriptPosition &pos, Baggage *bag);
 
 	void DefineClass(Baggage &bag);
 	void DefineConstant(FsStatement *c);
+	void AddProperty(Baggage &bag, FName name1, FName name2, FPropArgs *arguments, const FScriptPosition &pos, bool info);
+	void AddExpressionProperty(Baggage &bag, FName name1, FName name2, FxExpression *ex, const FScriptPosition &pos);
+	void AddFlag(FName name1, FName name2, bool on, const FScriptPosition &pos);
 
 };
 
