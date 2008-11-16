@@ -103,9 +103,10 @@ void InitParserTokens()
 	ParserTokens[')'] = DS_RPAREN;
 	ParserTokens['['] = DS_LBRACKET;
 	ParserTokens[']'] = DS_RBRACKET;
-	//ParserTokens[TK_Native] = DS_NATIVE;
+	ParserTokens[TK_Native] = DS_NATIVE;
 	//ParserTokens[TK_DefaultProperties] = DS_DEFAULTPROPERTIES;
 	ParserTokens['.'] = DS_DOT;
+	ParserTokens[TK_Color] = DS_COLOR;
 	//ParserTokens[TK_String] = DS_STRING;
 	//ParserTokens[TK_Ellipsis] = DS_ELLIPSIS;
 	//ParserTokens[TK_Void] = DS_VOID;
@@ -144,6 +145,8 @@ void InitParserTokens()
 	ParserTokens[TK_True] = DS_TRUE;
 	ParserTokens[TK_False] = DS_FALSE;
 	//ParserTokens[TK_Name] = DS_NAME;
+	ParserTokens[TK_Info] = DS_INFO;
+	ParserTokens[TK_DefaultProperties] = DS_DEFAULTPROPERTIES;
 }
 
 FRandom *MakeRNG(const FToken &tok)

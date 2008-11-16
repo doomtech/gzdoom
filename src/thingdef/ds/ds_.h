@@ -76,21 +76,23 @@ public:
 		ScriptNameIndex = bag->AddString(ScriptPosition.FileName);
 	}
 
-	const FToken &MakeIdentifier()
+	const FToken &StringToIdentifier()
 	{
 		switch (tokentype)
 		{
 		case TK_StringConst:
 			v.intvalue = int(FName(bag->GetString(v.intvalue)));
+			tokentype = TK_Identifier;
 			break;
-			
-		case TK_Color: 
-			v.intvalue = NAME_Color;
+		default:
 			break;
-			
-		case TK_State:
-			v.intvalue = NAME_State;
 		}
+		return *this;
+	}
+
+	const FToken &MakeIdentifier(FName identifier)
+	{
+		v.intvalue = identifier;
 		tokentype = TK_Identifier;
 		return *this;
 	}

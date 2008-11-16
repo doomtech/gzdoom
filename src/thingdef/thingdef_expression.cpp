@@ -325,12 +325,13 @@ void FxExpression::RequestAddress()
 FxExpression *FxExpression::CreateCast(FCompileContext &ctx, const FExpressionType &castType)
 {
 	FxExpression *cast = NULL;
-	if (ValueType.Type == castType.Type)
+	FxExpression *self = Resolve(ctx);
+	if (self == NULL || self->ValueType.Type == castType.Type)
 	{
-		return this;	// there's nothing to cast
+		return self;	// there's nothing to cast
 	}
 
-	int thistype = ValueType.Type;
+	int thistype = self->ValueType.Type;
 	int casttype = castType.Type;
 
 	if (casttype == VAL_Int)
@@ -341,47 +342,46 @@ FxExpression *FxExpression::CreateCast(FCompileContext &ctx, const FExpressionTy
 			{
 				ScriptPosition.Message(MSG_ERROR , "Implicit cast from float to int");
 			}
-			cast = new FxIntCast(this);
+			cast = new FxIntCast(self);
 		}
 	}
 	else if (casttype == VAL_Float)
 	{
 		if (thistype == VAL_Int)
 		{
-			cast = new FxFloatCast(this);
+			cast = new FxFloatCast(self);
 		}
 	}
 	else if (casttype == VAL_State)
 	{
 		if (thistype == VAL_Name || thistype == VAL_String)
 		{
-			cast = new FxStateCast(this);
+			cast = new FxStateCast(self);
 		}
 	}
 	else if (casttype == VAL_Name)
 	{
 		if (thistype == VAL_String)
 		{
-			cast = new FxNameCast(this);
+			cast = new FxNameCast(self);
 		}
 	}
 	else if (casttype == VAL_Name)
 	{
 		if (thistype == VAL_String)
 		{
-			cast = new FxColorCast(this);
+			cast = new FxColorCast(self);
 		}
 	}
 	else if (casttype == VAL_Sound)
 	{
 		if (thistype == VAL_Name || thistype == VAL_String)
 		{
-			cast = new FxStringToSound(this);
+			cast = new FxStringToSound(self);
 		}
 	}
 	if (cast != NULL)
 	{
-		//CLOG(CL_RESOLVE, LPrintf("Casting expression from %s to %s\n", ValueType.GetTypeString().GetChars(), castType->GetTypeString().GetChars()));
 		return cast->Resolve(ctx);
 	}
 	else
@@ -389,7 +389,7 @@ FxExpression *FxExpression::CreateCast(FCompileContext &ctx, const FExpressionTy
 		ScriptPosition.Message(MSG_ERROR, "Unable to convert from '%s' to '%s'", 
 			"", "");
 			//ValueType.GetTypeString().GetChars(), castType->GetTypeString().GetChars());
-		delete this;
+		delete self;
 		return NULL;
 	}
 }

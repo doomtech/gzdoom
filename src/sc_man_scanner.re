@@ -150,6 +150,7 @@ std2:
 		'abs'						{ RET(TK_Abs); }
 		'random'					{ RET(TK_Random); }
 		'random2'					{ RET(TK_Random2); }
+		'info'						{ RET(TK_Info); }
 
 		L (L|D)*					{ RET(TK_Identifier); }
 

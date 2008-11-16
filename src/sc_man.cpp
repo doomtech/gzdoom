@@ -920,6 +920,7 @@ FString FScanner::TokenName (int token, const char *string)
 		"'abs'",
 		"'random'",
 		"'random2'"
+		"'info'"
 	};
 
 	FString work;
@@ -1112,6 +1113,8 @@ void STACK_ARGS FScriptPosition::Message (int severity, const char *message, ...
 		I_Error ("Script error, \"%s\" line %d:\n%s\n",
 			FileName.GetChars(), ScriptLine, composed.GetChars());
 	}
+	Printf (level, "Script %s, \"%s\" line %d:\n%s\n",
+		type, FileName.GetChars(), ScriptLine, composed.GetChars());
 }
 
 

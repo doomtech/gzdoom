@@ -203,7 +203,6 @@ class_body(A) ::= class_body(B) enum_definition(C).
 	A = B;
 }
 
-/*
 class_body(A) ::= class_body(B) info_definition.
 {
 	A = B;
@@ -214,6 +213,7 @@ class_body(A) ::= class_body(B) properties_definition.
 	A = B;
 }
 
+/*
 class_body(A) ::= class_body(B) function_prototype(C).
 {
 	B->AddFunction(C);
@@ -226,6 +226,126 @@ class_body(A) ::= class_body(B) states_definition.
 }
 */
 
+// ===========================================================================
+//
+// Info block definition
+//
+// ===========================================================================
+
+%type info_body { FsClass* }	// intentionally no destructor
+
+
+info_definition ::= INFO LBRACE info_body RBRACE.
+	
+info_body(A) ::= .
+{
+	A = context->GetClass();
+}
+
+info_body(A) ::= info_body(B) IDENTIFIER(C) LPAREN property_args(D) RPAREN.
+{
+	B->AddProperty(*context, NAME_None, C.NameValue(), D, C.ScriptPosition(), true);
+	A = B;
+}
+
+
+// ===========================================================================
+//
+// Property block definition
+//
+// ===========================================================================
+
+%type prop_body { FsClass* }	// intentionally no destructor
+
+
+properties_definition ::= DEFAULTPROPERTIES LBRACE prop_body RBRACE.
+	
+prop_body(A) ::= .
+{
+	A = context->GetClass();
+}
+
+prop_body(A) ::= prop_body(B) property_identifier(C) LPAREN RPAREN.
+{
+	B->AddProperty(*context, NAME_None, C.NameValue(), NULL, C.ScriptPosition(), false);
+	A = B;
+}
+
+prop_body(A) ::= prop_body(B) property_identifier(C) DOT property_identifier(D) LPAREN RPAREN.
+{
+	B->AddProperty(*context, C.NameValue(), D.NameValue(), NULL, C.ScriptPosition(), false);
+	A = B;
+}
+
+prop_body(A) ::= prop_body(B) property_identifier(C) LBRACKET value_expression(D) RBRACKET.
+{
+	B->AddExpressionProperty(*context, NAME_None, C.NameValue(), D, C.ScriptPosition());
+	A = B;
+}
+
+prop_body(A) ::= prop_body(B) property_identifier(C) LPAREN property_args(D) RPAREN.
+{
+	B->AddProperty(*context, NAME_None, C.NameValue(), D, C.ScriptPosition(), false);
+	A = B;
+}
+
+prop_body(A) ::= prop_body(B) property_identifier(C) DOT property_identifier(D) LPAREN property_args(E) RPAREN.
+{
+	B->AddProperty(*context, C.NameValue(), D.NameValue(), E, C.ScriptPosition(), false);
+	A = B;
+}
+
+prop_body(A) ::= prop_body(B) PLUS property_identifier(C).
+{
+	B->AddFlag(NAME_Actor, C.NameValue(), true, C.ScriptPosition());
+	A = B;
+}
+
+prop_body(A) ::= prop_body(B) MINUS property_identifier(C).
+{
+	B->AddFlag(NAME_Actor, C.NameValue(), false, C.ScriptPosition());
+	A = B;
+}
+
+prop_body(A) ::= prop_body(B) PLUS property_identifier(C) DOT property_identifier(D).
+{
+	B->AddFlag(C.NameValue(), D.NameValue(), true, C.ScriptPosition());
+	A = B;
+}
+
+prop_body(A) ::= prop_body(B) MINUS property_identifier(C) DOT property_identifier(D).
+{
+	B->AddFlag(C.NameValue(), D.NameValue(), false, C.ScriptPosition());
+	A = B;
+}
+
+prop_body(A) ::= prop_body(B) error.
+{
+	A = B;
+	context->ScriptPosition.Message(MSG_ERROR, "Invalid property definition");
+}
+
+// ===========================================================================
+//
+// Property arguments
+//
+// ===========================================================================
+
+
+%type property_args { FPropArgs* }
+%destructor property_args { delete $$; }
+
+property_args(A) ::= value_expression(B).
+{
+	A = new FPropArgs;
+	A->Push(B);
+}
+
+property_args(A) ::= property_args(B) COMMA value_expression(C).
+{
+	B->Push(C);
+	A = B;
+}
 
 // ===========================================================================
 //
@@ -262,13 +382,13 @@ quotable_identifier(A) ::= IDENTIFIER(B).
 
 quotable_identifier(A) ::= STRINGCONST(B).
 {
-	A = B.MakeIdentifier();
+	A = B.StringToIdentifier();
 }
 
 // 'Actor' needs to be both a valid identifier for class names and a keyword.
 quotable_identifier(A) ::= ACTOR(B).	
 {
-	A = B.MakeIdentifier();
+	A = B.MakeIdentifier(NAME_Actor);
 }
 
 // ===========================================================================
@@ -277,8 +397,7 @@ quotable_identifier(A) ::= ACTOR(B).
 //
 // ===========================================================================
 
-/*
-%type property_identifier { ZToken }
+%type property_identifier { FToken }
 
 property_identifier(A) ::= IDENTIFIER(B).
 {
@@ -287,24 +406,18 @@ property_identifier(A) ::= IDENTIFIER(B).
 
 property_identifier(A) ::= COLOR(B).
 {
-	A = B.MakeIdentifier();
+	A = B.MakeIdentifier(NAME_Color);
 }
 
 property_identifier(A) ::= FLOAT(B).
 {
-	A = B.MakeIdentifier();
-}
-
-property_identifier(A) ::= ACTOR(B).
-{
-	A = B.MakeIdentifier();
+	A = B.MakeIdentifier(NAME_Float);
 }
 
 property_identifier(A) ::= PROJECTILE(B).
 {
-	A = B.MakeIdentifier();
+	A = B.MakeIdentifier(NAME_Projectile);
 }
-*/
 
 
 
