@@ -385,7 +385,7 @@ void gl_SetFog(int lightlevel, int rellight, const FColormap *cmap, bool isaddit
 	}
 	else
 	{
-		if (gl_lightmode == 2 && fogcolor == 0)
+		if ((gl_lightmode == 2 && gl_fog_shader) && fogcolor == 0)
 		{
 			float light;
 

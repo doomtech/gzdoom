@@ -51,6 +51,7 @@
 #include "doomstat.h"
 #include "g_level.h"
 #include "gl_geometric.h"
+#include "gl_intern.h"
 
 static inline float GetTimeFloat()
 {
@@ -592,7 +593,7 @@ void gl_RenderModel(GLSprite * spr, int cm)
 	Matrix3x4 ModelToWorld;
 	Matrix3x4 *mat;
 
-	if (gl_fogmode != 2)
+	if (gl_fogmode != 2 || !gl_fog_shader)
 	{
 		// Model space => World space
 		gl.Translatef(spr->x, spr->z, spr->y );
