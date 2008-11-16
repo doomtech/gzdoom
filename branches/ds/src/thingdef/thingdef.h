@@ -230,8 +230,8 @@ PSymbolActionFunction *FindGlobalActionFunction(const char *name);
 //
 //==========================================================================
 
-FActorInfo *CreateNewActor(const FScriptPosition &sc, FName typeName, FName parentName, FName replaceName, 
-								  int DoomEdNum, bool native);
+FActorInfo *CreateNewActor(FName typeName, FName parentName, bool native);
+void SetReplacement(FActorInfo *info, FName replaceName);
 
 void HandleActorFlag(FScanner &sc, Baggage &bag, const char *part1, const char *part2, int mod);
 void FinishActor(const FScriptPosition &sc, FActorInfo *info, Baggage &bag);
@@ -303,7 +303,7 @@ union FPropParam
 	const char *s;
 };
 
-typedef void (*PropHandler)(AActor *defaults, Baggage &bag, FPropParam *params);
+typedef void (*PropHandler)(AActor *defaults, FActorInfo *info, Baggage &bag, FPropParam *params);
 
 enum ECategory
 {
@@ -334,18 +334,18 @@ int MatchString (const char *in, const char **strings);
 
 
 #define DEFINE_PROPERTY_BASE(name, paramlist, clas, cat) \
-	static void Handler_##name##_##paramlist##_##clas(A##clas *defaults, Baggage &bag, FPropParam *params); \
+	static void Handler_##name##_##paramlist##_##clas(A##clas *defaults, FActorInfo *info, Baggage &bag, FPropParam *params); \
 	static FPropertyInfo Prop_##name##_##paramlist##_##clas = \
 		{ #name, #paramlist, RUNTIME_CLASS(A##clas), (PropHandler)Handler_##name##_##paramlist##_##clas, cat }; \
 	MSVC_PSEG FPropertyInfo *infoptr_##name##_##paramlist##_##clas GCC_PSEG = &Prop_##name##_##paramlist##_##clas; \
-	static void Handler_##name##_##paramlist##_##clas(A##clas *defaults, Baggage &bag, FPropParam *params)
+	static void Handler_##name##_##paramlist##_##clas(A##clas *defaults, FActorInfo *info, Baggage &bag, FPropParam *params)
 
 #define DEFINE_PREFIXED_PROPERTY_BASE(prefix, name, paramlist, clas, cat) \
-	static void Handler_##name##_##paramlist##_##clas(A##clas *defaults, Baggage &bag, FPropParam *params); \
+	static void Handler_##name##_##paramlist##_##clas(A##clas *defaults, FActorInfo *info, Baggage &bag, FPropParam *params); \
 	static FPropertyInfo Prop_##name##_##paramlist##_##clas = \
 { #prefix"."#name, #paramlist, RUNTIME_CLASS(A##clas), (PropHandler)Handler_##name##_##paramlist##_##clas, cat }; \
 	MSVC_PSEG FPropertyInfo *infoptr_##name##_##paramlist##_##clas GCC_PSEG = &Prop_##name##_##paramlist##_##clas; \
-	static void Handler_##name##_##paramlist##_##clas(A##clas *defaults, Baggage &bag, FPropParam *params)
+	static void Handler_##name##_##paramlist##_##clas(A##clas *defaults, FActorInfo *info, Baggage &bag, FPropParam *params)
 
 
 #define DEFINE_PROPERTY(name, paramlist, clas) DEFINE_PROPERTY_BASE(name, paramlist, clas, CAT_PROPERTY)
