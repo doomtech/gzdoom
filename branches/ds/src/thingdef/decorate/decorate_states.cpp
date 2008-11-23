@@ -76,7 +76,7 @@ static int PrepareStateParameters(FState * state, int numparams, const PClass *c
 // handles action specials as code pointers
 //
 //==========================================================================
-bool DoActionSpecials(FScanner &sc, FState & state, bool multistate, Baggage &bag)
+bool DoActionSpecials(FScanner &sc, FState & state, Baggage &bag)
 {
 	int i;
 	int min_args, max_args;
@@ -150,7 +150,7 @@ static FString ParseStateString(FScanner &sc)
 // parses a state block
 //
 //==========================================================================
-int ParseStates(FScanner &sc, FActorInfo * actor, AActor * defaults, Baggage &bag)
+void ParseStates(FScanner &sc, FActorInfo * actor, AActor * defaults, Baggage &bag)
 {
 	FString statestring;
 	FState state;
@@ -205,14 +205,12 @@ do_stop:
 		}
 		else
 		{
-			const char * statestrp;
-
 			sc.MustGetString();
 			if (sc.Compare (":"))
 			{
 				do
 				{
-					bag.statedef.SetStateLabel(statestring, bag.StateArray.Size());
+					bag.statedef.AddStateLabel(statestring);
 					statestring = ParseStateString(sc);
 					if (!statestring.CompareNoCase("GOTO"))
 					{
@@ -245,14 +243,7 @@ do_stop:
 			state.Misc1 = state.Misc2 = 0;
 			state.ParameterIndex = 0;
 			sc.MustGetString();
-			statestring = (sc.String+1);
-			statestrp = statestring;
-			state.Frame = (*sc.String & 223)-'A';
-			if ((*sc.String & 223)<'A' || (*sc.String & 223)>']')
-			{
-				sc.ScriptError ("Frames must be A-Z, [, \\, or ]");
-				state.Frame=0;
-			}
+			statestring = sc.String;
 
 			sc.MustGetNumber();
 			state.Tics = clamp<int>(sc.Number, -1, 32767);
@@ -280,7 +271,7 @@ do_stop:
 				// Make the action name lowercase to satisfy the gperf hashers
 				strlwr (sc.String);
 
-				if (DoActionSpecials(sc, state, !statestring.IsEmpty(), bag))
+				if (DoActionSpecials(sc, state, bag))
 				{
 					goto endofstate;
 				}
@@ -331,7 +322,7 @@ do_stop:
 							if ((*params == 'l' || *params == 'L') && sc.CheckNumber())
 							{
 								// Special case: State label as an offset
-								if (sc.Number > 0 && strlen(statestring)>0)
+								if (sc.Number > 0 && statestring.Len() > 1)
 								{
 									sc.ScriptError("You cannot use state jumps commands with a jump offset on multistate definitions\n");
 								}
@@ -342,7 +333,7 @@ do_stop:
 									sc.ScriptError("Negative jump offsets are not allowed");
 								}
 
-								x = new FxStateByIndex(bag.StateArray.Size() + v, sc);
+								x = new FxStateByIndex(bag.statedef.GetStateCount() + v, sc);
 							}
 							else
 							{
@@ -391,24 +382,12 @@ do_stop:
 			}
 			sc.UnGet();
 endofstate:
-			bag.StateArray.Push(state);
-			while (*statestrp)
+			if (!bag.statedef.AddStates(&state, statestring))
 			{
-				int frame=((*statestrp++)&223)-'A';
-
-				if (frame<0 || frame>28)
-				{
-					sc.ScriptError ("Frames must be A-Z, [, \\, or ]");
-					frame=0;
-				}
-
-				state.Frame=(state.Frame&(SF_FULLBRIGHT))|frame;
-				bag.StateArray.Push(state);
+				sc.ScriptError ("Invalid frame character string '%s'", statestring.GetChars());
 			}
-			bag.statedef.SetLastState(&bag.StateArray[bag.StateArray.Size() - 1]);
 		}
 	}
 	sc.SetEscape(true);	// re-enable escape sequences
-	return bag.StateArray.Size();
 }
 

@@ -84,6 +84,7 @@ class FStateDefinitions
 	TArray<FStateDefine> StateLabels;
 	FState *laststate;
 	intptr_t lastlabel;
+	TArray<FState> StateArray;
 
 	static FStateDefine *FindStateLabelInList(TArray<FStateDefine> &list, FName name, bool create);
 	static FStateLabels *CreateStateLabelList(TArray<FStateDefine> &statelist);
@@ -104,20 +105,10 @@ public:
 		lastlabel = -1;
 	}
 
-	void ClearStateLabels()
-	{
-		StateLabels.Clear();
-	}
-
-	void SetLastState(FState *state)
-	{
-		laststate = state;
-	}
-
 	void SetStateLabel (const char * statename, FState * state, BYTE defflags = SDF_STATE);
-	void SetStateLabel (const char * statename, int index);
+	void AddStateLabel (const char * statename);
 	void InstallStates(FActorInfo *info, AActor *defaults);
-	int FinishStates (FActorInfo *actor, AActor *defaults, TArray<FState> &StateArray);
+	int FinishStates (FActorInfo *actor, AActor *defaults);
 
 	void MakeStateDefines(const PClass *cls);
 	void AddStateDefines(const FStateLabels *list);
@@ -127,6 +118,8 @@ public:
 	bool SetStop();
 	bool SetWait();
 	bool SetLoop();
+	bool AddStates(FState *state, const char *framechars);
+	int GetStateCount() const { return StateArray.Size(); }
 
 };
 
@@ -181,7 +174,6 @@ struct Baggage
 	int CurrentState;
 	int Lumpnum;
 	FStateDefinitions statedef;
-	TArray<FState> StateArray;
 	FsClass *Class;
 
 	FDropItem *DropItemList;
@@ -218,7 +210,6 @@ inline void ResetBaggage (Baggage *bag, const PClass *stateclass)
 	bag->DropItemSet = false;
 	bag->CurrentState = 0;
 	bag->StateSet = false;
-	bag->StateArray.Clear();
 	bag->statedef.MakeStateDefines(stateclass);
 }
 
@@ -238,7 +229,7 @@ AFuncDesc * FindFunction(const char * string);
 
 
 
-int ParseStates(FScanner &sc, FActorInfo *actor, AActor *defaults, Baggage &bag);
+void ParseStates(FScanner &sc, FActorInfo *actor, AActor *defaults, Baggage &bag);
 
 PSymbolActionFunction *FindGlobalActionFunction(const char *name);
 

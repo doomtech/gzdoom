@@ -102,7 +102,7 @@ IMPLEMENT_CLASS (AFakeInventory)
 // PRIVATE FUNCTION PROTOTYPES ---------------------------------------------
 
 static void ParseInsideDecoration (Baggage &bag, AActor *defaults,
-	FExtraInfo &extra, EDefinitionType def, FScanner &sc);
+	FExtraInfo &extra, EDefinitionType def, FScanner &sc, TArray<FState> &StateArray);
 static void ParseSpriteFrames (FActorInfo *info, TArray<FState> &states, FScanner &sc);
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
@@ -134,6 +134,7 @@ static const char *RenderStyles[] =
 void ParseOldDecoration(FScanner &sc, EDefinitionType def)
 {
 	Baggage bag;
+	TArray<FState> StateArray;
 	FExtraInfo extra;
 	FActorInfo *info;
 	PClass *type;
@@ -156,9 +157,9 @@ void ParseOldDecoration(FScanner &sc, EDefinitionType def)
 	sc.MustGetStringName("{");
 
 	memset (&extra, 0, sizeof(extra));
-	ParseInsideDecoration (bag, (AActor *)(type->Defaults), extra, def, sc);
+	ParseInsideDecoration (bag, (AActor *)(type->Defaults), extra, def, sc, StateArray);
 
-	bag.Info->NumOwnedStates = bag.StateArray.Size();
+	bag.Info->NumOwnedStates = StateArray.Size();
 	if (bag.Info->NumOwnedStates == 0)
 	{
 		sc.ScriptError ("%s does not define any animation frames", typeName.GetChars() );
@@ -179,13 +180,13 @@ void ParseOldDecoration(FScanner &sc, EDefinitionType def)
 	if (extra.IceDeathEnd != 0)
 	{
 		// Make a copy of the final frozen frame for A_FreezeDeathChunks
-		FState icecopy = bag.StateArray[extra.IceDeathEnd-1];
-		bag.StateArray.Push (icecopy);
+		FState icecopy = StateArray[extra.IceDeathEnd-1];
+		StateArray.Push (icecopy);
 		info->NumOwnedStates += 1;
 	}
 
 	info->OwnedStates = new FState[info->NumOwnedStates];
-	memcpy (info->OwnedStates, &bag.StateArray[0], info->NumOwnedStates * sizeof(info->OwnedStates[0]));
+	memcpy (info->OwnedStates, &StateArray[0], info->NumOwnedStates * sizeof(info->OwnedStates[0]));
 	if (info->NumOwnedStates == 1)
 	{
 		info->OwnedStates->Tics = -1;
@@ -333,7 +334,7 @@ void ParseOldDecoration(FScanner &sc, EDefinitionType def)
 //==========================================================================
 
 static void ParseInsideDecoration (Baggage &bag, AActor *defaults,
-	FExtraInfo &extra, EDefinitionType def, FScanner &sc)
+	FExtraInfo &extra, EDefinitionType def, FScanner &sc, TArray<FState> &StateArray)
 {
 	AFakeInventory *const inv = static_cast<AFakeInventory *>(defaults);
 	char sprite[5] = "TNT1";
@@ -382,31 +383,31 @@ static void ParseInsideDecoration (Baggage &bag, AActor *defaults,
 		else if (sc.Compare ("Frames"))
 		{
 			sc.MustGetString ();
-			extra.SpawnStart = bag.StateArray.Size();
-			ParseSpriteFrames (bag.Info, bag.StateArray, sc);
-			extra.SpawnEnd = bag.StateArray.Size();
+			extra.SpawnStart = StateArray.Size();
+			ParseSpriteFrames (bag.Info, StateArray, sc);
+			extra.SpawnEnd = StateArray.Size();
 		}
 		else if ((def == DEF_BreakableDecoration || def == DEF_Projectile) &&
 			sc.Compare ("DeathFrames"))
 		{
 			sc.MustGetString ();
-			extra.DeathStart = bag.StateArray.Size();
-			ParseSpriteFrames (bag.Info, bag.StateArray, sc);
-			extra.DeathEnd = bag.StateArray.Size();
+			extra.DeathStart = StateArray.Size();
+			ParseSpriteFrames (bag.Info, StateArray, sc);
+			extra.DeathEnd = StateArray.Size();
 		}
 		else if (def == DEF_BreakableDecoration && sc.Compare ("IceDeathFrames"))
 		{
 			sc.MustGetString ();
-			extra.IceDeathStart = bag.StateArray.Size();
-			ParseSpriteFrames (bag.Info, bag.StateArray, sc);
-			extra.IceDeathEnd = bag.StateArray.Size();
+			extra.IceDeathStart = StateArray.Size();
+			ParseSpriteFrames (bag.Info, StateArray, sc);
+			extra.IceDeathEnd = StateArray.Size();
 		}
 		else if (def == DEF_BreakableDecoration && sc.Compare ("BurnDeathFrames"))
 		{
 			sc.MustGetString ();
-			extra.FireDeathStart = bag.StateArray.Size();
-			ParseSpriteFrames (bag.Info, bag.StateArray, sc);
-			extra.FireDeathEnd = bag.StateArray.Size();
+			extra.FireDeathStart = StateArray.Size();
+			ParseSpriteFrames (bag.Info, StateArray, sc);
+			extra.FireDeathEnd = StateArray.Size();
 		}
 		else if (def == DEF_BreakableDecoration && sc.Compare ("GenericIceDeath"))
 		{
@@ -587,16 +588,16 @@ static void ParseInsideDecoration (Baggage &bag, AActor *defaults,
 	unsigned int i;
 	int spr = GetSpriteIndex(sprite);
 
-	for (i = 0; i < bag.StateArray.Size(); ++i)
+	for (i = 0; i < StateArray.Size(); ++i)
 	{
-		bag.StateArray[i].sprite = spr;
+		StateArray[i].sprite = spr;
 	}
 	if (extra.DeathSprite[0] && extra.DeathEnd != 0)
 	{
 		int spr = GetSpriteIndex(extra.DeathSprite);
 		for (i = extra.DeathStart; i < extra.DeathEnd; ++i)
 		{
-			bag.StateArray[i].sprite = spr;
+			StateArray[i].sprite = spr;
 		}
 	}
 }
