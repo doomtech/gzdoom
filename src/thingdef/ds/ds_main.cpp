@@ -37,6 +37,7 @@
 **
 */
 
+#include "templates.h"
 #include "actor.h"
 #include "zstring.h"
 #include "sc_man.h"
@@ -98,7 +99,7 @@ void InitParserTokens()
 	//ParserTokens[TK_Decr] = DS_DECR;
 	ParserTokens['!'] = DS_NOT;
 	ParserTokens['~'] = DS_TILDE;
-	//ParserTokens[TK_DColon] = DS_DCOLON;
+	ParserTokens[TK_DColon] = DS_DCOLON;
 	ParserTokens['('] = DS_LPAREN;
 	ParserTokens[')'] = DS_RPAREN;
 	ParserTokens['['] = DS_LBRACKET;
@@ -115,15 +116,15 @@ void InitParserTokens()
 	//ParserTokens[TK_Private] = DS_PRIVATE;
 	//ParserTokens[TK_Protected] = DS_PROTECTED;
 	//ParserTokens[TK_Final] = DS_FINAL;
-	//ParserTokens[TK_Stop] = DS_STOP;
-	//ParserTokens[TK_Wait] = DS_WAIT;
-	//ParserTokens[TK_Fail] = DS_FAIL;
-	//ParserTokens[TK_Loop] = DS_LOOP;
-	//ParserTokens[TK_Goto] = DS_GOTO;
-	//ParserTokens[TK_Super] = DS_SUPER;
+	ParserTokens[TK_Stop] = DS_STOP;
+	ParserTokens[TK_Wait] = DS_WAIT;
+	ParserTokens[TK_Fail] = DS_FAIL;
+	ParserTokens[TK_Loop] = DS_LOOP;
+	ParserTokens[TK_Goto] = DS_GOTO;
+	ParserTokens[TK_Super] = DS_SUPER;
 	//ParserTokens[TK_Bright] = DS_BRIGHT;
 	//ParserTokens[TK_Offset] = DS_OFFSET;
-	//ParserTokens[TK_States] = DS_STATES;
+	ParserTokens[TK_States] = DS_STATES;
 	//ParserTokens[TK_State] = DS_STATE;
 	//ParserTokens[TK_AddEq] = DS_ADDASSIGN;
 	//ParserTokens[TK_SubEq] = DS_SUBASSIGN;
@@ -166,6 +167,25 @@ void DefineGlobalConstant(FsStatement *constant)
 	delete constant;
 }
 
+struct CodePtr
+{
+	FName funcname;
+	TDeletingArray<FxExpression*> parameters;
+};
+
+void InstallCodePtr(FState *state, CodePtr *cptr)
+{
+	if (cptr == NULL)
+	{
+		state->ActionFunc = NULL;
+		state->ParameterIndex = 0;
+	}
+	else
+	{
+
+		delete cptr;
+	}
+}
 
 
 #include "ds-parser.c"

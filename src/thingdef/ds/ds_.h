@@ -125,65 +125,6 @@ public:
 };
 
 
-//==========================================================================
-//
-// a class representation inside the parser
-//
-//==========================================================================
-/*
-class ZClass
-{
-	friend struct ZState;
-
-	PClass *Class;
-	FScanner::ScriptPos ScriptPosition;
-
-	TArray<FState> StateArray;
-	int lastparsedstateitem;
-	bool statesdefined;
-	intptr_t statecount;
-	FState * laststate;
-	intptr_t lastlabel;	
-	int minrequiredstate;
-
-	FState *ResolveGotoLabel (const FScanner::ScriptPos &pos, char *name);
-	void FixStatePointers (TArray<FStateDefine> & list);
-	void FixStatePointersAgain (const FScanner::ScriptPos &pos, TArray<FStateDefine> & list);
-
-public:
-	bool DropItemSet;
-	FDropItem * DropItemList;
-
-	ZClass(ZToken *name, ZToken *parentname, bool isnative);
-	void DefineConstant(ZsStatement *constant);
-	void AddProperty(ZToken *qualifier, ZToken *name, ZPropArgs *args);
-	void AddFlag(ZToken *qualifier, ZToken *name, bool value);
-	void AddFunction(ZFunction *func);
-
-	void AddStateControl(ZToken *token);
-	void AddStateGoto(ZStateLabel *base, int offset);
-	void AddStateLabel(ZStateLabel *label);
-	void AddState(ZState *state);
-
-	int FinishStates (const FScanner::ScriptPos &pos);
-	void DefineClass();
-
-	PClass *GetPClass() const
-	{
-		return Class;
-	}
-	PSymbolContainer *GetSymbol() const
-	{
-		return Class? Class->Symbol : NULL;
-	}
-
-	void ResetDropItems()
-	{
-		DropItemSet = false;
-		DropItemList = NULL;
-	}
-};
-*/
 
 /*
 #ifdef _DEBUG

@@ -219,12 +219,12 @@ class_body(A) ::= class_body(B) function_prototype(C).
 	B->AddFunction(C);
 	A = B;
 }
+*/
 
 class_body(A) ::= class_body(B) states_definition.
 {
 	A = B;
 }
-*/
 
 // ===========================================================================
 //
@@ -968,3 +968,169 @@ value_expression_14(A) ::= INTCONST(B).
 	A = new FxConstant(B.IntValue(), B.ScriptPosition());
 }
 
+
+// ===========================================================================
+//
+// States
+//
+// ===========================================================================
+
+
+%type state_label { FString* }
+%destructor state_label { delete $$; }
+%type maybe_bright { bool }
+%include { struct offsetxy { int x,y; }; }
+%type maybe_offset { offsetxy }
+%type maybe_codeptr { CodePtr* }
+%destructor maybe_codeptr { delete $$; }
+%type codeptr_paramlist { CodePtr* }
+%destructor codeptr_paramlist { delete $$; }
+
+states_definition ::= STATES LBRACE stateblock RBRACE.
+
+stateblock ::= .
+{
+	if (context->StateSet) context->ScriptPosition.Message(MSG_FATAL, "Multiple state declarations not allowed");
+	context->StateSet=true;
+}
+
+stateblock ::= stateblock state.
+
+stateblock ::= stateblock state_label(A) COLON.
+{
+	context->statedef.AddStateLabel(*A);
+	delete A;
+}
+
+stateblock ::= stateblock STOP.
+{
+	context->statedef.SetStop();
+}
+
+stateblock ::= stateblock WAIT.
+{
+	context->statedef.SetWait();
+}
+
+stateblock ::= stateblock FAIL.
+{
+	context->statedef.SetWait();
+}
+
+stateblock ::= stateblock LOOP.
+{
+	context->statedef.SetLoop();
+}
+
+stateblock ::= stateblock GOTO state_label(A).
+{
+	context->statedef.SetGotoLabel(*A);
+	delete A;
+}
+
+stateblock ::= stateblock GOTO state_label(A) PLUS INTCONST(B).
+{
+	A->AppendFormat("+%d", B.IntValue());
+	context->statedef.SetGotoLabel(*A);
+	delete A;
+}
+
+state_label(A) ::= IDENTIFIER(B).
+{
+	A = new FString(B.StringValue());
+}
+
+state_label(A) ::= IDENTIFIER(B) DCOLON IDENTIFIER(C).
+{
+	A = new FString;
+	A->Format("%s::%s", B.StringValue().GetChars(), C.StringValue().GetChars());
+}
+
+state_label(A) ::= SUPER DCOLON IDENTIFIER(C).
+{
+	A = new FString;
+	A->Format("super::%s", C.StringValue().GetChars());
+}
+
+state_label(A) ::= state_label(B) DOT IDENTIFIER(C).
+{
+	A = B;
+	(*A) << '.' << C.StringValue();
+}
+
+state ::= quotable_identifier(Sprite) quotable_identifier(frame) value_expression(tics) maybe_bright(b) maybe_offset(xy) maybe_codeptr(codeptr) SEMICOLON.
+{
+	FState state;
+	
+	state.sprite = GetSpriteIndex(Sprite.StringValue());
+	state.Misc1 = xy.x; 
+	state.Misc2 = xy.y;
+	state.Frame = b? SF_FULLBRIGHT:0;
+	state.DefineFlags = 0;
+	state.NextState = NULL;
+
+	FCompileContext ctx(context->Info->Class);
+	tics = tics->CreateCast(ctx, VAL_Int);
+	state.Tics = tics==NULL? 0 : clamp<int>(tics->EvalExpression(NULL).GetInt(), -1, 32767);
+	SAFE_DELETE(tics);
+
+	InstallCodePtr(&state, codeptr);	
+	context->statedef.AddStates(&state, frame.StringValue());
+}
+
+maybe_bright(A) ::= .
+{
+	A = false;
+}
+
+maybe_bright(A) ::= BRIGHT.
+{
+	A = true;
+}
+
+maybe_offset(A) ::= .
+{
+	A.x = A.y = 0;
+}
+
+maybe_offset(A) ::= OFFSET LPAREN value_expression(X) COMMA value_expression(Y) RPAREN.
+{
+	FCompileContext ctx(context->Info->Class);
+
+	X = X->CreateCast(ctx, VAL_Int);
+	A.x = X == NULL? 0 : X->EvalExpression(NULL).GetInt();
+	SAFE_DELETE(X);
+
+	Y = Y->CreateCast(ctx, VAL_Int);
+	A.y = Y == NULL? 0 : Y->EvalExpression(NULL).GetInt();
+	SAFE_DELETE(Y);
+}
+
+maybe_codeptr(A) ::= .
+{
+	A = NULL;
+}
+
+maybe_codeptr(A) ::= IDENTIFIER(B).
+{
+	A = new CodePtr;
+	A->funcname = B.NameValue();
+}
+
+maybe_codeptr(A) ::= IDENTIFIER(B) LPAREN codeptr_paramlist(C) RPAREN.
+{
+	A = C;
+	A->funcname = B.NameValue();
+}
+
+codeptr_paramlist(A) ::= value_expression(B).
+{
+	A = new CodePtr;
+	A->parameters.Push(B);
+}
+
+codeptr_paramlist(A) ::= codeptr_paramlist(C) COMMA value_expression(B).
+{
+	A = C;
+	A->parameters.Push(B);
+}
