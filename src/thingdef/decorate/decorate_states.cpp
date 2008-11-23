@@ -63,7 +63,7 @@
 // creates an empty parameter list for a parameterized function call
 //
 //==========================================================================
-static int PrepareStateParameters(FState * state, int numparams, const PClass *cls)
+int PrepareStateParameters(FState * state, int numparams, const PClass *cls)
 {
 	int paramindex=StateParams.Reserve(numparams, cls);
 	state->ParameterIndex = paramindex+1;
