@@ -366,7 +366,7 @@ FxExpression *FxExpression::CreateCast(FCompileContext &ctx, const FExpressionTy
 			cast = new FxNameCast(self);
 		}
 	}
-	else if (casttype == VAL_Name)
+	else if (casttype == VAL_Color)
 	{
 		if (thistype == VAL_String)
 		{

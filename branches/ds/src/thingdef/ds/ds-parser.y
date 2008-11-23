@@ -1074,7 +1074,7 @@ state ::= quotable_identifier(Sprite) quotable_identifier(frame) value_expressio
 	state.Tics = tics==NULL? 0 : clamp<int>(tics->EvalExpression(NULL).GetInt(), -1, 32767);
 	SAFE_DELETE(tics);
 
-	InstallCodePtr(&state, codeptr);	
+	InstallCodePtr(&state, codeptr, context->Info->Class, Sprite.ScriptPosition());	
 	context->statedef.AddStates(&state, frame.StringValue());
 }
 

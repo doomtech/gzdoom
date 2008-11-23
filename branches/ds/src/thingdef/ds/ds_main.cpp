@@ -46,6 +46,7 @@
 #include "w_wad.h"
 #include "a_pickups.h"
 #include "ds_.h"
+#include "p_lnspec.h"
 #include "thingdef/thingdef_statement.h"
 
 static int ParserTokens[TK_LastToken];
@@ -167,13 +168,22 @@ void DefineGlobalConstant(FsStatement *constant)
 	delete constant;
 }
 
+//==========================================================================
+//
+// Code to interface the new parser with the old expression evaluation
+// mechanism. Will most likely be removed soon.
+//
+//==========================================================================
+
 struct CodePtr
 {
 	FName funcname;
 	TDeletingArray<FxExpression*> parameters;
 };
 
-void InstallCodePtr(FState *state, CodePtr *cptr)
+int PrepareStateParameters(FState *state, int numparams, const PClass *cls);
+
+static void InstallCodePtr(FState *state, CodePtr *cptr, const PClass *cls, const FScriptPosition &pos)
 {
 	if (cptr == NULL)
 	{
@@ -182,8 +192,139 @@ void InstallCodePtr(FState *state, CodePtr *cptr)
 	}
 	else
 	{
+		int min_args, max_args;
+		FCompileContext ctx(cls);
+		int special = P_FindLineSpecial(cptr->funcname, &min_args, &max_args);
 
-		delete cptr;
+		if (special > 0 && min_args >= 0)
+		{
+			int paramindex = PrepareStateParameters(state, 6, cls);
+			int i = cptr->parameters.Size();
+
+			if (i < min_args)
+			{
+				pos.Message(MSG_ERROR, "Too few arguments to %s", cptr->funcname.GetChars());
+				return;
+			}
+			if (i > max_args)
+			{
+				pos.Message(MSG_ERROR, "Too many arguments to %s", cptr->funcname.GetChars());
+				return;
+			}
+
+			// The special's index is the first parameter
+			StateParams.Set(paramindex, new FxConstant(special, pos));
+
+			for (int j=0; j<i; j++)
+			{
+				StateParams.Set(paramindex+j+1, cptr->parameters[j]->CreateCast(ctx, VAL_Int));
+				cptr->parameters[j] = NULL;
+			}
+
+			state->SetAction(FindGlobalActionFunction("A_CallSpecial"), false);
+			return;
+		}
+		else
+		{
+			PSymbol *sym = cls->Symbols.FindSymbol (cptr->funcname, true);
+			if (sym != NULL && sym->SymbolType == SYM_ActionFunction)
+			{
+				PSymbolActionFunction *afd = static_cast<PSymbolActionFunction *>(sym);
+				state->SetAction(afd, false);
+
+				const char *params = afd->Arguments.GetChars();
+				int numparams = (int)afd->Arguments.Len();
+				int excount = cptr->parameters.Size();
+				bool varargs = params[numparams - 1] == '+';
+				int paramindex = PrepareStateParameters(state, numparams, cls);
+				int paramstart = paramindex;
+				int varargcount=0;
+
+				if (varargs)
+				{
+					paramindex++;
+				}
+
+				if (excount > numparams)
+				{
+					pos.Message(MSG_ERROR, "Too many arguments to %s", cptr->funcname.GetChars());
+					return;
+				}
+
+				for(int i=0; i < excount; i++)
+				{
+					FxExpression *x = cptr->parameters[i];
+
+					switch(*params++)
+					{
+					case 'S':
+					case 's':		// Sound name
+						x = x->CreateCast(ctx, VAL_Sound);
+						break;
+
+					case 'M':
+					case 'm':		// Actor name
+						x = x->CreateCast(ctx, VAL_Class);
+						break;
+
+					case 'T':
+					case 't':		// String
+						x = x->CreateCast(ctx, VAL_Name);
+						break;
+
+					case 'C':
+					case 'c':		// Color
+						x = x->CreateCast(ctx, VAL_Color);
+						break;
+
+					case 'L':
+					case 'l':		// State label
+						x = x->CreateCast(ctx, VAL_State);
+						break;
+
+					case 'X':
+					case 'x':		// Number
+						x = x->Resolve(ctx);
+						if (x != NULL && x->ValueType != VAL_Int && x->ValueType != VAL_Float)
+						{
+							pos.Message(MSG_ERROR, "Numeric value expected.");
+						}
+						break;
+
+					default:	// incorrect definition - shouldn't happen
+						assert(false);
+						x = NULL;
+						break;
+					}
+
+					cptr->parameters[i] = NULL;
+					StateParams.Set(paramindex+i, x);
+					if (*params == '+')
+					{
+						varargcount++;
+						params--;
+					}
+				}
+
+				if (varargs)
+				{
+					StateParams.Set(paramstart, new FxConstant(varargcount, pos));
+				}
+				else if (*params != 0)
+				{
+					if (*params >='A' && *params <= 'Z')
+					{
+						pos.Message(MSG_ERROR, "Too few arguments to %s", cptr->funcname.GetChars());
+					}
+					else if (afd->defaultparameterindex > -1)
+					{
+						// copy the remaining default parameters
+						StateParams.Copy(paramindex+excount, afd->defaultparameterindex+excount, 
+							int(afd->Arguments.Len())-excount);
+					}
+				}
+			}
+		}
 	}
 }
 
