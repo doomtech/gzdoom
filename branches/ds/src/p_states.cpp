@@ -366,15 +366,30 @@ FStateDefine * FStateDefinitions::FindStateAddress(const char *name)
 
 //==========================================================================
 //
-// Adds a new state tp the curremt list
+// Adds a new state to the curremt list
 //
 //==========================================================================
 
-void FStateDefinitions::AddState (const char *statename, FState *state, BYTE defflags)
+void FStateDefinitions::SetStateLabel (const char *statename, FState *state, BYTE defflags)
 {
 	FStateDefine *std = FindStateAddress(statename);
 	std->State = state;
 	std->DefineFlags = defflags;
+}
+
+//==========================================================================
+//
+// Adds a new state to the curremt list
+//
+//==========================================================================
+
+void FStateDefinitions::SetStateLabel (const char *statename, int index)
+{
+	FStateDefine *std = FindStateAddress(statename);
+	std->State = (FState *)(intptr_t)(index+1);
+	std->DefineFlags = SDF_INDEX;
+	laststate = NULL;
+	lastlabel = index;
 }
 
 //==========================================================================
@@ -457,7 +472,7 @@ void FStateDefinitions::InstallStates(FActorInfo *info, AActor *defaults)
 	if (state == NULL)
 	{
 		// A NULL spawn state will crash the engine so set it to something valid.
-		AddState("Spawn", GetDefault<AActor>()->SpawnState);
+		SetStateLabel("Spawn", GetDefault<AActor>()->SpawnState);
 	}
 
 	if (info->StateList != NULL) 
@@ -559,7 +574,7 @@ void FStateDefinitions::RetargetStatePointers (intptr_t count, const char *targe
 {
 	for(unsigned i = 0;i<statelist.Size(); i++)
 	{
-		if (statelist[i].State == (FState*)count)
+		if (statelist[i].State == (FState*)count && statelist[i].DefineFlags == SDF_INDEX)
 		{
 			if (target == NULL)
 			{
@@ -708,6 +723,91 @@ void FStateDefinitions::ResolveGotoLabels (FActorInfo *actor, AActor *defaults, 
 	}
 }
 
+
+//==========================================================================
+//
+// SetGotoLabel
+//
+// sets a jump at the current state or retargets a label
+//
+//==========================================================================
+
+bool FStateDefinitions::SetGotoLabel(const char *string)
+{
+	// copy the text - this must be resolved later!
+	if (laststate != NULL)
+	{ // Following a state definition: Modify it.
+		laststate->NextState = (FState*)copystring(string);	
+		laststate->DefineFlags = SDF_LABEL;
+		return true;
+	}
+	else if (lastlabel >= 0)
+	{ // Following a label: Retarget it.
+		RetargetStates (lastlabel+1, string);
+		return true;
+	}
+	return false;
+}
+
+//==========================================================================
+//
+// SetStop
+//
+// sets a stop operation
+//
+//==========================================================================
+
+bool FStateDefinitions::SetStop()
+{
+	if (laststate != NULL)
+	{
+		laststate->DefineFlags = SDF_STOP;
+		return true;
+	}
+	else if (lastlabel >=0)
+	{
+		RetargetStates (lastlabel+1, NULL);
+		return true;
+	}
+	return false;
+}
+
+//==========================================================================
+//
+// SetWait
+//
+// sets a wait or fail operation
+//
+//==========================================================================
+
+bool FStateDefinitions::SetWait()
+{
+	if (laststate != NULL)
+	{
+		laststate->DefineFlags = SDF_WAIT;
+		return true;
+	}
+	return false;
+}
+
+//==========================================================================
+//
+// SetLoop
+//
+// sets a loop operation
+//
+//==========================================================================
+
+bool FStateDefinitions::SetLoop()
+{
+	if (laststate != NULL)
+	{
+		laststate->DefineFlags = SDF_INDEX;
+		laststate->NextState = (FState*)(lastlabel+1);
+		return true;
+	}
+	return false;
+}
 
 //==========================================================================
 //

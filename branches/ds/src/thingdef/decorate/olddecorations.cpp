@@ -246,7 +246,7 @@ void ParseOldDecoration(FScanner &sc, EDefinitionType def)
 				if (extra.DeathHeight == 0) extra.DeathHeight = ((AActor*)(type->Defaults))->height;
 				info->Class->Meta.SetMetaFixed (AMETA_DeathHeight, extra.DeathHeight);
 			}
-			bag.statedef.AddState("Death", &info->OwnedStates[extra.DeathStart]);
+			bag.statedef.SetStateLabel("Death", &info->OwnedStates[extra.DeathStart]);
 		}
 
 		// Burn states are the same as death states, except they can optionally terminate
@@ -284,7 +284,7 @@ void ParseOldDecoration(FScanner &sc, EDefinitionType def)
 			if (extra.BurnHeight == 0) extra.BurnHeight = ((AActor*)(type->Defaults))->height;
 			type->Meta.SetMetaFixed (AMETA_BurnHeight, extra.BurnHeight);
 
-			bag.statedef.AddState("Burn", &info->OwnedStates[extra.FireDeathStart]);
+			bag.statedef.SetStateLabel("Burn", &info->OwnedStates[extra.FireDeathStart]);
 		}
 
 		// Ice states are similar to burn and death, except their final frame enters
@@ -305,11 +305,11 @@ void ParseOldDecoration(FScanner &sc, EDefinitionType def)
 			info->OwnedStates[i].Tics = 1;
 			info->OwnedStates[i].Misc1 = 0;
 			info->OwnedStates[i].SetAction(FindGlobalActionFunction("A_FreezeDeathChunks"));
-			bag.statedef.AddState("Ice", &info->OwnedStates[extra.IceDeathStart]);
+			bag.statedef.SetStateLabel("Ice", &info->OwnedStates[extra.IceDeathStart]);
 		}
 		else if (extra.bGenericIceDeath)
 		{
-			bag.statedef.AddState("Ice", RUNTIME_CLASS(AActor)->ActorInfo->FindState(NAME_GenericFreezeDeath));
+			bag.statedef.SetStateLabel("Ice", RUNTIME_CLASS(AActor)->ActorInfo->FindState(NAME_GenericFreezeDeath));
 		}
 	}
 	if (def == DEF_BreakableDecoration)
@@ -320,7 +320,7 @@ void ParseOldDecoration(FScanner &sc, EDefinitionType def)
 	{
 		((AActor *)(type->Defaults))->flags |= MF_DROPOFF|MF_MISSILE;
 	}
-	bag.statedef.AddState("Spawn", &info->OwnedStates[extra.SpawnStart]);
+	bag.statedef.SetStateLabel("Spawn", &info->OwnedStates[extra.SpawnStart]);
 	bag.statedef.InstallStates (info, ((AActor *)(type->Defaults)));
 }
 

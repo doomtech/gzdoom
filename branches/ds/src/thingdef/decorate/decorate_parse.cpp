@@ -718,7 +718,7 @@ static void ParseActorProperty(FScanner &sc, Baggage &bag)
 	}
 	else if (MatchString(propname, statenames) != -1)
 	{
-		bag.statedef.AddState(propname, CheckState (sc, bag.Info->Class));
+		bag.statedef.SetStateLabel(propname, CheckState (sc, bag.Info->Class));
 	}
 	else
 	{
