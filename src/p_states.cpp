@@ -383,10 +383,11 @@ void FStateDefinitions::SetStateLabel (const char *statename, FState *state, BYT
 //
 //==========================================================================
 
-void FStateDefinitions::SetStateLabel (const char *statename, int index)
+void FStateDefinitions::AddStateLabel (const char *statename)
 {
+	intptr_t index = StateArray.Size();
 	FStateDefine *std = FindStateAddress(statename);
-	std->State = (FState *)(intptr_t)(index+1);
+	std->State = (FState *)(index+1);
 	std->DefineFlags = SDF_INDEX;
 	laststate = NULL;
 	lastlabel = index;
@@ -520,13 +521,17 @@ void FStateDefinitions::MakeStateList(const FStateLabels *list, TArray<FStateDef
 
 void FStateDefinitions::MakeStateDefines(const PClass *cls)
 {
-	if (cls->ActorInfo && cls->ActorInfo->StateList)
+	StateArray.Clear();
+	laststate = NULL;
+	lastlabel = -1;
+
+	if (cls != NULL && cls->ActorInfo != NULL && cls->ActorInfo->StateList != NULL)
 	{
 		MakeStateList(cls->ActorInfo->StateList, StateLabels);
 	}
 	else
 	{
-		ClearStateLabels();
+		StateLabels.Clear();
 	}
 }
 
@@ -811,12 +816,39 @@ bool FStateDefinitions::SetLoop()
 
 //==========================================================================
 //
+// AddStates
+// adds some state to the current definition set
+//
+//==========================================================================
+
+bool FStateDefinitions::AddStates(FState *state, const char *framechars)
+{
+	bool error = false;
+	while (*framechars)
+	{
+		int frame=((*framechars++)&223)-'A';
+
+		if (frame<0 || frame>28)
+		{
+			frame = 0;
+			error = true;
+		}
+
+		state->Frame=(state->Frame&(SF_FULLBRIGHT))|frame;
+		StateArray.Push(*state);
+	}
+	laststate = &StateArray[StateArray.Size() - 1];
+	return !error;
+}
+
+//==========================================================================
+//
 // FinishStates
 // copies a state block and fixes all state links using the current list of labels
 //
 //==========================================================================
 
-int FStateDefinitions::FinishStates (FActorInfo *actor, AActor *defaults, TArray<FState> &StateArray)
+int FStateDefinitions::FinishStates (FActorInfo *actor, AActor *defaults)
 {
 	static int c=0;
 	int count = StateArray.Size();
@@ -869,6 +901,12 @@ int FStateDefinitions::FinishStates (FActorInfo *actor, AActor *defaults, TArray
 	return count;
 }
 
+
+//==========================================================================
+//
+// Prints all state label info to the logfile
+//
+//==========================================================================
 
 void DumpStateHelper(FStateLabels *StateList, const FString &prefix)
 {

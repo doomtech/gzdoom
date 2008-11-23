@@ -265,6 +265,12 @@ DEFINE_PROPERTY(skip_super, 0, Actor)
 			"'skip_super' in definition of inventory item '%s' ignored.", info->Class->TypeName.GetChars() );
 		return;
 	}
+	if (bag.StateSet)
+	{
+		bag.ScriptPosition.Message(MSG_WARNING,
+			"'skip_super' must appear before any state definitions.");
+		return;
+	}
 
 	memcpy (defaults, GetDefault<AActor>(), sizeof(AActor));
 	if (bag.DropItemList != NULL)

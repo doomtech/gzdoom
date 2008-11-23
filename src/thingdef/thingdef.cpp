@@ -188,14 +188,14 @@ void FinishActor(const FScriptPosition &sc, FActorInfo *info, Baggage &bag)
 
 	try
 	{
-		bag.statedef.FinishStates (info, defaults, bag.StateArray);
+		bag.statedef.FinishStates (info, defaults);
 	}
 	catch (CRecoverableError &err)
 	{
 		sc.Message(MSG_FATAL, "%s", err.GetMessage());
 	}
 	bag.statedef.InstallStates (info, defaults);
-	bag.StateArray.Clear ();
+	bag.statedef.MakeStateDefines(NULL);
 	if (bag.DropItemSet)
 	{
 		if (bag.DropItemList == NULL)
