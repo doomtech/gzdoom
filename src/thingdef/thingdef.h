@@ -82,6 +82,8 @@ struct FStateDefine
 class FStateDefinitions
 {
 	TArray<FStateDefine> StateLabels;
+	FState *laststate;
+	intptr_t lastlabel;
 
 	static FStateDefine *FindStateLabelInList(TArray<FStateDefine> &list, FName name, bool create);
 	static FStateLabels *CreateStateLabelList(TArray<FStateDefine> &statelist);
@@ -96,19 +98,35 @@ class FStateDefinitions
 
 public:
 
+	FStateDefinitions()
+	{
+		laststate = NULL;
+		lastlabel = -1;
+	}
 
 	void ClearStateLabels()
 	{
 		StateLabels.Clear();
 	}
 
-	void AddState (const char * statename, FState * state, BYTE defflags = SDF_STATE);
+	void SetLastState(FState *state)
+	{
+		laststate = state;
+	}
+
+	void SetStateLabel (const char * statename, FState * state, BYTE defflags = SDF_STATE);
+	void SetStateLabel (const char * statename, int index);
 	void InstallStates(FActorInfo *info, AActor *defaults);
 	int FinishStates (FActorInfo *actor, AActor *defaults, TArray<FState> &StateArray);
 
 	void MakeStateDefines(const PClass *cls);
 	void AddStateDefines(const FStateLabels *list);
 	void RetargetStates (intptr_t count, const char *target);
+
+	bool SetGotoLabel(const char *string);
+	bool SetStop();
+	bool SetWait();
+	bool SetLoop();
 
 };
 
