@@ -213,6 +213,11 @@ enum
 	TK_Random,
 	TK_Random2,
 	TK_Info,
+	TK_Wait,
+	TK_Fail,
+	TK_Loop,
+	TK_DColon,
+	TK_States,
 
 	TK_LastToken
 };

@@ -154,7 +154,6 @@ void ParseStates(FScanner &sc, FActorInfo * actor, AActor * defaults, Baggage &b
 {
 	FString statestring;
 	FState state;
-	int spriteindex = 0;
 	char lastsprite[5]="";
 
 	sc.MustGetStringName ("{");
@@ -232,14 +231,7 @@ do_stop:
 				sc.ScriptError ("Sprite names must be exactly 4 characters\n");
 			}
 
-			statestring.ToUpper();
-			if (strcmp(statestring, lastsprite))
-			{
-				strcpy(lastsprite, statestring);
-				spriteindex = GetSpriteIndex(lastsprite);
-			}
-
-			state.sprite = spriteindex;
+			state.sprite = GetSpriteIndex(statestring);
 			state.Misc1 = state.Misc2 = 0;
 			state.ParameterIndex = 0;
 			sc.MustGetString();

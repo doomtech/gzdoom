@@ -151,6 +151,10 @@ std2:
 		'random'					{ RET(TK_Random); }
 		'random2'					{ RET(TK_Random2); }
 		'info'						{ RET(TK_Info); }
+		'wait'						{ RET(TK_Wait); }
+		'fail'						{ RET(TK_Fail); }
+		'loop'						{ RET(TK_Loop); }
+		'states'					{ RET(TK_States); }
 
 		L (L|D)*					{ RET(TK_Identifier); }
 
@@ -189,6 +193,7 @@ std2:
 		">="						{ RET(TK_Geq); }
 		"=="						{ RET(TK_Eq); }
 		"!="						{ RET(TK_Neq); }
+		"::"						{ RET(TK_DColon); }
 		";"							{ RET(';'); }
 		"{"							{ RET('{'); }
 		"}"							{ RET('}'); }

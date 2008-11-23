@@ -921,6 +921,11 @@ FString FScanner::TokenName (int token, const char *string)
 		"'random'",
 		"'random2'"
 		"'info'"
+		"'wait'"
+		"'fail'"
+		"'loop'"
+		"'::'",
+		"'states'",
 	};
 
 	FString work;
