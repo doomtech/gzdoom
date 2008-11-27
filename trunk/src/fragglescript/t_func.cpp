@@ -64,6 +64,7 @@
 #include "doomstat.h"
 #include "g_level.h"
 #include "v_palette.h"
+#include "v_font.h"
 
 #include "gl/gl_data.h"
 
@@ -657,7 +658,7 @@ void FParser::SF_Tip(void)
 	if (t_argc>0 && Script->trigger &&
 		Script->trigger->CheckLocalView(consoleplayer)) 
 	{
-		C_MidPrint(GetFormatString(0).GetChars());
+		C_MidPrint(SmallFont, GetFormatString(0).GetChars());
 	}
 }
 
@@ -677,7 +678,7 @@ void FParser::SF_TimedTip(void)
 	{
 		float saved = con_midtime;
 		con_midtime = intvalue(t_argv[0])/100.0f;
-		C_MidPrint(GetFormatString(1).GetChars());
+		C_MidPrint(SmallFont, GetFormatString(1).GetChars());
 		con_midtime=saved;
 	}
 }
@@ -696,7 +697,7 @@ void FParser::SF_PlayerTip(void)
 		int plnum = T_GetPlayerNum(t_argv[0]);
 		if (plnum!=-1 && players[plnum].mo->CheckLocalView(consoleplayer)) 
 		{
-			C_MidPrint(GetFormatString(1).GetChars());
+			C_MidPrint(SmallFont, GetFormatString(1).GetChars());
 		}
 	}
 }
