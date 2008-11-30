@@ -1,3 +1,34 @@
+November 30, 2008  (Changes by Graf Zahl)
+- Changed: Textures without a name no longer get added to the texture manager's 
+  hash chains.
+- Fixed: specifying texture patches or font characters by full lump name instead
+  of texture name didn't work. To do this properly the texture manager needs
+  an option to look for a texture by lump number so that such textures can
+  be maintained without interfering with regular operation.
+- added 'skystretch' and 'autosequences' keywords for MAPINFO so that the effects
+  of 'noautosequences' and 'forcenoskystretch' can be cancelled.
+- Added a 'gamedefaults' section to MAPINFO after discovering that 'defaultmap'
+  gets reset for each MAPINFO. A global section is needed to define a game's
+  default setting in zdoom.pk3. The gamedefaults should normally not be changed 
+  by PWADs but it can be done if some mod intends to change gameplay settings 
+  but wants to allow custom add-ons on its own.
+
+November 29, 2008
+- Fixed alignment of "finished" line in WI_drawLF() when the level name is a
+  graphic and scaled.
+- It is now possible to replace the game's SmallFont with a single lump font
+  called SMALLFNT.
+- Reduced the width of the second column in wi_percents false mode from 3 to
+  2 characters.
+- Added a WISLASH graphic for Doom's intermission screen when wi_percents is
+  false.
+
+November 29, 2008 (sbarinfo update)
+- Added: inventorybarnotvisible to check to see if the inventory bar is up.
+- Added the following flags to drawselectedinventory center, centerbottom, and
+  drawshadow.
+- Fixed: The translucent flag for drawinventorybar should only have affected
+  the artibox image.
 
 November 27, 2008
 - Removed S_MarkSoundChannels(), as it caused all non-actor sounds to
