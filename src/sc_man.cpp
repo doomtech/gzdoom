@@ -926,6 +926,8 @@ FString FScanner::TokenName (int token, const char *string)
 		"'loop'"
 		"'::'",
 		"'states'",
+		"'offset'",
+		"'bright'",
 	};
 
 	FString work;

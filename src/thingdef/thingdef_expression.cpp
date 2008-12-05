@@ -366,6 +366,13 @@ FxExpression *FxExpression::CreateCast(FCompileContext &ctx, const FExpressionTy
 			cast = new FxNameCast(self);
 		}
 	}
+	else if (casttype == VAL_Class)
+	{
+		if (thistype == VAL_String)
+		{
+			cast = new FxClassTypeCast(castType.ClassType, self);
+		}
+	}
 	else if (casttype == VAL_Color)
 	{
 		if (thistype == VAL_String)
@@ -2907,7 +2914,7 @@ FxExpression *FxClassTypeCast::Resolve(FCompileContext &ctx)
 	CHECKRESOLVED();
 	SAFE_RESOLVE(basex, ctx);
 	
-	if (basex->ValueType != VAL_Name)
+	if (basex->ValueType != VAL_Name && basex->ValueType != VAL_String)
 	{
 		ScriptPosition.Message(MSG_ERROR, "Cannot convert to class type");
 		delete this;
@@ -2916,7 +2923,17 @@ FxExpression *FxClassTypeCast::Resolve(FCompileContext &ctx)
 
 	if (basex->isConstant())
 	{
-		FName clsname = basex->EvalExpression(NULL).GetName();
+		FName clsname;
+		
+		if (basex->ValueType == VAL_Name)
+		{
+			clsname = basex->EvalExpression(NULL).GetName();
+		}
+		else
+		{
+			clsname = *basex->GetConstString();
+		}
+
 		const PClass *cls = NULL;
 
 		if (clsname != NAME_None || !ctx.isconst)
@@ -2935,7 +2952,7 @@ FxExpression *FxClassTypeCast::Resolve(FCompileContext &ctx)
 					"Unknown class name '%s'", 
 					clsname.GetChars(), desttype->TypeName.GetChars());
 			}
-			else 
+			else if (desttype != NULL)
 			{
 				if (!cls->IsDescendantOf(desttype))
 				{

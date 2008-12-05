@@ -999,6 +999,7 @@ static void ParseActor(FScanner &sc)
 		case TK_Identifier:
 			// other identifier related checks here
 		case TK_Projectile:	// special case: both keyword and property name
+		case TK_States:
 			ParseActorProperty(sc, bag);
 			break;
 

@@ -123,8 +123,8 @@ void InitParserTokens()
 	ParserTokens[TK_Loop] = DS_LOOP;
 	ParserTokens[TK_Goto] = DS_GOTO;
 	ParserTokens[TK_Super] = DS_SUPER;
-	//ParserTokens[TK_Bright] = DS_BRIGHT;
-	//ParserTokens[TK_Offset] = DS_OFFSET;
+	ParserTokens[TK_Bright] = DS_BRIGHT;
+	ParserTokens[TK_Offset] = DS_OFFSET;
 	ParserTokens[TK_States] = DS_STATES;
 	//ParserTokens[TK_State] = DS_STATE;
 	//ParserTokens[TK_AddEq] = DS_ADDASSIGN;
@@ -403,6 +403,7 @@ void LoadDS()
 			void *pParser = DSParseAlloc(malloc);
 			try
 			{
+				yyTraceFILE = fopen("parse.out", "w");
 				ParseDS (sc, pParser, &bag);
 				// Send a terminator token to the parser.
 				FToken tok;
@@ -412,9 +413,11 @@ void LoadDS()
 			}
 			catch (...)
 			{
+				if (yyTraceFILE) fclose(yyTraceFILE);
 				DSParseFree(pParser, free);
 				throw;
 			}
+			if (yyTraceFILE) fclose(yyTraceFILE);
 			DSParseFree(pParser, free);
 		}
 	}
