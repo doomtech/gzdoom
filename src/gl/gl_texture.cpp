@@ -1524,6 +1524,11 @@ void gl_ParseBrightmap(FScanner &sc, int deflump)
 				maplumpname.GetChars(), tex->Name);
 			return;
 		}
+		if (tex->gl_info.Brightmap != NULL)
+		{
+			// If there is already a brightmap assigned replace it
+			delete tex->gl_info.Brightmap;
+		}
 		tex->gl_info.Brightmap = brightmap;
 		brightmap->gl_info.bBrightmap = true;
 	}	
