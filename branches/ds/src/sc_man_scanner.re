@@ -155,6 +155,8 @@ std2:
 		'fail'						{ RET(TK_Fail); }
 		'loop'						{ RET(TK_Loop); }
 		'states'					{ RET(TK_States); }
+		'offset'					{ RET(TK_Offset); }
+		'bright'					{ RET(TK_Bright); }
 
 		L (L|D)*					{ RET(TK_Identifier); }
 

@@ -218,6 +218,8 @@ enum
 	TK_Loop,
 	TK_DColon,
 	TK_States,
+	TK_Offset,
+	TK_Bright,
 
 	TK_LastToken
 };
