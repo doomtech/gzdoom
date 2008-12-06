@@ -340,7 +340,7 @@ FxExpression *FxExpression::CreateCast(FCompileContext &ctx, const FExpressionTy
 		{
 			if (!ctx.lax)	// needed to parse converted DECORATE
 			{
-				ScriptPosition.Message(MSG_ERROR , "Implicit cast from float to int");
+				self->ScriptPosition.Message(MSG_ERROR , "Implicit cast from float to int");
 			}
 			cast = new FxIntCast(self);
 		}
@@ -384,7 +384,7 @@ FxExpression *FxExpression::CreateCast(FCompileContext &ctx, const FExpressionTy
 	{
 		if (thistype == VAL_Name || thistype == VAL_String)
 		{
-			cast = new FxStringToSound(self);
+			cast = new FxSoundCast(self);
 		}
 	}
 	if (cast != NULL)
@@ -393,7 +393,7 @@ FxExpression *FxExpression::CreateCast(FCompileContext &ctx, const FExpressionTy
 	}
 	else
 	{
-		ScriptPosition.Message(MSG_ERROR, "Unable to convert from '%s' to '%s'", 
+		self->ScriptPosition.Message(MSG_ERROR, "Unable to convert from '%s' to '%s'", 
 			"", "");
 			//ValueType.GetTypeString().GetChars(), castType->GetTypeString().GetChars());
 		delete self;
@@ -473,11 +473,12 @@ const FString *FxStringConstant::GetConstString() const
 //
 //==========================================================================
 
-FxIntCast::FxIntCast(FxExpression *x)
+FxIntCast::FxIntCast(FxExpression *x, bool _strict)
 : FxExpression(x->ScriptPosition)
 {
 	basex=x;
 	ValueType = VAL_Int;
+	strict = _strict;
 }
 
 //==========================================================================
@@ -511,6 +512,13 @@ FxExpression *FxIntCast::Resolve(FCompileContext &ctx)
 	}
 	else if (basex->ValueType == VAL_Float)
 	{
+		if (strict)
+		{
+			ScriptPosition.Message(MSG_ERROR, "Integer type expected");
+			delete this;
+			return NULL;
+		}
+
 		if (basex->isConstant())
 		{
 			ExpVal constval = basex->EvalExpression(NULL);
@@ -660,6 +668,21 @@ FxExpression *FxNameCast::Resolve(FCompileContext &ctx)
 		return NULL;
 	}
 
+	if (basex->ValueType == VAL_Name)
+	{
+		FxExpression *x = basex;
+		delete this;
+		return x;
+	}
+
+	if (basex->ValueType != VAL_String)
+	{
+		ScriptPosition.Message(MSG_ERROR, "string type expected");
+		delete this;
+		return NULL;
+	}
+
+
 	const FString *cv=basex->GetConstString();
 	if (cv)
 	{
@@ -711,6 +734,13 @@ FxExpression *FxColorCast::Resolve(FCompileContext &ctx)
 	}
 	if (!basex)
 	{
+		delete this;
+		return NULL;
+	}
+
+	if (basex->ValueType != VAL_String)
+	{
+		ScriptPosition.Message(MSG_ERROR, "string type expected");
 		delete this;
 		return NULL;
 	}
@@ -787,6 +817,13 @@ FxExpression *FxStateCast::Resolve(FCompileContext &ctx)
 		return NULL;
 	}
 
+	if (basex->ValueType != VAL_String && basex->ValueType != VAL_Name)
+	{
+		ScriptPosition.Message(MSG_ERROR, "string type expected");
+		delete this;
+		return NULL;
+	}
+
 	if (basex->isConstant())
 	{
 		const char *string;
@@ -803,6 +840,7 @@ FxExpression *FxStateCast::Resolve(FCompileContext &ctx)
 			if (sv) string = sv->GetChars();
 			else ScriptPosition.Message(MSG_ERROR, "Cannot cast to state");
 		}
+
 		FxExpression *newex = new FxMultiNameState(string, ScriptPosition);
 		delete this;
 		return newex->Resolve(ctx);
@@ -824,7 +862,7 @@ FxExpression *FxStateCast::Resolve(FCompileContext &ctx)
 //
 //==========================================================================
 
-FxStringToSound::FxStringToSound(FxExpression *x)
+FxSoundCast::FxSoundCast(FxExpression *x)
 : FxExpression(x->ScriptPosition)
 {
 	basex=x;
@@ -836,7 +874,7 @@ FxStringToSound::FxStringToSound(FxExpression *x)
 //
 //==========================================================================
 
-FxStringToSound::~FxStringToSound()
+FxSoundCast::~FxSoundCast()
 {
 	SAFE_DELETE(basex);
 }
@@ -847,10 +885,17 @@ FxStringToSound::~FxStringToSound()
 //
 //==========================================================================
 
-FxExpression *FxStringToSound::Resolve(FCompileContext &ctx)
+FxExpression *FxSoundCast::Resolve(FCompileContext &ctx)
 {
 	CHECKRESOLVED();
 	SAFE_RESOLVE(basex, ctx)
+
+	if (basex->ValueType != VAL_String)
+	{
+		ScriptPosition.Message(MSG_ERROR, "string type expected");
+		delete this;
+		return NULL;
+	}
 
 	const FString *cv=basex->GetConstString();
 	if (cv)
