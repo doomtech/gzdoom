@@ -276,6 +276,7 @@ info_body(A) ::= .
 info_body(A) ::= info_body(B) IDENTIFIER(C) LPAREN property_args(D) RPAREN.
 {
 	B->AddProperty(*context, NAME_None, C.NameValue(), D, C.ScriptPosition(), true);
+	delete D;
 	A = B;
 }
 
@@ -321,12 +322,14 @@ properties_definition ::= DEFAULTPROPERTIES LBRACE prop_body RBRACE.
 	prop_body(A) ::= prop_body(B) property_identifier(C) LPAREN property_args(D) RPAREN.
 	{
 		B->AddProperty(*context, NAME_None, C.NameValue(), D, C.ScriptPosition(), false);
+		delete D;
 		A = B;
 	}
 
 	prop_body(A) ::= prop_body(B) property_identifier(C) DOT property_identifier(D) LPAREN property_args(E) RPAREN.
 	{
 		B->AddProperty(*context, C.NameValue(), D.NameValue(), E, C.ScriptPosition(), false);
+		delete E;
 		A = B;
 	}
 
@@ -1172,6 +1175,7 @@ states_definition ::= STATES LBRACE stateblock RBRACE.
 		SAFE_DELETE(tics);
 
 		InstallCodePtr(&state, codeptr, context->Info->Class, Sprite.ScriptPosition());	
+		if (codeptr != NULL) delete codeptr;
 		context->statedef.AddStates(&state, frame.NameValue());
 	}
 

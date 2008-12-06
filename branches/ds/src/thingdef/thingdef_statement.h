@@ -56,6 +56,7 @@ class FsEnum : public FsStatement
 {
 	TArray<FsConstant *> values;
 public:
+	~FsEnum();
 	void Append(FsConstant *c);
 	bool Resolve(FCompileContext &ctx, bool notlocal);
 };
