@@ -339,10 +339,11 @@ public:
 class FxIntCast : public FxExpression
 {
 	FxExpression *basex;
+	bool strict;
 
 public:
 
-	FxIntCast(FxExpression *x);
+	FxIntCast(FxExpression *x, bool strict = false);
 	~FxIntCast();
 	FxExpression *Resolve(FCompileContext&);
 
@@ -425,14 +426,14 @@ public:
 //
 //==========================================================================
 
-class FxStringToSound : public FxExpression
+class FxSoundCast : public FxExpression
 {
 	FxExpression *basex;
 
 public:
 
-	FxStringToSound(FxExpression *x);
-	~FxStringToSound();
+	FxSoundCast(FxExpression *x);
+	~FxSoundCast();
 	FxExpression *Resolve(FCompileContext&);
 };
 

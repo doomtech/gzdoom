@@ -259,36 +259,37 @@ static void InstallCodePtr(FState *state, CodePtr *cptr, const PClass *cls, cons
 					{
 					case 'S':
 					case 's':		// Sound name
-						x = x->CreateCast(ctx, VAL_Sound);
+						x = new FxSoundCast(x);
 						break;
 
 					case 'M':
 					case 'm':		// Actor name
-						x = x->CreateCast(ctx, VAL_Class);
+						x = new FxClassTypeCast(NULL, x);
 						break;
 
 					case 'T':
 					case 't':		// String
-						x = x->CreateCast(ctx, VAL_Name);
+						x = new FxNameCast(x);
 						break;
 
 					case 'C':
 					case 'c':		// Color
-						x = x->CreateCast(ctx, VAL_Color);
+						x = new FxColorCast(x);
 						break;
 
 					case 'L':
 					case 'l':		// State label
-						x = x->CreateCast(ctx, VAL_State);
+						x = new FxStateCast(x);
 						break;
 
 					case 'X':
 					case 'x':		// Number
-						x = x->Resolve(ctx);
-						if (x != NULL && x->ValueType != VAL_Int && x->ValueType != VAL_Float)
-						{
-							pos.Message(MSG_ERROR, "Numeric value expected.");
-						}
+						x = new FxIntCast(x, true);
+						break;
+
+					case 'Y':
+					case 'y':		// Number
+						x = new FxFloatCast(x);
 						break;
 
 					default:	// incorrect definition - shouldn't happen

@@ -208,6 +208,24 @@
 		A = new FsClass(B.NameValue(), C.NameValue(), true, !!D, B.ScriptPosition(), context);
 	}
 
+	class_header(A) ::= CLASS error.
+	{
+		context->ScriptPosition.Message(MSG_ERROR, "Syntax error in class definition");
+		A = new FsClass(NAME_None, NAME_None, false, false, context->ScriptPosition, context);
+	}
+
+	class_header(A) ::= ACTOR error.
+	{
+		context->ScriptPosition.Message(MSG_ERROR, "Syntax error in actor definition");
+		A = new FsClass(NAME_None, NAME_None, true, false, context->ScriptPosition, context);
+	}
+
+	class_header (A) ::= class_header(B) error.
+	{
+		A = B;
+		A->Position.Message(MSG_ERROR, "Syntax error in class definition for '%s'", A->Class->TypeName.GetChars() );
+	}
+
 // class_body
 // ----------
 
@@ -263,6 +281,11 @@
 
 info_definition ::= INFO LBRACE info_body RBRACE.
 
+info_definition ::= INFO LBRACE error RBRACE.
+{
+	context->ScriptPosition.Message(MSG_ERROR, "Error in info definition for actor '%s'", context->Info->Class->TypeName.GetChars());
+}
+
 
 
 // info_body
@@ -280,7 +303,6 @@ info_body(A) ::= info_body(B) IDENTIFIER(C) LPAREN property_args(D) RPAREN.
 	A = B;
 }
 
-
 // ===========================================================================
 //
 // Property block definition
@@ -292,6 +314,10 @@ info_body(A) ::= info_body(B) IDENTIFIER(C) LPAREN property_args(D) RPAREN.
 
 properties_definition ::= DEFAULTPROPERTIES LBRACE prop_body RBRACE.
 	
+properties_definition ::= DEFAULTPROPERTIES LBRACE error RBRACE.
+{
+	context->ScriptPosition.Message(MSG_ERROR, "Error in defaultproperties for actor '%s'", context->Info->Class->TypeName.GetChars());
+}
 
 // prop_body
 // ---------
@@ -355,12 +381,6 @@ properties_definition ::= DEFAULTPROPERTIES LBRACE prop_body RBRACE.
 	{
 		B->AddFlag(C.NameValue(), D.NameValue(), false, C.ScriptPosition());
 		A = B;
-	}
-
-	prop_body(A) ::= prop_body(B) error.
-	{
-		A = B;
-		context->ScriptPosition.Message(MSG_ERROR, "Invalid property definition");
 	}
 
 // ===========================================================================
@@ -454,12 +474,6 @@ properties_definition ::= DEFAULTPROPERTIES LBRACE prop_body RBRACE.
 	{
 		A = B.MakeIdentifier(NAME_Float);
 	}
-
-	property_identifier(A) ::= PROJECTILE(B).
-	{
-		A = B.MakeIdentifier(NAME_Projectile);
-	}
-
 
 // ===========================================================================
 //

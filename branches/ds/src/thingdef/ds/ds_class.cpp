@@ -53,6 +53,7 @@
 
 FsClass::FsClass(FName clsname, FName parentname, bool actordef, bool native, const FScriptPosition &pos, Baggage *bag)
 {
+Printf("defining actor %s : %s\n", clsname.GetChars(), parentname.GetChars());
 	Position = pos;
 	if (actordef || clsname == NAME_Actor)
 	{
@@ -180,24 +181,28 @@ bool FsClass::ParsePropertyParams(FPropertyInfo *prop, FPropArgs *arguments, Bag
 					if (arg_expressions.Size() <= n+2)
 					{
 						// Insufficient paraneters
+						x->ScriptPosition.Message(MSG_ERROR, "Insufficient parameters for color");
 					}
-					int R=0, G=0, B=0;
-					R = clamp(x->EvalExpression(NULL).GetInt(), 0, 255);
+					else
+					{
+						int R=0, G=0, B=0;
+						R = clamp(x->EvalExpression(NULL).GetInt(), 0, 255);
 
-					FxExpression *&y = arg_expressions[++n];
-					y = y->CreateCast(ctx, VAL_Int);
-					if (y != NULL) 
-					{
-						G = clamp(y->EvalExpression(NULL).GetInt(), 0, 255);
+						FxExpression *&y = arg_expressions[++n];
+						y = y->CreateCast(ctx, VAL_Int);
+						if (y != NULL) 
+						{
+							G = clamp(y->EvalExpression(NULL).GetInt(), 0, 255);
+						}
+						FxExpression *&z = arg_expressions[++n];
+						z = z->CreateCast(ctx, VAL_Int);
+						if (z != NULL) 
+						{
+							B = clamp(z->EvalExpression(NULL).GetInt(), 0, 255);
+						}
+						conv.i = MAKERGB(R, G, B);
+						pref.i = 0;
 					}
-					FxExpression *&z = arg_expressions[++n];
-					z = z->CreateCast(ctx, VAL_Int);
-					if (z != NULL) 
-					{
-						B = clamp(z->EvalExpression(NULL).GetInt(), 0, 255);
-					}
-					conv.i = MAKERGB(R, G, B);
-					pref.i = 0;
 				}
 				else
 				{

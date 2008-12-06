@@ -103,13 +103,13 @@ struct FPropArgs
 
 class FsClass : public FsStatement
 {
-	const PClass *Class;
-	FActorInfo *Info;
-	FScriptPosition Position;
-
 	bool ParsePropertyParams(FPropertyInfo *prop, FPropArgs *arguments, Baggage &bag);
 
 public:
+
+	const PClass *Class;
+	FActorInfo *Info;
+	FScriptPosition Position;
 
 	FsClass(FName clsname, FName parentname, bool actordef, bool native, const FScriptPosition &pos, Baggage *bag);
 
