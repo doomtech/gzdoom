@@ -1556,22 +1556,19 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Print)
 	if (self->CheckLocalView (consoleplayer) ||
 		(self->target!=NULL && self->target->CheckLocalView (consoleplayer)))
 	{
-		FFont * oldfont = screen->Font;
 		float saved = con_midtime;
-
+		FFont *font = NULL;
 		
 		if (fontname != NAME_None)
 		{
-			FFont * font = V_GetFont(fontname);
-			if (font != NULL) screen->SetFont(font);
+			font = V_GetFont(fontname);
 		}
 		if (time > 0)
 		{
 			con_midtime = time;
 		}
 		
-		C_MidPrint(text);
-		screen->SetFont(oldfont);
+		C_MidPrint(font != NULL ? font : SmallFont, text);
 		con_midtime = saved;
 	}
 }
@@ -1785,6 +1782,25 @@ DEFINE_ACTION_FUNCTION(AActor, A_KillChildren)
 	while ( (mo = it.Next()) )
 	{
 		if (mo->master == self)
+		{
+			P_DamageMobj(mo, self, self, mo->health, NAME_None, DMG_NO_ARMOR);
+		}
+	}
+}
+
+//===========================================================================
+//
+// A_KillSiblings
+//
+//===========================================================================
+DEFINE_ACTION_FUNCTION(AActor, A_KillSiblings)
+{
+	TThinkerIterator<AActor> it;
+	AActor * mo;
+
+	while ( (mo = it.Next()) )
+	{
+		if (mo->master == self->master && mo != self)
 		{
 			P_DamageMobj(mo, self, self, mo->health, NAME_None, DMG_NO_ARMOR);
 		}
@@ -2134,6 +2150,39 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_DamageChildren)
 
 //===========================================================================
 //
+// A_DamageSiblings (amount)
+// Damages the siblings of this master by the specified amount. Negative values heal.
+//
+//===========================================================================
+DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_DamageSiblings)
+{
+	TThinkerIterator<AActor> it;
+	AActor * mo;
+
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_INT(amount, 0);
+	ACTION_PARAM_NAME(DamageType, 1);
+
+	while ( (mo = it.Next()) )
+	{
+		if (mo->master == self->master && mo != self)
+		{
+			if (amount > 0)
+			{
+				P_DamageMobj(mo, self, self, amount, DamageType, DMG_NO_ARMOR);
+			}
+			else if (amount < 0)
+			{
+				amount = -amount;
+				P_GiveBody(mo, amount);
+			}
+		}
+	}
+}
+
+
+//===========================================================================
+//
 // Modified code pointer from Skulltag
 //
 //===========================================================================
@@ -2216,16 +2265,39 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ChangeFlag)
 
 	if (fd != NULL)
 	{
+		bool kill_before, kill_after;
+
+		kill_before = self->CountsAsKill();
 		if (fd->structoffset == -1)
 		{
 			HandleDeprecatedFlags(self, cls->ActorInfo, expression, fd->flagbit);
 		}
 		else
 		{
-			int * flagp = (int*) (((char*)self) + fd->structoffset);
+			int *flagp = (int*) (((char*)self) + fd->structoffset);
 
-			if (expression) *flagp |= fd->flagbit;
-			else *flagp &= ~fd->flagbit;
+			if (expression)
+			{
+				*flagp |= fd->flagbit;
+			}
+			else
+			{
+				*flagp &= ~fd->flagbit;
+			}
+		}
+		kill_after = self->CountsAsKill();
+		// Was this monster previously worth a kill but no longer is?
+		// Or vice versa?
+		if (kill_before != kill_after)
+		{
+			if (kill_after)
+			{ // It counts as a kill now.
+				level.total_monsters++;
+			}
+			else
+			{ // It no longer counts as a kill.
+				level.total_monsters--;
+			}
 		}
 	}
 	else
@@ -2234,3 +2306,36 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ChangeFlag)
 	}
 }
 
+//===========================================================================
+//
+// A_RemoveMaster
+//
+//===========================================================================
+DEFINE_ACTION_FUNCTION(AActor, A_RemoveMaster)
+{
+   if (self->master != NULL)
+   {
+      P_RemoveThing(self->master);
+   }
+}
+
+//===========================================================================
+//
+// A_RemoveChildren
+//
+//===========================================================================
+DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_RemoveChildren)
+{
+   TThinkerIterator<AActor> it;
+   AActor * mo;
+   ACTION_PARAM_START(1);
+   ACTION_PARAM_BOOL(removeall,0);
+
+   while ( (mo = it.Next()) )
+   {
+      if ( ( mo->master == self ) && ( ( mo->health <= 0 ) || removeall) )
+      {
+		P_RemoveThing(mo);
+      }
+   }
+}

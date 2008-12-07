@@ -47,7 +47,15 @@
 #include "i_system.h"
 #include "g_level.h"
 
-SBarInfo *SBarInfoScript;
+SBarInfo *SBarInfoScript[NUM_SCRIPTS] = {NULL,NULL,NULL,NULL,NULL};
+static const char *DefaultScriptNames[NUM_SCRIPTS] =
+{
+	"SBARINFO", //Custom
+	"sbarinfo/doom.txt",
+	NULL, //Heretic
+	NULL, //Hexen
+	NULL  //Strife
+};
 
 static const char *SBarInfoTopLevel[] =
 {
@@ -97,6 +105,7 @@ static const char *SBarInfoRoutineLevel[] =
 	"isselected",
 	"usessecondaryammo",
 	"hasweaponpiece",
+	"inventorybarnotvisible",
 	"weaponammo", //event
 	"ininventory",
 	NULL
@@ -104,29 +113,48 @@ static const char *SBarInfoRoutineLevel[] =
 
 static void FreeSBarInfoScript()
 {
-	if (SBarInfoScript != NULL)
+	for(int i = 0;i < NUM_SCRIPTS;i++)
 	{
-		delete SBarInfoScript;
-		SBarInfoScript = NULL;
+		if (SBarInfoScript[i] != NULL)
+		{
+			delete SBarInfoScript[i];
+			SBarInfoScript[i] = NULL;
+		}
 	}
 }
 
 void SBarInfo::Load()
 {
-	if(Wads.CheckNumForName("SBARINFO") != -1)
+	Printf ("ParseSBarInfo: Loading default status bar definitions.\n");
+	for(int i = 1;i < NUM_SCRIPTS;i++) // Read in default bars if they exist
+	{
+		if(DefaultScriptNames[i] != NULL)
+		{
+			int lump = Wads.CheckNumForFullName(DefaultScriptNames[i], true);
+			if(lump != -1)
+			{
+				if(SBarInfoScript[i] == NULL)
+					SBarInfoScript[i] = new SBarInfo(lump);
+				else
+					SBarInfoScript[i]->ParseSBarInfo(lump);
+			}
+		}
+	}
+
+	if(Wads.CheckNumForName(DefaultScriptNames[SCRIPT_CUSTOM]) != -1)
 	{
 		Printf ("ParseSBarInfo: Loading custom status bar definition.\n");
 		int lastlump, lump;
 		lastlump = 0;
-		while((lump = Wads.FindLump("SBARINFO", &lastlump)) != -1)
+		while((lump = Wads.FindLump(DefaultScriptNames[SCRIPT_CUSTOM], &lastlump)) != -1)
 		{
-			if(SBarInfoScript == NULL)
-				SBarInfoScript = new SBarInfo(lump);
+			if(SBarInfoScript[SCRIPT_CUSTOM] == NULL)
+				SBarInfoScript[SCRIPT_CUSTOM] = new SBarInfo(lump);
 			else //We now have to load multiple SBarInfo Lumps so the 2nd time we need to use this method instead.
-				SBarInfoScript->ParseSBarInfo(lump);
+				SBarInfoScript[SCRIPT_CUSTOM]->ParseSBarInfo(lump);
 		}
-		atterm(FreeSBarInfoScript);
 	}
+	atterm(FreeSBarInfoScript);
 }
 
 //SBarInfo Script Reader
@@ -154,7 +182,12 @@ void SBarInfo::ParseSBarInfo(int lump)
 				if(!sc.CheckToken(TK_None))
 					sc.MustGetToken(TK_Identifier);
 				if(sc.Compare("Doom"))
-					gameType = GAME_Doom;
+				{
+					int lump = Wads.CheckNumForFullName("sbarinfo/doom.txt", true);
+					if(lump == -1)
+						sc.ScriptError("Standard Doom Status Bar not found.");
+					ParseSBarInfo(lump);
+				}
 				else if(sc.Compare("Heretic"))
 					gameType = GAME_Heretic;
 				else if(sc.Compare("Hexen"))
@@ -510,7 +543,7 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 					else if(sc.Compare("centerbottom"))
 						cmd.flags |= DRAWIMAGE_OFFSET_CENTERBOTTOM;
 					else
-						sc.ScriptError("Expected 'center' or 'centerbottom' got '%s' instead.", sc.String);
+						sc.ScriptError("'%s' is not a valid alignment.", sc.String);
 				}
 				sc.MustGetToken(';');
 				break;
@@ -715,6 +748,18 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 					{
 						cmd.flags |= DRAWSELECTEDINVENTORY_ALWAYSSHOWCOUNTER;
 					}
+					else if(sc.Compare("center"))
+					{
+						cmd.flags |= DRAWSELECTEDINVENTORY_CENTER;
+					}
+					else if(sc.Compare("centerbottom"))
+					{
+						cmd.flags |= DRAWSELECTEDINVENTORY_CENTERBOTTOM;
+					}
+					else if(sc.Compare("drawshadow"))
+					{
+						cmd.flags |= DRAWSELECTEDINVENTORY_DRAWSHADOW;
+					}
 					else
 					{
 						cmd.font = V_GetFont(sc.String);
@@ -726,21 +771,19 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 					if(!sc.CheckToken('|'))
 						sc.MustGetToken(',');
 				}
-				sc.MustGetToken(TK_IntConst);
-				cmd.x = sc.Number;
-				sc.MustGetToken(',');
-				sc.MustGetToken(TK_IntConst);
-				cmd.y = sc.Number - (200 - this->height);
+				this->getCoordinates(sc, cmd, block.fullScreenOffsets);
 				cmd.special2 = cmd.x + 30;
 				cmd.special3 = cmd.y + 24;
 				cmd.translation = CR_GOLD;
 				if(sc.CheckToken(',')) //more font information
 				{
-					sc.MustGetToken(TK_IntConst);
-					cmd.special2 = sc.Number;
-					sc.MustGetToken(',');
-					sc.MustGetToken(TK_IntConst);
-					cmd.special3 = sc.Number - (200 - this->height);
+					int x = cmd.x;
+					int y = cmd.y;
+					this->getCoordinates(sc, cmd, block.fullScreenOffsets);
+					cmd.special2 = cmd.x;
+					cmd.special3 = cmd.y;
+					cmd.x = x;
+					cmd.y = y;
 					if(sc.CheckToken(','))
 					{
 						sc.MustGetToken(TK_Identifier);
@@ -1209,6 +1252,11 @@ void SBarInfo::ParseSBarInfoBlock(FScanner &sc, SBarInfoBlock &block)
 				this->ParseSBarInfoBlock(sc, cmd.subBlock);
 				break;
 			}
+			case SBARINFO_INVENTORYBARNOTVISIBLE:
+				sc.MustGetToken('{');
+				cmd.subBlock.fullScreenOffsets = block.fullScreenOffsets;
+				this->ParseSBarInfoBlock(sc, cmd.subBlock);
+				break;
 			case SBARINFO_WEAPONAMMO:
 				sc.MustGetToken(TK_Identifier);
 				if(sc.Compare("not"))

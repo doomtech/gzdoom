@@ -3,7 +3,7 @@
 ** General BEHAVIOR management and ACS execution environment
 **
 **---------------------------------------------------------------------------
-** Copyright 1998-2007 Randy Heit
+** Copyright 1998-2008 Randy Heit
 ** All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,8 @@
 **---------------------------------------------------------------------------
 **
 ** This code at one time made lots of little-endian assumptions.
-** I think it should be better now, but I have no real way to test it.
+** I think it should be fine on big-endian machines now, but I have no
+** real way to test it.
 */
 
 #include <assert.h>
@@ -2154,10 +2155,6 @@ void DLevelScript::DoSetFont (int fontnum)
 	{
 		activefont = SmallFont;
 	}
-	if (screen != NULL)
-	{
-		screen->SetFont (activefont);
-	}
 }
 
 #define APROP_Health		0
@@ -2454,6 +2451,87 @@ int DLevelScript::GetPlayerInput(int playernum, int inputnum)
 	}
 }
 
+enum
+{
+	ACTOR_NONE				= 0x00000000,
+	ACTOR_WORLD				= 0x00000001,
+	ACTOR_PLAYER			= 0x00000002,
+	ACTOR_BOT				= 0x00000004,
+	ACTOR_VOODOODOLL		= 0x00000008,
+	ACTOR_MONSTER			= 0x00000010,
+	ACTOR_ALIVE				= 0x00000020,
+	ACTOR_DEAD				= 0x00000040,
+	ACTOR_MISSILE			= 0x00000080,
+	ACTOR_GENERIC			= 0x00000100
+};
+
+int DLevelScript::DoClassifyActor(int tid)
+{
+	AActor *actor;
+	int classify;
+
+	if (tid == 0)
+	{
+		actor = activator;
+		if (actor == NULL)
+		{
+			return ACTOR_WORLD;
+		}
+	}
+	else
+	{
+		FActorIterator it(tid);
+		actor = it.Next();
+	}
+	if (actor == NULL)
+	{
+		return ACTOR_NONE;
+	}
+
+	classify = 0;
+	if (actor->player != NULL)
+	{
+		classify |= ACTOR_PLAYER;
+		if (actor->player->playerstate == PST_DEAD)
+		{
+			classify |= ACTOR_DEAD;
+		}
+		else
+		{
+			classify |= ACTOR_ALIVE;
+		}
+		if (actor->player->mo != actor)
+		{
+			classify |= ACTOR_VOODOODOLL;
+		}
+		if (actor->player->isbot)
+		{
+			classify |= ACTOR_BOT;
+		}
+	}
+	else if (actor->flags3 & MF3_ISMONSTER)
+	{
+		classify |= ACTOR_MONSTER;
+		if (actor->health <= 0)
+		{
+			classify |= ACTOR_DEAD;
+		}
+		else
+		{
+			classify |= ACTOR_ALIVE;
+		}
+	}
+	else if (actor->flags & MF_MISSILE)
+	{
+		classify |= ACTOR_MISSILE;
+	}
+	else
+	{
+		classify |= ACTOR_GENERIC;
+	}
+	return classify;
+}
+
 #define NEXTWORD	(LittleLong(*pc++))
 #define NEXTBYTE	(fmt==ACS_LittleEnhanced?getbyte(pc):NEXTWORD)
 #define STACK(a)	(Stack[sp - (a)])
@@ -2535,11 +2613,6 @@ int DLevelScript::RunScript ()
 	const char *lookup;
 	int optstart = -1;
 	int temp;
-
-	if (screen != NULL)
-	{
-		screen->SetFont (activefont);
-	}
 
 	while (state == SCRIPT_Running)
 	{
@@ -3873,6 +3946,16 @@ int DLevelScript::RunScript ()
 			--sp;
 			break;
 
+		case PCD_PRINTBINARY:
+			work.AppendFormat ("%B", STACK(1));
+			--sp;
+			break;
+
+		case PCD_PRINTHEX:
+			work.AppendFormat ("%X", STACK(1));
+			--sp;
+			break;
+
 		case PCD_PRINTCHARACTER:
 			work += (char)STACK(1);
 			--sp;
@@ -4009,7 +4092,7 @@ int DLevelScript::RunScript ()
 				if (pcd == PCD_ENDPRINTBOLD || screen == NULL ||
 					screen->CheckLocalView (consoleplayer))
 				{
-					C_MidPrint (work);
+					C_MidPrint (activefont, work);
 				}
 			}
 			else
@@ -4060,26 +4143,26 @@ int DLevelScript::RunScript ()
 					switch (type & 0xFFFF)
 					{
 					default:	// normal
-						msg = new DHUDMessage (work, x, y, hudwidth, hudheight, color, holdTime);
+						msg = new DHUDMessage (activefont, work, x, y, hudwidth, hudheight, color, holdTime);
 						break;
 					case 1:		// fade out
 						{
 							float fadeTime = (optstart < sp) ? FIXED2FLOAT(Stack[optstart]) : 0.5f;
-							msg = new DHUDMessageFadeOut (work, x, y, hudwidth, hudheight, color, holdTime, fadeTime);
+							msg = new DHUDMessageFadeOut (activefont, work, x, y, hudwidth, hudheight, color, holdTime, fadeTime);
 						}
 						break;
 					case 2:		// type on, then fade out
 						{
 							float typeTime = (optstart < sp) ? FIXED2FLOAT(Stack[optstart]) : 0.05f;
 							float fadeTime = (optstart < sp-1) ? FIXED2FLOAT(Stack[optstart+1]) : 0.5f;
-							msg = new DHUDMessageTypeOnFadeOut (work, x, y, hudwidth, hudheight, color, typeTime, holdTime, fadeTime);
+							msg = new DHUDMessageTypeOnFadeOut (activefont, work, x, y, hudwidth, hudheight, color, typeTime, holdTime, fadeTime);
 						}
 						break;
 					case 3:		// fade in, then fade out
 						{
 							float inTime = (optstart < sp) ? FIXED2FLOAT(Stack[optstart]) : 0.5f;
 							float outTime = (optstart < sp-1) ? FIXED2FLOAT(Stack[optstart+1]) : 0.5f;
-							msg = new DHUDMessageFadeInOut (work, x, y, hudwidth, hudheight, color, holdTime, inTime, outTime);
+							msg = new DHUDMessageFadeInOut (activefont, work, x, y, hudwidth, hudheight, color, holdTime, inTime, outTime);
 						}
 						break;
 					}
@@ -5414,7 +5497,7 @@ int DLevelScript::RunScript ()
 			{
 				STACK(1) = actor->Sector->lightlevel;
 			}
-			else STACK(1)=0;
+			else STACK(1) = 0;
 			break;
 		}
 
@@ -5436,6 +5519,10 @@ int DLevelScript::RunScript ()
 					STACK(1) = players[playernum].camera->tid;
 				}
 			}
+			break;
+
+		case PCD_CLASSIFYACTOR:
+			STACK(1) = DoClassifyActor(STACK(1));
 			break;
 
 		case PCD_MORPHACTOR:
@@ -5581,10 +5668,6 @@ int DLevelScript::RunScript ()
 	{
 		this->pc = pc;
 		assert (sp == 0);
-	}
-	if (screen != NULL)
-	{
-		screen->SetFont (SmallFont);
 	}
 	return resultValue;
 }

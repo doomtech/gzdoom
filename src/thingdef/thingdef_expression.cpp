@@ -3171,7 +3171,7 @@ ExpVal FxMultiNameState::EvalExpression (AActor *self)
 	{
 		const char *dot="";
 		Printf("Jump target '");
-		for (int i=0;i<names.Size();i++)
+		for (unsigned int i=0;i<names.Size();i++)
 		{
 			Printf("%s%s", dot, names[i].GetChars());
 			dot = ".";

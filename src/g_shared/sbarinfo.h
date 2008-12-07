@@ -147,7 +147,17 @@ struct SBarInfo
 	static void Load();
 };
 
-extern SBarInfo *SBarInfoScript;
+#define NUM_SCRIPTS 5
+#define SCRIPT_CUSTOM	0
+#define SCRIPT_DOOM		1
+// The next ones shouldn't be used... yet
+#define SCRIPT_HERETIC	2
+#define SCRIPT_HEXEN	3
+#define SCRIPT_STRIFE	4
+// Converts GAME_x to it's script number
+#define GETSBARINFOSCRIPT(game) \
+	(game & GAME_DoomChex) ? SCRIPT_DOOM : (game == GAME_Heretic ? SCRIPT_HERETIC : (game == GAME_Hexen ? SCRIPT_HEXEN : (game == GAME_Strife ? SCRIPT_STRIFE : SCRIPT_CUSTOM)))
+extern SBarInfo *SBarInfoScript[5];
 
 
 // Enums used between the parser and the display
@@ -171,11 +181,13 @@ enum //drawimage flags
 	DRAWIMAGE_INVULNERABILITY = 0x80,
 	DRAWIMAGE_OFFSET_CENTER = 0x100,
 	DRAWIMAGE_OFFSET_CENTERBOTTOM = 0x200,
-	DRAWIMAGE_ARMOR = 0x400,
-	DRAWIMAGE_WEAPONICON = 0x800,
-	DRAWIMAGE_SIGIL = 0x1000,
-	DRAWIMAGE_KEYSLOT = 0x2000,
-	DRAWIMAGE_HEXENARMOR = 0x4000,
+	DRAWIMAGE_ARMOR = 0x800,
+	DRAWIMAGE_WEAPONICON = 0x1000,
+	DRAWIMAGE_SIGIL = 0x2000,
+	DRAWIMAGE_KEYSLOT = 0x4000,
+	DRAWIMAGE_HEXENARMOR = 0x8000,
+
+	DRAWIMAGE_OFFSET = DRAWIMAGE_OFFSET_CENTER|DRAWIMAGE_OFFSET_CENTERBOTTOM,
 };
 
 enum //drawnumber flags
@@ -212,9 +224,12 @@ enum //drawbar flags (will go into special2)
 
 enum //drawselectedinventory flags
 {
-	DRAWSELECTEDINVENTORY_ALTERNATEONEMPTY = 1,
-	DRAWSELECTEDINVENTORY_ARTIFLASH = 2,
-	DRAWSELECTEDINVENTORY_ALWAYSSHOWCOUNTER = 4,
+	DRAWSELECTEDINVENTORY_ALTERNATEONEMPTY = 0x1,
+	DRAWSELECTEDINVENTORY_ARTIFLASH = 0x2,
+	DRAWSELECTEDINVENTORY_ALWAYSSHOWCOUNTER = 0x4,
+	DRAWSELECTEDINVENTORY_CENTER = 0x8,
+	DRAWSELECTEDINVENTORY_CENTERBOTTOM = 0x10,
+	DRAWSELECTEDINVENTORY_DRAWSHADOW = 0x20,
 };
 
 enum //drawinventorybar flags
@@ -317,6 +332,7 @@ enum //Bar key words
 	SBARINFO_ISSELECTED,
 	SBARINFO_USESSECONDARYAMMO,
 	SBARINFO_HASWEAPONPIECE,
+	SBARINFO_INVENTORYBARNOTVISIBLE,
 	SBARINFO_WEAPONAMMO,
 	SBARINFO_ININVENTORY,
 };
@@ -338,7 +354,7 @@ class DSBarInfo : public DBaseStatusBar
 {
 	DECLARE_CLASS(DSBarInfo, DBaseStatusBar)
 public:
-	DSBarInfo();
+	DSBarInfo(SBarInfo *script=NULL);
 	~DSBarInfo();
 	void Draw(EHudState state);
 	void NewGame();
@@ -356,11 +372,12 @@ private:
 	void DrawFace(const char *defaultFace, int accuracy, int stateflags, int x, int y, int xOffset, int yOffset, int alpha, bool fullScreenOffsets);
 	int updateState(bool xdth, bool animatedgodmode);
 	void DrawInventoryBar(int type, int num, int x, int y, int xOffset, int yOffset, int alpha, bool fullScreenOffsets, bool alwaysshow,
-		int counterx, int countery, EColorRange translation, bool drawArtiboxes, bool noArrows, bool alwaysshowcounter);
+		int counterx, int countery, EColorRange translation, bool drawArtiboxes, bool noArrows, bool alwaysshowcounter, int bgalpha);
 	void DrawGem(FTexture* chain, FTexture* gem, int value, int x, int y, int xOffset, int yOffset, int alpha, bool fullScreenOffsets, int padleft, int padright, int chainsize,
 		bool wiggle, bool translate);
 	FRemapTable* getTranslation();
 
+	SBarInfo *script;
 	FImageCollection Images;
 	FPlayerSkin *oldSkin;
 	FFont *drawingFont;

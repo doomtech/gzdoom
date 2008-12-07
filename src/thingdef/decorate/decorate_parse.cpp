@@ -98,30 +98,6 @@ FxExpression *ParseParameter(FScanner &sc, PClass *cls, char type, bool constant
 	case 'c':		// Color
 		sc.MustGetString ();
 		x = new FxColorCast(new FxStringConstant(sc.String, sc));
-
-		/*
-		if (sc.Compare("none"))
-		{
-			v = -1;
-		}
-		else if (sc.Compare(""))
-		{
-			v = 0;
-		}
-		else
-		{
-			int c = V_GetColor (NULL, sc.String);
-			// 0 needs to be the default so we have to mark the color.
-			v = MAKEARGB(1, RPART(c), GPART(c), BPART(c));
-		}
-		{
-			ExpVal val;
-			val.Type = VAL_Color;
-			val.Int = v;
-			x = new FxConstant(val, sc);
-			break;
-		}
-		*/
 		break;
 
 	case 'L':
