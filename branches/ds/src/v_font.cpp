@@ -62,7 +62,7 @@ The FON2 header is followed by variable length data:
 
 	ubyte Palette[PaletteSize+1][3];
 		-- The last entry is the delimiter color. The delimiter is not used
-		-- by the font but is used my imagetool when converting the font
+		-- by the font but is used by imagetool when converting the font
 		-- back to an image. Color 0 is the transparent color and is also
 		-- used only for converting the font back to an image. The other
 		-- entries are all presorted in increasing order of brightness.
@@ -146,11 +146,18 @@ protected:
 	FTextureID PicNum;
 };
 
+// Essentially a normal multilump font but with an explicit list of character patches
+class FSpecialFont : public FFont
+{
+public:
+	FSpecialFont (const char *name, int first, int count, FTexture **lumplist, const bool *notranslate);
+};
+
 // This is a font character that loads a texture and recolors it.
 class FFontChar1 : public FTexture
 {
 public:
-   FFontChar1 (int sourcelump, const BYTE *sourceremap);
+   FFontChar1 (FTexture *sourcelump, const BYTE *sourceremap);
    const BYTE *GetColumn (unsigned int column, const Span **spans_out);
    const BYTE *GetPixels ();
    void Unload ();
@@ -311,9 +318,10 @@ FArchive &SerializeFFontPtr (FArchive &arc, FFont* &font)
 
 FFont::FFont (const char *name, const char *nametemplate, int first, int count, int start)
 {
-	int i, lump;
+	int i;
+	FTextureID lump;
 	char buffer[12];
-	int *charlumps;
+	FTexture **charlumps;
 	BYTE usedcolors[256], identity[256];
 	double *luminosity;
 	int maxyoffs;
@@ -321,7 +329,7 @@ FFont::FFont (const char *name, const char *nametemplate, int first, int count, 
 	bool stcfn121 = false;
 
 	Chars = new CharData[count];
-	charlumps = new int[count];
+	charlumps = new FTexture *[count];
 	PatchRemap = new BYTE[256];
 	FirstChar = first;
 	LastChar = first + count - 1;
@@ -336,33 +344,34 @@ FFont::FFont (const char *name, const char *nametemplate, int first, int count, 
 
 	for (i = 0; i < count; i++)
 	{
-		charlumps[i] = -1;
+		charlumps[i] = NULL;
 		mysnprintf (buffer, countof(buffer), nametemplate, i + start);
-		lump = Wads.CheckNumForName (buffer, ns_graphics);
-		if (doomtemplate && lump >= 0 && i + start == 121)
+
+		lump = TexMan.CheckForTexture(buffer, FTexture::TEX_MiscPatch);
+		if (doomtemplate && lump.isValid() && i + start == 121)
 		{ // HACKHACK: Don't load STCFN121 in doom(2), because
 		  // it's not really a lower-case 'y' but a '|'.
 		  // Because a lot of wads with their own font seem to foolishly
 		  // copy STCFN121 and make it a '|' themselves, wads must
-		  // provide STCFN120 (x) and STCFN122 (z) for STCFN121 to load.
-			if (Wads.CheckNumForName ("STCFN120", ns_graphics) == -1 ||
-				Wads.CheckNumForName ("STCFN122", ns_graphics) == -1)
+		  // provide STCFN120 (x) and STCFN122 (z) for STCFN121 to load as a 'y'.
+			if (!TexMan.CheckForTexture("STCFN120", FTexture::TEX_MiscPatch).isValid() ||
+				!TexMan.CheckForTexture("STCFN122", FTexture::TEX_MiscPatch).isValid())
 			{
 				// insert the incorrectly named '|' graphic in its correct position.
-				if (count > 124-start) charlumps[124-start] = lump;
-				lump = -1;
+				if (count > 124-start) charlumps[124-start] = TexMan[lump];
+				lump.SetInvalid();
 				stcfn121 = true;
 			}
 		}
 
-		if (lump >= 0)
+		if (lump.isValid())
 		{
-			FTexture *pic = TexMan[buffer];
+			FTexture *pic = TexMan[lump];
 			if (pic != NULL)
 			{
 				// set the lump here only if it represents a valid texture
 				if (i != 124-start || !stcfn121)
-					charlumps[i] = lump;
+					charlumps[i] = pic;
 
 				int height = pic->GetScaledHeight();
 				int yoffs = pic->GetScaledTopOffset();
@@ -385,7 +394,7 @@ FFont::FFont (const char *name, const char *nametemplate, int first, int count, 
 
 	for (i = 0; i < count; i++)
 	{
-		if (charlumps[i] >= 0)
+		if (charlumps[i] != NULL)
 		{
 			Chars[i].Pic = new FFontChar1 (charlumps[i], PatchRemap);
 		}
@@ -1224,17 +1233,15 @@ int FSinglePicFont::GetCharWidth (int code) const
 //
 //==========================================================================
 
-FFontChar1::FFontChar1 (int sourcelump, const BYTE *sourceremap)
+FFontChar1::FFontChar1 (FTexture *sourcelump, const BYTE *sourceremap)
 : SourceRemap (sourceremap)
 {
 	UseType = FTexture::TEX_FontChar;
-	Wads.GetLumpName(Name, sourcelump);
-	Name[8] = 0;
-	BaseTexture = TexMan[Name];		// it has already been added!
-	Name[0] = 0;					// Make this texture unnamed
+	BaseTexture = sourcelump;
 
 	// now copy all the properties from the base texture
-	if (BaseTexture != NULL) CopySize(BaseTexture);
+	assert(BaseTexture != NULL);
+	CopySize(BaseTexture);
 	Pixels = NULL;
 }
 
@@ -1503,38 +1510,25 @@ void FFontChar2::MakeTexture ()
 	}
 }
 
-//===========================================================================
-// 
-// Essentially a normal multilump font but 
-// with an explicit list of character patches
-//
-//===========================================================================
-class FSpecialFont : public FFont
-{
-public:
-	FSpecialFont (const char *name, int first, int count, int *lumplist, const bool *notranslate);
-};
-
 //==========================================================================
 //
 // FSpecialFont :: FSpecialFont
 //
 //==========================================================================
 
-FSpecialFont::FSpecialFont (const char *name, int first, int count, int *lumplist, const bool *notranslate)
+FSpecialFont::FSpecialFont (const char *name, int first, int count, FTexture **lumplist, const bool *notranslate)
 {
-	int i, j, lump;
-	char buffer[12];
-	int *charlumps;
+	int i, j;
+	FTexture **charlumps;
 	BYTE usedcolors[256], identity[256];
 	double *luminosity;
 	int maxyoffs;
 	int TotalColors;
 	FTexture *pic;
 	
-	Name=copystring(name);
+	Name = copystring(name);
 	Chars = new CharData[count];
-	charlumps = new int[count];
+	charlumps = new FTexture*[count];
 	PatchRemap = new BYTE[256];
 	FirstChar = first;
 	LastChar = first + count - 1;
@@ -1548,36 +1542,23 @@ FSpecialFont::FSpecialFont (const char *name, int first, int count, int *lumplis
 
 	for (i = 0; i < count; i++)
 	{
-		lump = charlumps[i] = lumplist[i];
-		if (lump >= 0)
+		pic = charlumps[i] = lumplist[i];
+		if (pic != NULL)
 		{
-			Wads.GetLumpName(buffer, lump);
-			if (buffer[0] != 0)
-			{
-				buffer[8]=0;
-				pic = TexMan[buffer];
-			}
-			else
-			{
-				pic = NULL;
-			}
-			if (pic != NULL)
-			{
-				int height = pic->GetScaledHeight();
-				int yoffs = pic->GetScaledTopOffset();
+			int height = pic->GetScaledHeight();
+			int yoffs = pic->GetScaledTopOffset();
 
-				if (yoffs > maxyoffs)
-				{
-					maxyoffs = yoffs;
-				}
-				height += abs (yoffs);
-				if (height > FontHeight)
-				{
-					FontHeight = height;
-				}
-
-				RecordTextureColors (pic, usedcolors);
+			if (yoffs > maxyoffs)
+			{
+				maxyoffs = yoffs;
 			}
+			height += abs (yoffs);
+			if (height > FontHeight)
+			{
+				FontHeight = height;
+			}
+
+			RecordTextureColors (pic, usedcolors);
 		}
 	}
 
@@ -1607,7 +1588,7 @@ FSpecialFont::FSpecialFont (const char *name, int first, int count, int *lumplis
 
 	for (i = 0; i < count; i++)
 	{
-		if (charlumps[i] >= 0)
+		if (charlumps[i] != NULL)
 		{
 			Chars[i].Pic = new FFontChar1 (charlumps[i], PatchRemap);
 		}
@@ -1660,7 +1641,7 @@ FSpecialFont::FSpecialFont (const char *name, int first, int count, int *lumplis
 void V_InitCustomFonts()
 {
 	FScanner sc;
-	int lumplist[256];
+	FTexture *lumplist[256];
 	bool notranslate[256];
 	FString namebuffer, templatebuf;
 	int i;
@@ -1675,7 +1656,7 @@ void V_InitCustomFonts()
 		sc.OpenLumpNum(llump);
 		while (sc.GetString())
 		{
-			memset (lumplist, -1, sizeof(lumplist));
+			memset (lumplist, 0, sizeof(lumplist));
 			memset (notranslate, 0, sizeof(notranslate));
 			namebuffer = sc.String;
 			format = 0;
@@ -1723,15 +1704,37 @@ void V_InitCustomFonts()
 						if (sc.Number >= 0 && sc.Number < 256)
 							notranslate[sc.Number] = true;
 					}
-					format=2;
+					format = 2;
 				}
 				else
 				{
 					if (format == 1) goto wrong;
-					int *p = &lumplist[*(unsigned char*)sc.String];
+					FTexture **p = &lumplist[*(unsigned char*)sc.String];
 					sc.MustGetString();
-					*p = Wads.CheckNumForFullName (sc.String, true);
-					format=2;
+					FTextureID texid = TexMan.CheckForTexture(sc.String, FTexture::TEX_MiscPatch);
+					if (!texid.Exists())
+					{
+						int lumpno = Wads.CheckNumForFullName (sc.String);
+						if (lumpno >= 0)
+						{
+							texid = TexMan.FindTextureByLumpNum(lumpno);
+							if (!texid.Exists())
+							{
+								FTexture *tex = FTexture::CreateTexture("", lumpno, FTexture::TEX_MiscPatch);
+								texid = TexMan.AddTexture(tex);
+							}
+						}
+					}
+					if (texid.Exists())
+					{
+						*p = TexMan[texid];
+					}
+					else if (Wads.GetLumpFile(sc.LumpNum) >= Wads.IWAD_FILENUM)
+					{
+						// Print a message only if this isn't in zdoom.pk3
+						sc.ScriptMessage("%s: Unable to find texture in font definition for %s", sc.String, namebuffer.GetChars());
+					}
+					format = 2;
 				}
 			}
 			if (format == 1)
@@ -1742,7 +1745,7 @@ void V_InitCustomFonts()
 			{
 				for (i = 0; i < 256; i++)
 				{
-					if (lumplist[i] != -1)
+					if (lumplist[i] != NULL)
 					{
 						first = i;
 						break;
@@ -1750,13 +1753,13 @@ void V_InitCustomFonts()
 				}
 				for (i = 255; i >= 0; i--)
 				{
-					if (lumplist[i] != -1)
+					if (lumplist[i] != NULL)
 					{
 						count = i - first + 1;
 						break;
 					}
 				}
-				if (count>0)
+				if (count > 0)
 				{
 					new FSpecialFont (namebuffer, first, count, &lumplist[first], notranslate);
 				}
@@ -2107,7 +2110,13 @@ void V_InitFonts()
 	// load the heads-up font
 	if (!(SmallFont = FFont::FindFont("SmallFont")))
 	{
-		if (Wads.CheckNumForName ("FONTA_S") >= 0)
+		int i;
+
+		if ((i = Wads.CheckNumForName("SMALLFNT")) >= 0)
+		{
+			SmallFont = new FSingleLumpFont("SmallFont", i);
+		}
+		else if (Wads.CheckNumForName ("FONTA_S") >= 0)
 		{
 			SmallFont = new FFont ("SmallFont", "FONTA%02u", HU_FONTSTART, HU_FONTSIZE, 1);
 		}
@@ -2116,7 +2125,7 @@ void V_InitFonts()
 			SmallFont = new FFont ("SmallFont", "STCFN%.3d", HU_FONTSTART, HU_FONTSIZE, HU_FONTSTART);
 		}
 	}
-	if (!(SmallFont2=FFont::FindFont("SmallFont2")))
+	if (!(SmallFont2 = FFont::FindFont("SmallFont2")))	// Only used by Strife
 	{
 		if (Wads.CheckNumForName ("STBFN033", ns_graphics) >= 0)
 		{
@@ -2127,7 +2136,7 @@ void V_InitFonts()
 			SmallFont2 = SmallFont;
 		}
 	}
-	if (!(BigFont=FFont::FindFont("BigFont")))
+	if (!(BigFont = FFont::FindFont("BigFont")))
 	{
 		if (gameinfo.gametype & GAME_DoomChex)
 		{
@@ -2142,9 +2151,19 @@ void V_InitFonts()
 			BigFont = new FFont ("BigFont", "FONTB%02u", HU_FONTSTART, HU_FONTSIZE, 1);
 		}
 	}
-	if (!(ConFont=FFont::FindFont("ConsoleFont")))
+	if (!(ConFont = FFont::FindFont("ConsoleFont")))
 	{
 		ConFont = new FSingleLumpFont ("ConsoleFont", Wads.GetNumForName ("CONFONT"));
 	}
+	if (!(IntermissionFont = FFont::FindFont("IntermissionFont")))
+	{
+		if (gameinfo.gametype & GAME_DoomChex)
+		{
+			IntermissionFont = FFont::FindFont("IntermissionFont_Doom");
+		}
+		if (IntermissionFont == NULL)
+		{
+			IntermissionFont = BigFont;
+		}
+	}
 }
-

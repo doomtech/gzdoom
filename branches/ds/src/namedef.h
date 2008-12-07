@@ -417,4 +417,3 @@ xx(Renderstyle)
 
 // Needed for converting keywords to identifiers
 xx(Float)
-xx(Projectile)

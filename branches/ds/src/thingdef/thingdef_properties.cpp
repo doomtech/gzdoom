@@ -1088,6 +1088,50 @@ DEFINE_CLASS_PROPERTY(savepercent, F, Armor)
 //==========================================================================
 //
 //==========================================================================
+DEFINE_CLASS_PROPERTY(maxabsorb, I, Armor)
+{
+	PROP_INT_PARM(i, 0);
+
+	// Special case here because this property has to work for 2 unrelated classes
+	if (info->Class->IsDescendantOf(RUNTIME_CLASS(ABasicArmorPickup)))
+	{
+		((ABasicArmorPickup*)defaults)->MaxAbsorb = i;
+	}
+	else if (info->Class->IsDescendantOf(RUNTIME_CLASS(ABasicArmorBonus)))
+	{
+		((ABasicArmorBonus*)defaults)->MaxAbsorb = i;
+	}
+	else
+	{
+		I_Error("\"Armor.MaxAbsorb\" requires an actor of type \"Armor\"\n");
+	}
+}
+
+//==========================================================================
+//
+//==========================================================================
+DEFINE_CLASS_PROPERTY(maxfullabsorb, I, Armor)
+{
+	PROP_INT_PARM(i, 0);
+
+	// Special case here because this property has to work for 2 unrelated classes
+	if (info->Class->IsDescendantOf(RUNTIME_CLASS(ABasicArmorPickup)))
+	{
+		((ABasicArmorPickup*)defaults)->MaxFullAbsorb = i;
+	}
+	else if (info->Class->IsDescendantOf(RUNTIME_CLASS(ABasicArmorBonus)))
+	{
+		((ABasicArmorBonus*)defaults)->MaxFullAbsorb = i;
+	}
+	else
+	{
+		I_Error("\"Armor.MaxFullAbsorb\" requires an actor of type \"Armor\"\n");
+	}
+}
+
+//==========================================================================
+//
+//==========================================================================
 DEFINE_CLASS_PROPERTY(amount, I, Inventory)
 {
 	PROP_INT_PARM(i, 0);

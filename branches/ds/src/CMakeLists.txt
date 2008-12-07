@@ -158,7 +158,7 @@ endif( NOT FMOD_LIB_NAME )
 
 # Search for FMOD include files
 
-find_path( FMOD_INCLUDE_DIR fmod.h
+find_path( FMOD_INCLUDE_DIR fmod.hpp
 	PATHS ${FMOD_SEARCH_PATHS}
 	${FMOD_INC_PATH_SUFFIXES} )
 
@@ -557,7 +557,6 @@ add_executable( zdoom WIN32
 	zstrformat.cpp
 	zstring.cpp
 	g_doom/a_doommisc.cpp
-	g_doom/doom_sbar.cpp
 	g_heretic/a_hereticmisc.cpp
 	g_heretic/heretic_sbar.cpp
 	g_hexen/a_hexenmisc.cpp
@@ -573,6 +572,7 @@ add_executable( zdoom WIN32
 	g_shared/a_camera.cpp
 	g_shared/a_debris.cpp
 	g_shared/a_decals.cpp
+	g_shared/a_fastprojectile.cpp
 	g_shared/a_flashfader.cpp
 	g_shared/a_fountain.cpp
 	g_shared/a_hatetarget.cpp

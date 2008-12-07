@@ -58,6 +58,7 @@
 #include "gi.h"
 #include "statnums.h"
 #include "g_level.h"
+#include "v_font.h"
 
 // State.
 #include "r_state.h"
@@ -548,7 +549,7 @@ void P_PlayerInSpecialSector (player_t *player, sector_t * sector)
 		sector->special &= ~SECRET_MASK;
 		if (player->mo->CheckLocalView (consoleplayer))
 		{
-			C_MidPrint (secretmessage);
+			C_MidPrint (SmallFont, secretmessage);
 			S_Sound (CHAN_AUTO, "misc/secret", 1, ATTN_NORM);
 		}
 	}

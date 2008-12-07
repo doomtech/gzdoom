@@ -2130,6 +2130,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\g_shared\a_fastprojectile.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\g_shared\a_flashfader.cpp"
 				>
 			</File>
@@ -2900,10 +2904,6 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\src\g_doom\doom_sbar.cpp"
-				>
 			</File>
 		</Filter>
 		<Filter

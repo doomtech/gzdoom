@@ -155,12 +155,14 @@ void FBarShader::Unload()
 }
 
 //SBarInfo Display
-DSBarInfo::DSBarInfo () : DBaseStatusBar (SBarInfoScript->height),
+DSBarInfo::DSBarInfo (SBarInfo *script) : DBaseStatusBar(script->height),
 	shader_horz_normal(false, false),
 	shader_horz_reverse(false, true),
 	shader_vert_normal(true, false),
 	shader_vert_reverse(true, true)
 {
+	this->script = script;
+
 	static const char *InventoryBarLumps[] =
 	{
 		"ARTIBOX",	"SELECTBO", "INVCURS",	"INVGEML1",
@@ -168,21 +170,21 @@ DSBarInfo::DSBarInfo () : DBaseStatusBar (SBarInfoScript->height),
 		"USEARTIA", "USEARTIB", "USEARTIC", "USEARTID",
 	};
 	TArray<const char *> patchnames;
-	patchnames.Resize(SBarInfoScript->Images.Size()+10);
+	patchnames.Resize(script->Images.Size()+10);
 	unsigned int i = 0;
-	for(i = 0;i < SBarInfoScript->Images.Size();i++)
+	for(i = 0;i < script->Images.Size();i++)
 	{
-		patchnames[i] = SBarInfoScript->Images[i];
+		patchnames[i] = script->Images[i];
 	}
 	for(i = 0;i < 10;i++)
 	{
-		patchnames[i+SBarInfoScript->Images.Size()] = InventoryBarLumps[i];
+		patchnames[i+script->Images.Size()] = InventoryBarLumps[i];
 	}
 	for (i = 0;i < numskins;i++)
 	{
 		AddFaceToImageCollection (&skins[i], &Images);
 	}
-	invBarOffset = SBarInfoScript->Images.Size();
+	invBarOffset = script->Images.Size();
 	Images.Init(&patchnames[0], patchnames.Size());
 	drawingFont = V_GetFont("ConFont");
 	oldHealth = 0;
@@ -204,14 +206,14 @@ void DSBarInfo::Draw (EHudState state)
 	int hud = STBAR_NORMAL;
 	if(state == HUD_StatusBar)
 	{
-		if(SBarInfoScript->completeBorder) //Fill the statusbar with the border before we draw.
+		if(script->completeBorder) //Fill the statusbar with the border before we draw.
 		{
 			FTexture *b = TexMan[gameinfo.border->b];
 			R_DrawBorder(viewwindowx, viewwindowy + viewheight + b->GetHeight(), viewwindowx + viewwidth, SCREENHEIGHT);
 			if(screenblocks == 10)
 				screen->FlatFill(viewwindowx, viewwindowy + viewheight, viewwindowx + viewwidth, viewwindowy + viewheight + b->GetHeight(), b, true);
 		}
-		if(SBarInfoScript->automapbar && automapactive)
+		if(script->automapbar && automapactive)
 		{
 			hud = STBAR_AUTOMAP;
 		}
@@ -228,28 +230,28 @@ void DSBarInfo::Draw (EHudState state)
 	{
 		hud = STBAR_NONE;
 	}
-	if(SBarInfoScript->huds[hud].forceScaled) //scale the statusbar
+	if(script->huds[hud].forceScaled) //scale the statusbar
 	{
 		SetScaled(true, true);
 		setsizeneeded = true;
 	}
-	doCommands(SBarInfoScript->huds[hud], 0, 0, SBarInfoScript->huds[hud].alpha);
+	doCommands(script->huds[hud], 0, 0, script->huds[hud].alpha);
 	if(CPlayer->inventorytics > 0 && !(level.flags & LEVEL_NOINVENTORYBAR))
 	{
 		if(state == HUD_StatusBar)
 		{
 			// No overlay?  Lets cancel it.
-			if(SBarInfoScript->huds[STBAR_INVENTORY].commands.Size() == 0)
+			if(script->huds[STBAR_INVENTORY].commands.Size() == 0)
 				CPlayer->inventorytics = 0;
 			else
-				doCommands(SBarInfoScript->huds[STBAR_INVENTORY], 0, 0, SBarInfoScript->huds[STBAR_INVENTORY].alpha);
+				doCommands(script->huds[STBAR_INVENTORY], 0, 0, script->huds[STBAR_INVENTORY].alpha);
 		}
 		else if(state == HUD_Fullscreen)
 		{
-			if(SBarInfoScript->huds[STBAR_INVENTORYFULLSCREEN].commands.Size() == 0)
+			if(script->huds[STBAR_INVENTORYFULLSCREEN].commands.Size() == 0)
 				CPlayer->inventorytics = 0;
 			else
-				doCommands(SBarInfoScript->huds[STBAR_INVENTORYFULLSCREEN], 0, 0, SBarInfoScript->huds[STBAR_INVENTORYFULLSCREEN].alpha);
+				doCommands(script->huds[STBAR_INVENTORYFULLSCREEN], 0, 0, script->huds[STBAR_INVENTORYFULLSCREEN].alpha);
 		}
 	}
 	if(currentPopup != POP_None)
@@ -261,8 +263,8 @@ void DSBarInfo::Draw (EHudState state)
 			popbar = STBAR_POPUPKEYS;
 		else if(currentPopup == POP_Status)
 			popbar = STBAR_POPUPSTATUS;
-		doCommands(SBarInfoScript->huds[popbar], SBarInfoScript->popups[currentPopup-1].getXOffset(), SBarInfoScript->popups[currentPopup-1].getYOffset(),
-			SBarInfoScript->popups[currentPopup-1].getAlpha(SBarInfoScript->huds[popbar].alpha));
+		doCommands(script->huds[popbar], script->popups[currentPopup-1].getXOffset(), script->popups[currentPopup-1].getYOffset(),
+			script->popups[currentPopup-1].getAlpha(script->huds[popbar].alpha));
 	}
 }
 
@@ -290,19 +292,20 @@ void DSBarInfo::Tick ()
 	DBaseStatusBar::Tick();
 	if(level.time & 1)
 		chainWiggle = pr_chainwiggle() & 1;
-	if(!SBarInfoScript->interpolateHealth)
+	if(!script->interpolateHealth)
 	{
 		oldHealth = CPlayer->health;
 	}
 	else
 	{
-		if(oldHealth > CPlayer->health)
+		int health = script->lowerHealthCap ? CPlayer->health : CPlayer->mo->health;
+		if(oldHealth > health)
 		{
-			oldHealth -= clamp((oldHealth - CPlayer->health) >> 2, 1, SBarInfoScript->interpolationSpeed);
+			oldHealth -= clamp((oldHealth - health), 1, script->interpolationSpeed);
 		}
 		else if(oldHealth < CPlayer->health)
 		{
-			oldHealth += clamp((CPlayer->health - oldHealth) >> 2, 1, SBarInfoScript->interpolationSpeed);
+			oldHealth += clamp((health - oldHealth), 1, script->interpolationSpeed);
 		}
 	}
 	AInventory *armor = CPlayer->mo->FindInventory<ABasicArmor>();
@@ -312,7 +315,7 @@ void DSBarInfo::Tick ()
 	}
 	else
 	{
-		if(!SBarInfoScript->interpolateArmor)
+		if(!script->interpolateArmor)
 		{
 			oldArmor = armor->Amount;
 		}
@@ -320,11 +323,11 @@ void DSBarInfo::Tick ()
 		{
 			if(oldArmor > armor->Amount)
 			{
-				oldArmor -= clamp((oldArmor - armor->Amount) >> 2, 1, SBarInfoScript->armorInterpolationSpeed);
+				oldArmor -= clamp((oldArmor - armor->Amount) >> 2, 1, script->armorInterpolationSpeed);
 			}
 			else if(oldArmor < armor->Amount)
 			{
-				oldArmor += clamp((armor->Amount - oldArmor) >> 2, 1, SBarInfoScript->armorInterpolationSpeed);
+				oldArmor += clamp((armor->Amount - oldArmor) >> 2, 1, script->armorInterpolationSpeed);
 			}
 		}
 	}
@@ -336,12 +339,12 @@ void DSBarInfo::Tick ()
 	MugShot.Tick(CPlayer);
 	if(currentPopup != POP_None)
 	{
-		SBarInfoScript->popups[currentPopup-1].tick();
-		if(SBarInfoScript->popups[currentPopup-1].opened == false && SBarInfoScript->popups[currentPopup-1].isDoneMoving())
+		script->popups[currentPopup-1].tick();
+		if(script->popups[currentPopup-1].opened == false && script->popups[currentPopup-1].isDoneMoving())
 		{
 			currentPopup = pendingPopup;
 			if(currentPopup != POP_None)
-				SBarInfoScript->popups[currentPopup-1].open();
+				script->popups[currentPopup-1].open();
 		}
 	}
 }
@@ -366,13 +369,13 @@ void DSBarInfo::ShowPop(int popnum)
 	else
 		pendingPopup = POP_None;
 	if(currentPopup != POP_None)
-		SBarInfoScript->popups[currentPopup-1].close();
+		script->popups[currentPopup-1].close();
 	else
 	{
 		currentPopup = pendingPopup;
 		pendingPopup = POP_None;
 		if(currentPopup != POP_None)
-			SBarInfoScript->popups[currentPopup-1].open();
+			script->popups[currentPopup-1].open();
 	}
 }
 
@@ -385,11 +388,11 @@ void DSBarInfo::doCommands(SBarInfoBlock &block, int xOffset, int yOffset, int a
 	ABasicArmor *armor = CPlayer->mo->FindInventory<ABasicArmor>();
 	int health = CPlayer->mo->health;
 	int armorAmount = armor != NULL ? armor->Amount : 0;
-	if(SBarInfoScript->interpolateHealth)
+	if(script->interpolateHealth)
 	{
 		health = oldHealth;
 	}
-	if(SBarInfoScript->interpolateArmor)
+	if(script->interpolateArmor)
 	{
 		armorAmount = oldArmor;
 	}
@@ -490,11 +493,11 @@ void DSBarInfo::doCommands(SBarInfoBlock &block, int xOffset, int yOffset, int a
 				if(drawAlt != 0) //draw 'off' image
 				{
 					if(cmd.special != -1 && drawAlt == 1)
-						DrawGraphic(Images[cmd.special], cmd.x, cmd.y, xOffset, yOffset, alpha, block.fullScreenOffsets, !!(cmd.flags & DRAWIMAGE_TRANSLATABLE), false, !!(cmd.flags & (DRAWIMAGE_OFFSET_CENTER|DRAWIMAGE_OFFSET_CENTERBOTTOM)));
+						DrawGraphic(Images[cmd.special], cmd.x, cmd.y, xOffset, yOffset, alpha, block.fullScreenOffsets, !!(cmd.flags & DRAWIMAGE_TRANSLATABLE), false, !!(cmd.flags & DRAWIMAGE_OFFSET));
 					else if(cmd.special2 != -1 && drawAlt == 2)
-						DrawGraphic(Images[cmd.special2], cmd.x, cmd.y, xOffset, yOffset, alpha, block.fullScreenOffsets, !!(cmd.flags & DRAWIMAGE_TRANSLATABLE), false, !!(cmd.flags & (DRAWIMAGE_OFFSET_CENTER|DRAWIMAGE_OFFSET_CENTERBOTTOM)));
+						DrawGraphic(Images[cmd.special2], cmd.x, cmd.y, xOffset, yOffset, alpha, block.fullScreenOffsets, !!(cmd.flags & DRAWIMAGE_TRANSLATABLE), false, !!(cmd.flags & DRAWIMAGE_OFFSET));
 					else if(cmd.special3 != -1 && drawAlt == 3)
-						DrawGraphic(Images[cmd.special3], cmd.x, cmd.y, xOffset, yOffset, alpha, block.fullScreenOffsets, !!(cmd.flags & DRAWIMAGE_TRANSLATABLE), false,(cmd.flags & (DRAWIMAGE_OFFSET_CENTER|DRAWIMAGE_OFFSET_CENTERBOTTOM)));
+						DrawGraphic(Images[cmd.special3], cmd.x, cmd.y, xOffset, yOffset, alpha, block.fullScreenOffsets, !!(cmd.flags & DRAWIMAGE_TRANSLATABLE), false, (cmd.flags & DRAWIMAGE_OFFSET));
 					break;
 				}
 			}
@@ -566,7 +569,7 @@ void DSBarInfo::doCommands(SBarInfoBlock &block, int xOffset, int yOffset, int a
 				if(cmd.flags & DRAWNUMBER_HEALTH)
 				{
 					value = health;
-					if(SBarInfoScript->lowerHealthCap && value < 0) //health shouldn't display negatives
+					if(script->lowerHealthCap && value < 0) //health shouldn't display negatives
 					{
 						value = 0;
 					}
@@ -699,13 +702,15 @@ void DSBarInfo::doCommands(SBarInfoBlock &block, int xOffset, int yOffset, int a
 			case SBARINFO_DRAWSELECTEDINVENTORY:
 				if(CPlayer->mo->InvSel != NULL && !(level.flags & LEVEL_NOINVENTORYBAR))
 				{
+					int offsetflags = (cmd.flags & DRAWSELECTEDINVENTORY_CENTER) ? DRAWIMAGE_OFFSET_CENTER : 0;
+					offsetflags |= (cmd.flags & DRAWSELECTEDINVENTORY_CENTERBOTTOM) ? DRAWIMAGE_OFFSET_CENTERBOTTOM : 0;
 					if((cmd.flags & DRAWSELECTEDINVENTORY_ARTIFLASH) && artiflash)
 					{
-						DrawGraphic(Images[ARTIFLASH_OFFSET+(4-artiflash)], cmd.x, cmd.y, xOffset, yOffset, alpha, block.fullScreenOffsets, false, CPlayer->mo->InvSel->Amount <= 0);
+						DrawGraphic(Images[ARTIFLASH_OFFSET+(4-artiflash)], cmd.x, cmd.y, xOffset, yOffset, alpha, block.fullScreenOffsets, false, CPlayer->mo->InvSel->Amount <= 0, offsetflags);
 					}
 					else
 					{
-						DrawGraphic(TexMan(CPlayer->mo->InvSel->Icon), cmd.x, cmd.y, xOffset, yOffset, alpha, block.fullScreenOffsets, false, CPlayer->mo->InvSel->Amount <= 0);
+						DrawGraphic(TexMan(CPlayer->mo->InvSel->Icon), cmd.x, cmd.y, xOffset, yOffset, alpha, block.fullScreenOffsets, false, CPlayer->mo->InvSel->Amount <= 0, offsetflags);
 					}
 					if((cmd.flags & DRAWSELECTEDINVENTORY_ALWAYSSHOWCOUNTER) || CPlayer->mo->InvSel->Amount != 1)
 					{
@@ -713,7 +718,7 @@ void DSBarInfo::doCommands(SBarInfoBlock &block, int xOffset, int yOffset, int a
 						{
 							drawingFont = cmd.font;
 						}
-						DrawNumber(CPlayer->mo->InvSel->Amount, 3, cmd.special2, cmd.special3, xOffset, yOffset, alpha, block.fullScreenOffsets, cmd.translation, cmd.special4);
+						DrawNumber(CPlayer->mo->InvSel->Amount, 3, cmd.special2, cmd.special3, xOffset, yOffset, alpha, block.fullScreenOffsets, cmd.translation, cmd.special4, false, !!(cmd.flags & DRAWSELECTEDINVENTORY_DRAWSHADOW));
 					}
 				}
 				else if((cmd.flags & DRAWSELECTEDINVENTORY_ALTERNATEONEMPTY))
@@ -727,6 +732,7 @@ void DSBarInfo::doCommands(SBarInfoBlock &block, int xOffset, int yOffset, int a
 				bool artibox = true;
 				bool noarrows = false;
 				bool alwaysshowcounter = false;
+				int bgalpha = alpha;
 				if((cmd.flags & DRAWINVENTORYBAR_ALWAYSSHOW))
 					alwaysshow = true;
 				if((cmd.flags & DRAWINVENTORYBAR_NOARTIBOX))
@@ -736,12 +742,12 @@ void DSBarInfo::doCommands(SBarInfoBlock &block, int xOffset, int yOffset, int a
 				if((cmd.flags & DRAWINVENTORYBAR_ALWAYSSHOWCOUNTER))
 					alwaysshowcounter = true;
 				if(cmd.flags & DRAWINVENTORYBAR_TRANSLUCENT)
-					alpha = fixed_t((((double) alpha / (double) FRACUNIT) * ((double) HX_SHADOW / (double) FRACUNIT)) * FRACUNIT);
+					bgalpha = fixed_t((((double) alpha / (double) FRACUNIT) * ((double) HX_SHADOW / (double) FRACUNIT)) * FRACUNIT);
 				if(drawingFont != cmd.font)
 				{
 					drawingFont = cmd.font;
 				}
-				DrawInventoryBar(cmd.special, cmd.value, cmd.x, cmd.y, xOffset, yOffset, alpha, block.fullScreenOffsets, alwaysshow, cmd.special2, cmd.special3, cmd.translation, artibox, noarrows, alwaysshowcounter);
+				DrawInventoryBar(cmd.special, cmd.value, cmd.x, cmd.y, xOffset, yOffset, alpha, block.fullScreenOffsets, alwaysshow, cmd.special2, cmd.special3, cmd.translation, artibox, noarrows, alwaysshowcounter, bgalpha);
 				break;
 			}
 			case SBARINFO_DRAWBAR:
@@ -1291,6 +1297,10 @@ void DSBarInfo::doCommands(SBarInfoBlock &block, int xOffset, int yOffset, int a
 				}
 				break;
 			}
+			case SBARINFO_INVENTORYBARNOTVISIBLE:
+				if(CPlayer->inventorytics <= 0 || (level.flags & LEVEL_NOINVENTORYBAR))
+					doCommands(cmd.subBlock, xOffset, yOffset, alpha);
+				break;
 			case SBARINFO_WEAPONAMMO:
 				if(CPlayer->ReadyWeapon != NULL)
 				{
@@ -1372,8 +1382,8 @@ void DSBarInfo::DrawGraphic(FTexture* texture, int x, int y, int xOffset, int yO
 
 	if(offsetflags & DRAWIMAGE_OFFSET_CENTER)
 	{
-		x -= (texture->GetWidth()/2)-texture->LeftOffset;
-		y -= (texture->GetHeight()/2)-texture->TopOffset;
+		x -= (texture->GetScaledWidth()/2)-texture->LeftOffset;
+		y -= (texture->GetScaledHeight()/2)-texture->TopOffset;
 	}
 
 	x += xOffset;
@@ -1432,17 +1442,17 @@ void DSBarInfo::DrawString(const char* str, int x, int y, int xOffset, int yOffs
 			continue;
 		}
 		int width;
-		if(SBarInfoScript->spacingCharacter == '\0') //No monospace?
+		if(script->spacingCharacter == '\0') //No monospace?
 			width = drawingFont->GetCharWidth((int) *str);
 		else
-			width = drawingFont->GetCharWidth((int) SBarInfoScript->spacingCharacter);
+			width = drawingFont->GetCharWidth((int) script->spacingCharacter);
 		FTexture* character = drawingFont->GetChar((int) *str, &width);
 		if(character == NULL) //missing character.
 		{
 			str++;
 			continue;
 		}
-		if(SBarInfoScript->spacingCharacter == '\0') //If we are monospaced lets use the offset
+		if(script->spacingCharacter == '\0') //If we are monospaced lets use the offset
 			x += (character->LeftOffset+1); //ignore x offsets since we adapt to character size
 
 		int rx, ry, rw, rh;
@@ -1504,10 +1514,10 @@ void DSBarInfo::DrawString(const char* str, int x, int y, int xOffset, int yOffs
 				DTA_HUDRules, HUD_Normal,
 				TAG_DONE);
 		}
-		if(SBarInfoScript->spacingCharacter == '\0')
+		if(script->spacingCharacter == '\0')
 			x += width + spacing - (character->LeftOffset+1);
 		else //width gets changed at the call to GetChar()
-			x += drawingFont->GetCharWidth((int) SBarInfoScript->spacingCharacter) + spacing;
+			x += drawingFont->GetCharWidth((int) script->spacingCharacter) + spacing;
 		str++;
 	}
 }
@@ -1534,10 +1544,10 @@ void DSBarInfo::DrawNumber(int num, int len, int x, int y, int xOffset, int yOff
 				value.Insert(0, "0");
 		}
 	}
-	if(SBarInfoScript->spacingCharacter == '\0')
+	if(script->spacingCharacter == '\0')
 		x -= int(drawingFont->StringWidth(value)+(spacing * value.Len()));
 	else //monospaced, so just multiplay the character size
-		x -= int((drawingFont->GetCharWidth((int) SBarInfoScript->spacingCharacter) + spacing) * value.Len());
+		x -= int((drawingFont->GetCharWidth((int) script->spacingCharacter) + spacing) * value.Len());
 	DrawString(value, x, y, xOffset, yOffset, alpha, fullScreenOffsets, translation, spacing, drawshadow);
 }
 
@@ -1552,7 +1562,7 @@ void DSBarInfo::DrawFace(const char *defaultFace, int accuracy, int stateflags, 
 }
 
 void DSBarInfo::DrawInventoryBar(int type, int num, int x, int y, int xOffset, int yOffset, int alpha, bool fullScreenOffsets, bool alwaysshow,
-	int counterx, int countery, EColorRange translation, bool drawArtiboxes, bool noArrows, bool alwaysshowcounter)
+	int counterx, int countery, EColorRange translation, bool drawArtiboxes, bool noArrows, bool alwaysshowcounter, int bgalpha)
 { //yes, there is some Copy & Paste here too
 	AInventory *item;
 	int i;
@@ -1566,7 +1576,7 @@ void DSBarInfo::DrawInventoryBar(int type, int num, int x, int y, int xOffset, i
 		{
 			if(drawArtiboxes)
 			{
-				DrawGraphic(Images[invBarOffset + imgARTIBOX], x+i*spacing, y, xOffset, yOffset, alpha, fullScreenOffsets);
+				DrawGraphic(Images[invBarOffset + imgARTIBOX], x+i*spacing, y, xOffset, yOffset, bgalpha, fullScreenOffsets);
 			}
 			if(type != GAME_Strife) //Strife draws the cursor before the icons
 				DrawGraphic(TexMan(item->Icon), x+i*spacing, y, xOffset, yOffset, alpha, fullScreenOffsets, false, item->Amount <= 0);
@@ -1643,7 +1653,14 @@ FRemapTable* DSBarInfo::getTranslation()
 
 IMPLEMENT_CLASS(DSBarInfo);
 
-DBaseStatusBar *CreateCustomStatusBar ()
+DBaseStatusBar *CreateCustomStatusBar (int script)
 {
-	return new DSBarInfo;
+	if(SBarInfoScript[script] == NULL)
+		I_FatalError("Tried to create a status bar with no script!");
+	return new DSBarInfo(SBarInfoScript[script]);
+}
+
+DBaseStatusBar *CreateDoomStatusBar ()
+{
+	return new DSBarInfo(SBarInfoScript[1]);
 }
