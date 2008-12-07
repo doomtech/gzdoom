@@ -470,93 +470,67 @@ int strbin (char *str)
 	return str - start;
 }
 
-// [RH] Replaces the escape sequences in a string with actual escaped characters.
-// This operation is done in-place. The result is the new length of the string.
+//==========================================================================
+//
+// ExpandEnvVars
+//
+// Expands environment variable references in a string. Intended primarily
+// for use with IWAD search paths in config files.
+//
+//==========================================================================
 
-FString strbin1 (const char *start)
+FString ExpandEnvVars(const char *searchpathstring)
 {
-	FString result;
-	const char *p = start;
-	char c;
-	int i;
+	static const char envvarnamechars[] =
+		"01234567890"
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		"_"
+		"abcdefghijklmnopqrstuvwxyz";
 
-	while ( (c = *p++) ) {
-		if (c != '\\') {
-			result << c;
-		} else {
-			switch (*p) {
-				case 'a':
-					result << '\a';
-					break;
-				case 'b':
-					result << '\b';
-					break;
-				case 'c':
-					result << '\034';	// TEXTCOLOR_ESCAPE
-					break;
-				case 'f':
-					result << '\f';
-					break;
-				case 'n':
-					result << '\n';
-					break;
-				case 't':
-					result << '\t';
-					break;
-				case 'r':
-					result << '\r';
-					break;
-				case 'v':
-					result << '\v';
-					break;
-				case '?':
-					result << '\?';
-					break;
-				case '\n':
-					break;
-				case 'x':
-				case 'X':
-					c = 0;
-					p++;
-					for (i = 0; i < 2; i++) {
-						c <<= 4;
-						if (*p >= '0' && *p <= '9')
-							c += *p-'0';
-						else if (*p >= 'a' && *p <= 'f')
-							c += 10 + *p-'a';
-						else if (*p >= 'A' && *p <= 'F')
-							c += 10 + *p-'A';
-						else
-							break;
-						p++;
-					}
-					result << c;
-					break;
-				case '0':
-				case '1':
-				case '2':
-				case '3':
-				case '4':
-				case '5':
-				case '6':
-				case '7':
-					c = 0;
-					for (i = 0; i < 3; i++) {
-						c <<= 3;
-						if (*p >= '0' && *p <= '7')
-							c += *p-'0';
-						else
-							break;
-						p++;
-					}
-					result << c;
-					break;
-				default:
-					result << *p;
-					break;
+	if (searchpathstring == NULL)
+		return FString("");
+
+	const char *dollar = strchr(searchpathstring, '$');
+	if (dollar == NULL)
+	{
+		return FString(searchpathstring);
+	}
+
+	const char *nextchars = searchpathstring;
+	FString out = FString(searchpathstring, dollar - searchpathstring);
+	while ( (dollar != NULL) && (*nextchars != 0) )
+	{
+		size_t length = strspn(dollar + 1, envvarnamechars);
+		if (length != 0)
+		{
+			FString varname = FString(dollar + 1, length);
+			if (stricmp(varname, "progdir") == 0)
+			{
+				out += progdir;
 			}
-			p++;
+			else
+			{
+				char *varvalue = getenv(varname);
+				if ( (varvalue != NULL) && (strlen(varvalue) != 0) )
+				{
+					out += varvalue;
+				}
+			}
+		}
+		else
+		{
+			out += '$';
+		}
+		nextchars = dollar + length + 1;
+		dollar = strchr(nextchars, '$');
+		if (dollar != NULL)
+		{
+			out += FString(nextchars, dollar - nextchars);
 		}
 	}
-	return result;
+	if (*nextchars != 0)
+	{
+		out += nextchars;
+	}
+	return out;
 }
