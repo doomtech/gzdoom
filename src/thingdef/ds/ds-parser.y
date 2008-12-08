@@ -257,13 +257,11 @@
 		A = B;
 	}
 
-	/*
 	class_body(A) ::= class_body(B) function_prototype(C).
 	{
 		B->AddFunction(C);
 		A = B;
 	}
-	*/
 
 	class_body(A) ::= class_body(B) states_definition.
 	{
@@ -1282,4 +1280,107 @@ states_definition ::= STATES LBRACE stateblock RBRACE.
 	{
 		A = C;
 		A->parameters.Push(B);
+	}
+
+
+// ===========================================================================
+//
+// Function prototype
+//
+// ===========================================================================
+
+%type type_expression { FtTypeExpression* }
+%destructor type_expression { delete $$; }
+%type function_prototype { FsFunction* }
+%destructor function_prototype { delete $$; }
+%type parameter_list { FFunctionParameterList* }
+%destructor parameter_list { delete $$; }
+%type function_parameter { FFunctionParameter* }
+%destructor function_parameter { delete $$; }
+
+	function_prototype(A) ::= NATIVE ACTION IDENTIFIER(B) LPAREN parameter_list(C) RPAREN SEMICOLON.
+	{
+		A = new FsFunction(B, C);
+	}
+
+// parameter list
+
+	parameter_list(A) ::= .
+	{
+		A = new FFunctionParameterList;
+	}
+
+	parameter_list(A) ::= parameter_list(B) COMMA function_parameter(C).
+	{
+		A = B;
+		A->AddParameter(C);
+	}
+
+	parameter_list(A) ::= parameter_list(B) COMMA ELLIPSIS.
+	{
+		A = B;
+		A->AddParameter(NULL);
+	}
+
+// parameter
+
+	function_parameter(A) ::= type_expression(B) IDENTIFIER.
+	{
+		A = new FFunctionParameter(B, NULL);
+	}
+
+	function_parameter(A) ::= type_expression(B) IDENTIFIER EQUALS value_expression(C).
+	{
+		A = new FFunctionParameter(B, C);
+	}
+
+// ===========================================================================
+//
+// Type expressioo
+//
+// ===========================================================================
+
+	type_expression(A) ::= INT.
+	{
+		A = new FtSimpleType(VAL_Int);
+	}
+
+	type_expression(A) ::= FLOAT.
+	{
+		A = new FtSimpleType(VAL_Float);
+	}
+
+	type_expression(A) ::= BOOL.
+	{
+		A = new FtSimpleType(VAL_Bool);
+	}
+
+	type_expression(A) ::= SOUND.
+	{
+		A = new FtSimpleType(VAL_Sound);
+	}
+
+	type_expression(A) ::= COLOR.
+	{
+		A = new FtSimpleType(VAL_Color);
+	}
+
+	type_expression(A) ::= NAME.
+	{
+		A = new FtSimpleType(VAL_Name);
+	}
+
+	type_expression(A) ::= STRING.
+	{
+		A = new FtSimpleType(VAL_String);
+	}
+
+	type_expression(A) ::= CLASS.
+	{
+		A = new FtClassType(VAL_Class, NAME_None);
+	}
+
+	type_expression(A) ::= CLASS LT IDENTIFIER(B) GT.
+	{
+		A = new FtClassType(VAL_Class, B.NameValue());
 	}
