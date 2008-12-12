@@ -369,6 +369,7 @@ void GLPortal::End(bool usestencil)
 		else
 		{
 			gl.Enable(GL_DEPTH_TEST);
+			gl.DepthMask(true);
 		}
 		// Restore the old view
 		viewx=savedviewx;
