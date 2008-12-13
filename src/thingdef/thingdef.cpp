@@ -391,19 +391,16 @@ static void FinishThingdef()
 //
 //==========================================================================
 void LoadDS();
+void LoadDecorate();
 
 void LoadActors ()
 {
-	int lastlump, lump;
-
+	DWORD st = I_MSTime();
 	InitThingdef();
-	lastlump = 0;
-	while ((lump = Wads.FindLump ("DECORATE", &lastlump)) != -1)
-	{
-		FScanner sc(lump);
-		ParseDecorate (sc);
-	}
 	LoadDS();
+	LoadDecorate();
 	FinishThingdef();
+	DWORD en = I_MSTime();
+	Printf("Actor parsing took %d ms\n", en-st);
 }
 

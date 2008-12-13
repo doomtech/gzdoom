@@ -394,42 +394,46 @@ void ParseDS(FScanner &sc, void *pParser, Baggage *context)
 
 void LoadDS()
 {
-	if (Wads.CheckNumForName("DSCRIPT") > -1)
+	FScriptPosition::ResetErrorCounter();
+
+	#ifdef _DEBUG
+		//yyTraceFILE = fopen("parse.out", "w");
+	#endif
+
+	int lastlump, lump;
+
+	lastlump = 0;
+	InitParserTokens();
+	while ((lump = Wads.FindLump ("ZSCRIPT", &lastlump)) != -1)
 	{
-		#ifdef _DEBUG
-			yyTraceFILE = fopen("parse.out", "w");
-		#endif
-
-		int lastlump, lump;
-
-		lastlump = 0;
-		InitParserTokens();
-		while ((lump = Wads.FindLump ("DSCRIPT", &lastlump)) != -1)
+		FScanner sc(lump);
+		Baggage bag;
+		void *pParser = DSParseAlloc(malloc);
+		try
 		{
-			FScanner sc(lump);
-			Baggage bag;
-			void *pParser = DSParseAlloc(malloc);
-			try
-			{
-				ParseDS (sc, pParser, &bag);
-				// Send a terminator token to the parser.
-				FToken tok;
-				tok.tokentype = 0;
-				tok.bag = NULL;
-				DSParse(pParser, 0, tok, &bag);
-			}
-			catch (...)
-			{
-				#ifdef _DEBUG
-					if (yyTraceFILE) fclose(yyTraceFILE);
-				#endif
-				DSParseFree(pParser, free);
-				throw;
-			}
-			DSParseFree(pParser, free);
+			ParseDS (sc, pParser, &bag);
+			// Send a terminator token to the parser.
+			FToken tok;
+			tok.tokentype = 0;
+			tok.bag = NULL;
+			DSParse(pParser, 0, tok, &bag);
 		}
-		#ifdef _DEBUG
-			if (yyTraceFILE) fclose(yyTraceFILE);
-		#endif
+		catch (...)
+		{
+			#ifdef _DEBUG
+				//if (yyTraceFILE) fclose(yyTraceFILE);
+			#endif
+			DSParseFree(pParser, free);
+			throw;
+		}
+		DSParseFree(pParser, free);
+	}
+	#ifdef _DEBUG
+		//if (yyTraceFILE) fclose(yyTraceFILE);
+	#endif
+
+	if (FScriptPosition::ErrorCounter > 0)
+	{
+		I_Error("%d errors while parsing scripts", FScriptPosition::ErrorCounter);
 	}
 }

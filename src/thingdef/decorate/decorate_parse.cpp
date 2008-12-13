@@ -228,87 +228,6 @@ static void ParseEnum (FScanner &sc, PSymbolTable *symt, PClass *cls)
 	sc.MustGetToken(';');
 }
 
-//==========================================================================
-//
-// ActorConstDef
-//
-// Parses a constant definition.
-//
-//==========================================================================
-
-static void ParseVariable (FScanner &sc, PSymbolTable * symt, PClass *cls)
-{
-	FExpressionType valuetype;
-
-	if (sc.LumpNum == -1 || Wads.GetLumpFile(sc.LumpNum) > 0)
-	{
-		sc.ScriptError ("variables can only be imported by internal class and actor definitions!");
-	}
-
-	// Read the type and make sure it's int or float.
-	sc.MustGetAnyToken();
-	switch (sc.TokenType)
-	{
-	case TK_Int:
-		valuetype = VAL_Int;
-		break;
-
-	case TK_Float:
-		valuetype = VAL_Float;
-		break;
-
-	case TK_Angle_t:
-		valuetype = VAL_Angle;
-		break;
-
-	case TK_Fixed_t:
-		valuetype = VAL_Fixed;
-		break;
-
-	case TK_Bool:
-		valuetype = VAL_Bool;
-		break;
-
-	case TK_Identifier:
-		valuetype = VAL_Object;
-		// Todo: Object type
-		sc.ScriptError("Object type variables not implemented yet!");
-		break;
-
-	default:
-		sc.ScriptError("Invalid variable type %s", sc.String);
-		return;
-	}
-
-	sc.MustGetToken(TK_Identifier);
-	FName symname = sc.String;
-	if (sc.CheckToken('['))
-	{
-		FxExpression *expr = ParseExpression (sc, cls);
-		int maxelems = expr->EvalExpression(NULL).GetInt();
-		delete expr;
-		sc.MustGetToken(']');
-		valuetype.MakeArray(maxelems);
-	}
-	sc.MustGetToken(';');
-
-	FVariableInfo *vi = FindVariable(symname, cls);
-	if (vi == NULL)
-	{
-		sc.ScriptError("Unknown native variable '%s'", symname.GetChars());
-	}
-
-	PSymbolVariable *sym = new PSymbolVariable(symname);
-	sym->offset = vi->address;	// todo
-	sym->ValueType = valuetype;
-
-	if (symt->AddSymbol (sym) == NULL)
-	{
-		delete sym;
-		sc.ScriptError ("'%s' is already defined in '%s'.",
-			symname.GetChars(), cls? cls->TypeName.GetChars() : "Global");
-	}
-}
 
 //==========================================================================
 //
@@ -706,153 +625,6 @@ static void ParseActorProperty(FScanner &sc, Baggage &bag)
 
 //==========================================================================
 //
-// ActorActionDef
-//
-// Parses an action function definition. A lot of this is essentially
-// documentation in the declaration for when I have a proper language
-// ready.
-//
-//==========================================================================
-
-static void ParseActionDef (FScanner &sc, PClass *cls)
-{
-	enum
-	{
-		OPTIONAL = 1
-	};
-
-	AFuncDesc *afd;
-	FName funcname;
-	FString args;
-	TArray<FxExpression *> DefaultParams;
-	bool hasdefaults = false;
-	
-	if (sc.LumpNum == -1 || Wads.GetLumpFile(sc.LumpNum) > 0)
-	{
-		sc.ScriptError ("action functions can only be imported by internal class and actor definitions!");
-	}
-
-	sc.MustGetToken(TK_Native);
-	sc.MustGetToken(TK_Identifier);
-	funcname = sc.String;
-	afd = FindFunction(sc.String);
-	if (afd == NULL)
-	{
-		sc.ScriptError ("The function '%s' has not been exported from the executable.", sc.String);
-	}
-	sc.MustGetToken('(');
-	if (!sc.CheckToken(')'))
-	{
-		while (sc.TokenType != ')')
-		{
-			int flags = 0;
-			char type = '@';
-
-			// Retrieve flags before type name
-			for (;;)
-			{
-				if (sc.CheckToken(TK_Coerce) || sc.CheckToken(TK_Native))
-				{
-				}
-				else
-				{
-					break;
-				}
-			}
-			// Read the variable type
-			sc.MustGetAnyToken();
-			switch (sc.TokenType)
-			{
-			case TK_Bool:
-			case TK_Int:
-				type = 'x';
-				break;
-
-			case TK_Float:
-				type = 'y';
-				break;
-
-			case TK_Sound:		type = 's';		break;
-			case TK_String:		type = 't';		break;
-			case TK_Name:		type = 't';		break;
-			case TK_State:		type = 'l';		break;
-			case TK_Color:		type = 'c';		break;
-			case TK_Class:
-				sc.MustGetToken('<');
-				sc.MustGetToken(TK_Identifier);	// Skip class name, since the parser doesn't care
-				sc.MustGetToken('>');
-				type = 'm';
-				break;
-			case TK_Ellipsis:
-				type = '+';
-				sc.MustGetToken(')');
-				sc.UnGet();
-				break;
-			default:
-				sc.ScriptError ("Unknown variable type %s", sc.TokenName(sc.TokenType, sc.String).GetChars());
-				break;
-			}
-			// Read the optional variable name
-			if (!sc.CheckToken(',') && !sc.CheckToken(')'))
-			{
-				sc.MustGetToken(TK_Identifier);
-			}
-			else
-			{
-				sc.UnGet();
-			}
-
-			FxExpression *def;
-			if (sc.CheckToken('='))
-			{
-				hasdefaults = true;
-				flags |= OPTIONAL;
-				def = ParseParameter(sc, cls, type, true);
-			}
-			else
-			{
-				def = NULL;
-			}
-			DefaultParams.Push(def);
-
-			if (!(flags & OPTIONAL) && type != '+')
-			{
-				type -= 'a' - 'A';
-			}
-			args += type;
-			sc.MustGetAnyToken();
-			if (sc.TokenType != ',' && sc.TokenType != ')')
-			{
-				sc.ScriptError ("Expected ',' or ')' but got %s instead", sc.TokenName(sc.TokenType, sc.String).GetChars());
-			}
-		}
-	}
-	sc.MustGetToken(';');
-	PSymbolActionFunction *sym = new PSymbolActionFunction(funcname);
-	sym->Arguments = args;
-	sym->Function = afd->Function;
-	if (hasdefaults)
-	{
-		sym->defaultparameterindex = StateParams.Size();
-		for(unsigned int i = 0; i < DefaultParams.Size(); i++)
-		{
-			StateParams.Add(DefaultParams[i], cls, true);
-		}
-	}
-	else
-	{
-		sym->defaultparameterindex = -1;
-	}
-	if (cls->Symbols.AddSymbol (sym) == NULL)
-	{
-		delete sym;
-		sc.ScriptError ("'%s' is already defined in class '%s'.",
-			funcname.GetChars(), cls->TypeName.GetChars());
-	}
-}
-
-//==========================================================================
-//
 // Starts a new actor definition
 //
 //==========================================================================
@@ -961,20 +733,12 @@ static void ParseActor(FScanner &sc)
 	{
 		switch (sc.TokenType)
 		{
-		case TK_Action:
-			ParseActionDef (sc, info->Class);
-			break;
-
 		case TK_Const:
 			ParseConstant (sc, &info->Class->Symbols, info->Class);
 			break;
 
 		case TK_Enum:
 			ParseEnum (sc, &info->Class->Symbols, info->Class);
-			break;
-
-		case TK_Native:
-			ParseVariable (sc, &info->Class->Symbols, info->Class);
 			break;
 
 		case TK_Identifier:
@@ -1036,10 +800,6 @@ void ParseDecorate (FScanner &sc)
 			ParseEnum (sc, &GlobalSymbols, NULL);
 			break;
 
-		case TK_Native:
-			ParseVariable(sc, &GlobalSymbols, NULL);
-			break;
-
 		case ';':
 			// ';' is the start of a comment in the non-cmode parser which
 			// is used to parse parts of the DECORATE lump. If we don't add 
@@ -1076,5 +836,17 @@ void ParseDecorate (FScanner &sc)
 			ParseOldDecoration(sc, DEF_Decoration);
 			break;
 		}
+	}
+}
+
+void LoadDecorate()
+{
+	int lastlump, lump;
+
+	lastlump = 0;
+	while ((lump = Wads.FindLump ("DECORATE", &lastlump)) != -1)
+	{
+		FScanner sc(lump);
+		ParseDecorate (sc);
 	}
 }

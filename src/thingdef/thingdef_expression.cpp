@@ -234,7 +234,7 @@ static ExpVal GetVariableValue (void *address, FExpressionType &type)
 
 ExpVal FxExpression::EvalExpression (AActor *self)
 {
-	I_Error("Unresolved expression found");
+	ScriptPosition.Message(MSG_ERROR, "Unresolved expression found");
 	ExpVal val;
 
 	val.Type = VAL_Int;
