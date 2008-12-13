@@ -1,42 +1,101 @@
 ACTOR ParticleFountain native
 {
-	Height 0
-	+NOBLOCKMAP
-	+NOGRAVITY
-	+INVISIBLE
+	DefaultProperties
+	{
+		Height (0)
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+INVISIBLE
+	}
 }
 
-ACTOR RedParticleFountain : ParticleFountain 9027
+ACTOR RedParticleFountain : ParticleFountain
 {
-	Health 1
+	Info
+	{
+		DoomEdNum (9027)
+	}
+
+	DefaultProperties
+	{
+		Health (1)
+	}
 }
 
-ACTOR GreenParticleFountain : ParticleFountain 9028
+ACTOR GreenParticleFountain : ParticleFountain
 {
-	Health 2
+	Info
+	{
+		DoomEdNum (9028)
+	}
+
+	DefaultProperties
+	{
+		Health (2)
+	}
 }
 
-ACTOR BlueParticleFountain : ParticleFountain 9029
+ACTOR BlueParticleFountain : ParticleFountain
 {
-	Health 3
+	Info
+	{
+		DoomEdNum (9029)
+	}
+
+	DefaultProperties
+	{
+		Health (3)
+	}
 }
 
-ACTOR YellowParticleFountain : ParticleFountain 9030
+ACTOR YellowParticleFountain : ParticleFountain
 {
-	Health 4
+	Info
+	{
+		DoomEdNum (9030)
+	}
+
+	DefaultProperties
+	{
+		Health (4)
+	}
 }
 
-ACTOR PurpleParticleFountain : ParticleFountain 9031
+ACTOR PurpleParticleFountain : ParticleFountain
 {
-	Health 5
+	Info
+	{
+		DoomEdNum (9031)
+	}
+
+	DefaultProperties
+	{
+		Health (5)
+	}
 }
 
-ACTOR BlackParticleFountain : ParticleFountain 9032
+ACTOR BlackParticleFountain : ParticleFountain
 {
-	Health 6
+	Info
+	{
+		DoomEdNum (9032)
+	}
+
+	DefaultProperties
+	{
+		Health (6)
+	}
 }
 
-ACTOR WhiteParticleFountain : ParticleFountain 9033
+ACTOR WhiteParticleFountain : ParticleFountain
 {
-	Health 7
+	Info
+	{
+		DoomEdNum (9033)
+	}
+
+	DefaultProperties
+	{
+		Health (7)
+	}
 }

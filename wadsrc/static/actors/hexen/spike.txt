@@ -3,12 +3,16 @@
 
 ACTOR DirtClump
 {
-	+NOBLOCKMAP
-	+NOTELEPORT
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+NOTELEPORT
+	}
+
 	States
 	{
 	Spawn:
-		TSPK C 20
+		TSPK C 20;
 		Loop
 	}
 }
@@ -17,74 +21,86 @@ ACTOR DirtClump
 
 ACTOR ThrustFloor native
 {
-	Radius 20
-	Height 128
+	DefaultProperties
+	{
+		Radius (20)
+		Height (128)
+	}
 
-	action native A_ThrustRaise();
-	action native A_ThrustImpale();
-	action native A_ThrustLower();
-	action native A_ThrustInitDn();
-	action native A_ThrustInitUp();
+	native action A_ThrustRaise();
+	native action A_ThrustImpale();
+	native action A_ThrustLower();
+	native action A_ThrustInitDn();
+	native action A_ThrustInitUp();
 
 	States
 	{
 	ThrustRaising:
-		TSPK A 2 A_ThrustRaise
+		TSPK A 2 A_ThrustRaise;
 		Loop
 	BloodThrustRaising:
-		TSPK B 2 A_ThrustRaise
+		TSPK B 2 A_ThrustRaise;
 		Loop
 	ThrustLower:
-		TSPK A 2 A_ThrustLower
+		TSPK A 2 A_ThrustLower;
 		Loop
 	BloodThrustLower:
-		TSPK B 2 A_ThrustLower
+		TSPK B 2 A_ThrustLower;
 		Loop
 	ThrustInit1:
-		TSPK A 3
-		TSPK A 4 A_ThrustInitDn
-		TSPK A -1
+		TSPK A 3;
+		TSPK A 4 A_ThrustInitDn;
+		TSPK A -1;
 		Loop
 	BloodThrustInit1:
-		TSPK B 3
-		TSPK B 4 A_ThrustInitDn
-		TSPK B -1
+		TSPK B 3;
+		TSPK B 4 A_ThrustInitDn;
+		TSPK B -1;
 		Loop
 	ThrustInit2:
-		TSPK A 3
-		TSPK A 4 A_ThrustInitUp
-		TSPK A 10
+		TSPK A 3;
+		TSPK A 4 A_ThrustInitUp;
+		TSPK A 10;
 		Loop
 	BloodThrustInit2:
-		TSPK B 3
-		TSPK B 4 A_ThrustInitUp
-		TSPK B 10
+		TSPK B 3;
+		TSPK B 4 A_ThrustInitUp;
+		TSPK B 10;
 		Loop
 	ThrustRaise:
-		TSPK A 8 A_ThrustRaise
-		TSPK A 6 A_ThrustRaise
-		TSPK A 4 A_ThrustRaise
-		TSPK A 3 A_SetSolid
-		TSPK A 2 A_ThrustImpale
+		TSPK A 8 A_ThrustRaise;
+		TSPK A 6 A_ThrustRaise;
+		TSPK A 4 A_ThrustRaise;
+		TSPK A 3 A_SetSolid;
+		TSPK A 2 A_ThrustImpale;
 		Loop
 	BloodThrustRaise:
-		TSPK B 8 A_ThrustRaise
-		TSPK B 6 A_ThrustRaise
-		TSPK B 4 A_ThrustRaise
-		TSPK B 3 A_SetSolid
-		TSPK B 2 A_ThrustImpale
+		TSPK B 8 A_ThrustRaise;
+		TSPK B 6 A_ThrustRaise;
+		TSPK B 4 A_ThrustRaise;
+		TSPK B 3 A_SetSolid;
+		TSPK B 2 A_ThrustImpale;
 		Loop
 	}
 }
 
 // Spike up -----------------------------------------------------------------
 
-ACTOR ThrustFloorUp : ThrustFloor 10091
+ACTOR ThrustFloorUp : ThrustFloor
 {
-	Game Hexen
-	SpawnID 104
-	+SOLID
-	+NOTELEPORT +FLOORCLIP
+	Info
+	{
+		DoomEdNum (10091)
+		Game ("Hexen")
+		SpawnID (104)
+	}
+
+	DefaultProperties
+	{
+		+SOLID
+		+NOTELEPORT +FLOORCLIP
+	}
+
 	States
 	{
 	Spawn:
@@ -94,12 +110,21 @@ ACTOR ThrustFloorUp : ThrustFloor 10091
 
 // Spike down ---------------------------------------------------------------
 
-ACTOR ThrustFloorDown : ThrustFloor 10090
+ACTOR ThrustFloorDown : ThrustFloor
 {
-	Game Hexen
-	+NOTELEPORT +FLOORCLIP
-	+INVISIBLE
-	SpawnID 105
+	Info
+	{
+		DoomEdNum (10090)
+		Game ("Hexen")
+		SpawnID (105)
+	}
+
+	DefaultProperties
+	{
+		+NOTELEPORT +FLOORCLIP
+		+INVISIBLE
+	}
+
 	States
 	{
 	Spawn:

@@ -88,6 +88,11 @@
 		A->DefineClass(*context);
 	}
 
+	toplevel_declaration ::= native_variable_declaration(A).
+	{
+		DefineGlobalConstant(A);
+	}
+
 	/*
 	toplevel_declaration ::= global_function_prototype(A).
 	{
@@ -108,6 +113,25 @@
 	constant_definition(A) ::= CONST const_type_expression(B) IDENTIFIER(C) ASSIGN value_expression(D) SEMICOLON.
 	{
 		A = new FsConstant(B, C.NameValue(), D, C.ScriptPosition());
+	}
+
+// ===========================================================================
+//
+// Native variables
+//
+// ===========================================================================
+
+%type native_variable_declaration { FsNativeVar* }
+%destructor native_variable_declaration { delete $$; }
+
+	native_variable_declaration(A) ::= NATIVE native_type_expression(B) IDENTIFIER(C) SEMICOLON.
+	{
+		A = new FsNativeVar(B, C.NameValue(), NULL, C.ScriptPosition());
+	}
+
+	native_variable_declaration(A) ::= NATIVE native_type_expression(B) IDENTIFIER(C) LBRACKET value_expression(D) RBRACKET SEMICOLON.
+	{
+		A = new FsNativeVar(B, C.NameValue(), D, C.ScriptPosition());
 	}
 
 // ===========================================================================
@@ -265,6 +289,12 @@
 
 	class_body(A) ::= class_body(B) states_definition.
 	{
+		A = B;
+	}
+
+	class_body(A) ::= class_body(B) native_variable_declaration(C).
+	{
+		B->DefineConstant(C);
 		A = B;
 	}
 
@@ -1188,7 +1218,10 @@ states_definition ::= STATES LBRACE stateblock RBRACE.
 
 		InstallCodePtr(&state, codeptr, context->Info->Class, Sprite.ScriptPosition());	
 		if (codeptr != NULL) delete codeptr;
-		context->statedef.AddStates(&state, frame.NameValue());
+		if (!context->statedef.AddStates(&state, frame.NameValue()))
+		{
+			context->ScriptPosition.Message(MSG_ERROR, "Invalid frame string '%s'", frame.NameValue());
+		}
 	}
 
 	state ::= quotable_identifier error SEMICOLON.
@@ -1289,8 +1322,6 @@ states_definition ::= STATES LBRACE stateblock RBRACE.
 //
 // ===========================================================================
 
-%type type_expression { FtTypeExpression* }
-%destructor type_expression { delete $$; }
 %type function_prototype { FsFunction* }
 %destructor function_prototype { delete $$; }
 %type parameter_list { FFunctionParameterList* }
@@ -1298,28 +1329,42 @@ states_definition ::= STATES LBRACE stateblock RBRACE.
 %type function_parameter { FFunctionParameter* }
 %destructor function_parameter { delete $$; }
 
+	// function without parameters
+	function_prototype(A) ::= NATIVE ACTION IDENTIFIER(B) LPAREN RPAREN SEMICOLON.
+	{
+		A = new FsFunction(B.ScriptPosition(), NULL, B.NameValue(), NULL, false);
+	}
+
+	// function with parameters
 	function_prototype(A) ::= NATIVE ACTION IDENTIFIER(B) LPAREN parameter_list(C) RPAREN SEMICOLON.
 	{
-		A = new FsFunction(B, C);
+		A = new FsFunction(B.ScriptPosition(), NULL, B.NameValue(), C, false);
+	}
+
+	// function with varargs
+	function_prototype(A) ::= NATIVE ACTION IDENTIFIER(B) LPAREN parameter_list(C) COMMA ELLIPSIS RPAREN SEMICOLON.
+	{
+		A = new FsFunction(B.ScriptPosition(), NULL, B.NameValue(), C, true);
+	}
+
+	function_prototype(A) ::= NATIVE ACTION IDENTIFIER(B) LPAREN parameter_list error RPAREN SEMICOLON.
+	{
+		context->ScriptPosition.Message(MSG_ERROR, "Error in definition of function '%s'", B.NameValue().GetChars());
+		A = new FsFunction(B.ScriptPosition(), NULL, B.NameValue(), NULL, false);
 	}
 
 // parameter list
 
-	parameter_list(A) ::= .
+	parameter_list(A) ::= function_parameter(C).
 	{
 		A = new FFunctionParameterList;
+		A->AddParameter(C);
 	}
 
 	parameter_list(A) ::= parameter_list(B) COMMA function_parameter(C).
 	{
 		A = B;
 		A->AddParameter(C);
-	}
-
-	parameter_list(A) ::= parameter_list(B) COMMA ELLIPSIS.
-	{
-		A = B;
-		A->AddParameter(NULL);
 	}
 
 // parameter
@@ -1329,7 +1374,7 @@ states_definition ::= STATES LBRACE stateblock RBRACE.
 		A = new FFunctionParameter(B, NULL);
 	}
 
-	function_parameter(A) ::= type_expression(B) IDENTIFIER EQUALS value_expression(C).
+	function_parameter(A) ::= type_expression(B) IDENTIFIER ASSIGN value_expression(C).
 	{
 		A = new FFunctionParameter(B, C);
 	}
@@ -1339,6 +1384,11 @@ states_definition ::= STATES LBRACE stateblock RBRACE.
 // Type expressioo
 //
 // ===========================================================================
+
+%type type_expression { FtTypeExpression* }
+%destructor type_expression { delete $$; }
+%type native_type_expression { FtTypeExpression* }
+%destructor native_type_expression { delete $$; }
 
 	type_expression(A) ::= INT.
 	{
@@ -1375,12 +1425,38 @@ states_definition ::= STATES LBRACE stateblock RBRACE.
 		A = new FtSimpleType(VAL_String);
 	}
 
+	type_expression(A) ::= STATE.
+	{
+		A = new FtSimpleType(VAL_State);
+	}
+
 	type_expression(A) ::= CLASS.
 	{
-		A = new FtClassType(VAL_Class, NAME_None);
+		A = new FtClassType(NAME_None);
 	}
 
 	type_expression(A) ::= CLASS LT IDENTIFIER(B) GT.
 	{
-		A = new FtClassType(VAL_Class, B.NameValue());
+		A = new FtClassType(B.NameValue());
+	}
+
+	type_expression(A) ::= CLASS LT ACTOR GT.
+	{
+		A = new FtClassType(NAME_Actor);
+	}
+
+	// the following can only be used in native variable declarations.
+	native_type_expression(A) ::= FIXED.
+	{
+		A = new FtSimpleType(VAL_Fixed);
+	}
+
+	native_type_expression(A) ::= ANGLE.
+	{
+		A = new FtSimpleType(VAL_Angle);
+	}
+
+	native_type_expression(A) ::= type_expression(B).
+	{
+		A = B;
 	}

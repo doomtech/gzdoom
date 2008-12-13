@@ -1,20 +1,29 @@
 // Med patch -----------------------------------------------------------------
 
-ACTOR MedPatch : HealthPickup 2011
+ACTOR MedPatch : HealthPickup
 {
-	Game Strife
-	ConversationID 125, 121, 124
-	Health 10
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	Inventory.MaxAmount 20
-	Tag "Med_patch"
-	Inventory.Icon "I_STMP"
-	Inventory.PickupMessage "$TXT_MEDPATCH"
+	Info
+	{
+		DoomEdNum (2011)
+		Game ("Strife")
+		ConversationID (125, 121, 124)
+	}
+
+	DefaultProperties
+	{
+		Health (10)
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		Inventory.MaxAmount (20)
+		Tag ("Med_patch")
+		Inventory.Icon ("I_STMP")
+		Inventory.PickupMessage ("$TXT_MEDPATCH")
+	}
+
 	States
 	{
 	Spawn:
-		STMP A -1
+		STMP A -1;
 		Stop
 	}
 }
@@ -22,21 +31,30 @@ ACTOR MedPatch : HealthPickup 2011
 
 // Medical Kit ---------------------------------------------------------------
 
-ACTOR MedicalKit : HealthPickup 2012
+ACTOR MedicalKit : HealthPickup
 {
-	Game Strife
-	ConversationID 126, 122, 125
-	Health 25
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	Inventory.MaxAmount 15
-	Tag "Medical_kit"
-	Inventory.Icon "I_MDKT"
-	Inventory.PickupMessage "$TXT_MEDICALKIT"
+	Info
+	{
+		DoomEdNum (2012)
+		Game ("Strife")
+		ConversationID (126, 122, 125)
+	}
+
+	DefaultProperties
+	{
+		Health (25)
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		Inventory.MaxAmount (15)
+		Tag ("Medical_kit")
+		Inventory.Icon ("I_MDKT")
+		Inventory.PickupMessage ("$TXT_MEDICALKIT")
+	}
+
 	States
 	{
 	Spawn:
-		MDKT A -1
+		MDKT A -1;
 		Stop
 	}
 }
@@ -44,21 +62,30 @@ ACTOR MedicalKit : HealthPickup 2012
 
 // Surgery Kit --------------------------------------------------------------
 
-ACTOR SurgeryKit : HealthPickup 83
+ACTOR SurgeryKit : HealthPickup
 {
-	Game Strife
-	ConversationID 127, 123, 126
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	Health -100
-	Inventory.MaxAmount 5
-	Tag "Surgery_Kit"	// "full_health" in the Teaser
-	Inventory.Icon "I_FULL"
-	Inventory.PickupMessage "$TXT_SURGERYKIT"
+	Info
+	{
+		DoomEdNum (83)
+		Game ("Strife")
+		ConversationID (127, 123, 126)
+	}
+
+	DefaultProperties
+	{
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		Health (-100)
+		Inventory.MaxAmount (5)
+		Tag ("Surgery_Kit")	// "full_health" in the Teaser
+		Inventory.Icon ("I_FULL")
+		Inventory.PickupMessage ("$TXT_SURGERYKIT")
+	}
+
 	States
 	{
 	Spawn:
-		FULL AB 35
+		FULL AB 35;
 		Loop
 	}
 }
@@ -66,18 +93,27 @@ ACTOR SurgeryKit : HealthPickup 83
 
 // StrifeMap ----------------------------------------------------------------
 
-ACTOR StrifeMap : MapRevealer 2026
+ACTOR StrifeMap : MapRevealer
 {
-	Game Strife
-	SpawnID 137
-	ConversationID 164, 160, 163
-	+FLOORCLIP
-	Inventory.PickupSound "misc/p_pkup"
-	Inventory.PickupMessage "$TXT_STRIFEMAP"	
+	Info
+	{
+		DoomEdNum (2026)
+		Game ("Strife")
+		SpawnID (137)
+		ConversationID (164, 160, 163)
+	}
+
+	DefaultProperties
+	{
+		+FLOORCLIP
+		Inventory.PickupSound ("misc/p_pkup")
+		Inventory.PickupMessage ("$TXT_STRIFEMAP")
+	}
+
 	States
 	{
 	Spawn:
-		SMAP AB 6 Bright
+		SMAP AB 6 Bright;
 		Loop
 	}
 }
@@ -87,19 +123,27 @@ ACTOR StrifeMap : MapRevealer 2026
 
 ACTOR BeldinsRing : Inventory
 {
-	Game Strife
-	+NOTDMATCH
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	ConversationID 173, 165, 169
-	Tag "ring"
-	Inventory.Icon "I_RING"
-	Inventory.GiveQuest 1
-	Inventory.PickupMessage "$TXT_BELDINSRING"
+	Info
+	{
+		Game ("Strife")
+		ConversationID (173, 165, 169)
+	}
+
+	DefaultProperties
+	{
+		+NOTDMATCH
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		Tag ("ring")
+		Inventory.Icon ("I_RING")
+		Inventory.GiveQuest (1)
+		Inventory.PickupMessage ("$TXT_BELDINSRING")
+	}
+
 	States
 	{
 	Spawn:
-		RING A -1
+		RING A -1;
 		Stop
 	}
 }
@@ -107,23 +151,32 @@ ACTOR BeldinsRing : Inventory
 
 // Offering Chalice ---------------------------------------------------------
 
-ACTOR OfferingChalice : Inventory 205
+ACTOR OfferingChalice : Inventory
 {
-	Game Strife
-	+DROPPED
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	ConversationID 174, 166, 170
-	Radius 10
-	Height 16
-	Tag "Offering_Chalice"
-	Inventory.Icon "I_RELC"
-	Inventory.PickupMessage "$TXT_OFFERINGCHALICE"
-	Inventory.GiveQuest 2
+	Info
+	{
+		DoomEdNum (205)
+		Game ("Strife")
+		ConversationID (174, 166, 170)
+	}
+
+	DefaultProperties
+	{
+		+DROPPED
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		Radius (10)
+		Height (16)
+		Tag ("Offering_Chalice")
+		Inventory.Icon ("I_RELC")
+		Inventory.PickupMessage ("$TXT_OFFERINGCHALICE")
+		Inventory.GiveQuest (2)
+	}
+
 	States
 	{
 	Spawn:
-		RELC A -1
+		RELC A -1;
 		Stop
 	}
 }
@@ -133,18 +186,26 @@ ACTOR OfferingChalice : Inventory 205
 
 ACTOR Ear : Inventory
 {
-	Game Strife
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	ConversationID 175, 167, 171
-	Tag "ear"
-	Inventory.Icon "I_EARS"
-	Inventory.PickupMessage "$TXT_EAR"
-	Inventory.GiveQuest 9
+	Info
+	{
+		Game ("Strife")
+		ConversationID (175, 167, 171)
+	}
+
+	DefaultProperties
+	{
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		Tag ("ear")
+		Inventory.Icon ("I_EARS")
+		Inventory.PickupMessage ("$TXT_EAR")
+		Inventory.GiveQuest (9)
+	}
+
 	States
 	{
 	Spawn:
-		EARS A -1
+		EARS A -1;
 		Stop
 	}
 }
@@ -152,25 +213,34 @@ ACTOR Ear : Inventory
 
 // Broken Power Coupling ----------------------------------------------------
 
-ACTOR BrokenPowerCoupling : Inventory 226
+ACTOR BrokenPowerCoupling : Inventory
 {
-	Game Strife
-	ConversationID 289, -1, -1
-	Health 40
-	+DROPPED
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	Radius 16
-	Height 16
-	Tag "BROKEN_POWER_COUPLING"
-	Inventory.MaxAmount 1
-	Inventory.Icon "I_COUP"
-	Inventory.PickupMessage "$TXT_BROKENCOUPLING"
-	Inventory.GiveQuest 8
+	Info
+	{
+		DoomEdNum (226)
+		Game ("Strife")
+		ConversationID (289, -1, -1)
+	}
+
+	DefaultProperties
+	{
+		Health (40)
+		+DROPPED
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		Radius (16)
+		Height (16)
+		Tag ("BROKEN_POWER_COUPLING")
+		Inventory.MaxAmount (1)
+		Inventory.Icon ("I_COUP")
+		Inventory.PickupMessage ("$TXT_BROKENCOUPLING")
+		Inventory.GiveQuest (8)
+	}
+
 	States
 	{
 	Spawn:
-		COUP C -1
+		COUP C -1;
 		Stop
 	}
 }
@@ -178,26 +248,35 @@ ACTOR BrokenPowerCoupling : Inventory 226
 
 // Shadow Armor -------------------------------------------------------------
 
-ACTOR ShadowArmor : PowerupGiver 2024
+ACTOR ShadowArmor : PowerupGiver
 {
-	Game Strife
-	SpawnID 135
-	ConversationID 160, 156, 159
-	+FLOORCLIP
-	+VISIBILITYPULSE
-	+INVENTORY.INVBAR
-	-INVENTORY.FANCYPICKUPSOUND
-	RenderStyle Translucent
-	Tag "Shadow_armor"
-	Inventory.MaxAmount 2
-	Powerup.Type "Shadow"
-	Inventory.Icon "I_SHD1"
-	Inventory.PickupSound "misc/i_pkup"
-	Inventory.PickupMessage "$TXT_SHADOWARMOR"
+	Info
+	{
+		DoomEdNum (2024)
+		Game ("Strife")
+		SpawnID (135)
+		ConversationID (160, 156, 159)
+	}
+
+	DefaultProperties
+	{
+		+FLOORCLIP
+		+VISIBILITYPULSE
+		+INVENTORY.INVBAR
+		-INVENTORY.FANCYPICKUPSOUND
+		RenderStyle ("Translucent")
+		Tag ("Shadow_armor")
+		Inventory.MaxAmount (2)
+		Powerup.Type ("Shadow")
+		Inventory.Icon ("I_SHD1")
+		Inventory.PickupSound ("misc/i_pkup")
+		Inventory.PickupMessage ("$TXT_SHADOWARMOR")
+	}
+
 	States
 	{
 	Spawn:
-		SHD1 A -1 Bright
+		SHD1 A -1 Bright;
 		Stop
 	}
 }
@@ -205,24 +284,33 @@ ACTOR ShadowArmor : PowerupGiver 2024
 
 // Environmental suit -------------------------------------------------------
 
-ACTOR EnvironmentalSuit : PowerupGiver 2025
+ACTOR EnvironmentalSuit : PowerupGiver
 {
-	Game Strife
-	SpawnID 136
-	ConversationID 161, 157, 160
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	-INVENTORY.FANCYPICKUPSOUND
-	Inventory.MaxAmount 5
-	Powerup.Type "Mask"
-	Tag "Environmental_Suit"
-	Inventory.Icon "I_MASK"
-	Inventory.PickupSound "misc/i_pkup"
-	Inventory.PickupMessage "$TXT_ENVSUIT"
+	Info
+	{
+		DoomEdNum (2025)
+		Game ("Strife")
+		SpawnID (136)
+		ConversationID (161, 157, 160)
+	}
+
+	DefaultProperties
+	{
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		-INVENTORY.FANCYPICKUPSOUND
+		Inventory.MaxAmount (5)
+		Powerup.Type ("Mask")
+		Tag ("Environmental_Suit")
+		Inventory.Icon ("I_MASK")
+		Inventory.PickupSound ("misc/i_pkup")
+		Inventory.PickupMessage ("$TXT_ENVSUIT")
+	}
+
 	States
 	{
 	Spawn:
-		MASK A -1
+		MASK A -1;
 		Stop
 	}
 }
@@ -230,20 +318,29 @@ ACTOR EnvironmentalSuit : PowerupGiver 2025
 
 // Guard Uniform ------------------------------------------------------------
 
-ACTOR GuardUniform : Inventory 90
+ACTOR GuardUniform : Inventory
 {
-	Game Strife
-	ConversationID 162, 158, 161
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	Tag "Guard_Uniform"
-	Inventory.Icon "I_UNIF"
-	Inventory.PickupMessage "$TXT_GUARDUNIFORM"
-	Inventory.GiveQuest 15
+	Info
+	{
+		DoomEdNum (90)
+		Game ("Strife")
+		ConversationID (162, 158, 161)
+	}
+
+	DefaultProperties
+	{
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		Tag ("Guard_Uniform")
+		Inventory.Icon ("I_UNIF")
+		Inventory.PickupMessage ("$TXT_GUARDUNIFORM")
+		Inventory.GiveQuest (15)
+	}
+
 	States
 	{
 	Spawn:
-		UNIF A -1
+		UNIF A -1;
 		Stop
 	}
 }
@@ -251,19 +348,28 @@ ACTOR GuardUniform : Inventory 90
 
 // Officer's Uniform --------------------------------------------------------
 
-ACTOR OfficersUniform : Inventory 52
+ACTOR OfficersUniform : Inventory
 {
-	Game Strife
-	ConversationID 163, 159, 162
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	Tag "Officer's_Uniform"
-	Inventory.Icon "I_OFIC"
-	Inventory.PickupMessage "$TXT_OFFICERSUNIFORM"
+	Info
+	{
+		DoomEdNum (52)
+		Game ("Strife")
+		ConversationID (163, 159, 162)
+	}
+
+	DefaultProperties
+	{
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		Tag ("Officer's_Uniform")
+		Inventory.Icon ("I_OFIC")
+		Inventory.PickupMessage ("$TXT_OFFICERSUNIFORM")
+	}
+
 	States
 	{
 	Spawn:
-		OFIC A -1
+		OFIC A -1;
 		Stop
 	}
 }
@@ -271,19 +377,27 @@ ACTOR OfficersUniform : Inventory 52
 	
 // Flame Thrower Parts ------------------------------------------------------
 
-ACTOR FlameThrowerParts : Inventory 
+ACTOR FlameThrowerParts : Inventory
 {
-	Game Strife
-	ConversationID 191, 185, 189
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	Inventory.Icon "I_BFLM"
-	Tag "flame_thrower_parts"
-	Inventory.PickupMessage "$TXT_FTHROWERPARTS"
+	Info
+	{
+		Game ("Strife")
+		ConversationID (191, 185, 189)
+	}
+
+	DefaultProperties
+	{
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		Inventory.Icon ("I_BFLM")
+		Tag ("flame_thrower_parts")
+		Inventory.PickupMessage ("$TXT_FTHROWERPARTS")
+	}
+
 	States
 	{
 	Spawn:
-		BFLM A -1
+		BFLM A -1;
 		Stop
 	}
 }
@@ -295,15 +409,23 @@ ACTOR FlameThrowerParts : Inventory
 
 ACTOR InterrogatorReport : Inventory
 {
-	Game Strife
-	ConversationID 308, 289, 306
-	+FLOORCLIP
-	Tag "report"
-	Inventory.PickupMessage "$TXT_REPORT"
+	Info
+	{
+		Game ("Strife")
+		ConversationID (308, 289, 306)
+	}
+
+	DefaultProperties
+	{
+		+FLOORCLIP
+		Tag ("report")
+		Inventory.PickupMessage ("$TXT_REPORT")
+	}
+
 	States
 	{
 	Spawn:
-		TOKN A -1
+		TOKN A -1;
 		Stop
 	}
 }
@@ -311,19 +433,27 @@ ACTOR InterrogatorReport : Inventory
 
 // Info ---------------------------------------------------------------------
 
-ACTOR Info : Inventory
+ACTOR "Info" : Inventory	// Info is a keyword hence the qutation marks
 {
-	Game Strife
-	ConversationID 300, 282, 299
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	Tag "info"
-	Inventory.Icon "I_TOKN"
-	Inventory.PickupMessage "$TXT_INFO"
+	Info
+	{
+		Game ("Strife")
+		ConversationID (300, 282, 299)
+	}
+
+	DefaultProperties
+	{
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		Tag ("info")
+		Inventory.Icon ("I_TOKN")
+		Inventory.PickupMessage ("$TXT_INFO")
+	}
+
 	States
 	{
 	Spawn:
-		TOKN A -1
+		TOKN A -1;
 		Stop
 	}
 }
@@ -331,77 +461,104 @@ ACTOR Info : Inventory
 
 // Targeter -----------------------------------------------------------------
 
-ACTOR Targeter : PowerupGiver 207
+ACTOR Targeter : PowerupGiver
 {
-	Game Strife
-	ConversationID 167, 169, 173
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	-INVENTORY.FANCYPICKUPSOUND
-	Tag "Targeter"
-	Powerup.Type "Targeter"
-	Inventory.MaxAmount 5
-	Inventory.Icon "I_TARG"
-	Inventory.PickupSound "misc/i_pkup"
-	Inventory.PickupMessage "$TXT_TARGETER"
+	Info
+	{
+		DoomEdNum (207)
+		Game ("Strife")
+		ConversationID (167, 169, 173)
+	}
+
+	DefaultProperties
+	{
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		-INVENTORY.FANCYPICKUPSOUND
+		Tag ("Targeter")
+		Powerup.Type ("Targeter")
+		Inventory.MaxAmount (5)
+		Inventory.Icon ("I_TARG")
+		Inventory.PickupSound ("misc/i_pkup")
+		Inventory.PickupMessage ("$TXT_TARGETER")
+	}
+
 	States
 	{
 	Spawn:
-		TARG A -1
+		TARG A -1;
 		Stop
 	}
 }
 	
 // Communicator -----------------------------------------------------------------
 
-ACTOR Communicator : Inventory 206
+ACTOR Communicator : Inventory
 {
-	Game Strife
-	ConversationID 176, 168, 172
-	+NOTDMATCH
-	Tag "Communicator"
-	Inventory.Icon "I_COMM"
-	Inventory.PickupSound  "misc/p_pkup"
-	Inventory.PickupMessage "$TXT_COMMUNICATOR"
+	Info
+	{
+		DoomEdNum (206)
+		Game ("Strife")
+		ConversationID (176, 168, 172)
+	}
+
+	DefaultProperties
+	{
+		+NOTDMATCH
+		Tag ("Communicator")
+		Inventory.Icon ("I_COMM")
+		Inventory.PickupSound ( "misc/p_pkup")
+		Inventory.PickupMessage ("$TXT_COMMUNICATOR")
+	}
+
 	States
 	{
 	Spawn:
-		COMM A -1
+		COMM A -1;
 		Stop
 	}
 }
 
 // Degnin Ore ---------------------------------------------------------------
 
-ACTOR DegninOre : Inventory 59 native
-{	
-	Game Strife
-	ConversationID 128, 124, 127
-	Health 10
-	Radius 16
-	Height 16
-	Inventory.MaxAmount 10
-	+SOLID
-	+SHOOTABLE
-	+NOBLOOD
-	+FLOORCLIP
-	+INCOMBAT
-	+INVENTORY.INVBAR
-	Tag "Degnin_Ore"
-	DeathSound "ore/explode"
-	Inventory.Icon "I_XPRK"
-	Inventory.PickupMessage "$TXT_DEGNINORE"
+ACTOR DegninOre : Inventory native
+{
+	Info
+	{
+		DoomEdNum (59)
+		Game ("Strife")
+		ConversationID (128, 124, 127)
+	}
+
+	DefaultProperties
+	{
+		Health (10)
+		Radius (16)
+		Height (16)
+		Inventory.MaxAmount (10)
+		+SOLID
+		+SHOOTABLE
+		+NOBLOOD
+		+FLOORCLIP
+		+INCOMBAT
+		+INVENTORY.INVBAR
+		Tag ("Degnin_Ore")
+		DeathSound ("ore/explode")
+		Inventory.Icon ("I_XPRK")
+		Inventory.PickupMessage ("$TXT_DEGNINORE")
+	}
+
 	States
 	{
 	Spawn:
-		XPRK A -1
+		XPRK A -1;
 		Stop
 	Death:
-		XPRK A 1 A_RemoveForceField
-		BNG3 A 0 A_SetTranslucent(1,1)
-		BNG3 A 0 A_Scream
-		BNG3 A 3 Bright A_Explode(192,192,1,1)
-		BNG3 BCDEFGH 3 Bright
+		XPRK A 1 A_RemoveForceField;
+		BNG3 A 0 A_SetTranslucent(1,1);
+		BNG3 A 0 A_Scream;
+		BNG3 A 3 Bright A_Explode(192,192,1,1);
+		BNG3 BCDEFGH 3 Bright;
 		Stop
 	}
 }
@@ -410,18 +567,26 @@ ACTOR DegninOre : Inventory 59 native
 
 ACTOR GunTraining : Inventory
 {
-	Game Strife
-	ConversationID 310,-1,-1
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	+INVENTORY.UNDROPPABLE
-	Inventory.MaxAmount 100
-	Tag "Accuracy"
-	Inventory.Icon "I_GUNT"
+	Info
+	{
+		Game ("Strife")
+		ConversationID (310,-1,-1)
+	}
+
+	DefaultProperties
+	{
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		+INVENTORY.UNDROPPABLE
+		Inventory.MaxAmount (100)
+		Tag ("Accuracy")
+		Inventory.Icon ("I_GUNT")
+	}
+
 	States
 	{
 	Spawn:
-		GUNT A -1
+		GUNT A -1;
 		Stop
 	}
 }
@@ -430,18 +595,26 @@ ACTOR GunTraining : Inventory
 
 ACTOR HealthTraining : Inventory native
 {
-	Game Strife
-	ConversationID 309,-1,-1
-	+FLOORCLIP
-	+INVENTORY.INVBAR
-	+INVENTORY.UNDROPPABLE
-	Inventory.MaxAmount 100
-	Tag "Toughness"
-	Inventory.Icon "I_HELT"
+	Info
+	{
+		Game ("Strife")
+		ConversationID (309,-1,-1)
+	}
+
+	DefaultProperties
+	{
+		+FLOORCLIP
+		+INVENTORY.INVBAR
+		+INVENTORY.UNDROPPABLE
+		Inventory.MaxAmount (100)
+		Tag ("Toughness")
+		Inventory.Icon ("I_HELT")
+	}
+
 	States
 	{
 	Spawn:
-		HELT A -1
+		HELT A -1;
 		Stop
 	}
 }
@@ -450,22 +623,31 @@ ACTOR HealthTraining : Inventory native
 
 // Scanner ------------------------------------------------------------------
 
-ACTOR Scanner : PowerupGiver 2027 native
+ACTOR Scanner : PowerupGiver native
 {
-	Game Strife
-	ConversationID 165,-1,-1
-	+FLOORCLIP
-	+INVENTORY.FANCYPICKUPSOUND
-	Inventory.MaxAmount 1
-	Tag "scanner"
-	Inventory.Icon "I_PMUP"
-	Powerup.Type "Scanner"
-	Inventory.PickupSound "misc/i_pkup"
-	Inventory.PickupMessage "$TXT_SCANNER"
+	Info
+	{
+		DoomEdNum (2027)
+		Game ("Strife")
+		ConversationID (165,-1,-1)
+	}
+
+	DefaultProperties
+	{
+		+FLOORCLIP
+		+INVENTORY.FANCYPICKUPSOUND
+		Inventory.MaxAmount (1)
+		Tag ("scanner")
+		Inventory.Icon ("I_PMUP")
+		Powerup.Type ("Scanner")
+		Inventory.PickupSound ("misc/i_pkup")
+		Inventory.PickupMessage ("$TXT_SCANNER")
+	}
+
 	States
 	{
 	Spawn:
-		PMUP AB 6
+		PMUP AB 6;
 		Loop
 	}
 }
@@ -474,15 +656,23 @@ ACTOR Scanner : PowerupGiver 2027 native
 
 ACTOR PrisonPass : Key native
 {
-	Game Strife
-	ConversationID 304, 286, 303
-	Inventory.Icon "I_TOKN"
-	Tag "Prison_pass"
-	Inventory.PickupMessage "TXT_PRISONPASS"
+	Info
+	{
+		Game ("Strife")
+		ConversationID (304, 286, 303)
+	}
+
+	DefaultProperties
+	{
+		Inventory.Icon ("I_TOKN")
+		Tag ("Prison_pass")
+		Inventory.PickupMessage ("TXT_PRISONPASS")
+	}
+
 	States
 	{
 	Spawn:
-		TOKN A -1
+		TOKN A -1;
 		Stop
 	}
 }
@@ -497,7 +687,7 @@ ACTOR DummyStrifeItem : Inventory native
 	States
 	{
 	Spawn:
-		TOKN A -1
+		TOKN A -1;
 		Stop
 	}
 }
@@ -505,69 +695,112 @@ ACTOR DummyStrifeItem : Inventory native
 // Sound the alarm! ---------------------------------------------------------
 
 ACTOR RaiseAlarm : DummyStrifeItem native
-{	
-	ConversationID 301, 283, 300
-	Tag "alarm"
+{
+	Info
+	{
+		ConversationID (301, 283, 300)
+	}
+
+	DefaultProperties
+	{
+		Tag ("alarm")
+	}
 }
 
 // Open door tag 222 --------------------------------------------------------
 
 ACTOR OpenDoor222 : DummyStrifeItem native
 {
-	ConversationID 302, 284, 301
+	Info
+	{
+		ConversationID (302, 284, 301)
+	}
 }
 
 // Close door tag 222 -------------------------------------------------------
 
 ACTOR CloseDoor222 : DummyStrifeItem native
 {
-	ConversationID 303, 285, 302
+	Info
+	{
+		ConversationID (303, 285, 302)
+	}
 }
 
 // Open door tag 224 --------------------------------------------------------
 
 ACTOR OpenDoor224 : DummyStrifeItem native
 {
-	ConversationID 305, -1, -1
+	Info
+	{
+		ConversationID (305, -1, -1)
+	}
 }
 
 // Ammo ---------------------------------------------------------------------
 
 ACTOR AmmoFillup : DummyStrifeItem native
 {
-	ConversationID 298,280,297
-	Tag "Ammo"
+	Info
+	{
+		ConversationID (298,280,297)
+	}
+
+	DefaultProperties
+	{
+		Tag ("Ammo")
+	}
 }
 
 // Health -------------------------------------------------------------------
 
 ACTOR HealthFillup : DummyStrifeItem native
 {
-	ConversationID 299,281,298
-	Tag "Health"
+	Info
+	{
+		ConversationID (299,281,298)
+	}
+
+	DefaultProperties
+	{
+		Tag ("Health")
+	}
 }
 
 // Upgrade Stamina ----------------------------------------------------------
 
 ACTOR UpgradeStamina : DummyStrifeItem native
 {
-	ConversationID 306, 287, 307
-	Inventory.Amount 10
-	Inventory.MaxAmount 100
+	Info
+	{
+		ConversationID (306, 287, 307)
+	}
+
+	DefaultProperties
+	{
+		Inventory.Amount (10)
+		Inventory.MaxAmount (100)
+	}
 }
 
 // Upgrade Accuracy ---------------------------------------------------------
 
 ACTOR UpgradeAccuracy : DummyStrifeItem native
 {
-	ConversationID 307, 288, 308
+	Info
+	{
+		ConversationID (307, 288, 308)
+	}
 }
 
 // Start a slideshow --------------------------------------------------------
 
 ACTOR SlideshowStarter : DummyStrifeItem native
 {
-	ConversationID 343,-1,-1
+	Info
+	{
+		ConversationID (343,-1,-1)
+	}
 }
 
 

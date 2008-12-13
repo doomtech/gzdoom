@@ -1,123 +1,206 @@
 // Same as Doom weapons, but the obituaries are removed.
 
-actor Bootspoon : Fist
+ACTOR Bootspoon : Fist
 {
-	game Chex
-	obituary "$OB_MPSPOON"
-}
-
-actor SuperBootspork : Chainsaw 2005
-{
-	game Chex
-	obituary "$OB_MPBOOTSPORK"
-	Inventory.PickupMessage "$GOTSUPERBOOTSPORK"
-}
-
-actor MiniZorcher : Pistol
-{
-	game Chex
-	obituary "$OP_MPZORCH"
-	inventory.pickupmessage "$GOTMINIZORCHER"
-	states
+	Info
 	{
-		Spawn:
-			stop
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		obituary ("$OB_MPSPOON")
 	}
 }
 
-actor LargeZorcher : Shotgun 2001
+ACTOR SuperBootspork : Chainsaw
 {
-	game Chex
-	obituary "$OP_MPZORCH"
-	inventory.pickupmessage "$GOTLARGEZORCHER"
+	Info
+	{
+		DoomEdNum (2005)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		obituary ("$OB_MPBOOTSPORK")
+		Inventory.PickupMessage ("$GOTSUPERBOOTSPORK")
+	}
 }
 
-actor SuperLargeZorcher : SuperShotgun 82
+ACTOR MiniZorcher : Pistol
 {
-	game Chex
-	obituary "$OB_MPMEGAZORCH"
-	inventory.pickupmessage "$GOTSUPERLARGEZORCHER"
+	Info
+	{
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		obituary ("$OP_MPZORCH")
+		inventory.pickupmessage ("$GOTMINIZORCHER")
+	}
+
+	States
+	{
+	Spawn:
+		stop
+	}
 }
 
-actor RapidZorcher : Chaingun 2002
+ACTOR LargeZorcher : Shotgun
 {
-	game Chex
-	obituary "$OB_MPRAPIDZORCH"
-	inventory.pickupmessage "$GOTRAPIDZORCHER"
+	Info
+	{
+		DoomEdNum (2001)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		obituary ("$OP_MPZORCH")
+		inventory.pickupmessage ("$GOTLARGEZORCHER")
+	}
 }
 
-actor ZorchPropulsor : RocketLauncher 2003
+ACTOR SuperLargeZorcher : SuperShotgun
 {
-	game Chex
-	obituary ""
-	inventory.pickupmessage "$GOTZORCHPROPULSOR"
+	Info
+	{
+		DoomEdNum (82)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		obituary ("$OB_MPMEGAZORCH")
+		inventory.pickupmessage ("$GOTSUPERLARGEZORCHER")
+	}
+}
+
+ACTOR RapidZorcher : Chaingun
+{
+	Info
+	{
+		DoomEdNum (2002)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		obituary ("$OB_MPRAPIDZORCH")
+		inventory.pickupmessage ("$GOTRAPIDZORCHER")
+	}
+}
+
+ACTOR ZorchPropulsor : RocketLauncher
+{
+	Info
+	{
+		DoomEdNum (2003)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		obituary ("")
+		inventory.pickupmessage ("$GOTZORCHPROPULSOR")
+	}
+
 	States
 	{
 	Fire:
-		MISG B 8 A_GunFlash
-		MISG B 12 A_FireCustomMissile("PropulsorMissile")
-		MISG B 0 A_ReFire
+		MISG B 8 A_GunFlash;
+		MISG B 12 A_FireCustomMissile("PropulsorMissile");
+		MISG B 0 A_ReFire;
 		Goto Ready
 	}
 }
 
-actor PropulsorMissile : Rocket
+ACTOR PropulsorMissile : Rocket
 {
-	-ROCKETTRAIL
-	-DEHEXPLOSION
-	RenderStyle Translucent
-	Obituary "$OB_MPPROPULSOR"
-	Alpha 0.75
-}	
+	DefaultProperties
+	{
+		-ROCKETTRAIL
+		-DEHEXPLOSION
+		RenderStyle ("Translucent")
+		Obituary ("$OB_MPPROPULSOR")
+		Alpha (0.75)
+	}
+}
 
-actor PhasingZorcher : PlasmaRifle 2004
+ACTOR PhasingZorcher : PlasmaRifle
 {
-	game Chex
-	obituary ""
-	inventory.pickupmessage "$GOTPHASINGZORCHER"
-	states
+	Info
+	{
+		DoomEdNum (2004)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		obituary ("")
+		inventory.pickupmessage ("$GOTPHASINGZORCHER")
+	}
+
+	States
 	{
 	Fire:
-		PLSG A 0 A_GunFlash
-		PLSG A 3 A_FireCustomMissile("PhaseZorchMissile")
-		PLSG B 20 A_ReFire
+		PLSG A 0 A_GunFlash;
+		PLSG A 3 A_FireCustomMissile("PhaseZorchMissile");
+		PLSG B 20 A_ReFire;
 		Goto Ready
 	Flash:
-		PLSF A 0 A_Jump(128, "Flash2")
-		PLSF A 3 Bright A_Light1
+		PLSF A 0 A_Jump(128, "Flash2");
+		PLSF A 3 Bright A_Light1;
 		Goto LightDone
 	Flash2:
-		PLSF B 3 Bright A_Light1
+		PLSF B 3 Bright A_Light1;
 		Goto LightDone
 	}
 }
 
-actor PhaseZorchMissile : PlasmaBall
+ACTOR PhaseZorchMissile : PlasmaBall
 {
-	RenderStyle Translucent
-	Obituary "$OB_MPPHASEZORCH"
-	Alpha 0.75
-}	
+	DefaultProperties
+	{
+		RenderStyle ("Translucent")
+		Obituary ("$OB_MPPHASEZORCH")
+		Alpha (0.75)
+	}
+}
 
-actor LAZDevice : BFG9000 2006
+ACTOR LAZDevice : BFG9000
 {
-	game Chex
-	obituary ""
-	inventory.pickupmessage "$GOTLAZDEVICE"
-	states
+	Info
+	{
+		DoomEdNum (2006)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		obituary ("")
+		inventory.pickupmessage ("$GOTLAZDEVICE")
+	}
+
+	States
 	{
 	Fire:
-		BFGG A 20 A_BFGsound
-		BFGG B 10 A_GunFlash
-		BFGG B 10 A_FireCustomMissile("LAZBall")
-		BFGG B 20 A_ReFire
+		BFGG A 20 A_BFGsound;
+		BFGG B 10 A_GunFlash;
+		BFGG B 10 A_FireCustomMissile("LAZBall");
+		BFGG B 20 A_ReFire;
 		Goto Ready
 	}
 }
 
-actor LAZBall : BFGBall
+ACTOR LAZBall : BFGBall
 {
-	RenderStyle Translucent
-	Obituary "$OB_MPLAZ_BOOM"
-	Alpha 0.75
+	DefaultProperties
+	{
+		RenderStyle ("Translucent")
+		Obituary ("$OB_MPLAZ_BOOM")
+		Alpha (0.75)
+	}
 }

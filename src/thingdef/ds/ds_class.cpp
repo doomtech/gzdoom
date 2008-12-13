@@ -53,7 +53,7 @@
 
 FsClass::FsClass(FName clsname, FName parentname, bool actordef, bool native, const FScriptPosition &pos, Baggage *bag)
 {
-Printf("defining actor %s : %s\n", clsname.GetChars(), parentname.GetChars());
+Printf(PRINT_LOG, "defining actor %s : %s\n", clsname.GetChars(), parentname.GetChars());
 	Position = pos;
 	if (actordef || clsname == NAME_Actor)
 	{
@@ -102,6 +102,145 @@ void FsClass::DefineConstant(FsStatement *constant)
 {
 	constant->Resolve(FCompileContext(Class, false, true), true);
 	delete constant;
+}
+
+
+//==========================================================================
+//
+// Temporary!
+//
+//==========================================================================
+
+void FsClass::AddFunction(FsFunction *func)
+{
+	FFunctionParameterList *p = func->GetParams();
+	FName funcname = func->GetName();
+	FString args;
+	TArray<FxExpression *> DefaultParams;
+	bool hasdefaults = false;
+
+	AFuncDesc *afd = FindFunction(funcname);
+	if (afd == NULL)
+	{
+		func->ScriptPosition.Message(MSG_ERROR,
+			"The function '%s' has not been exported from the executable.", funcname.GetChars());
+	}
+
+	if (p != NULL)
+	{
+		for(unsigned i = 0; i < p->params.Size(); i++)
+		{
+			FFunctionParameter *fp = p->params[i];
+
+			int flags = 0;
+			char type = '@';
+
+			// Read the variable type
+			switch (fp->type->GetType().Type)
+			{
+			case VAL_Bool:
+			case VAL_Int:
+				type = 'x';
+				break;
+
+			case VAL_Float:
+				type = 'y';
+				break;
+
+			case VAL_Sound:		type = 's';		break;
+			case VAL_String:	type = 't';		break;
+			case VAL_Name:		type = 't';		break;
+			case VAL_State:		type = 'l';		break;
+			case VAL_Color:		type = 'c';		break;
+			case VAL_Class:		type = 'm';		break;
+			default:
+				// shouldn't happen
+				func->ScriptPosition.Message(MSG_ERROR,	"Unknown variable type");
+				break;
+			}
+
+			FxExpression *def = fp->defval;
+			if (def != NULL)
+			{
+				FCompileContext ctx(Class, false, true);
+				
+				switch(type)
+				{
+				case 's':		// Sound name
+					def = new FxSoundCast(def);
+					break;
+
+				case 'm':		// Actor name
+					def = new FxClassTypeCast(NULL, def);
+					break;
+
+				case 't':		// String
+					def = new FxNameCast(def);
+					break;
+
+				case 'c':		// Color
+					def = new FxColorCast(def);
+					break;
+
+				case 'l':		// State label
+					def = new FxStateCast(def);
+					break;
+
+				case 'x':		// Number
+					def = new FxIntCast(def, true);
+					break;
+
+				case 'y':		// Number
+					def = new FxFloatCast(def);
+					break;
+
+				default:	// incorrect definition - shouldn't happen
+					assert(false);
+					def = NULL;
+					break;
+				}
+				
+				//def = def->Resolve(ctx);
+				fp->defval = NULL;
+				hasdefaults = true;
+				flags = true;
+			}
+
+			DefaultParams.Push(def);
+
+			if (!flags && type != '+')
+			{
+				type -= 'a' - 'A';
+			}
+			args += type;
+		}
+	}
+
+	Printf(PRINT_LOG, "defining action function %s.%s(%s)\n", Class->TypeName.GetChars(), funcname.GetChars(), args.GetChars());
+
+	PSymbolActionFunction *sym = new PSymbolActionFunction(funcname);
+	sym->Arguments = args;
+	sym->Function = afd->Function;
+	if (hasdefaults)
+	{
+		sym->defaultparameterindex = StateParams.Size();
+		for(unsigned int i = 0; i < DefaultParams.Size(); i++)
+		{
+			StateParams.Add(DefaultParams[i], Class, true);
+		}
+	}
+	else
+	{
+		sym->defaultparameterindex = -1;
+	}
+	if (const_cast<PClass*>(Class)->Symbols.AddSymbol (sym) == NULL)
+	{
+		delete sym;
+		func->ScriptPosition.Message(MSG_ERROR,	"'%s' is already defined in class '%s'.",
+			funcname.GetChars(), Class->TypeName.GetChars());
+	}
+
+	delete func;
 }
 
 //==========================================================================
@@ -414,7 +553,7 @@ void FsClass::AddFlag(FName name1, FName name2, bool on, const FScriptPosition &
 	{
 		if (name1 == NAME_Actor)
 		{
-			pos.Message(MSG_ERROR, "\"%s\" is an unknown flag\n", name1.GetChars());
+			pos.Message(MSG_ERROR, "\"%s\" is an unknown flag\n", name2.GetChars());
 		}
 		else
 		{

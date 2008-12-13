@@ -3,91 +3,147 @@
 
 ACTOR Unknown
 {
-	Radius 32
-	Height 56
-	+NOGRAVITY
-	+NOBLOCKMAP
-	+DONTSPLASH
+	DefaultProperties
+	{
+		Radius (32)
+		Height (56)
+		+NOGRAVITY
+		+NOBLOCKMAP
+		+DONTSPLASH
+	}
+
 	States
 	{
 	Spawn:
-		UNKN A -1
+		UNKN A -1;
 		Stop
 	}
 }
 
 // Route node for monster patrols -------------------------------------------
 
-ACTOR PatrolPoint 9024
+ACTOR PatrolPoint
 {
-	Radius 8
-	Height 8
-	Mass 10
-	+NOGRAVITY
-	+NOBLOCKMAP
-	+DONTSPLASH
-	RenderStyle None
-}	
+	Info
+	{
+		DoomEdNum (9024)
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (8)
+		Mass (10)
+		+NOGRAVITY
+		+NOBLOCKMAP
+		+DONTSPLASH
+		RenderStyle ("None")
+	}
+}
 
 // A special to execute when a monster reaches a matching patrol point ------
 
-ACTOR PatrolSpecial 9047
+ACTOR PatrolSpecial
 {
-	Radius 8
-	Height 8
-	Mass 10
-	+NOGRAVITY
-	+NOBLOCKMAP
-	+DONTSPLASH
-	RenderStyle None
-}	
+	Info
+	{
+		DoomEdNum (9047)
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (8)
+		Mass (10)
+		+NOGRAVITY
+		+NOBLOCKMAP
+		+DONTSPLASH
+		RenderStyle ("None")
+	}
+}
 
 // Map spot ----------------------------------------------------------------
 
-ACTOR MapSpot 9001
+ACTOR MapSpot
 {
-	+NOBLOCKMAP
-	+NOSECTOR
-	+NOGRAVITY
-	+DONTSPLASH
-	RenderStyle None
-}	
+	Info
+	{
+		DoomEdNum (9001)
+	}
+
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+NOSECTOR
+		+NOGRAVITY
+		+DONTSPLASH
+		RenderStyle ("None")
+	}
+}
 
 // Map spot with gravity ---------------------------------------------------
 
-ACTOR MapSpotGravity : MapSpot 9013
+ACTOR MapSpotGravity : MapSpot
 {
-	-NOBLOCKMAP
-	-NOSECTOR
-	-NOGRAVITY
+	Info
+	{
+		DoomEdNum (9013)
+	}
+
+	DefaultProperties
+	{
+		-NOBLOCKMAP
+		-NOSECTOR
+		-NOGRAVITY
+	}
 }
 
 // Point Pushers ---------------------------------------------------
 
-ACTOR PointPusher 5001
+ACTOR PointPusher
 {
-	+NOBLOCKMAP
-	+INVISIBLE
+	Info
+	{
+		DoomEdNum (5001)
+	}
+
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+INVISIBLE
+	}
 }
 
-ACTOR PointPuller 5002
+ACTOR PointPuller
 {
-	+NOBLOCKMAP
-	+INVISIBLE
+	Info
+	{
+		DoomEdNum (5002)
+	}
+
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+INVISIBLE
+	}
 }
 
 // Bloody gibs -------------------------------------------------------------
 
 ACTOR RealGibs
 {
-	+DROPOFF
-	+CORPSE
-	+NOTELEPORT
-	+DONTGIB
+	DefaultProperties
+	{
+		+DROPOFF
+		+CORPSE
+		+NOTELEPORT
+		+DONTGIB
+	}
+
 	States
 	{
 	Spawn:
-		POL5 A -1
+		POL5 A -1;
 		Stop
 	}
 }
@@ -98,23 +154,40 @@ ACTOR RealGibs
 // a deh patch to change the gibs, since ZDoom actually creates a gib actor
 // for actors that get crushed instead of changing their state as Doom did.
 
-ACTOR Gibs : RealGibs 24
+ACTOR Gibs : RealGibs
 {
-	Game Doom
-	SpawnID 146
-	ClearFlags
+	Info
+	{
+		DoomEdNum (24)
+		Game ("Doom")
+		SpawnID (146)
+	}
+
+	DefaultProperties
+	{
+		ClearFlags ()
+	}
 }
 
 // Needed for loading Build maps ---------------------------------------
 
-ACTOR CustomSprite 9988 native
+ACTOR CustomSprite native
 {
-	+NOBLOCKMAP
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (9988)
+	}
+
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		TNT1 A -1
+		TNT1 A -1;
 		Stop
 	}
 }
@@ -134,16 +207,22 @@ ACTOR SwitchingDecoration : SwitchableDecoration native
 
 ACTOR RandomSpawner native
 {
-	+NOBLOCKMAP
-	+NOSECTOR
-	+NOGRAVITY
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+NOSECTOR
+		+NOGRAVITY
+	}
 }
 
 // Fast projectiles -----------------------------------------------------------
 
 ACTOR FastProjectile native
 {
-	Projectile
+	DefaultProperties
+	{
+		Projectile ()
+	}
 }
 
 

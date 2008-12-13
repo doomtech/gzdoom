@@ -686,7 +686,8 @@ FxExpression *FxNameCast::Resolve(FCompileContext &ctx)
 	const FString *cv=basex->GetConstString();
 	if (cv)
 	{
-		FxExpression *b = new FxConstant(FName(*cv), ScriptPosition);
+		// The empty string gets mapped to 0.
+		FxExpression *b = new FxConstant(cv->Len()? FName(*cv) : FName(NAME_None), ScriptPosition);
 		delete this;
 		return b;
 	}
@@ -827,6 +828,7 @@ FxExpression *FxStateCast::Resolve(FCompileContext &ctx)
 	if (basex->isConstant())
 	{
 		const char *string;
+		FxExpression *newex;
 
 		if (ValueType == VAL_Name)
 		{
@@ -838,10 +840,26 @@ FxExpression *FxStateCast::Resolve(FCompileContext &ctx)
 			const FString *sv = basex->GetConstString();
 
 			if (sv) string = sv->GetChars();
-			else ScriptPosition.Message(MSG_ERROR, "Cannot cast to state");
+			else 
+			{
+				ScriptPosition.Message(MSG_ERROR, "Cannot cast to state");
+				delete this; 
+				return NULL;
+			}
 		}
 
-		FxExpression *newex = new FxMultiNameState(string, ScriptPosition);
+		if (string[0] == 0 || !stricmp(string, "None"))
+		{
+			newex = new FxConstant((FState*)NULL, ScriptPosition);
+		}
+		else if (!strcmp(string, "*"))
+		{
+			newex = new FxConstant((FState*)(intptr_t)-1, ScriptPosition);
+		}
+		else
+		{
+			newex = new FxMultiNameState(string, ScriptPosition);
+		}
 		delete this;
 		return newex->Resolve(ctx);
 	}
@@ -2233,10 +2251,10 @@ FxExpression *FxIdentifier::Resolve(FCompileContext& ctx)
 {
 	PSymbol * sym;
 	FxExpression *newex = NULL;
+	const PClass *Class;
 	//FBaseCVar * cv = NULL;
 	//FString s;
 	int num;
-	//const PClass *Class;
 	
 	CHECKRESOLVED();
 	// see if the current class (if valid) defines something with this name.
@@ -2277,14 +2295,11 @@ FxExpression *FxIdentifier::Resolve(FCompileContext& ctx)
 			ScriptPosition.Message(MSG_ERROR, "Invalid global identifier '%s'\n", Identifier.GetChars());
 		}
 	}
-	/*
 	else if ((Class = PClass::FindClass(Identifier)))
 	{
-		pos.Message(MSG_DEBUGLOG, "Resolving name '%s' as class name\n", Identifier.GetChars());
-			newex = new FxClassType(Class, ScriptPosition);
-		}
+		ScriptPosition.Message(MSG_DEBUGLOG, "Resolving name '%s' as class name\n", Identifier.GetChars());
+		newex = new FxConstant(Class, ScriptPosition);
 	}
-	*/
 
 	// also check for CVars
 	/*
@@ -3128,23 +3143,27 @@ FxExpression *FxMultiNameState::Resolve(FCompileContext &ctx)
 	}
 	if (scope != NULL)
 	{
+		FState *destination = NULL;
 		// If the label is class specific we can resolve it right here
-		if (scope->ActorInfo == NULL)
+		if (names[1] != NAME_None)
 		{
-			ScriptPosition.Message(MSG_ERROR, "'%s' has no actorinfo", names[0].GetChars());
-			delete this;
-			return NULL;
-		}
-		FState *destination = scope->ActorInfo->FindState(names.Size()-1, &names[1], false);
-		if (destination == NULL)
-		{
-			ScriptPosition.Message(ctx.lax? MSG_WARNING:MSG_ERROR, "Unknown state jump destination");
-			if (!ctx.lax)
+			if (scope->ActorInfo == NULL)
 			{
+				ScriptPosition.Message(MSG_ERROR, "'%s' has no actorinfo", names[0].GetChars());
 				delete this;
 				return NULL;
 			}
-			return this;
+			destination = scope->ActorInfo->FindState(names.Size()-1, &names[1], false);
+			if (destination == NULL)
+			{
+				ScriptPosition.Message(ctx.lax? MSG_WARNING:MSG_ERROR, "Unknown state jump destination");
+				if (!ctx.lax)
+				{
+					delete this;
+					return NULL;
+				}
+				return this;
+			}
 		}
 		FxExpression *x = new FxConstant(destination, ScriptPosition);
 		delete this;

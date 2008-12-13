@@ -8,6 +8,7 @@ struct FToken;
 struct FCompileContext;
 struct PSymbol;
 class FxExpression;
+class FsFunction;
 
 class FsStatement
 {
@@ -43,6 +44,28 @@ private:
 
 public:
 	FsConstant(int t, FName name, FxExpression *x, const FScriptPosition &pos);
+	~FsConstant();
+	bool Resolve(FCompileContext &ctx, bool notlocal = false);
+};
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+class FsNativeVar : public FsStatement
+{
+	FtTypeExpression *Type;
+	FxExpression *Subscript;
+	FName identifier;
+
+private:
+	bool AddSymbol(FCompileContext &ctx, PSymbol *sym, bool notlocal);
+
+public:
+	FsNativeVar(FtTypeExpression *type, FName name, FxExpression *subscript_ex, const FScriptPosition &pos);
+	~FsNativeVar();
 	bool Resolve(FCompileContext &ctx, bool notlocal = false);
 };
 
@@ -118,10 +141,65 @@ public:
 	void AddProperty(Baggage &bag, FName name1, FName name2, FPropArgs *arguments, const FScriptPosition &pos, bool info);
 	void AddExpressionProperty(Baggage &bag, FName name1, FName name2, FxExpression *ex, const FScriptPosition &pos);
 	void AddFlag(FName name1, FName name2, bool on, const FScriptPosition &pos);
+	void AddFunction(FsFunction *func);
 
 };
 
+struct FFunctionParameter
+{
+	FtTypeExpression *type;
+	FxExpression *defval;
 
+	FFunctionParameter(FtTypeExpression *t, FxExpression *x)
+	{
+		type = t;
+		defval = x;
+	}
+
+	~FFunctionParameter();
+};
+
+
+struct FFunctionParameterList
+{
+	TDeletingArray<FFunctionParameter*> params;
+
+public:
+
+	void AddParameter(FFunctionParameter *param)
+	{
+		params.Push(param);
+	}
+};
+
+class FsFunction : public FsStatement
+{
+	FtTypeExpression *returntype;	// NULL means action function.
+	FName funcname;
+	FFunctionParameterList *params;
+	bool varargs;
+
+public:
+	FScriptPosition ScriptPosition;
+
+	FsFunction(const FScriptPosition &pos, FtTypeExpression *rettype, FName identifier, FFunctionParameterList *_params, bool _varargs)
+	{
+		ScriptPosition = pos;
+		returntype = rettype;
+		funcname = identifier;
+		params = _params;
+		varargs = _varargs;
+	}
+
+	~FsFunction()
+	{
+		if (returntype) delete returntype;
+		if (params) delete params;
+	}
+
+	FFunctionParameterList *GetParams() {return params; }
+	FName GetName() { return funcname; }
+};
 
 
 #endif

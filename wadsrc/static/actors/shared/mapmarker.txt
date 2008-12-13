@@ -1,15 +1,24 @@
 
-ACTOR MapMarker 9040 native
+ACTOR MapMarker native
 {
-	+NOBLOCKMAP
-	+NOGRAVITY
-	+DONTSPLASH
-	+INVISIBLE
-	Scale 0.5
+	Info
+	{
+		DoomEdNum (9040)
+	}
+
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+		+INVISIBLE
+		Scale (0.5)
+	}
+
 	States
 	{
 	Spawn:
-		AMRK A -1
+		AMRK A -1;
 		Stop
 	}
 }

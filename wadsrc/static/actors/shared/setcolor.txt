@@ -1,16 +1,32 @@
-ACTOR ColorSetter 9038 native
+ACTOR ColorSetter native
 {
-	+NOBLOCKMAP
-	+NOGRAVITY
-	+DONTSPLASH
-	RenderStyle None
+	Info
+	{
+		DoomEdNum (9038)
+	}
+
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+		RenderStyle ("None")
+	}
 }
 
 
-ACTOR FadeSetter 9039 native
+ACTOR FadeSetter native
 {
-	+NOBLOCKMAP
-	+NOGRAVITY
-	+DONTSPLASH
-	RenderStyle None
+	Info
+	{
+		DoomEdNum (9039)
+	}
+
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+		RenderStyle ("None")
+	}
 }

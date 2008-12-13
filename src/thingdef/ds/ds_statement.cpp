@@ -106,6 +106,17 @@ FsConstant::FsConstant(int t, FName name, FxExpression *x, const FScriptPosition
 
 //==========================================================================
 //
+//	FsConstant :: FsConstant
+//
+//==========================================================================
+
+FsConstant::~FsConstant()
+{
+	SAFE_DELETE(Exp);
+}
+
+//==========================================================================
+//
 //	FsConstant :: AddSymbol
 //
 //==========================================================================
@@ -167,7 +178,7 @@ bool FsConstant::Resolve(FCompileContext &ctx, bool notlocal)
 	if (Exp == NULL) return false;
 
 	ExpVal x = Exp->EvalExpression(NULL);
-	delete Exp;
+	SAFE_DELETE(Exp);
 	if (Type == VAL_Int || Type == VAL_Float)
 	{
 		PSymbolConst *sym = new PSymbolConst(identifier);
@@ -235,7 +246,7 @@ bool FsEnum::Resolve(FCompileContext &ctx, bool notlocal)
 				if (Exp != NULL)
 				{
 					ExpVal x = Exp->EvalExpression(NULL);
-					delete Exp;
+					SAFE_DELETE(Exp);
 					if (x.Type == VAL_Int)
 					{
 						value = x.GetInt();
@@ -255,4 +266,107 @@ bool FsEnum::Resolve(FCompileContext &ctx, bool notlocal)
 		value++;
 	}
 	return res;
+}
+
+
+//==========================================================================
+//
+//	FsNativeVar :: FsNativeVar
+//
+//==========================================================================
+
+FsNativeVar::FsNativeVar(FtTypeExpression *t, FName name, FxExpression *x, const FScriptPosition &pos) : FsStatement(pos)
+{
+	Type = t;
+	Subscript = x;
+	identifier = name;
+}
+
+//==========================================================================
+//
+//	FsNativeVar :: FsNativeVar
+//
+//==========================================================================
+
+FsNativeVar::~FsNativeVar()
+{
+	SAFE_DELETE(Type)
+	SAFE_DELETE(Subscript);
+}
+
+//==========================================================================
+//
+//	FsNativeVar :: Resolve
+//
+//==========================================================================
+
+bool FsNativeVar::Resolve(FCompileContext &ctx, bool notlocal)
+{
+	FExpressionType xt = Type->GetType();
+
+	if (!notlocal)
+	{
+		ScriptPosition.Message(MSG_ERROR, "Cannot define native variables inside a function");
+		return false;
+	}
+
+	if (Subscript != NULL)
+	{
+		Subscript = Subscript->Resolve(ctx);
+		if (Subscript == NULL) return false;
+
+		ExpVal x = Subscript->EvalExpression(NULL);
+		SAFE_DELETE(Subscript);
+		if (x.Type == VAL_Int)
+		{
+			xt.MakeArray(x.GetInt());
+		}
+		else
+		{
+			ScriptPosition.Message(MSG_ERROR, "Array subscript must be integer for %s", identifier.GetChars());
+			return false;
+		}
+	}
+
+	FVariableInfo *vi = FindVariable(identifier, ctx.cls);
+	if (vi == NULL)
+	{
+		ScriptPosition.Message(MSG_ERROR, ("Unknown native variable '%s'", identifier.GetChars()));
+		return false;
+	}
+
+	if (developer == 1)
+	{
+		if (ctx.cls != NULL) Printf(PRINT_LOG, "Adding native variable %s to class %s\n", identifier.GetChars(), ctx.cls->TypeName.GetChars());
+		else Printf(PRINT_LOG, "Adding native global variable %s\n", identifier.GetChars());
+	}
+
+	PSymbolVariable *sym = new PSymbolVariable(identifier);
+	sym->offset = vi->address;	// todo
+	sym->ValueType = xt;
+
+	bool res;
+	if (ctx.cls != NULL)
+	{
+		res = !!const_cast<PClass *>(ctx.cls)->Symbols.AddSymbol(sym);
+		if (!res) ScriptPosition.Message(MSG_ERROR, "Duplicate definition of '%s' in class '%s'", 
+					identifier.GetChars(), ctx.cls->TypeName.GetChars());
+	}
+	else
+	{
+		res = !!GlobalSymbols.AddSymbol(sym);
+		if (!res) ScriptPosition.Message(MSG_ERROR, "Duplicate definition of global symbol '%s'", 
+					identifier.GetChars());
+	}
+	return res;
+}
+
+
+
+
+
+FFunctionParameter::~FFunctionParameter()
+{
+	if (type) delete type;
+	if (defval) delete defval;
 }

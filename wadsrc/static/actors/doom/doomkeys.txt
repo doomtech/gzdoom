@@ -1,109 +1,166 @@
 
-Actor DoomKey : Key
+ACTOR DoomKey : Key
 {
-	Radius 20
-	Height 16
-	+NOTDMATCH
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		+NOTDMATCH
+	}
 }
 
 // Blue key card ------------------------------------------------------------
 
-Actor BlueCard : DoomKey 5
+ACTOR BlueCard : DoomKey
 {
-	Game Doom
-	SpawnID 85
-	Inventory.Pickupmessage "$GOTBLUECARD"
-	Inventory.Icon "STKEYS0"
+	Info
+	{
+		DoomEdNum (5)
+		Game ("Doom")
+		SpawnID (85)
+	}
+
+	DefaultProperties
+	{
+		Inventory.Pickupmessage ("$GOTBLUECARD")
+		Inventory.Icon ("STKEYS0")
+	}
+
 	States
 	{
 	Spawn:
-		BKEY A 10
-		BKEY B 10 bright
+		BKEY A 10;
+		BKEY B 10 bright;
 		loop
 	}
 }
 
 // Yellow key card ----------------------------------------------------------
 
-Actor YellowCard : DoomKey 6
+ACTOR YellowCard : DoomKey
 {
-	Game Doom
-	SpawnID 87
-	Inventory.Pickupmessage "$GOTYELWCARD"
-	Inventory.Icon "STKEYS1"
+	Info
+	{
+		DoomEdNum (6)
+		Game ("Doom")
+		SpawnID (87)
+	}
+
+	DefaultProperties
+	{
+		Inventory.Pickupmessage ("$GOTYELWCARD")
+		Inventory.Icon ("STKEYS1")
+	}
+
 	States
 	{
 	Spawn:
-		YKEY A 10
-		YKEY B 10 bright
+		YKEY A 10;
+		YKEY B 10 bright;
 		loop
 	}
 }
 
 // Red key card -------------------------------------------------------------
 
-Actor RedCard : DoomKey 13
+ACTOR RedCard : DoomKey
 {
-	Game Doom
-	SpawnID 86
-	Inventory.Pickupmessage "$GOTREDCARD"
-	Inventory.Icon "STKEYS2"
+	Info
+	{
+		DoomEdNum (13)
+		Game ("Doom")
+		SpawnID (86)
+	}
+
+	DefaultProperties
+	{
+		Inventory.Pickupmessage ("$GOTREDCARD")
+		Inventory.Icon ("STKEYS2")
+	}
+
 	States
 	{
 	Spawn:
-		RKEY A 10
-		RKEY B 10 bright
+		RKEY A 10;
+		RKEY B 10 bright;
 		loop
 	}
 }
 
 // Blue skull key -----------------------------------------------------------
 
-Actor BlueSkull : DoomKey 40
+ACTOR BlueSkull : DoomKey
 {
-	Game Doom
-	SpawnID 90
-	Inventory.Pickupmessage "$GOTBLUESKUL"
-	Inventory.Icon "STKEYS3"
+	Info
+	{
+		DoomEdNum (40)
+		Game ("Doom")
+		SpawnID (90)
+	}
+
+	DefaultProperties
+	{
+		Inventory.Pickupmessage ("$GOTBLUESKUL")
+		Inventory.Icon ("STKEYS3")
+	}
+
 	States
 	{
 	Spawn:
-		BSKU A 10
-		BSKU B 10 bright
+		BSKU A 10;
+		BSKU B 10 bright;
 		loop
 	}
 }
 
 // Yellow skull key ---------------------------------------------------------
 
-Actor YellowSkull : DoomKey 39
+ACTOR YellowSkull : DoomKey
 {
-	Game Doom
-	SpawnID 88
-	Inventory.Pickupmessage "$GOTYELWSKUL"
-	Inventory.Icon "STKEYS4"
+	Info
+	{
+		DoomEdNum (39)
+		Game ("Doom")
+		SpawnID (88)
+	}
+
+	DefaultProperties
+	{
+		Inventory.Pickupmessage ("$GOTYELWSKUL")
+		Inventory.Icon ("STKEYS4")
+	}
+
 	States
 	{
 	Spawn:
-		YSKU A 10
-		YSKU B 10 bright
+		YSKU A 10;
+		YSKU B 10 bright;
 		loop
 	}
 }
 
 // Red skull key ------------------------------------------------------------
 
-Actor RedSkull : DoomKey 38
+ACTOR RedSkull : DoomKey
 {
-	Game Doom
-	SpawnID 89
-	Inventory.Pickupmessage "$GOTREDSKUL"
-	Inventory.Icon "STKEYS5"
+	Info
+	{
+		DoomEdNum (38)
+		Game ("Doom")
+		SpawnID (89)
+	}
+
+	DefaultProperties
+	{
+		Inventory.Pickupmessage ("$GOTREDSKUL")
+		Inventory.Icon ("STKEYS5")
+	}
+
 	States
 	{
 	Spawn:
-		RSKU A 10
-		RSKU B 10 bright
+		RSKU A 10;
+		RSKU B 10 bright;
 		loop
 	}
 }

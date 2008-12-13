@@ -1,17 +1,26 @@
 
 // Yorick's Skull -----------------------------------------------------------
 
-ACTOR PuzzSkull : PuzzleItem 9002
+ACTOR PuzzSkull : PuzzleItem
 {
-	Game Hexen
-	SpawnID 76
-	PuzzleItem.Number 0
-	Inventory.Icon ARTISKLL
-	Inventory.PickupMessage "$TXT_ARTIPUZZSKULL"
+	Info
+	{
+		DoomEdNum (9002)
+		Game ("Hexen")
+		SpawnID (76)
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (0)
+		Inventory.Icon ("ARTISKLL")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZSKULL")
+	}
+
 	States
 	{
 	Spawn:
-		ASKU A -1
+		ASKU A -1;
 		Stop
 	}
 }
@@ -19,34 +28,52 @@ ACTOR PuzzSkull : PuzzleItem 9002
 
 // Heart of D'Sparil --------------------------------------------------------
 
-ACTOR PuzzGemBig : PuzzleItem 9003
+ACTOR PuzzGemBig : PuzzleItem
 {
-	Game Hexen
-	SpawnID 77
-	PuzzleItem.Number 1
-	Inventory.Icon ARTIBGEM
-	Inventory.PickupMessage "$TXT_ARTIPUZZGEMBIG"
+	Info
+	{
+		DoomEdNum (9003)
+		Game ("Hexen")
+		SpawnID (77)
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (1)
+		Inventory.Icon ("ARTIBGEM")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZGEMBIG")
+	}
+
 	States
 	{
 	Spawn:
-		ABGM A -1
+		ABGM A -1;
 		Stop
 	}
 }
 
 // Red Gem (Ruby Planet) ----------------------------------------------------
 
-ACTOR PuzzGemRed : PuzzleItem 9004
+ACTOR PuzzGemRed : PuzzleItem
 {
-	Game Hexen
-	SpawnID 78
-	PuzzleItem.Number 2
-	Inventory.Icon ARTIGEMR
-	Inventory.PickupMessage "$TXT_ARTIPUZZGEMRED"
+	Info
+	{
+		DoomEdNum (9004)
+		Game ("Hexen")
+		SpawnID (78)
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (2)
+		Inventory.Icon ("ARTIGEMR")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZGEMRED")
+	}
+
 	States
 	{
 	Spawn:
-		AGMR A -1
+		AGMR A -1;
 		Stop
 	}
 }
@@ -54,17 +81,26 @@ ACTOR PuzzGemRed : PuzzleItem 9004
 
 // Green Gem 1 (Emerald Planet) ---------------------------------------------
 
-ACTOR PuzzGemGreen1 : PuzzleItem 9005
+ACTOR PuzzGemGreen1 : PuzzleItem
 {
-	Game Hexen
-	SpawnID 79
-	PuzzleItem.Number 3
-	Inventory.Icon ARTIGEMG
-	Inventory.PickupMessage "$TXT_ARTIPUZZGEMGREEN1"
+	Info
+	{
+		DoomEdNum (9005)
+		Game ("Hexen")
+		SpawnID (79)
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (3)
+		Inventory.Icon ("ARTIGEMG")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZGEMGREEN1")
+	}
+
 	States
 	{
 	Spawn:
-		AGMG A -1
+		AGMG A -1;
 		Stop
 	}
 }
@@ -72,17 +108,26 @@ ACTOR PuzzGemGreen1 : PuzzleItem 9005
 
 // Green Gem 2 (Emerald Planet) ---------------------------------------------
 
-ACTOR PuzzGemGreen2 : PuzzleItem 9009
+ACTOR PuzzGemGreen2 : PuzzleItem
 {
-	Game Hexen
-	SpawnID 80
-	PuzzleItem.Number 4
-	Inventory.Icon ARTIGMG2
-	Inventory.PickupMessage "$TXT_ARTIPUZZGEMGREEN2"
+	Info
+	{
+		DoomEdNum (9009)
+		Game ("Hexen")
+		SpawnID (80)
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (4)
+		Inventory.Icon ("ARTIGMG2")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZGEMGREEN2")
+	}
+
 	States
 	{
 	Spawn:
-		AGG2 A -1
+		AGG2 A -1;
 		Stop
 	}
 }
@@ -90,17 +135,26 @@ ACTOR PuzzGemGreen2 : PuzzleItem 9009
 
 // Blue Gem 1 (Sapphire Planet) ---------------------------------------------
 
-ACTOR PuzzGemBlue1 : PuzzleItem 9006
+ACTOR PuzzGemBlue1 : PuzzleItem
 {
-	Game Hexen
-	SpawnID 81
-	PuzzleItem.Number 5
-	Inventory.Icon ARTIGEMB
-	Inventory.PickupMessage "$TXT_ARTIPUZZGEMBLUE1"
+	Info
+	{
+		DoomEdNum (9006)
+		Game ("Hexen")
+		SpawnID (81)
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (5)
+		Inventory.Icon ("ARTIGEMB")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZGEMBLUE1")
+	}
+
 	States
 	{
 	Spawn:
-		AGMB A -1
+		AGMB A -1;
 		Stop
 	}
 }
@@ -108,17 +162,26 @@ ACTOR PuzzGemBlue1 : PuzzleItem 9006
 
 // Blue Gem 2 (Sapphire Planet) ---------------------------------------------
 
-ACTOR PuzzGemBlue2 : PuzzleItem 9010
+ACTOR PuzzGemBlue2 : PuzzleItem
 {
-	Game Hexen
-	SpawnID 82
-	PuzzleItem.Number 6
-	Inventory.Icon ARTIGMB2
-	Inventory.PickupMessage "$TXT_ARTIPUZZGEMBLUE2"
+	Info
+	{
+		DoomEdNum (9010)
+		Game ("Hexen")
+		SpawnID (82)
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (6)
+		Inventory.Icon ("ARTIGMB2")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZGEMBLUE2")
+	}
+
 	States
 	{
 	Spawn:
-		AGB2 A -1
+		AGB2 A -1;
 		Stop
 	}
 }
@@ -126,17 +189,26 @@ ACTOR PuzzGemBlue2 : PuzzleItem 9010
 
 // Book 1 (Daemon Codex) ----------------------------------------------------
 
-ACTOR PuzzBook1 : PuzzleItem 9007
+ACTOR PuzzBook1 : PuzzleItem
 {
-	Game Hexen
-	SpawnID 83
-	PuzzleItem.Number 7
-	Inventory.Icon ARTIBOK1
-	Inventory.PickupMessage "$TXT_ARTIPUZZBOOK1"
+	Info
+	{
+		DoomEdNum (9007)
+		Game ("Hexen")
+		SpawnID (83)
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (7)
+		Inventory.Icon ("ARTIBOK1")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZBOOK1")
+	}
+
 	States
 	{
 	Spawn:
-		ABK1 A -1
+		ABK1 A -1;
 		Stop
 	}
 }
@@ -144,17 +216,26 @@ ACTOR PuzzBook1 : PuzzleItem 9007
 
 // Book 2 (Liber Oscura) ----------------------------------------------------
 
-ACTOR PuzzBook2 : PuzzleItem 9008
+ACTOR PuzzBook2 : PuzzleItem
 {
-	Game Hexen
-	SpawnID 84
-	PuzzleItem.Number 8
-	Inventory.Icon ARTIBOK2
-	Inventory.PickupMessage "$TXT_ARTIPUZZBOOK2"
+	Info
+	{
+		DoomEdNum (9008)
+		Game ("Hexen")
+		SpawnID (84)
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (8)
+		Inventory.Icon ("ARTIBOK2")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZBOOK2")
+	}
+
 	States
 	{
 	Spawn:
-		ABK2 A -1
+		ABK2 A -1;
 		Stop
 	}
 }
@@ -163,32 +244,50 @@ ACTOR PuzzBook2 : PuzzleItem 9008
 // Flame Mask ---------------------------------------------------------------
 
 
-ACTOR PuzzFlameMask : PuzzleItem 9014
+ACTOR PuzzFlameMask : PuzzleItem
 {
-	Game Hexen
-	PuzzleItem.Number 9
-	Inventory.Icon ARTISKL2
-	Inventory.PickupMessage "$TXT_ARTIPUZZSKULL2"
+	Info
+	{
+		DoomEdNum (9014)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (9)
+		Inventory.Icon ("ARTISKL2")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZSKULL2")
+	}
+
 	States
 	{
 	Spawn:
-		ASK2 A -1
+		ASK2 A -1;
 		Stop
 	}
 }
 
 // Fighter Weapon (Glaive Seal) ---------------------------------------------
 
-ACTOR PuzzFWeapon : PuzzleItem 9015
+ACTOR PuzzFWeapon : PuzzleItem
 {
-	Game Hexen
-	PuzzleItem.Number 10
-	Inventory.Icon ARTIFWEP
-	Inventory.PickupMessage "$TXT_ARTIPUZZFWEAPON"
+	Info
+	{
+		DoomEdNum (9015)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (10)
+		Inventory.Icon ("ARTIFWEP")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZFWEAPON")
+	}
+
 	States
 	{
 	Spawn:
-		AFWP A -1
+		AFWP A -1;
 		Stop
 	}
 }
@@ -196,16 +295,25 @@ ACTOR PuzzFWeapon : PuzzleItem 9015
 
 // Cleric Weapon (Holy Relic) -----------------------------------------------
 
-ACTOR PuzzCWeapon : PuzzleItem 9016
+ACTOR PuzzCWeapon : PuzzleItem
 {
-	Game Hexen
-	PuzzleItem.Number 11
-	Inventory.Icon ARTICWEP
-	Inventory.PickupMessage "$TXT_ARTIPUZZCWEAPON"
+	Info
+	{
+		DoomEdNum (9016)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (11)
+		Inventory.Icon ("ARTICWEP")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZCWEAPON")
+	}
+
 	States
 	{
 	Spawn:
-		ACWP A -1
+		ACWP A -1;
 		Stop
 	}
 }
@@ -213,32 +321,50 @@ ACTOR PuzzCWeapon : PuzzleItem 9016
 
 // Mage Weapon (Sigil of the Magus) -----------------------------------------
 
-ACTOR PuzzMWeapon : PuzzleItem 9017
+ACTOR PuzzMWeapon : PuzzleItem
 {
-	Game Hexen
-	PuzzleItem.Number 12
-	Inventory.Icon ARTIMWEP
-	Inventory.PickupMessage "$TXT_ARTIPUZZMWEAPON"
+	Info
+	{
+		DoomEdNum (9017)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (12)
+		Inventory.Icon ("ARTIMWEP")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZMWEAPON")
+	}
+
 	States
 	{
 	Spawn:
-		AMWP A -1
+		AMWP A -1;
 		Stop
 	}
 }
 
 // Clock Gear 1 -------------------------------------------------------------
 
-ACTOR PuzzGear1 : PuzzleItem 9018
+ACTOR PuzzGear1 : PuzzleItem
 {
-	Game Hexen
-	PuzzleItem.Number 13
-	Inventory.Icon ARTIGEAR
-	Inventory.PickupMessage "$TXT_ARTIPUZZGEAR"
+	Info
+	{
+		DoomEdNum (9018)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (13)
+		Inventory.Icon ("ARTIGEAR")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZGEAR")
+	}
+
 	States
 	{
 	Spawn:
-		AGER ABCDEFGH 4 Bright
+		AGER ABCDEFGH 4 Bright;
 		Loop
 	}
 }
@@ -246,16 +372,25 @@ ACTOR PuzzGear1 : PuzzleItem 9018
 
 // Clock Gear 2 -------------------------------------------------------------
 
-ACTOR PuzzGear2 : PuzzleItem 9019
+ACTOR PuzzGear2 : PuzzleItem
 {
-	Game Hexen
-	PuzzleItem.Number 14
-	Inventory.Icon ARTIGER2
-	Inventory.PickupMessage "$TXT_ARTIPUZZGEAR"
+	Info
+	{
+		DoomEdNum (9019)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (14)
+		Inventory.Icon ("ARTIGER2")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZGEAR")
+	}
+
 	States
 	{
 	Spawn:
-		AGR2 ABCDEFGH 4 Bright
+		AGR2 ABCDEFGH 4 Bright;
 		Loop
 	}
 }
@@ -263,16 +398,25 @@ ACTOR PuzzGear2 : PuzzleItem 9019
 
 // Clock Gear 3 -------------------------------------------------------------
 
-ACTOR PuzzGear3 : PuzzleItem 9020
+ACTOR PuzzGear3 : PuzzleItem
 {
-	Game Hexen
-	PuzzleItem.Number 15
-	Inventory.Icon ARTIGER3
-	Inventory.PickupMessage "$TXT_ARTIPUZZGEAR"
+	Info
+	{
+		DoomEdNum (9020)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (15)
+		Inventory.Icon ("ARTIGER3")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZGEAR")
+	}
+
 	States
 	{
 	Spawn:
-		AGR3 ABCDEFGH 4 Bright
+		AGR3 ABCDEFGH 4 Bright;
 		Loop
 	}
 }
@@ -280,16 +424,25 @@ ACTOR PuzzGear3 : PuzzleItem 9020
 
 // Clock Gear 4 -------------------------------------------------------------
 
-ACTOR PuzzGear4 : PuzzleItem 9021
+ACTOR PuzzGear4 : PuzzleItem
 {
-	Game Hexen
-	PuzzleItem.Number 16
-	Inventory.Icon ARTIGER4
-	Inventory.PickupMessage "$TXT_ARTIPUZZGEAR"
+	Info
+	{
+		DoomEdNum (9021)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		PuzzleItem.Number (16)
+		Inventory.Icon ("ARTIGER4")
+		Inventory.PickupMessage ("$TXT_ARTIPUZZGEAR")
+	}
+
 	States
 	{
 	Spawn:
-		AGR4 ABCDEFGH 4 Bright
+		AGR4 ABCDEFGH 4 Bright;
 		Loop
 	}
 }

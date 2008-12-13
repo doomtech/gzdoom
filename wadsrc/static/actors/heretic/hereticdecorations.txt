@@ -1,265 +1,427 @@
-ACTOR SkullHang70 17
+ACTOR SkullHang70
 {
-	Game Heretic
-	Radius 20
-	Height 70
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (17)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (70)
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		SKH1 A -1
+		SKH1 A -1;
 		Stop
 	}
 }
 	
-ACTOR SkullHang60 24
+ACTOR SkullHang60
 {
-	Game Heretic
-	Radius 20
-	Height 60
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (24)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (60)
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		SKH2 A -1
+		SKH2 A -1;
 		Stop
 	}
 }
 	
-ACTOR SkullHang45 25
+ACTOR SkullHang45
 {
-	Game Heretic
-	Radius 20
-	Height 45
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (25)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (45)
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		SKH3 A -1
+		SKH3 A -1;
 		Stop
 	}
 }
 	
-ACTOR SkullHang35 26
+ACTOR SkullHang35
 {
-	Game Heretic
-	Radius 20
-	Height 35
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (26)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (35)
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		SKH4 A -1
+		SKH4 A -1;
 		Stop
 	}
 }
 	
-ACTOR Chandelier 28
+ACTOR Chandelier
 {
-	Game Heretic
-	Radius 20
-	Height 60
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (28)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (60)
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		CHDL ABC 4
+		CHDL ABC 4;
 		Loop
 	}
 }
 
-ACTOR SerpentTorch 27
+ACTOR SerpentTorch
 {
-	Game Heretic
-	Radius 12
-	Height 54
-	+SOLID
+	Info
+	{
+		DoomEdNum (27)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (12)
+		Height (54)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		SRTC ABC 4
+		SRTC ABC 4;
 		Loop
 	}
 }
 
-ACTOR SmallPillar 29
+ACTOR SmallPillar
 {
-	Game Heretic
-	Radius 16
-	Height 34
-	+SOLID
+	Info
+	{
+		DoomEdNum (29)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (16)
+		Height (34)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		SMPL A -1
+		SMPL A -1;
 		Stop
 	}
 }
 
-ACTOR StalagmiteSmall 37
+ACTOR StalagmiteSmall
 {
-	Game Heretic
-	Radius 8
-	Height 32
-	+SOLID
+	Info
+	{
+		DoomEdNum (37)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (32)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		STGS A -1
+		STGS A -1;
 		Stop
 	}
 }
 
-ACTOR StalagmiteLarge 38
+ACTOR StalagmiteLarge
 {
-	Game Heretic
-	Radius 12
-	Height 64
-	+SOLID
+	Info
+	{
+		DoomEdNum (38)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (12)
+		Height (64)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		STGL A -1
+		STGL A -1;
 		Stop
 	}
 }
 
-ACTOR StalactiteSmall 39
+ACTOR StalactiteSmall
 {
-	Game Heretic
-	Radius 8
-	Height 36
-	+SOLID
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (39)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (36)
+		+SOLID
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		STCS A -1
+		STCS A -1;
 		Stop
 	}
 }
 
-ACTOR StalactiteLarge 40
+ACTOR StalactiteLarge
 {
-	Game Heretic
-	Radius 12
-	Height 68
-	+SOLID
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (40)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (12)
+		Height (68)
+		+SOLID
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		STCL A -1
+		STCL A -1;
 		Stop
 	}
 }
 
-ACTOR FireBrazier 76
+ACTOR FireBrazier
 {
-	Game Heretic
-	Radius 16
-	Height 44
-	+SOLID
+	Info
+	{
+		DoomEdNum (76)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (16)
+		Height (44)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		KFR1 ABCDEFGH 3 Bright
+		KFR1 ABCDEFGH 3 Bright;
 		Loop
 	}
 }
 
-ACTOR Barrel 44
+ACTOR Barrel
 {
-	Game Heretic
-	Radius 12
-	Height 32
-	+SOLID
+	Info
+	{
+		DoomEdNum (44)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (12)
+		Height (32)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		BARL A -1
+		BARL A -1;
 		Stop
 	}
 }
 
-ACTOR BrownPillar 47
+ACTOR BrownPillar
 {
-	Game Heretic
-	Radius 14
-	Height 128
-	+SOLID
+	Info
+	{
+		DoomEdNum (47)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (14)
+		Height (128)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		BRPL A -1
+		BRPL A -1;
 		Stop
 	}
 }
 
-ACTOR Moss1 48
+ACTOR Moss1
 {
-	Game Heretic
-	Radius 20
-	Height 23
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (48)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (23)
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		MOS1 A -1
+		MOS1 A -1;
 		Stop
 	}
 }
 
-ACTOR Moss2 49
+ACTOR Moss2
 {
-	Game Heretic
-	Radius 20
-	Height 27
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (49)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (27)
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		MOS2 A -1
+		MOS2 A -1;
 		Stop
 	}
 }
 
-ACTOR WallTorch 50
+ACTOR WallTorch
 {
-	Game Heretic
-	Radius 6
-	Height 16
-	+NOGRAVITY
-	+FIXMAPTHINGPOS
+	Info
+	{
+		DoomEdNum (50)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (6)
+		Height (16)
+		+NOGRAVITY
+		+FIXMAPTHINGPOS
+	}
+
 	States
 	{
 	Spawn:
-		WTRH ABC 6 Bright
+		WTRH ABC 6 Bright;
 		Loop
 	}
 }
 
-ACTOR HangingCorpse 51
+ACTOR HangingCorpse
 {
-	Game Heretic
-	Radius 8
-	Height 104
-	+SOLID
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (51)
+		Game ("Heretic")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (104)
+		+SOLID
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		HCOR A -1
+		HCOR A -1;
 		Stop
 	}
 }

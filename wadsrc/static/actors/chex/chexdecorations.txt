@@ -2,139 +2,300 @@
 
 // Civilians ------------------------------------------------------------------
 
-actor ChexCivilian1 : GreenTorch 45
+ACTOR ChexCivilian1 : GreenTorch
 {
-	game Chex
-	height 54
+	Info
+	{
+		DoomEdNum (45)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (54)
+	}
 }
 
-actor ChexCivilian2 : ShortGreenTorch 56
+ACTOR ChexCivilian2 : ShortGreenTorch
 {
-	game Chex
-	height 54
+	Info
+	{
+		DoomEdNum (56)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (54)
+	}
 }
 
-actor ChexCivilian3 : ShortRedTorch 57
+ACTOR ChexCivilian3 : ShortRedTorch
 {
-	game Chex
-	height 48
+	Info
+	{
+		DoomEdNum (57)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (48)
+	}
 }
 
 // Landing Zone ---------------------------------------------------------------
 
-actor ChexLandingLight : Column 2028
+ACTOR ChexLandingLight : Column
 {
-	game Chex
-	height 35
+	Info
+	{
+		DoomEdNum (2028)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (35)
+	}
 }
 
-actor ChexSpaceship : TechPillar 48
+ACTOR ChexSpaceship : TechPillar
 {
-	game Chex
-	height 52
+	Info
+	{
+		DoomEdNum (48)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (52)
+	}
 }
 
 // Trees and Plants -----------------------------------------------------------
 
-actor ChexAppleTree : Stalagtite 47
+ACTOR ChexAppleTree : Stalagtite
 {
-	game Chex
-	height 92
+	Info
+	{
+		DoomEdNum (47)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (92)
+	}
 }
 
-actor ChexBananaTree : BigTree 54
+ACTOR ChexBananaTree : BigTree
 {
-	game Chex
-	height 108
+	Info
+	{
+		DoomEdNum (54)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (108)
+	}
 }
 
-actor ChexOrangeTree : TorchTree 43
+ACTOR ChexOrangeTree : TorchTree
 {
-	game Chex
-	height 92
+	Info
+	{
+		DoomEdNum (43)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (92)
+	}
 }
 
-actor ChexSubmergedPlant : ShortGreenColumn 31
+ACTOR ChexSubmergedPlant : ShortGreenColumn
 {
-	game Chex
-	height 42
+	Info
+	{
+		DoomEdNum (31)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (42)
+	}
 }
 
-actor ChexTallFlower : HeadsOnAStick 28
+ACTOR ChexTallFlower : HeadsOnAStick
 {
-	game Chex
-	height 25
+	Info
+	{
+		DoomEdNum (28)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (25)
+	}
 }
 
-actor ChexTallFlower2 : DeadStick 25
+ACTOR ChexTallFlower2 : DeadStick
 {
-	game Chex
-	height 25
+	Info
+	{
+		DoomEdNum (25)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (25)
+	}
 }
 
 // Slime Fountain -------------------------------------------------------------
 
-actor ChexSlimeFountain : BlueTorch 44
+ACTOR ChexSlimeFountain : BlueTorch
 {
-	game Chex
-	height 48
+	Info
+	{
+		DoomEdNum (44)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (48)
+	}
+
 	States
 	{
 	Spawn:
-		TBLU ABCD 4
+		TBLU ABCD 4;
 		Loop
 	}
 }
 
 // Cavern Decorations ---------------------------------------------------------
 
-actor ChexCavernColumn : TallRedColumn 32
+ACTOR ChexCavernColumn : TallRedColumn
 {
-	game Chex
-	height 128
+	Info
+	{
+		DoomEdNum (32)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (128)
+	}
 }
 
-actor ChexCavernStalagmite : TallGreenColumn 30
+ACTOR ChexCavernStalagmite : TallGreenColumn
 {
-	game Chex
-	height 60
+	Info
+	{
+		DoomEdNum (30)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (60)
+	}
 }
 
 // Misc. Props ----------------------------------------------------------------
 
-actor ChexChemicalBurner : EvilEye 41
+ACTOR ChexChemicalBurner : EvilEye
 {
-	game Chex
-	height 25
+	Info
+	{
+		DoomEdNum (41)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (25)
+	}
 }
 
-actor ChexChemicalFlask : Candlestick 34
+ACTOR ChexChemicalFlask : Candlestick
 {
-	game Chex
-	renderstyle translucent
-	alpha 0.75
+	Info
+	{
+		DoomEdNum (34)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		renderstyle ("translucent")
+		alpha (0.75)
+	}
 }
 
-actor ChexFlagOnPole : SkullColumn 37
+ACTOR ChexFlagOnPole : SkullColumn
 {
-	game Chex
-	height 128
+	Info
+	{
+		DoomEdNum (37)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (128)
+	}
 }
 
-actor ChexGasTank : Candelabra 35
+ACTOR ChexGasTank : Candelabra
 {
-	game Chex
-	height 36
+	Info
+	{
+		DoomEdNum (35)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (36)
+	}
 }
 
-actor ChexLightColumn : ShortBlueTorch 55
+ACTOR ChexLightColumn : ShortBlueTorch
 {
-	game Chex
-	height 86
+	Info
+	{
+		DoomEdNum (55)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (86)
+	}
 }
 
-actor ChexMineCart : ShortRedColumn 33
+ACTOR ChexMineCart : ShortRedColumn
 {
-	game Chex
-	height 30
+	Info
+	{
+		DoomEdNum (33)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		height (30)
+	}
 }

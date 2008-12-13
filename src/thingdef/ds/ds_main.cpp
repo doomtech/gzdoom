@@ -66,13 +66,14 @@ void InitParserTokens()
 	ParserTokens[':'] = DS_COLON;
 	ParserTokens[TK_Const] = DS_CONST;
 	ParserTokens[TK_Identifier] = DS_IDENTIFIER;
+	ParserTokens[TK_None] = DS_IDENTIFIER;	// we need none as a valid identifier
 	ParserTokens['='] = DS_ASSIGN;
 	ParserTokens[TK_Enum] = DS_ENUM;
 	ParserTokens[','] = DS_COMMA;
 	ParserTokens[TK_StringConst] = DS_STRINGCONST;
 	ParserTokens[TK_Int] = DS_INT;
 	ParserTokens[TK_Float] = DS_FLOAT;
-	//ParserTokens[TK_Sound] = DS_SOUND;
+	ParserTokens[TK_Sound] = DS_SOUND;
 	ParserTokens[TK_Bool] = DS_BOOL;
 	ParserTokens[TK_FloatConst] = DS_FLOATCONST;
 	ParserTokens[TK_IntConst] = DS_INTCONST;
@@ -106,14 +107,14 @@ void InitParserTokens()
 	ParserTokens['['] = DS_LBRACKET;
 	ParserTokens[']'] = DS_RBRACKET;
 	ParserTokens[TK_Native] = DS_NATIVE;
-	//ParserTokens[TK_DefaultProperties] = DS_DEFAULTPROPERTIES;
+	ParserTokens[TK_DefaultProperties] = DS_DEFAULTPROPERTIES;
 	ParserTokens['.'] = DS_DOT;
 	ParserTokens[TK_Color] = DS_COLOR;
-	//ParserTokens[TK_String] = DS_STRING;
-	//ParserTokens[TK_Ellipsis] = DS_ELLIPSIS;
+	ParserTokens[TK_String] = DS_STRING;
+	ParserTokens[TK_Ellipsis] = DS_ELLIPSIS;
 	//ParserTokens[TK_Void] = DS_VOID;
 	//ParserTokens[TK_Vector] = DS_VECTOR;
-	//ParserTokens[TK_Action] = DS_ACTION;
+	ParserTokens[TK_Action] = DS_ACTION;
 	//ParserTokens[TK_Private] = DS_PRIVATE;
 	//ParserTokens[TK_Protected] = DS_PROTECTED;
 	//ParserTokens[TK_Final] = DS_FINAL;
@@ -126,7 +127,7 @@ void InitParserTokens()
 	ParserTokens[TK_Bright] = DS_BRIGHT;
 	ParserTokens[TK_Offset] = DS_OFFSET;
 	ParserTokens[TK_States] = DS_STATES;
-	//ParserTokens[TK_State] = DS_STATE;
+	ParserTokens[TK_State] = DS_STATE;
 	//ParserTokens[TK_AddEq] = DS_ADDASSIGN;
 	//ParserTokens[TK_SubEq] = DS_SUBASSIGN;
 	//ParserTokens[TK_MulEq] = DS_MULASSIGN;
@@ -146,9 +147,10 @@ void InitParserTokens()
 	//ParserTokens[TK_Null] = DS_NULL;
 	ParserTokens[TK_True] = DS_TRUE;
 	ParserTokens[TK_False] = DS_FALSE;
-	//ParserTokens[TK_Name] = DS_NAME;
+	ParserTokens[TK_Name] = DS_NAME;
 	ParserTokens[TK_Info] = DS_INFO;
-	ParserTokens[TK_DefaultProperties] = DS_DEFAULTPROPERTIES;
+	ParserTokens[TK_Fixed_t] = DS_FIXED;
+	ParserTokens[TK_Angle_t] = DS_ANGLE;
 }
 
 FRandom *MakeRNG(const FToken &tok)
@@ -339,6 +341,7 @@ static void InstallCodePtr(FState *state, CodePtr *cptr, const PClass *cls, cons
 //==========================================================================
 void ParseDS(FScanner &sc, void *pParser, Baggage *context)
 {
+	context->Lumpnum = sc.LumpNum;
 	while (sc.GetToken())
 	{
 		if (sc.TokenType == TK_Include)
@@ -355,6 +358,7 @@ void ParseDS(FScanner &sc, void *pParser, Baggage *context)
 			{
 				FScanner newscanner(lump);
 				ParseDS(newscanner, pParser, context);
+				context->Lumpnum = sc.LumpNum;
 			}
 		}
 		else
@@ -392,6 +396,9 @@ void LoadDS()
 {
 	if (Wads.CheckNumForName("DSCRIPT") > -1)
 	{
+		#ifdef _DEBUG
+			yyTraceFILE = fopen("parse.out", "w");
+		#endif
 
 		int lastlump, lump;
 
@@ -404,7 +411,6 @@ void LoadDS()
 			void *pParser = DSParseAlloc(malloc);
 			try
 			{
-				yyTraceFILE = fopen("parse.out", "w");
 				ParseDS (sc, pParser, &bag);
 				// Send a terminator token to the parser.
 				FToken tok;
@@ -414,12 +420,16 @@ void LoadDS()
 			}
 			catch (...)
 			{
-				if (yyTraceFILE) fclose(yyTraceFILE);
+				#ifdef _DEBUG
+					if (yyTraceFILE) fclose(yyTraceFILE);
+				#endif
 				DSParseFree(pParser, free);
 				throw;
 			}
-			if (yyTraceFILE) fclose(yyTraceFILE);
 			DSParseFree(pParser, free);
 		}
+		#ifdef _DEBUG
+			if (yyTraceFILE) fclose(yyTraceFILE);
+		#endif
 	}
 }

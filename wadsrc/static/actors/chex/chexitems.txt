@@ -3,67 +3,147 @@
 
 // Health ---------------------------------------------------------------------
 
-actor GlassOfWater : HealthBonus 2014
+ACTOR GlassOfWater : HealthBonus
 {
-	game Chex
-	inventory.pickupmessage "$GOTWATER"
+	Info
+	{
+		DoomEdNum (2014)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		inventory.pickupmessage ("$GOTWATER")
+	}
 }
 
-actor BowlOfFruit : Stimpack 2011
+ACTOR BowlOfFruit : Stimpack
 {
-	game Chex
-	inventory.pickupmessage "$GOTFRUIT"
+	Info
+	{
+		DoomEdNum (2011)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		inventory.pickupmessage ("$GOTFRUIT")
+	}
 }
 
-actor BowlOfVegetables : Medikit 2012
+ACTOR BowlOfVegetables : Medikit
 {
-	game Chex
-	inventory.pickupmessage "$GOTVEGETABLES"
-	health.lowmessage 25, "$GOTVEGETABLESNEED"
+	Info
+	{
+		DoomEdNum (2012)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		inventory.pickupmessage ("$GOTVEGETABLES")
+		health.lowmessage (25, "$GOTVEGETABLESNEED")
+	}
 }
 
-actor SuperchargeBreakfast : Soulsphere 2013
+ACTOR SuperchargeBreakfast : Soulsphere
 {
-	game Chex
-	inventory.pickupmessage "$GOTBREAKFAST"
+	Info
+	{
+		DoomEdNum (2013)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		inventory.pickupmessage ("$GOTBREAKFAST")
+	}
 }
 
 // Armor ----------------------------------------------------------------------
 
-actor SlimeRepellent : ArmorBonus 2015
+ACTOR SlimeRepellent : ArmorBonus
 {
-	game Chex
-	inventory.pickupmessage "$GOTREPELLENT"
+	Info
+	{
+		DoomEdNum (2015)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		inventory.pickupmessage ("$GOTREPELLENT")
+	}
 }
 
-actor ChexArmor : GreenArmor 2018
+ACTOR ChexArmor : GreenArmor
 {
-	game Chex
-	inventory.pickupmessage "$GOTCHEXARMOR"
+	Info
+	{
+		DoomEdNum (2018)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		inventory.pickupmessage ("$GOTCHEXARMOR")
+	}
 }
 
-actor SuperChexArmor : BlueArmor 2019
+ACTOR SuperChexArmor : BlueArmor
 {
-	game Chex
-	inventory.pickupmessage "$GOTSUPERCHEXARMOR"
+	Info
+	{
+		DoomEdNum (2019)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		inventory.pickupmessage ("$GOTSUPERCHEXARMOR")
+	}
 }
 
 // Powerups ===================================================================
 
-actor ComputerAreaMap : Allmap 2026
+ACTOR ComputerAreaMap : Allmap
 {
-	game Chex
-	inventory.pickupmessage "$GOTCHEXMAP"
+	Info
+	{
+		DoomEdNum (2026)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		inventory.pickupmessage ("$GOTCHEXMAP")
+	}
 }
 
-actor SlimeProofSuit : RadSuit 2025
+ACTOR SlimeProofSuit : RadSuit
 {
-	game Chex
-	inventory.pickupmessage "$GOTSLIMESUIT"
+	Info
+	{
+		DoomEdNum (2025)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		inventory.pickupmessage ("$GOTSLIMESUIT")
+	}
 }
 
-actor Zorchpack : Backpack 8
+ACTOR Zorchpack : Backpack
 {
-	game Chex
-	inventory.pickupmessage "$GOTZORCHPACK"
+	Info
+	{
+		DoomEdNum (8)
+		game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		inventory.pickupmessage ("$GOTZORCHPACK")
+	}
 }

@@ -3,222 +3,402 @@
 
 ACTOR Peasant : StrifeHumanoid
 {
-	Health 31
-	PainChance 200
-	Speed 8
-	Radius 20
-	Height 56
-	Monster
-	+FRIENDLY
-	-COUNTKILL
-	+NOSPLASHALERT
-	MinMissileChance 150
-	MaxStepHeight 16
-	MaxDropoffHeight 32
-	SeeSound "peasant/sight"
-	AttackSound "peasant/attack"
-	PainSound "peasant/pain"
-	DeathSound "peasant/death"
-	HitObituary "$OB_PEASANT"
+	DefaultProperties
+	{
+		Health (31)
+		PainChance (200)
+		Speed (8)
+		Radius (20)
+		Height (56)
+		Monster ()
+		+FRIENDLY
+		-COUNTKILL
+		+NOSPLASHALERT
+		MinMissileChance (150)
+		MaxStepHeight (16)
+		MaxDropoffHeight (32)
+		SeeSound ("peasant/sight")
+		AttackSound ("peasant/attack")
+		PainSound ("peasant/pain")
+		DeathSound ("peasant/death")
+		HitObituary ("$OB_PEASANT")
+	}
+
 	States
 	{
 	Spawn:
-		PEAS A 10 A_Look2
+		PEAS A 10 A_Look2;
 		Loop
 	See:
-		PEAS AABBCCDD 5 A_Wander
+		PEAS AABBCCDD 5 A_Wander;
 		Loop
 	Melee:
-		PEAS E 10 A_FaceTarget
-		PEAS F 8 A_CustomMeleeAttack(2*random[PeasantAttack](1,5)+2)
-		PEAS E 8
+		PEAS E 10 A_FaceTarget;
+		PEAS F 8 A_CustomMeleeAttack(2*random[PeasantAttack](1,5)+2);
+		PEAS E 8;
 		Goto See
 	Pain:
-		PEAS O 3
-		PEAS O 3 A_Pain
+		PEAS O 3;
+		PEAS O 3 A_Pain;
 		Goto Melee
 	Wound:
-		PEAS G 5
-		PEAS H 10 A_GetHurt
-		PEAS I 6
+		PEAS G 5;
+		PEAS H 10 A_GetHurt;
+		PEAS I 6;
 		Goto Wound+1
 	Death:
-		PEAS G 5
-		PEAS H 5 A_Scream
-		PEAS I 6
-		PEAS J 5 A_NoBlocking
-		PEAS K 5
-		PEAS L 6
-		PEAS M 8
-		PEAS N 1400
-		GIBS U 5
-		GIBS V 1400
+		PEAS G 5;
+		PEAS H 5 A_Scream;
+		PEAS I 6;
+		PEAS J 5 A_NoBlocking;
+		PEAS K 5;
+		PEAS L 6;
+		PEAS M 8;
+		PEAS N 1400;
+		GIBS U 5;
+		GIBS V 1400;
 		Stop
 	XDeath:
-		GIBS M 5 A_TossGib
-		GIBS N 5 A_XScream
-		GIBS O 5 A_NoBlocking
-		GIBS PQRS 4 A_TossGib
+		GIBS M 5 A_TossGib;
+		GIBS N 5 A_XScream;
+		GIBS O 5 A_NoBlocking;
+		GIBS PQRS 4 A_TossGib;
 		Goto Death+8
 	}
 }
 
 // Peasant Variant 1 --------------------------------------------------------
 
-ACTOR Peasant1 : Peasant 3004
+ACTOR Peasant1 : Peasant
 {
-	Game Strife
-	ConversationID 6
-	Speed 4
+	Info
+	{
+		DoomEdNum (3004)
+		Game ("Strife")
+		ConversationID (6)
+	}
+
+	DefaultProperties
+	{
+		Speed (4)
+	}
 }
 
-ACTOR Peasant2 : Peasant 130
+ACTOR Peasant2 : Peasant
 {
-	Game Strife
-	ConversationID 7
-	Speed 5
+	Info
+	{
+		DoomEdNum (130)
+		Game ("Strife")
+		ConversationID (7)
+	}
+
+	DefaultProperties
+	{
+		Speed (5)
+	}
 }
 
-ACTOR Peasant3 : Peasant 131
+ACTOR Peasant3 : Peasant
 {
-	Game Strife
-	ConversationID 8
-	Speed 5
+	Info
+	{
+		DoomEdNum (131)
+		Game ("Strife")
+		ConversationID (8)
+	}
+
+	DefaultProperties
+	{
+		Speed (5)
+	}
 }
 
-ACTOR Peasant4 : Peasant 65
+ACTOR Peasant4 : Peasant
 {
-	Game Strife
-	Translation 0
-	ConversationID 9
-	Speed 7
+	Info
+	{
+		DoomEdNum (65)
+		Game ("Strife")
+		ConversationID (9)
+	}
+
+	DefaultProperties
+	{
+		Translation (0)
+		Speed (7)
+	}
 }
 
-ACTOR Peasant5 : Peasant 132
+ACTOR Peasant5 : Peasant
 {
-	Game Strife
-	Translation 0
-	ConversationID 10
-	Speed 7
+	Info
+	{
+		DoomEdNum (132)
+		Game ("Strife")
+		ConversationID (10)
+	}
+
+	DefaultProperties
+	{
+		Translation (0)
+		Speed (7)
+	}
 }
 
-ACTOR Peasant6 : Peasant 133
+ACTOR Peasant6 : Peasant
 {
-	Game Strife
-	Translation 0
-	ConversationID 11
-	Speed 7
+	Info
+	{
+		DoomEdNum (133)
+		Game ("Strife")
+		ConversationID (11)
+	}
+
+	DefaultProperties
+	{
+		Translation (0)
+		Speed (7)
+	}
 }
 
-ACTOR Peasant7 : Peasant 66
+ACTOR Peasant7 : Peasant
 {
-	Game Strife
-	Translation 2
-	ConversationID 12
+	Info
+	{
+		DoomEdNum (66)
+		Game ("Strife")
+		ConversationID (12)
+	}
+
+	DefaultProperties
+	{
+		Translation (2)
+	}
 }
 
-ACTOR Peasant8 : Peasant 134
+ACTOR Peasant8 : Peasant
 {
-	Game Strife
-	Translation 2
-	ConversationID 13
+	Info
+	{
+		DoomEdNum (134)
+		Game ("Strife")
+		ConversationID (13)
+	}
+
+	DefaultProperties
+	{
+		Translation (2)
+	}
 }
 
-ACTOR Peasant9 : Peasant 135
+ACTOR Peasant9 : Peasant
 {
-	Game Strife
-	Translation 2
-	ConversationID 14
+	Info
+	{
+		DoomEdNum (135)
+		Game ("Strife")
+		ConversationID (14)
+	}
+
+	DefaultProperties
+	{
+		Translation (2)
+	}
 }
 
-ACTOR Peasant10 : Peasant 67
+ACTOR Peasant10 : Peasant
 {
-	Game Strife
-	Translation 1
-	ConversationID 15
+	Info
+	{
+		DoomEdNum (67)
+		Game ("Strife")
+		ConversationID (15)
+	}
+
+	DefaultProperties
+	{
+		Translation (1)
+	}
 }
 
-ACTOR Peasant11 : Peasant 136
+ACTOR Peasant11 : Peasant
 {
-	Game Strife
-	Translation 1
-	ConversationID 16
+	Info
+	{
+		DoomEdNum (136)
+		Game ("Strife")
+		ConversationID (16)
+	}
+
+	DefaultProperties
+	{
+		Translation (1)
+	}
 }
 
-ACTOR Peasant12 : Peasant 137
+ACTOR Peasant12 : Peasant
 {
-	Game Strife
-	Translation 1
-	ConversationID 17
+	Info
+	{
+		DoomEdNum (137)
+		Game ("Strife")
+		ConversationID (17)
+	}
+
+	DefaultProperties
+	{
+		Translation (1)
+	}
 }
 
-ACTOR Peasant13 : Peasant 172
+ACTOR Peasant13 : Peasant
 {
-	Game Strife
-	Translation 3
-	ConversationID 18
+	Info
+	{
+		DoomEdNum (172)
+		Game ("Strife")
+		ConversationID (18)
+	}
+
+	DefaultProperties
+	{
+		Translation (3)
+	}
 }
 
-ACTOR Peasant14 : Peasant 173
+ACTOR Peasant14 : Peasant
 {
-	Game Strife
-	Translation 3
-	ConversationID 19
+	Info
+	{
+		DoomEdNum (173)
+		Game ("Strife")
+		ConversationID (19)
+	}
+
+	DefaultProperties
+	{
+		Translation (3)
+	}
 }
 
-ACTOR Peasant15 : Peasant 174
+ACTOR Peasant15 : Peasant
 {
-	Game Strife
-	Translation 3
-	ConversationID 20
+	Info
+	{
+		DoomEdNum (174)
+		Game ("Strife")
+		ConversationID (20)
+	}
+
+	DefaultProperties
+	{
+		Translation (3)
+	}
 }
 
-ACTOR Peasant16 : Peasant 175
+ACTOR Peasant16 : Peasant
 {
-	Game Strife
-	Translation 5
-	ConversationID 21
+	Info
+	{
+		DoomEdNum (175)
+		Game ("Strife")
+		ConversationID (21)
+	}
+
+	DefaultProperties
+	{
+		Translation (5)
+	}
 }
 
-ACTOR Peasant17 : Peasant 176
+ACTOR Peasant17 : Peasant
 {
-	Game Strife
-	Translation 5
-	ConversationID 22
+	Info
+	{
+		DoomEdNum (176)
+		Game ("Strife")
+		ConversationID (22)
+	}
+
+	DefaultProperties
+	{
+		Translation (5)
+	}
 }
 
-ACTOR Peasant18 : Peasant 177
+ACTOR Peasant18 : Peasant
 {
-	Game Strife
-	Translation 5
-	ConversationID 23
+	Info
+	{
+		DoomEdNum (177)
+		Game ("Strife")
+		ConversationID (23)
+	}
+
+	DefaultProperties
+	{
+		Translation (5)
+	}
 }
 
-ACTOR Peasant19 : Peasant 178
+ACTOR Peasant19 : Peasant
 {
-	Game Strife
-	Translation 4
-	ConversationID 24
+	Info
+	{
+		DoomEdNum (178)
+		Game ("Strife")
+		ConversationID (24)
+	}
+
+	DefaultProperties
+	{
+		Translation (4)
+	}
 }
 
-ACTOR Peasant20 : Peasant 179
+ACTOR Peasant20 : Peasant
 {
-	Game Strife
-	Translation 4
-	ConversationID 25
+	Info
+	{
+		DoomEdNum (179)
+		Game ("Strife")
+		ConversationID (25)
+	}
+
+	DefaultProperties
+	{
+		Translation (4)
+	}
 }
 
-ACTOR Peasant21 : Peasant 180
+ACTOR Peasant21 : Peasant
 {
-	Game Strife
-	Translation 4
-	ConversationID 26
+	Info
+	{
+		DoomEdNum (180)
+		Game ("Strife")
+		ConversationID (26)
+	}
+
+	DefaultProperties
+	{
+		Translation (4)
+	}
 }
 
-ACTOR Peasant22 : Peasant 181
+ACTOR Peasant22 : Peasant
 {
-	Game Strife
-	Translation 6
-	ConversationID 27
+	Info
+	{
+		DoomEdNum (181)
+		Game ("Strife")
+		ConversationID (27)
+	}
+
+	DefaultProperties
+	{
+		Translation (6)
+	}
 }
 

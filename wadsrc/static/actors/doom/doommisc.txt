@@ -1,34 +1,43 @@
 // The barrel of green goop ------------------------------------------------
 
-ACTOR ExplosiveBarrel 2035
+ACTOR ExplosiveBarrel
 {
-	Game Doom
-	SpawnID 125
-	Health 20
-	Radius 10
-	Height 34
-	+SOLID
-	+SHOOTABLE
-	+NOBLOOD
-	+ACTIVATEMCROSS
-	+DONTGIB
-	+NOICEDEATH
-	+OLDRADIUSDMG
-	DeathSound "world/barrelx"
-	Obituary "$OB_BARREL"
+	Info
+	{
+		DoomEdNum (2035)
+		Game ("Doom")
+		SpawnID (125)
+	}
+
+	DefaultProperties
+	{
+		Health (20)
+		Radius (10)
+		Height (34)
+		+SOLID
+		+SHOOTABLE
+		+NOBLOOD
+		+ACTIVATEMCROSS
+		+DONTGIB
+		+NOICEDEATH
+		+OLDRADIUSDMG
+		DeathSound ("world/barrelx")
+		Obituary ("$OB_BARREL")
+	}
+
 	States
 	{
 	Spawn:
-		BAR1 AB 6
+		BAR1 AB 6;
 		Loop
 	Death:
-		BEXP A 5 BRIGHT
-		BEXP B 5 BRIGHT A_Scream
-		BEXP C 5 BRIGHT
-		BEXP D 5 BRIGHT A_Explode
-		BEXP E 10 BRIGHT
-		BEXP E 1050 BRIGHT A_BarrelDestroy
-		BEXP E 5 A_Respawn
+		BEXP A 5 BRIGHT;
+		BEXP B 5 BRIGHT A_Scream;
+		BEXP C 5 BRIGHT;
+		BEXP D 5 BRIGHT A_Explode;
+		BEXP E 10 BRIGHT;
+		BEXP E 1050 BRIGHT A_BarrelDestroy;
+		BEXP E 5 A_Respawn;
 		Wait
 	}
 }
@@ -37,23 +46,31 @@ ACTOR ExplosiveBarrel 2035
 
 ACTOR BulletPuff
 {
-	Game Doom
-	SpawnID 131
-	+NOBLOCKMAP
-	+NOGRAVITY
-	+ALLOWPARTICLES
-	+RANDOMIZE
-	RenderStyle Translucent
-	Alpha 0.5
-	VSpeed 1
-	Mass 5
+	Info
+	{
+		Game ("Doom")
+		SpawnID (131)
+	}
+
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+ALLOWPARTICLES
+		+RANDOMIZE
+		RenderStyle ("Translucent")
+		Alpha (0.5)
+		VSpeed (1)
+		Mass (5)
+	}
+
 	States
 	{
 	Spawn:
-		PUFF A 4 Bright
-		PUFF B 4
+		PUFF A 4 Bright;
+		PUFF B 4;
 	Melee:
-		PUFF CD 4
+		PUFF CD 4;
 		Stop
 	}
 }
@@ -69,12 +86,12 @@ ACTOR DoomUnusedStates
 {
 	States
 	{
-		SMT2 A -1
+		SMT2 A -1;
 		stop
 	Death:
-		PLAY N -1
+		PLAY N -1;
 		stop
-		PLAY S -1
+		PLAY S -1;
 		stop
 	}
 }

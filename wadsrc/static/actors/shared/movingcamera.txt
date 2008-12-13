@@ -1,33 +1,65 @@
-ACTOR InterpolationPoint 9070 native
+ACTOR InterpolationPoint native
 {
-	+NOBLOCKMAP
-	+NOGRAVITY
-	+DONTSPLASH
-	RenderStyle None
+	Info
+	{
+		DoomEdNum (9070)
+	}
+
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+		RenderStyle ("None")
+	}
 }
 
-ACTOR InterpolationSpecial 9075 native
+ACTOR InterpolationSpecial native
 {
-	+NOBLOCKMAP
-	+NOSECTOR
-	+NOGRAVITY
-	+DONTSPLASH
+	Info
+	{
+		DoomEdNum (9075)
+	}
+
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+NOSECTOR
+		+NOGRAVITY
+		+DONTSPLASH
+	}
 }
 
-ACTOR PathFollower 9071 native
+ACTOR PathFollower native
 {
-	+NOBLOCKMAP
-	+NOSECTOR
-	+NOGRAVITY
-	+DONTSPLASH
+	Info
+	{
+		DoomEdNum (9071)
+	}
+
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+NOSECTOR
+		+NOGRAVITY
+		+DONTSPLASH
+	}
 }
 
-ACTOR ActorMover : PathFollower 9074 native
+ACTOR ActorMover : PathFollower native
 {
+	Info
+	{
+		DoomEdNum (9074)
+	}
 }
 
-ACTOR MovingCamera : PathFollower 9072 native
+ACTOR MovingCamera : PathFollower native
 {
+	Info
+	{
+		DoomEdNum (9072)
+	}
 }
 
 

@@ -1,37 +1,69 @@
-ACTOR SkyViewpoint 9080 native 
+ACTOR SkyViewpoint native
 {
-	+NOSECTOR
-	+NOBLOCKMAP
-	+NOGRAVITY
-	+DONTSPLASH
+	Info
+	{
+		DoomEdNum (9080)
+	}
+
+	DefaultProperties
+	{
+		+NOSECTOR
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+	}
 }
 
-ACTOR SkyPicker 9081 native 
+ACTOR SkyPicker native
 {
-	+NOSECTOR
-	+NOBLOCKMAP
-	+NOGRAVITY
-	+DONTSPLASH
+	Info
+	{
+		DoomEdNum (9081)
+	}
+
+	DefaultProperties
+	{
+		+NOSECTOR
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+	}
 }
 
 
-ACTOR StackPoint : SkyViewpoint native 
+ACTOR StackPoint : SkyViewpoint native
 {
 }
 
-ACTOR UpperStackLookOnly : StackPoint 9077 native 
+ACTOR UpperStackLookOnly : StackPoint native
 {
+	Info
+	{
+		DoomEdNum (9077)
+	}
 }
 
-ACTOR LowerStackLookOnly : StackPoint 9078 native 
+ACTOR LowerStackLookOnly : StackPoint native
 {
+	Info
+	{
+		DoomEdNum (9078)
+	}
 }
 
 
-ACTOR SectorSilencer 9082 native 
+ACTOR SectorSilencer native
 {
-	+NOBLOCKMAP
-	+NOGRAVITY
-	+DONTSPLASH
-	RenderStyle None
+	Info
+	{
+		DoomEdNum (9082)
+	}
+
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+		RenderStyle ("None")
+	}
 }

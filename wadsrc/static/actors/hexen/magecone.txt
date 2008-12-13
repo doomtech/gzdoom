@@ -1,45 +1,53 @@
 
 // The Mage's Frost Cone ----------------------------------------------------
 
-ACTOR MWeapFrost : MageWeapon 53
+ACTOR MWeapFrost : MageWeapon
 {
-	Game Hexen
-	SpawnID 36
-	+BLOODSPLATTER
-	Weapon.SelectionOrder 1700
-	Weapon.AmmoUse1 3
-	Weapon.AmmoGive1 25
-	Weapon.KickBack 150
-	Weapon.YAdjust 20
-	Weapon.AmmoType1 "Mana1"
-	Inventory.PickupMessage "$TXT_WEAPON_M2"
+	Info
+	{
+		DoomEdNum (53)
+		Game ("Hexen")
+		SpawnID (36)
+	}
 
-	action native A_FireConePL1();
+	DefaultProperties
+	{
+		+BLOODSPLATTER
+		Weapon.SelectionOrder (1700)
+		Weapon.AmmoUse1 (3)
+		Weapon.AmmoGive1 (25)
+		Weapon.KickBack (150)
+		Weapon.YAdjust (20)
+		Weapon.AmmoType1 ("Mana1")
+		Inventory.PickupMessage ("$TXT_WEAPON_M2")
+	}
+
+	native action A_FireConePL1();
 
 	States
 	{
 	Spawn:
-		WMCS ABC 8 Bright
+		WMCS ABC 8 Bright;
 		Loop
 	Select:
-		CONE A 1 A_Raise
+		CONE A 1 A_Raise;
 		Loop
 	Deselect:
-		CONE A 1 A_Lower
+		CONE A 1 A_Lower;
 		Loop
 	Ready:
-		CONE A 1 A_WeaponReady
+		CONE A 1 A_WeaponReady;
 		Loop
 	Fire:
-		CONE B 3
-		CONE C 4
+		CONE B 3;
+		CONE C 4;
 	Hold:
-		CONE D 3
-		CONE E 5
-		CONE F 3 A_FireConePL1
-		CONE G 3
-		CONE A 9
-		CONE A 10 A_ReFire
+		CONE D 3;
+		CONE E 5;
+		CONE F 3 A_FireConePL1;
+		CONE G 3;
+		CONE A 9;
+		CONE A 10 A_ReFire;
 		Goto Ready
 	}
 }
@@ -48,26 +56,29 @@ ACTOR MWeapFrost : MageWeapon 53
 
 ACTOR FrostMissile native
 {
-	Speed 25
-	Radius 13
-	Height 8
-	Damage 1
-	DamageType "Ice"
-	Projectile
-	DeathSound "MageShardsExplode"
+	DefaultProperties
+	{
+		Speed (25)
+		Radius (13)
+		Height (8)
+		Damage (1)
+		DamageType ("Ice")
+		Projectile ()
+		DeathSound ("MageShardsExplode")
+	}
 
-	action native A_ShedShard();
+	native action A_ShedShard();
 
 	States
 	{
 	Spawn:
-		SHRD A 2 Bright
-		SHRD A 3 Bright A_ShedShard
-		SHRD B 3 Bright
-		SHRD C 3 Bright
+		SHRD A 2 Bright;
+		SHRD A 3 Bright A_ShedShard;
+		SHRD B 3 Bright;
+		SHRD C 3 Bright;
 		Loop
 	Death:
-		SHEX ABCDE 5 Bright
+		SHEX ABCDE 5 Bright;
 		Stop
 	}
 }
@@ -76,15 +87,23 @@ ACTOR FrostMissile native
 
 ACTOR IceShard : FrostMissile
 {
-	Game Hexen
-	SpawnID 65
-	DamageType "Ice"
-	-ACTIVATEIMPACT
-	-ACTIVATEPCROSS
+	Info
+	{
+		Game ("Hexen")
+		SpawnID (65)
+	}
+
+	DefaultProperties
+	{
+		DamageType ("Ice")
+		-ACTIVATEIMPACT
+		-ACTIVATEPCROSS
+	}
+
 	States
 	{
 	Spawn:
-		SHRD ABC 3 Bright
+		SHRD ABC 3 Bright;
 		Loop
 	}
 }

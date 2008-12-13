@@ -1,127 +1,223 @@
 
-ACTOR StealthArachnotron : Arachnotron 9050
+ACTOR StealthArachnotron : Arachnotron
 {
-	Game Doom
-	SpawnID 117
-	+STEALTH
-	RenderStyle Translucent
-	Alpha 0
-	Obituary "$OB_STEALTHBABY"
+	Info
+	{
+		DoomEdNum (9050)
+		Game ("Doom")
+		SpawnID (117)
+	}
+
+	DefaultProperties
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHBABY")
+	}
 }
 
-ACTOR StealthArchvile : Archvile 9051
+ACTOR StealthArchvile : Archvile
 {
-	Game Doom
-	SpawnID 118
-	+STEALTH
-	RenderStyle Translucent
-	Alpha 0
-	Obituary "$OB_STEALTHVILE"
+	Info
+	{
+		DoomEdNum (9051)
+		Game ("Doom")
+		SpawnID (118)
+	}
+
+	DefaultProperties
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHVILE")
+	}
 }
 
-ACTOR StealthBaron : BaronOfHell 9052
+ACTOR StealthBaron : BaronOfHell
 {
-	Game Doom
-	SpawnID 100
-	+STEALTH
-	RenderStyle Translucent
-	Alpha 0
-	Obituary "$OB_STEALTHBARON"
-	HitObituary "$OB_STEALTHBARON"
+	Info
+	{
+		DoomEdNum (9052)
+		Game ("Doom")
+		SpawnID (100)
+	}
+
+	DefaultProperties
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHBARON")
+		HitObituary ("$OB_STEALTHBARON")
+	}
 }
 
-ACTOR StealthCacodemon : Cacodemon 9053
+ACTOR StealthCacodemon : Cacodemon
 {
-	Game Doom
-	SpawnID 119
-	+STEALTH
-	RenderStyle Translucent
-	Alpha 0
-	Obituary "$OB_STEALTHCACO"
-	HitObituary "$OB_STEALTHCACO"
+	Info
+	{
+		DoomEdNum (9053)
+		Game ("Doom")
+		SpawnID (119)
+	}
+
+	DefaultProperties
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHCACO")
+		HitObituary ("$OB_STEALTHCACO")
+	}
 }
 
-ACTOR StealthChaingunGuy : ChaingunGuy 9054
+ACTOR StealthChaingunGuy : ChaingunGuy
 {
-	Game Doom
-	SpawnID 120
-	+STEALTH
-	RenderStyle Translucent
-	Alpha 0
-	Obituary "$OB_STEALTHCHAINGUY"
+	Info
+	{
+		DoomEdNum (9054)
+		Game ("Doom")
+		SpawnID (120)
+	}
+
+	DefaultProperties
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHCHAINGUY")
+	}
 }
 
-ACTOR StealthDemon : Demon 9055
+ACTOR StealthDemon : Demon
 {
-	Game Doom
-	SpawnID 121
-	+STEALTH
-	RenderStyle Translucent
-	Alpha 0
-	Obituary "$OB_STEALTHDEMON"
-	HitObituary "$OB_STEALTHDEMON"
+	Info
+	{
+		DoomEdNum (9055)
+		Game ("Doom")
+		SpawnID (121)
+	}
+
+	DefaultProperties
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHDEMON")
+		HitObituary ("$OB_STEALTHDEMON")
+	}
 }
 
-ACTOR StealthHellKnight : HellKnight 9056
+ACTOR StealthHellKnight : HellKnight
 {
-	Game Doom
-	SpawnID 101
-	+STEALTH
-	RenderStyle Translucent
-	Alpha 0
-	Obituary "$OB_STEALTHKNIGHT"
-	HitObituary "$OB_STEALTHKNIGHT"
+	Info
+	{
+		DoomEdNum (9056)
+		Game ("Doom")
+		SpawnID (101)
+	}
+
+	DefaultProperties
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHKNIGHT")
+		HitObituary ("$OB_STEALTHKNIGHT")
+	}
 }
 
-ACTOR StealthDoomImp : DoomImp 9057
+ACTOR StealthDoomImp : DoomImp
 {
-	Game Doom
-	SpawnID 122
-	+STEALTH
-	RenderStyle Translucent
-	Alpha 0
-	Obituary "$OB_STEALTHIMP"
-	HitObituary "$OB_STEALTHIMP"
+	Info
+	{
+		DoomEdNum (9057)
+		Game ("Doom")
+		SpawnID (122)
+	}
+
+	DefaultProperties
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHIMP")
+		HitObituary ("$OB_STEALTHIMP")
+	}
 }
 
-ACTOR StealthFatso : Fatso 9058
+ACTOR StealthFatso : Fatso
 {
-	Game Doom
-	SpawnID 123
-	+STEALTH
-	RenderStyle Translucent
-	Alpha 0
-	Obituary "$OB_STEALTHFATSO"
+	Info
+	{
+		DoomEdNum (9058)
+		Game ("Doom")
+		SpawnID (123)
+	}
+
+	DefaultProperties
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHFATSO")
+	}
 }
 
-ACTOR StealthRevenant : Revenant 9059
+ACTOR StealthRevenant : Revenant
 {
-	Game Doom
-	SpawnID 124
-	+STEALTH
-	RenderStyle Translucent
-	Alpha 0
-	Obituary "$OB_STEALTHUNDEAD"
-	HitObituary "$OB_STEALTHUNDEAD"
+	Info
+	{
+		DoomEdNum (9059)
+		Game ("Doom")
+		SpawnID (124)
+	}
+
+	DefaultProperties
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHUNDEAD")
+		HitObituary ("$OB_STEALTHUNDEAD")
+	}
 }
 
-ACTOR StealthShotgunGuy : ShotgunGuy 9060
+ACTOR StealthShotgunGuy : ShotgunGuy
 {
-	Game Doom
-	SpawnID 103
-	+STEALTH
-	RenderStyle Translucent
-	Alpha 0
-	Obituary "$OB_STEALTHSHOTGUNGUY"
+	Info
+	{
+		DoomEdNum (9060)
+		Game ("Doom")
+		SpawnID (103)
+	}
+
+	DefaultProperties
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHSHOTGUNGUY")
+	}
 }
 
-ACTOR StealthZombieMan : ZombieMan 9061
+ACTOR StealthZombieMan : ZombieMan
 {
-	Game Doom
-	SpawnID 102
-	+STEALTH
-	RenderStyle Translucent
-	Alpha 0
-	Obituary "$OB_STEALTHZOMBIE"
+	Info
+	{
+		DoomEdNum (9061)
+		Game ("Doom")
+		SpawnID (102)
+	}
+
+	DefaultProperties
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHZOMBIE")
+	}
 }
 
