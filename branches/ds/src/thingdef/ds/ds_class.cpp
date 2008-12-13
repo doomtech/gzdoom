@@ -111,8 +111,15 @@ void FsClass::DefineConstant(FsStatement *constant)
 //
 //==========================================================================
 
-void FsClass::AddFunction(FsFunction *func)
+void FsClass::AddFunction(Baggage &bag, FsFunction *func)
 {
+	if (bag.LumpNum == -1 || Wads.GetLumpFile(bag.LumpNum) > 0)
+	{
+		func->ScriptPosition.Message(MSG_ERROR,
+			"action functions can only be imported by internal class and actor definitions!");
+		return;
+	}
+
 	FFunctionParameterList *p = func->GetParams();
 	FName funcname = func->GetName();
 	FString args;
@@ -124,6 +131,7 @@ void FsClass::AddFunction(FsFunction *func)
 	{
 		func->ScriptPosition.Message(MSG_ERROR,
 			"The function '%s' has not been exported from the executable.", funcname.GetChars());
+		return;
 	}
 
 	if (p != NULL)
