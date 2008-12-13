@@ -1,25 +1,33 @@
 
 // Bat Spawner --------------------------------------------------------------
 
-ACTOR BatSpawner : SwitchableDecoration 10225
+ACTOR BatSpawner : SwitchableDecoration
 {
-	Game Hexen
-	+NOBLOCKMAP +NOSECTOR +NOGRAVITY
-	RenderStyle None
+	Info
+	{
+		DoomEdNum (10225)
+		Game ("Hexen")
+	}
 
-	action native A_BatSpawnInit();
-	action native A_BatSpawn();
+	DefaultProperties
+	{
+		+NOBLOCKMAP +NOSECTOR +NOGRAVITY
+		RenderStyle ("None")
+	}
+
+	native action A_BatSpawnInit();
+	native action A_BatSpawn();
 
 	States
 	{
 	Spawn:
 	Active:
-		TNT1 A 2
-		TNT1 A 2 A_BatSpawnInit
-		TNT1 A 2 A_BatSpawn
+		TNT1 A 2;
+		TNT1 A 2 A_BatSpawnInit;
+		TNT1 A 2 A_BatSpawn;
 		Wait
 	Inactive:
-		TNT1 A -1
+		TNT1 A -1;
 		Stop
 	}
 }
@@ -28,21 +36,24 @@ ACTOR BatSpawner : SwitchableDecoration 10225
 
 ACTOR Bat
 {
-	Speed 5
-	Radius 3
-	Height 3
-	+NOBLOCKMAP +NOGRAVITY +MISSILE
-	+NOTELEPORT +CANPASS
+	DefaultProperties
+	{
+		Speed (5)
+		Radius (3)
+		Height (3)
+		+NOBLOCKMAP +NOGRAVITY +MISSILE
+		+NOTELEPORT +CANPASS
+	}
 
-	action native A_BatMove();
+	native action A_BatMove();
 
 	States
 	{
 	Spawn:
-		ABAT ABC 2 A_BatMove
+		ABAT ABC 2 A_BatMove;
 		Loop
 	Death:
-		ABAT A 2
+		ABAT A 2;
 		Stop
 	}
 }

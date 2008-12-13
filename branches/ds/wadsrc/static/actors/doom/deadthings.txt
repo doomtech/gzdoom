@@ -1,33 +1,46 @@
 // Gibbed marine -----------------------------------------------------------
 
-actor GibbedMarine 10
+actor GibbedMarine
 {
-	Game Doom
-	SpawnID 145
+	Info
+	{
+		DoomEdNum (10)
+		Game ("Doom")
+		SpawnID (145)
+	}
+	
 	States
 	{
 	Spawn:
-		PLAY W -1
+		PLAY W -1;
 		Stop
 	}
 }
 
 // Gibbed marine (extra copy) ----------------------------------------------
 
-actor GibbedMarineExtra : GibbedMarine 12
+actor GibbedMarineExtra : GibbedMarine
 {
-	Game Doom
+	Info
+	{
+		DoomEdNum (12)
+		Game ("Doom")
+	}
 }
 
 // Dead marine -------------------------------------------------------------
 
-actor DeadMarine 15
+actor DeadMarine
 {
-	Game Doom
+	Info
+	{
+		Game ("Doom")
+	}
+	
 	States
 	{
 	Spawn:
-		PLAY N -1
+		PLAY N -1;
 		Stop
 	}
 }
@@ -39,11 +52,20 @@ actor DeadMarine 15
 
 // Dead zombie man ---------------------------------------------------------
 
-actor DeadZombieMan : ZombieMan 18
+actor DeadZombieMan : ZombieMan
 {
-	Skip_Super
-	Game Doom
-	DropItem None
+	Info
+	{
+		DoomEdNum (18)
+		Game ("Doom")
+	}
+	
+	DefaultProperties
+	{
+		Skip_Super()
+		DropItem ("None")
+	}
+	
 	States
 	{
 	Spawn:
@@ -53,11 +75,14 @@ actor DeadZombieMan : ZombieMan 18
 
 // Dead shotgun guy --------------------------------------------------------
 
-actor DeadShotgunGuy : ShotgunGuy 19
+actor DeadShotgunGuy : ShotgunGuy
 {
-	Skip_Super
-	Game Doom
-	DropItem None
+	Info
+	{
+		DoomEdNum (19)
+		Game ("Doom")
+	}
+	
 	States
 	{
 	Spawn:
@@ -67,10 +92,19 @@ actor DeadShotgunGuy : ShotgunGuy 19
 
 // Dead imp ----------------------------------------------------------------
 
-actor DeadDoomImp : DoomImp 20
+actor DeadDoomImp : DoomImp
 {
-	Skip_Super
-	Game Doom
+	Info
+	{
+		DoomEdNum (20)
+		Game ("Doom")
+	}
+	
+	DefaultProperties
+	{
+		Skip_Super()
+	}
+
 	States
 	{
 	Spawn:
@@ -80,10 +114,19 @@ actor DeadDoomImp : DoomImp 20
 
 // Dead demon --------------------------------------------------------------
 
-actor DeadDemon : Demon 21
+actor DeadDemon : Demon
 {
-	Skip_Super
-	Game Doom
+	Info
+	{
+		DoomEdNum (21)
+		Game ("Doom")
+	}
+	
+	DefaultProperties
+	{
+		Skip_Super()
+	}
+
 	States
 	{
 	Spawn:
@@ -93,10 +136,19 @@ actor DeadDemon : Demon 21
 
 // Dead cacodemon ----------------------------------------------------------
 
-actor DeadCacodemon : Cacodemon 22
+actor DeadCacodemon : Cacodemon
 {
-	Skip_Super
-	Game Doom
+	Info
+	{
+		DoomEdNum (22)
+		Game ("Doom")
+	}
+	
+	DefaultProperties
+	{
+		Skip_Super()
+	}
+
 	States
 	{
 	Spawn:
@@ -112,10 +164,19 @@ actor DeadCacodemon : Cacodemon 22
  * a holdover from that.)
  */
 
-actor DeadLostSoul : LostSoul 23
+actor DeadLostSoul : LostSoul
 {
-	Skip_Super
-	Game Doom
+	Info
+	{
+		DoomEdNum (23)
+		Game ("Doom")
+	}
+	
+	DefaultProperties
+	{
+		Skip_Super()
+	}
+
 	States
 	{
 	Spawn:

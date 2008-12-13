@@ -1,75 +1,101 @@
 
 // Fog Spawner --------------------------------------------------------------
 
-ACTOR FogSpawner 10000
+ACTOR FogSpawner
 {
-	Game Hexen
-	+NOSECTOR +NOBLOCKMAP
-	+FLOATBOB
-	+INVISIBLE
+	Info
+	{
+		DoomEdNum (10000)
+		Game ("Hexen")
+	}
 
-	action native A_FogSpawn();
+	DefaultProperties
+	{
+		+NOSECTOR +NOBLOCKMAP
+		+FLOATBOB
+		+INVISIBLE
+	}
+
+	native action A_FogSpawn();
 
 	States
 	{
 	Spawn:
-		TNT1 A 20 A_FogSpawn
+		TNT1 A 20 A_FogSpawn;
 		Loop
 	}
 }
 
 // Small Fog Patch ----------------------------------------------------------
 
-ACTOR FogPatchSmall 10001
+ACTOR FogPatchSmall
 {
-	Game Hexen
-	Speed 1
-	+NOBLOCKMAP +NOGRAVITY +NOCLIP +FLOAT
-	+NOTELEPORT
-	RenderStyle Translucent
-	Alpha 0.6
+	Info
+	{
+		DoomEdNum (10001)
+		Game ("Hexen")
+	}
 
-	action native A_FogMove();
+	DefaultProperties
+	{
+		Speed (1)
+		+NOBLOCKMAP +NOGRAVITY +NOCLIP +FLOAT
+		+NOTELEPORT
+		RenderStyle ("Translucent")
+		Alpha (0.6)
+	}
+
+	native action A_FogMove();
 
 	States
 	{
 	Spawn:
-		FOGS ABCDE 7 A_FogMove
+		FOGS ABCDE 7 A_FogMove;
 		Loop
 	Death:
-		FOGS E 5
+		FOGS E 5;
 		Stop
 	}
 }
 
 // Medium Fog Patch ---------------------------------------------------------
 
-ACTOR FogPatchMedium : FogPatchSmall 10002
+ACTOR FogPatchMedium : FogPatchSmall
 {
-	Game Hexen
+	Info
+	{
+		DoomEdNum (10002)
+		Game ("Hexen")
+	}
+
 	States
 	{
 	Spawn:
-		FOGM ABCDE 7 A_FogMove
+		FOGM ABCDE 7 A_FogMove;
 		Loop
 	Death:
-		FOGS ABCDE 5
+		FOGS ABCDE 5;
 		Goto Super::Death
 	}
 }
 
 // Large Fog Patch ----------------------------------------------------------
 
-ACTOR FogPatchLarge : FogPatchMedium 10003
+ACTOR FogPatchLarge : FogPatchMedium
 {
-	Game Hexen
+	Info
+	{
+		DoomEdNum (10003)
+		Game ("Hexen")
+	}
+
 	States
 	{
 	Spawn:
-		FOGL ABCDE 7 A_FogMove
+		FOGL ABCDE 7 A_FogMove;
 		Loop
 	Death:
-		FOGM ABCDEF 4
+		FOGM ABCDEF 4;
 		Goto Super::Death
 	}
 }

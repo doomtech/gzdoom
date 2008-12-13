@@ -1,1498 +1,2425 @@
-ACTOR ZWingedStatue 5
+ACTOR ZWingedStatue
 {
-	Game Hexen
-	Radius 10
-	Height 62
-	+SOLID
+	Info
+	{
+		DoomEdNum (5)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (10)
+		Height (62)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		STTW A -1
+		STTW A -1;
 		Stop
 	}
 }
 	
-ACTOR ZRock1 6
+ACTOR ZRock1
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (6)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		RCK1 A -1
+		RCK1 A -1;
 		Stop
 	}
 }
 
-ACTOR ZRock2 7
+ACTOR ZRock2
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (7)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		RCK2 A -1
+		RCK2 A -1;
 		Stop
 	}
 }
 
-ACTOR ZRock3 9
+ACTOR ZRock3
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (9)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		RCK3 A -1
+		RCK3 A -1;
 		Stop
 	}
 }
 
-ACTOR ZRock4 15
+ACTOR ZRock4
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (15)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		RCK4 A -1
+		RCK4 A -1;
 		Stop
 	}
 }
 
-ACTOR ZChandelier 17
+ACTOR ZChandelier
 {
-	Game Hexen
-	Radius 20
-	Height 60
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (17)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (60)
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		CDLR ABC 4
+		CDLR ABC 4;
 		Loop
 	}
 }
 
-ACTOR ZChandelierUnlit 8063
+ACTOR ZChandelierUnlit
 {
-	Game Hexen
-	Radius 20
-	Height 60
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (8063)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (60)
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		CDLR D -1
+		CDLR D -1;
 		Stop
 	}
 }
 
-ACTOR ZTreeDead 24
+ACTOR ZTreeDead
 {
-	Game Hexen
-	Radius 10
-	Height 96
-	+SOLID
+	Info
+	{
+		DoomEdNum (24)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (10)
+		Height (96)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		ZTRE A -1
+		ZTRE A -1;
 		Stop
 	}
 }
 
-ACTOR ZTree 25
+ACTOR ZTree
 {
-	Game Hexen
-	Radius 15
-	Height 128
-	+SOLID
+	Info
+	{
+		DoomEdNum (25)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (15)
+		Height (128)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		ZTRE A -1
+		ZTRE A -1;
 		Stop
 	}
 }
 
-ACTOR ZTreeSwamp150 26
+ACTOR ZTreeSwamp150
 {
-	Game Hexen
-	Radius 10
-	Height 150
-	+SOLID
+	Info
+	{
+		DoomEdNum (26)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (10)
+		Height (150)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		TRES A -1
+		TRES A -1;
 		Stop
 	}
 }
 
-ACTOR ZTreeSwamp120 27
+ACTOR ZTreeSwamp120
 {
-	Game Hexen
-	Radius 10
-	Height 120
-	+SOLID
+	Info
+	{
+		DoomEdNum (27)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (10)
+		Height (120)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		TRE3 A -1
+		TRE3 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStumpBurned 28
+ACTOR ZStumpBurned
 {
-	Game Hexen
-	Radius 12
-	Height 20
-	+SOLID
+	Info
+	{
+		DoomEdNum (28)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (12)
+		Height (20)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		STM1 A -1
+		STM1 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStumpBare 29
+ACTOR ZStumpBare
 {
-	Game Hexen
-	Radius 12
-	Height 20
-	+SOLID
+	Info
+	{
+		DoomEdNum (29)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (12)
+		Height (20)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		STM2 A -1
+		STM2 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStumpSwamp1 37
+ACTOR ZStumpSwamp1
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (37)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		STM3 A -1
+		STM3 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStumpSwamp2 38
+ACTOR ZStumpSwamp2
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (38)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		STM4 A -1
+		STM4 A -1;
 		Stop
 	}
 }
 
-ACTOR ZShroomLarge1 39
+ACTOR ZShroomLarge1
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (39)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		MSH1 A -1
+		MSH1 A -1;
 		Stop
 	}
 }
 
-ACTOR ZShroomLarge2 40
+ACTOR ZShroomLarge2
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (40)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		MSH2 A -1
+		MSH2 A -1;
 		Stop
 	}
 }
 
-ACTOR ZShroomLarge3 41
+ACTOR ZShroomLarge3
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (41)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		MSH3 A -1
+		MSH3 A -1;
 		Stop
 	}
 }
 
-ACTOR ZShroomSmall1 42
+ACTOR ZShroomSmall1
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (42)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		MSH4 A -1
+		MSH4 A -1;
 		Stop
 	}
 }
 
-ACTOR ZShroomSmall2 44
+ACTOR ZShroomSmall2
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (44)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		MSH5 A -1
+		MSH5 A -1;
 		Stop
 	}
 }
 
-ACTOR ZShroomSmall3 45
+ACTOR ZShroomSmall3
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (45)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		MSH6 A -1
+		MSH6 A -1;
 		Stop
 	}
 }
 
-ACTOR ZShroomSmall4 46
+ACTOR ZShroomSmall4
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (46)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		MSH7 A -1
+		MSH7 A -1;
 		Stop
 	}
 }
 
-ACTOR ZShroomSmall5 47
+ACTOR ZShroomSmall5
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (47)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		MSH8 A -1
+		MSH8 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalagmitePillar 48
+ACTOR ZStalagmitePillar
 {
-	Game Hexen
-	Radius 8
-	Height 138
-	+SOLID
+	Info
+	{
+		DoomEdNum (48)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (138)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		SGMP A -1
+		SGMP A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalagmiteLarge 49
+ACTOR ZStalagmiteLarge
 {
-	Game Hexen
-	Radius 8
-	Height 48
-	+SOLID
+	Info
+	{
+		DoomEdNum (49)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (48)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		SGM1 A -1
+		SGM1 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalagmiteMedium 50
+ACTOR ZStalagmiteMedium
 {
-	Game Hexen
-	Radius 6
-	Height 40
-	+SOLID
+	Info
+	{
+		DoomEdNum (50)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (6)
+		Height (40)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		SGM2 A -1
+		SGM2 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalagmiteSmall 51
+ACTOR ZStalagmiteSmall
 {
-	Game Hexen
-	Radius 8
-	Height 36
-	+SOLID
+	Info
+	{
+		DoomEdNum (51)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (36)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		SGM3 A -1
+		SGM3 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalactiteLarge 52
+ACTOR ZStalactiteLarge
 {
-	Game Hexen
-	Radius 8
-	Height 66
-	+SOLID
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (52)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (66)
+		+SOLID
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		SLC1 A -1
+		SLC1 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalactiteMedium 56
+ACTOR ZStalactiteMedium
 {
-	Game Hexen
-	Radius 6
-	Height 50
-	+SOLID
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (56)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (6)
+		Height (50)
+		+SOLID
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		SLC2 A -1
+		SLC2 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalactiteSmall 57
+ACTOR ZStalactiteSmall
 {
-	Game Hexen
-	Radius 8
-	Height 40
-	+SOLID
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (57)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (40)
+		+SOLID
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		SLC3 A -1
+		SLC3 A -1;
 		Stop
 	}
 }
 
-ACTOR ZMossCeiling1 58
+ACTOR ZMossCeiling1
 {
-	Game Hexen
-	Radius 20
-	Height 20
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (58)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (20)
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		MSS1 A -1
+		MSS1 A -1;
 		Stop
 	}
 }
 
-ACTOR ZMossCeiling2 59
+ACTOR ZMossCeiling2
 {
-	Game Hexen
-	Radius 20
-	Height 24
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (59)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (24)
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		MSS2 A -1
+		MSS2 A -1;
 		Stop
 	}
 }
 
-ACTOR ZSwampVine 60
+ACTOR ZSwampVine
 {
-	Game Hexen
-	Radius 8
-	Height 52
-	+SOLID
+	Info
+	{
+		DoomEdNum (60)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (52)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		SWMV A -1
+		SWMV A -1;
 		Stop
 	}
 }
 
-ACTOR ZCorpseKabob 61
+ACTOR ZCorpseKabob
 {
-	Game Hexen
-	Radius 10
-	Height 92
-	+SOLID
+	Info
+	{
+		DoomEdNum (61)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (10)
+		Height (92)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		CPS1 A -1
+		CPS1 A -1;
 		Stop
 	}
 }
 
-ACTOR ZCorpseSleeping 62
+ACTOR ZCorpseSleeping
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (62)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		CPS2 A -1
+		CPS2 A -1;
 		Stop
 	}
 }
 
-ACTOR ZTombstoneRIP 63
+ACTOR ZTombstoneRIP
 {
-	Game Hexen
-	Radius 10
-	Height 46
-	+SOLID
+	Info
+	{
+		DoomEdNum (63)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (10)
+		Height (46)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		TMS1 A -1
+		TMS1 A -1;
 		Stop
 	}
 }
 
-ACTOR ZTombstoneShane 64
+ACTOR ZTombstoneShane
 {
-	Game Hexen
-	Radius 10
-	Height 46
-	+SOLID
+	Info
+	{
+		DoomEdNum (64)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (10)
+		Height (46)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		TMS2 A -1
+		TMS2 A -1;
 		Stop
 	}
 }
 
-ACTOR ZTombstoneBigCross 65
+ACTOR ZTombstoneBigCross
 {
-	Game Hexen
-	Radius 10
-	Height 46
-	+SOLID
+	Info
+	{
+		DoomEdNum (65)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (10)
+		Height (46)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		TMS3 A -1
+		TMS3 A -1;
 		Stop
 	}
 }
 
-ACTOR ZTombstoneBrianR 66
+ACTOR ZTombstoneBrianR
 {
-	Game Hexen
-	Radius 10
-	Height 52
-	+SOLID
+	Info
+	{
+		DoomEdNum (66)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (10)
+		Height (52)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		TMS4 A -1
+		TMS4 A -1;
 		Stop
 	}
 }
 
-ACTOR ZTombstoneCrossCircle 67
+ACTOR ZTombstoneCrossCircle
 {
-	Game Hexen
-	Radius 10
-	Height 52
-	+SOLID
+	Info
+	{
+		DoomEdNum (67)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (10)
+		Height (52)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		TMS5 A -1
+		TMS5 A -1;
 		Stop
 	}
 }
 
-ACTOR ZTombstoneSmallCross 68
+ACTOR ZTombstoneSmallCross
 {
-	Game Hexen
-	Radius 8
-	Height 46
-	+SOLID
+	Info
+	{
+		DoomEdNum (68)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (46)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		TMS6 A -1
+		TMS6 A -1;
 		Stop
 	}
 }
 
-ACTOR ZTombstoneBrianP 69
+ACTOR ZTombstoneBrianP
 {
-	Game Hexen
-	Radius 8
-	Height 46
-	+SOLID
+	Info
+	{
+		DoomEdNum (69)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (46)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		TMS7 A -1
+		TMS7 A -1;
 		Stop
 	}
 }
 
-ACTOR ZCorpseHanging 71
+ACTOR ZCorpseHanging
 {
-	Game Hexen
-	Radius 6
-	Height 75
-	+SOLID
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (71)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (6)
+		Height (75)
+		+SOLID
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		CPS3 A -1
+		CPS3 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStatueGargoyleGreenTall 72
+ACTOR ZStatueGargoyleGreenTall
 {
-	Game Hexen
-	Radius 14
-	Height 108
-	+SOLID
+	Info
+	{
+		DoomEdNum (72)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (14)
+		Height (108)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		STT2 A -1
+		STT2 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStatueGargoyleBlueTall 73
+ACTOR ZStatueGargoyleBlueTall
 {
-	Game Hexen
-	Radius 14
-	Height 108
-	+SOLID
+	Info
+	{
+		DoomEdNum (73)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (14)
+		Height (108)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		STT3 A -1
+		STT3 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStatueGargoyleGreenShort 74
+ACTOR ZStatueGargoyleGreenShort
 {
-	Game Hexen
-	Radius 14
-	Height 62
-	+SOLID
+	Info
+	{
+		DoomEdNum (74)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (14)
+		Height (62)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		STT4 A -1
+		STT4 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStatueGargoyleBlueShort 76
+ACTOR ZStatueGargoyleBlueShort
 {
-	Game Hexen
-	Radius 14
-	Height 62
-	+SOLID
+	Info
+	{
+		DoomEdNum (76)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (14)
+		Height (62)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		STT5 A -1
+		STT5 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStatueGargoyleStripeTall 8044
+ACTOR ZStatueGargoyleStripeTall
 {
-	Game Hexen
-	Radius 14
-	Height 108
-	+SOLID
+	Info
+	{
+		DoomEdNum (8044)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (14)
+		Height (108)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		GAR1 A -1
+		GAR1 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStatueGargoyleDarkRedTall 8045
+ACTOR ZStatueGargoyleDarkRedTall
 {
-	Game Hexen
-	Radius 14
-	Height 108
-	+SOLID
+	Info
+	{
+		DoomEdNum (8045)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (14)
+		Height (108)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		GAR2 A -1
+		GAR2 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStatueGargoyleRedTall 8046
+ACTOR ZStatueGargoyleRedTall
 {
-	Game Hexen
-	Radius 14
-	Height 108
-	+SOLID
+	Info
+	{
+		DoomEdNum (8046)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (14)
+		Height (108)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		GAR3 A -1
+		GAR3 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStatueGargoyleTanTall 8047
+ACTOR ZStatueGargoyleTanTall
 {
-	Game Hexen
-	Radius 14
-	Height 108
-	+SOLID
+	Info
+	{
+		DoomEdNum (8047)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (14)
+		Height (108)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		GAR4 A -1
+		GAR4 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStatueGargoyleRustTall 8048
+ACTOR ZStatueGargoyleRustTall
 {
-	Game Hexen
-	Radius 14
-	Height 108
-	+SOLID
+	Info
+	{
+		DoomEdNum (8048)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (14)
+		Height (108)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		GAR5 A -1
+		GAR5 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStatueGargoyleDarkRedShort 8049
+ACTOR ZStatueGargoyleDarkRedShort
 {
-	Game Hexen
-	Radius 14
-	Height 62
-	+SOLID
+	Info
+	{
+		DoomEdNum (8049)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (14)
+		Height (62)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		GAR6 A -1
+		GAR6 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStatueGargoyleRedShort 8050
+ACTOR ZStatueGargoyleRedShort
 {
-	Game Hexen
-	Radius 14
-	Height 62
-	+SOLID
+	Info
+	{
+		DoomEdNum (8050)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (14)
+		Height (62)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		GAR7 A -1
+		GAR7 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStatueGargoyleTanShort 8051
+ACTOR ZStatueGargoyleTanShort
 {
-	Game Hexen
-	Radius 14
-	Height 62
-	+SOLID
+	Info
+	{
+		DoomEdNum (8051)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (14)
+		Height (62)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		GAR8 A -1
+		GAR8 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStatueGargoyleRustShort 8052
+ACTOR ZStatueGargoyleRustShort
 {
-	Game Hexen
-	Radius 14
-	Height 62
-	+SOLID
+	Info
+	{
+		DoomEdNum (8052)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (14)
+		Height (62)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		GAR9 A -1
+		GAR9 A -1;
 		Stop
 	}
 }
 
-ACTOR ZBannerTattered 77
+ACTOR ZBannerTattered
 {
-	Game Hexen
-	Radius 8
-	Height 120
-	+SOLID
+	Info
+	{
+		DoomEdNum (77)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (120)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		BNR1 A -1
+		BNR1 A -1;
 		Stop
 	}
 }
 
-ACTOR ZTreeLarge1 78
+ACTOR ZTreeLarge1
 {
-	Game Hexen
-	Radius 15
-	Height 180
-	+SOLID
+	Info
+	{
+		DoomEdNum (78)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (15)
+		Height (180)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		TRE4 A -1
+		TRE4 A -1;
 		Stop
 	}
 }
 
-ACTOR ZTreeLarge2 79
+ACTOR ZTreeLarge2
 {
-	Game Hexen
-	Radius 15
-	Height 180
-	+SOLID
+	Info
+	{
+		DoomEdNum (79)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (15)
+		Height (180)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		TRE5 A -1
+		TRE5 A -1;
 		Stop
 	}
 }
 
-ACTOR ZTreeGnarled1 80
+ACTOR ZTreeGnarled1
 {
-	Game Hexen
-	Radius 22
-	Height 100
-	+SOLID
+	Info
+	{
+		DoomEdNum (80)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (22)
+		Height (100)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		TRE6 A -1
+		TRE6 A -1;
 		Stop
 	}
 }
 
-ACTOR ZTreeGnarled2 87
+ACTOR ZTreeGnarled2
 {
-	Game Hexen
-	Radius 22
-	Height 100
-	+SOLID
+	Info
+	{
+		DoomEdNum (87)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (22)
+		Height (100)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		TRE7 A -1
+		TRE7 A -1;
 		Stop
 	}
 }
 
-ACTOR ZLog 88
+ACTOR ZLog
 {
-	Game Hexen
-	Radius 20
-	Height 25
-	+SOLID
+	Info
+	{
+		DoomEdNum (88)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (25)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		LOGG A -1
+		LOGG A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalactiteIceLarge 89
+ACTOR ZStalactiteIceLarge
 {
-	Game Hexen
-	Radius 8
-	Height 66
-	+SOLID
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (89)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (66)
+		+SOLID
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		ICT1 A -1
+		ICT1 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalactiteIceMedium 90
+ACTOR ZStalactiteIceMedium
 {
-	Game Hexen
-	Radius 5
-	Height 50
-	+SOLID
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (90)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (5)
+		Height (50)
+		+SOLID
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		ICT2 A -1
+		ICT2 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalactiteIceSmall 91
+ACTOR ZStalactiteIceSmall
 {
-	Game Hexen
-	Radius 4
-	Height 32
-	+SOLID
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (91)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (4)
+		Height (32)
+		+SOLID
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		ICT3 A -1
+		ICT3 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalactiteIceTiny 92
+ACTOR ZStalactiteIceTiny
 {
-	Game Hexen
-	Radius 4
-	Height 8
-	+SOLID
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (92)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (4)
+		Height (8)
+		+SOLID
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		ICT4 A -1
+		ICT4 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalagmiteIceLarge 93
+ACTOR ZStalagmiteIceLarge
 {
-	Game Hexen
-	Radius 8
-	Height 66
-	+SOLID
+	Info
+	{
+		DoomEdNum (93)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (66)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		ICM1 A -1
+		ICM1 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalagmiteIceMedium 94
+ACTOR ZStalagmiteIceMedium
 {
-	Game Hexen
-	Radius 5
-	Height 50
-	+SOLID
+	Info
+	{
+		DoomEdNum (94)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (5)
+		Height (50)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		ICM2 A -1
+		ICM2 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalagmiteIceSmall 95
+ACTOR ZStalagmiteIceSmall
 {
-	Game Hexen
-	Radius 4
-	Height 32
-	+SOLID
+	Info
+	{
+		DoomEdNum (95)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (4)
+		Height (32)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		ICM3 A -1
+		ICM3 A -1;
 		Stop
 	}
 }
 
-ACTOR ZStalagmiteIceTiny 96
+ACTOR ZStalagmiteIceTiny
 {
-	Game Hexen
-	Radius 4
-	Height 8
-	+SOLID
+	Info
+	{
+		DoomEdNum (96)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (4)
+		Height (8)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		ICM4 A -1
+		ICM4 A -1;
 		Stop
 	}
 }
 
-ACTOR ZRockBrown1 97
+ACTOR ZRockBrown1
 {
-	Game Hexen
-	Radius 17
-	Height 72
-	+SOLID
+	Info
+	{
+		DoomEdNum (97)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (17)
+		Height (72)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		RKBL A -1
+		RKBL A -1;
 		Stop
 	}
 }
 
-ACTOR ZRockBrown2 98
+ACTOR ZRockBrown2
 {
-	Game Hexen
-	Radius 15
-	Height 50
-	+SOLID
+	Info
+	{
+		DoomEdNum (98)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (15)
+		Height (50)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		RKBS A -1
+		RKBS A -1;
 		Stop
 	}
 }
 
-ACTOR ZRockBlack 99
+ACTOR ZRockBlack
 {
-	Game Hexen
-	Radius 20
-	Height 40
-	+SOLID
+	Info
+	{
+		DoomEdNum (99)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (40)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		RKBK A -1
+		RKBK A -1;
 		Stop
 	}
 }
 
-ACTOR ZRubble1 100
+ACTOR ZRubble1
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (100)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		RBL1 A -1
+		RBL1 A -1;
 		Stop
 	}
 }
 
-ACTOR ZRubble2 101
+ACTOR ZRubble2
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (101)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		RBL2 A -1
+		RBL2 A -1;
 		Stop
 	}
 }
 
-ACTOR ZRubble3 102
+ACTOR ZRubble3
 {
-	Game Hexen
-	Radius 20
-	Height 16
+	Info
+	{
+		DoomEdNum (102)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+	}
+
 	States
 	{
 	Spawn:
-		RBL3 A -1
+		RBL3 A -1;
 		Stop
 	}
 }
 
-ACTOR ZVasePillar 103
+ACTOR ZVasePillar
 {
-	Game Hexen
-	Radius 12
-	Height 54
-	+SOLID
+	Info
+	{
+		DoomEdNum (103)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (12)
+		Height (54)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		VASE A -1
+		VASE A -1;
 		Stop
 	}
 }
 
-ACTOR ZCorpseLynched 108
+ACTOR ZCorpseLynched
 {
-	Game Hexen
-	Radius 11
-	Height 95
-	+SOLID
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (108)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (11)
+		Height (95)
+		+SOLID
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		CPS4 A -1
+		CPS4 A -1;
 		Stop
 	}
 }
 
-ACTOR ZCandle 119
+ACTOR ZCandle
 {
-	Game Hexen
-	Radius 20
-	Height 16
-	+NOGRAVITY
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (119)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		+NOGRAVITY
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		CNDL ABC 4 Bright
+		CNDL ABC 4 Bright;
 		Loop
 	}
 }
 
-ACTOR ZBarrel 8100
+ACTOR ZBarrel
 {
-	Game Hexen
-	Radius 15
-	Height 32
-	+SOLID
+	Info
+	{
+		DoomEdNum (8100)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (15)
+		Height (32)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		ZBAR A -1
+		ZBAR A -1;
 		Stop
 	}
 }
 
-ACTOR ZBucket 8103
+ACTOR ZBucket
 {
-	Game Hexen
-	Radius 8
-	Height 72
-	+SOLID
-	+SPAWNCEILING
-	+NOGRAVITY
+	Info
+	{
+		DoomEdNum (8103)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (8)
+		Height (72)
+		+SOLID
+		+SPAWNCEILING
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		BCKT A -1
+		BCKT A -1;
 		Stop
 	}
 }
 
-ACTOR FireThing 8060
+ACTOR FireThing
 {
-	Game Hexen
-	Radius 5
-	Height 10
-	+SOLID
+	Info
+	{
+		DoomEdNum (8060)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (5)
+		Height (10)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		FSKL A 4 Bright
-		FSKL B 3 Bright
-		FSKL C 4 Bright
-		FSKL D 3 Bright
-		FSKL E 4 Bright
-		FSKL F 3 Bright
-		FSKL G 4 Bright
-		FSKL H 3 Bright
-		FSKL I 4 Bright
+		FSKL A 4 Bright;
+		FSKL B 3 Bright;
+		FSKL C 4 Bright;
+		FSKL D 3 Bright;
+		FSKL E 4 Bright;
+		FSKL F 3 Bright;
+		FSKL G 4 Bright;
+		FSKL H 3 Bright;
+		FSKL I 4 Bright;
 		Loop
 	}
 }
 
-ACTOR BrassTorch 8061
+ACTOR BrassTorch
 {
-	Game Hexen
-	Radius 6
-	Height 35
-	+SOLID
+	Info
+	{
+		DoomEdNum (8061)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (6)
+		Height (35)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		BRTR ABCDEFGHIJKLM 4 Bright
+		BRTR ABCDEFGHIJKLM 4 Bright;
 		Loop
 	}
 }
 
-ACTOR ZBlueCandle 8066
+ACTOR ZBlueCandle
 {
-	Game Hexen
-	Radius 20
-	Height 16
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8066)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		BCAN ABCDE 5 Bright
+		BCAN ABCDE 5 Bright;
 		Loop
 	}
 }
 
-ACTOR ZIronMaiden 8067
+ACTOR ZIronMaiden
 {
-	Game Hexen
-	Radius 12
-	Height 60
-	+SOLID
+	Info
+	{
+		DoomEdNum (8067)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (12)
+		Height (60)
+		+SOLID
+	}
+
 	States
 	{
 	Spawn:
-		IRON A -1
+		IRON A -1;
 		Stop
 	}
 }
 
-ACTOR ZChainBit32 8071
+ACTOR ZChainBit32
 {
-	Game Hexen
-	Radius 4
-	Height 32
-	+SPAWNCEILING
-	+NOGRAVITY
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8071)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (4)
+		Height (32)
+		+SPAWNCEILING
+		+NOGRAVITY
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		CHNS A -1
+		CHNS A -1;
 		Stop
 	}
 }
 
-ACTOR ZChainBit64 8072
+ACTOR ZChainBit64
 {
-	Game Hexen
-	Radius 4
-	Height 64
-	+SPAWNCEILING
-	+NOGRAVITY
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8072)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (4)
+		Height (64)
+		+SPAWNCEILING
+		+NOGRAVITY
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		CHNS B -1
+		CHNS B -1;
 		Stop
 	}
 }
 
-ACTOR ZChainEndHeart 8073
+ACTOR ZChainEndHeart
 {
-	Game Hexen
-	Radius 4
-	Height 32
-	+SPAWNCEILING
-	+NOGRAVITY
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8073)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (4)
+		Height (32)
+		+SPAWNCEILING
+		+NOGRAVITY
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		CHNS C -1
+		CHNS C -1;
 		Stop
 	}
 }
 
-ACTOR ZChainEndHook1 8074
+ACTOR ZChainEndHook1
 {
-	Game Hexen
-	Radius 4
-	Height 32
-	+SPAWNCEILING
-	+NOGRAVITY
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8074)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (4)
+		Height (32)
+		+SPAWNCEILING
+		+NOGRAVITY
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		CHNS D -1
+		CHNS D -1;
 		Stop
 	}
 }
 
-ACTOR ZChainEndHook2 8075
+ACTOR ZChainEndHook2
 {
-	Game Hexen
-	Radius 4
-	Height 32
-	+SPAWNCEILING
-	+NOGRAVITY
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8075)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (4)
+		Height (32)
+		+SPAWNCEILING
+		+NOGRAVITY
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		CHNS E -1
+		CHNS E -1;
 		Stop
 	}
 }
 
-ACTOR ZChainEndSpike 8076
+ACTOR ZChainEndSpike
 {
-	Game Hexen
-	Radius 4
-	Height 32
-	+SPAWNCEILING
-	+NOGRAVITY
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8076)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (4)
+		Height (32)
+		+SPAWNCEILING
+		+NOGRAVITY
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		CHNS F -1
+		CHNS F -1;
 		Stop
 	}
 }
 
-ACTOR ZChainEndSkull 8077
+ACTOR ZChainEndSkull
 {
-	Game Hexen
-	Radius 4
-	Height 32
-	+SPAWNCEILING
-	+NOGRAVITY
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8077)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (4)
+		Height (32)
+		+SPAWNCEILING
+		+NOGRAVITY
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		CHNS G -1
+		CHNS G -1;
 		Stop
 	}
 }
 
-ACTOR TableShit1 8500
+ACTOR TableShit1
 {
-	Game Hexen
-	Radius 20
-	Height 16
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8500)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		TST1 A -1
+		TST1 A -1;
 		Stop
 	}
 }
 
-ACTOR TableShit2 8501
+ACTOR TableShit2
 {
-	Game Hexen
-	Radius 20
-	Height 16
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8501)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		TST2 A -1
+		TST2 A -1;
 		Stop
 	}
 }
 
-ACTOR TableShit3 8502
+ACTOR TableShit3
 {
-	Game Hexen
-	Radius 20
-	Height 16
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8502)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		TST3 A -1
+		TST3 A -1;
 		Stop
 	}
 }
 
-ACTOR TableShit4 8503
+ACTOR TableShit4
 {
-	Game Hexen
-	Radius 20
-	Height 16
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8503)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		TST4 A -1
+		TST4 A -1;
 		Stop
 	}
 }
 
-ACTOR TableShit5 8504
+ACTOR TableShit5
 {
-	Game Hexen
-	Radius 20
-	Height 16
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8504)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		TST5 A -1
+		TST5 A -1;
 		Stop
 	}
 }
 
-ACTOR TableShit6 8505
+ACTOR TableShit6
 {
-	Game Hexen
-	Radius 20
-	Height 16
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8505)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		TST6 A -1
+		TST6 A -1;
 		Stop
 	}
 }
 
-ACTOR TableShit7 8506
+ACTOR TableShit7
 {
-	Game Hexen
-	Radius 20
-	Height 16
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8506)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		TST7 A -1
+		TST7 A -1;
 		Stop
 	}
 }
 
-ACTOR TableShit8 8507
+ACTOR TableShit8
 {
-	Game Hexen
-	Radius 20
-	Height 16
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8507)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		TST8 A -1
+		TST8 A -1;
 		Stop
 	}
 }
 
-ACTOR TableShit9 8508
+ACTOR TableShit9
 {
-	Game Hexen
-	Radius 20
-	Height 16
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8508)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		TST9 A -1
+		TST9 A -1;
 		Stop
 	}
 }
 
-ACTOR TableShit10 8509
+ACTOR TableShit10
 {
-	Game Hexen
-	Radius 20
-	Height 16
-	+NOBLOCKMAP
+	Info
+	{
+		DoomEdNum (8509)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		+NOBLOCKMAP
+	}
+
 	States
 	{
 	Spawn:
-		TST0 A -1
+		TST0 A -1;
 		Stop
 	}
 }
 
-ACTOR TeleSmoke 140
+ACTOR TeleSmoke
 {
-	Game Hexen
-	Radius 20
-	Height 16
-	+NOGRAVITY
-	+NOBLOCKMAP
-	RenderStyle Translucent
-	Alpha 0.6
+	Info
+	{
+		DoomEdNum (140)
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		+NOGRAVITY
+		+NOBLOCKMAP
+		RenderStyle ("Translucent")
+		Alpha (0.6)
+	}
+
 	States
 	{
 	Spawn:
-		TSMK A 4
-		TSMK B 3
-		TSMK C 4
-		TSMK D 3
-		TSMK E 4
-		TSMK F 3
-		TSMK G 4
-		TSMK H 3
-		TSMK I 4
-		TSMK J 3
-		TSMK K 4
-		TSMK L 3
-		TSMK M 4
-		TSMK N 3
-		TSMK O 4
-		TSMK P 3
-		TSMK Q 4
-		TSMK R 3
-		TSMK S 4
-		TSMK T 3
-		TSMK U 4
-		TSMK V 3
-		TSMK W 4
-		TSMK X 3
-		TSMK Y 4
-		TSMK Z 3
+		TSMK A 4;
+		TSMK B 3;
+		TSMK C 4;
+		TSMK D 3;
+		TSMK E 4;
+		TSMK F 3;
+		TSMK G 4;
+		TSMK H 3;
+		TSMK I 4;
+		TSMK J 3;
+		TSMK K 4;
+		TSMK L 3;
+		TSMK M 4;
+		TSMK N 3;
+		TSMK O 4;
+		TSMK P 3;
+		TSMK Q 4;
+		TSMK R 3;
+		TSMK S 4;
+		TSMK T 3;
+		TSMK U 4;
+		TSMK V 3;
+		TSMK W 4;
+		TSMK X 3;
+		TSMK Y 4;
+		TSMK Z 3;
 		Loop
 	}
 }

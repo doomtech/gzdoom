@@ -2,85 +2,153 @@
 
 // Mini Zorch -----------------------------------------------------------------
 
-actor MiniZorchRecharge : Clip 2007
+ACTOR MiniZorchRecharge : Clip
 {
-	Game Chex
-	inventory.pickupmessage "$GOTZORCHRECHARGE"
+	Info
+	{
+		DoomEdNum (2007)
+		Game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		inventory.pickupmessage ("$GOTZORCHRECHARGE")
+	}
 }
 
-actor MiniZorchPack : Clip 2048
+ACTOR MiniZorchPack : Clip
 {
-	Game Chex
-	Inventory.PickupMessage "$GOTMINIZORCHPACK"
-	Inventory.Amount 50
+	Info
+	{
+		DoomEdNum (2048)
+		Game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		Inventory.PickupMessage ("$GOTMINIZORCHPACK")
+		Inventory.Amount (50)
+	}
+
 	States
 	{
-		Spawn:
-			AMMO A -1
-			Stop
+	Spawn:
+		AMMO A -1;
+		Stop
 	}
 }
 
 // Large Zorch ----------------------------------------------------------------
 
-actor LargeZorchRecharge : Shell 2008
+ACTOR LargeZorchRecharge : Shell
 {
-	Game Chex
-	inventory.pickupmessage "$GOTLARGEZORCHERRECHARGE"
+	Info
+	{
+		DoomEdNum (2008)
+		Game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		inventory.pickupmessage ("$GOTLARGEZORCHERRECHARGE")
+	}
 }
 
-actor LargeZorchPack : Shell 2049
+ACTOR LargeZorchPack : Shell
 {
-	Game Chex
-	Inventory.PickupMessage "$GOTLARGEZORCHERPACK"
-	Inventory.Amount 20
+	Info
+	{
+		DoomEdNum (2049)
+		Game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		Inventory.PickupMessage ("$GOTLARGEZORCHERPACK")
+		Inventory.Amount (20)
+	}
+
 	States
 	{
-		Spawn:
-			SBOX A -1
-			Stop
+	Spawn:
+		SBOX A -1;
+		Stop
 	}
 }
 
 // Zorch Propulsor ------------------------------------------------------------
 
-actor PropulsorZorch : RocketAmmo 2010
+ACTOR PropulsorZorch : RocketAmmo
 {
-	Game Chex
-	inventory.pickupmessage "$GOTPROPULSORRECHARGE"
+	Info
+	{
+		DoomEdNum (2010)
+		Game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		inventory.pickupmessage ("$GOTPROPULSORRECHARGE")
+	}
 }
 
-actor PropulsorZorchPack : RocketAmmo 2046
+ACTOR PropulsorZorchPack : RocketAmmo
 {
-	Game Chex
-	Inventory.PickupMessage "$GOTPROPULSORPACK"
-	Inventory.Amount 5
+	Info
+	{
+		DoomEdNum (2046)
+		Game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		Inventory.PickupMessage ("$GOTPROPULSORPACK")
+		Inventory.Amount (5)
+	}
+
 	States
 	{
-		Spawn:
-			BROK A -1
-			Stop
+	Spawn:
+		BROK A -1;
+		Stop
 	}
 }
 
 // Phasing Zorch --------------------------------------------------------------
 
-actor PhasingZorch : Cell 2047
+ACTOR PhasingZorch : Cell
 {
-	Game Chex
-	inventory.pickupmessage "$GOTPHASINGZORCHERRECHARGE"
+	Info
+	{
+		DoomEdNum (2047)
+		Game ("Chex")
+	}
+
+	DefaultProperties
+	{
+		inventory.pickupmessage ("$GOTPHASINGZORCHERRECHARGE")
+	}
 }
 
-actor PhasingZorchPack : Cell 17
+ACTOR PhasingZorchPack : Cell
 {
-	Game Chex
-	SpawnID 142
-	Inventory.PickupMessage "$GOTPHASINGZORCHERPACK"
-	Inventory.Amount 100
+	Info
+	{
+		DoomEdNum (17)
+		Game ("Chex")
+		SpawnID (142)
+	}
+
+	DefaultProperties
+	{
+		Inventory.PickupMessage ("$GOTPHASINGZORCHERPACK")
+		Inventory.Amount (100)
+	}
+
 	States
 	{
-		Spawn:
-			CELP A -1
-			Stop
+	Spawn:
+		CELP A -1;
+		Stop
 	}
 }

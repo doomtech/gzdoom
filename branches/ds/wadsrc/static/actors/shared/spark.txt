@@ -1,8 +1,16 @@
 
-ACTOR Spark 9026 native
+ACTOR Spark native
 {
-	+NOSECTOR
-	+NOBLOCKMAP
-	+NOGRAVITY
-	+DONTSPLASH
+	Info
+	{
+		DoomEdNum (9026)
+	}
+
+	DefaultProperties
+	{
+		+NOSECTOR
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+	}
 }

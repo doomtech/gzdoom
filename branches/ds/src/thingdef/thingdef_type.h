@@ -17,7 +17,6 @@ enum ExpValType
 	VAL_Pointer,	// Dereferenced variable (only used for addressing arrays for now.)
 	VAL_Sound,		// Sound identifier. Internally it's an int.
 	VAL_Name,		// A Name
-	VAL_MultiName,	// Multiple names for multi-label states
 	VAL_Color,		// A color.
 	VAL_State,		// A State pointer
 	VAL_String,		// String
@@ -94,5 +93,38 @@ struct FExpressionType
 	}
 
 };
+
+
+// just a cheap temporary implementation
+// should be done differently later!
+
+class FtTypeExpression
+{
+protected:
+	FExpressionType type;
+
+public:
+	FExpressionType &GetType() { return type; }
+};
+
+class FtSimpleType : public FtTypeExpression
+{
+public:
+	FtSimpleType(int t)
+	{
+		type = t;
+	}
+};
+
+class FtClassType : public FtTypeExpression
+{
+public:
+	FtClassType(FName name)
+	{
+		// no type checking yet!
+		type = VAL_Class;
+	}
+};
+
 
 #endif

@@ -1,23 +1,33 @@
 
 // Dark Servant Artifact ----------------------------------------------------
 
-ACTOR ArtiDarkServant : Inventory 86 native
+ACTOR ArtiDarkServant : Inventory native
 {
-	Game Hexen
-	SpawnID 16
-	+COUNTITEM
-	+FLOATBOB
-	Inventory.RespawnTics 4230
-	Inventory.DefMaxAmount
-	Inventory.PickupFlash "PickupFlash"
-	+INVBAR +FANCYPICKUPSOUND
-	Inventory.Icon "ARTISUMN"
-	Inventory.PickupSound "misc/p_pkup"
-	Inventory.PickupMessage "$TXT_ARTISUMMON"
+	Info
+	{
+		DoomEdNum (86)
+		Game ("Hexen")
+		SpawnID (16)
+	}
+
+	DefaultProperties
+	{
+		+COUNTITEM
+		+FLOATBOB
+		Inventory.RespawnTics (4230)
+		Inventory.DefMaxAmount ()
+		Inventory.PickupFlash ("PickupFlash")
+		+INVENTORY.INVBAR 
+		+INVENTORY.FANCYPICKUPSOUND
+		Inventory.Icon ("ARTISUMN")
+		Inventory.PickupSound ("misc/p_pkup")
+		Inventory.PickupMessage ("$TXT_ARTISUMMON")
+	}
+
 	States
 	{
 	Spawn:
-		SUMN A 350
+		SUMN A 350;
 		Loop
 	}
 }
@@ -26,21 +36,28 @@ ACTOR ArtiDarkServant : Inventory 86 native
 
 ACTOR SummoningDoll
 {
-	Game Hexen
-	Speed 20
-	+NOBLOCKMAP +DROPOFF +MISSILE
-	+NOTELEPORT
+	Info
+	{
+		Game ("Hexen")
+	}
 
-	action native A_Summon();
+	DefaultProperties
+	{
+		Speed (20)
+		+NOBLOCKMAP +DROPOFF +MISSILE
+		+NOTELEPORT
+	}
+
+	native action A_Summon();
 
 	States
 	{
 	Spawn:
-		SUMN A 4
+		SUMN A 4;
 		Loop
 	Death:
-		SUMN AA 4
-		SUMN A 4 A_Summon
+		SUMN AA 4;
+		SUMN A 4 A_Summon;
 		Stop
 	}
 }
@@ -49,16 +66,23 @@ ACTOR SummoningDoll
 
 ACTOR MinotaurSmoke
 {
-	Game Hexen
-	+NOBLOCKMAP +NOGRAVITY
-	+NOTELEPORT
-	RenderStyle Translucent
-	Alpha 0.6
+	Info
+	{
+		Game ("Hexen")
+	}
+
+	DefaultProperties
+	{
+		+NOBLOCKMAP +NOGRAVITY
+		+NOTELEPORT
+		RenderStyle ("Translucent")
+		Alpha (0.6)
+	}
 
 	States
 	{
 	Spawn:
-		MNSM ABCDEFGHIJKLMNOPQ 3
+		MNSM ABCDEFGHIJKLMNOPQ 3;
 		Stop
 	}
 }

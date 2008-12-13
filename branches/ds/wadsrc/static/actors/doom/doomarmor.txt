@@ -1,65 +1,92 @@
 
 // Armor bonus --------------------------------------------------------------
 
-Actor ArmorBonus : BasicArmorBonus 2015
+ACTOR ArmorBonus : BasicArmorBonus
 {
-	Game Doom
-	SpawnID 22
-	Radius 20
-	Height 16
-	Inventory.Pickupmessage "$GOTARMBONUS"
-	Inventory.Icon "BON2A0"
-	Armor.Savepercent 33.33333
-	Armor.Saveamount 1
-	Armor.Maxsaveamount 200
-	+COUNTITEM
-	+INVENTORY.ALWAYSPICKUP
+	Info
+	{
+		DoomEdNum (2015)
+		Game ("Doom")
+		SpawnID (22)
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		Inventory.Pickupmessage ("$GOTARMBONUS")
+		Inventory.Icon ("BON2A0")
+		Armor.Savepercent (33.335)
+		Armor.Saveamount (1)
+		Armor.Maxsaveamount (200)
+		+COUNTITEM
+		+INVENTORY.ALWAYSPICKUP
+	}
+
 	States
 	{
 	Spawn:
-		BON2 ABCDCB 6
+		BON2 ABCDCB 6;
 		loop
 	}
 }
 
 // Green armor --------------------------------------------------------------
 
-Actor GreenArmor : BasicArmorPickup 2018
+ACTOR GreenArmor : BasicArmorPickup
 {
-	Game Doom
-	SpawnID 68
-	Radius 20
-	Height 16
-	Inventory.Pickupmessage "$GOTARMOR"
-	Inventory.Icon "ARM1A0"
-	Armor.SavePercent 33.335
-	Armor.SaveAmount 100
+	Info
+	{
+		DoomEdNum (2018)
+		Game ("Doom")
+		SpawnID (68)
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		Inventory.Pickupmessage ("$GOTARMOR")
+		Inventory.Icon ("ARM1A0")
+		Armor.Savepercent (33.335)
+		Armor.Saveamount (100)
+	}
+
 	States
 	{
 	Spawn:
-		ARM1 A 6
-		ARM1 B 7 bright
+		ARM1 A 6;
+		ARM1 B 7 bright;
 		loop
 	}
 }
 
 // Blue armor ---------------------------------------------------------------
 
-Actor BlueArmor : BasicArmorPickup 2019
+ACTOR BlueArmor : BasicArmorPickup
 {
-	Game Doom
-	SpawnID 69
-	Radius 20
-	Height 16
-	Inventory.Pickupmessage "$GOTMEGA"
-	Inventory.Icon "ARM2A0"
-	Armor.Savepercent 50
-	Armor.Saveamount 200
+	Info
+	{
+		DoomEdNum (2019)
+		Game ("Doom")
+		SpawnID (69)
+	}
+
+	DefaultProperties
+	{
+		Radius (20)
+		Height (16)
+		Inventory.Pickupmessage ("$GOTMEGA")
+		Inventory.Icon ("ARM2A0")
+		Armor.Savepercent (50)
+		Armor.Saveamount (200)
+	}
+
 	States
 	{
 	Spawn:
-		ARM2 A 6
-		ARM2 B 6 bright
+		ARM2 A 6;
+		ARM2 B 6 bright;
 		loop
 	}
 }

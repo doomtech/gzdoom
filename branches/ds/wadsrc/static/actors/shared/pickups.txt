@@ -6,12 +6,16 @@
 
 ACTOR ItemFog
 {
-	+NOBLOCKMAP
-	+NOGRAVITY
+	DefaultProperties
+	{
+		+NOBLOCKMAP
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		IFOG ABABCDE 6 BRIGHT
+		IFOG ABABCDE 6 BRIGHT;
 		Stop
 	}
 }
@@ -20,11 +24,15 @@ ACTOR ItemFog
 
 ACTOR PickupFlash
 {
-	+NOGRAVITY
+	DefaultProperties
+	{
+		+NOGRAVITY
+	}
+
 	States
 	{
 	Spawn:
-		ACLO DCDCBCBABA 3
+		ACLO DCDCBCBABA 3;
 		Stop
 	}
 }

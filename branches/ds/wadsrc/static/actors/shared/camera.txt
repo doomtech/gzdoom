@@ -1,22 +1,39 @@
-ACTOR DoomBuilderCamera 32000
+ACTOR DoomBuilderCamera
 {
+	Info
+	{
+		DoomEdNum (32000)
+	}
+
 	States
 	{
 	Spawn:
-		TNT1 A 1
+		TNT1 A 1;
 		Stop
 	}
 }
 
 
-ACTOR SecurityCamera 9025 native 
+ACTOR SecurityCamera native
 {
-	+NOBLOCKMAP 
-	+NOGRAVITY
-	+DONTSPLASH
-	RenderStyle None
+	Info
+	{
+		DoomEdNum (9025)
+	}
+
+	DefaultProperties
+	{
+		+NOBLOCKMAP 
+		+NOGRAVITY
+		+DONTSPLASH
+		RenderStyle ("None")
+	}
 }
 
-ACTOR AimingCamera : SecurityCamera 9073 native 
+ACTOR AimingCamera : SecurityCamera native
 {
+	Info
+	{
+		DoomEdNum (9073)
+	}
 }

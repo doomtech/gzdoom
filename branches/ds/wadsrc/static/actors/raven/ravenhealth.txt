@@ -1,14 +1,23 @@
-ACTOR CrystalVial : Health 81
+ACTOR CrystalVial : Health
 {
-	Game Raven
-	SpawnID 23
-	+FLOATBOB
-	Inventory.Amount 10
-	Inventory.PickupMessage "$TXT_ITEMHEALTH"
+	Info
+	{
+		DoomEdNum (81)
+		Game ("Raven")
+		SpawnID (23)
+	}
+
+	DefaultProperties
+	{
+		+FLOATBOB
+		Inventory.Amount (10)
+		Inventory.PickupMessage ("$TXT_ITEMHEALTH")
+	}
+
 	States
 	{
 	Spawn:
-		PTN1 ABC 3
+		PTN1 ABC 3;
 		Loop
 	}
 }

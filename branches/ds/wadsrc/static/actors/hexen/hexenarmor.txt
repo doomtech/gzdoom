@@ -1,72 +1,108 @@
 
 // Mesh Armor (1) -----------------------------------------------------------
 
-ACTOR MeshArmor : HexenArmor 8005
+ACTOR MeshArmor : HexenArmor
 {
-	Game Hexen
-	SpawnID 68
-	+NOGRAVITY
-	Health 0	// Armor class
-	Inventory.Amount 0
-	Inventory.PickupMessage "$TXT_ARMOR1"
+	Info
+	{
+		DoomEdNum (8005)
+		Game ("Hexen")
+		SpawnID (68)
+	}
+
+	DefaultProperties
+	{
+		+NOGRAVITY
+		Health (0)	// Armor class
+		Inventory.Amount (0)
+		Inventory.PickupMessage ("$TXT_ARMOR1")
+	}
+
 	States
 	{
 	Spawn:
-		AR_1 A -1
+		AR_1 A -1;
 		Stop
 	}
 }
 	
 // Falcon Shield (2) --------------------------------------------------------
 
-ACTOR FalconShield : HexenArmor 8006
+ACTOR FalconShield : HexenArmor
 {
-	Game Hexen
-	SpawnID 69
-	+NOGRAVITY
-	Health 1	// Armor class
-	Inventory.Amount 0
-	Inventory.PickupMessage "$TXT_ARMOR2"
+	Info
+	{
+		DoomEdNum (8006)
+		Game ("Hexen")
+		SpawnID (69)
+	}
+
+	DefaultProperties
+	{
+		+NOGRAVITY
+		Health (1)	// Armor class
+		Inventory.Amount (0)
+		Inventory.PickupMessage ("$TXT_ARMOR2")
+	}
+
 	States
 	{
 	Spawn:
-		AR_2 A -1
+		AR_2 A -1;
 		Stop
 	}
 }
 
 // Platinum Helm (3) --------------------------------------------------------
 
-ACTOR PlatinumHelm : HexenArmor 8007
+ACTOR PlatinumHelm : HexenArmor
 {
-	Game Hexen
-	SpawnID 70
-	+NOGRAVITY
-	Health 2	// Armor class
-	Inventory.Amount 0
-	Inventory.PickupMessage "$TXT_ARMOR3"
+	Info
+	{
+		DoomEdNum (8007)
+		Game ("Hexen")
+		SpawnID (70)
+	}
+
+	DefaultProperties
+	{
+		+NOGRAVITY
+		Health (2)	// Armor class
+		Inventory.Amount (0)
+		Inventory.PickupMessage ("$TXT_ARMOR3")
+	}
+
 	States
 	{
 	Spawn:
-		AR_3 A -1
+		AR_3 A -1;
 		Stop
 	}
 }
 
 // Amulet of Warding (4) ----------------------------------------------------
 
-ACTOR AmuletOfWarding : HexenArmor 8008
+ACTOR AmuletOfWarding : HexenArmor
 {
-	Game Hexen
-	SpawnID 71
-	+NOGRAVITY
-	Health 3	// Armor class
-	Inventory.Amount 0
-	Inventory.PickupMessage "$TXT_ARMOR4"
+	Info
+	{
+		DoomEdNum (8008)
+		Game ("Hexen")
+		SpawnID (71)
+	}
+
+	DefaultProperties
+	{
+		+NOGRAVITY
+		Health (3)	// Armor class
+		Inventory.Amount (0)
+		Inventory.PickupMessage ("$TXT_ARMOR4")
+	}
+
 	States
 	{
 	Spawn:
-		AR_4 A -1
+		AR_4 A -1;
 		Stop
 	}
 }

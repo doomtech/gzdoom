@@ -3,18 +3,26 @@
 
 ACTOR Blood
 {
-	SpawnID 130
-	Mass 5
-	+NOBLOCKMAP
-	+NOTELEPORT
+	Info
+	{
+		SpawnID (130)
+	}
+
+	DefaultProperties
+	{
+		Mass (5)
+		+NOBLOCKMAP
+		+NOTELEPORT
+	}
+
 	States
 	{
 	Spawn:
-		BLUD CBA 8
+		BLUD CBA 8;
 		Stop
 	Spray:
-		SPRY ABCDEF 3
-		SPRY G 2
+		SPRY ABCDEF 3;
+		SPRY G 2;
 		Stop
 	}
 }
@@ -23,21 +31,25 @@ ACTOR Blood
 
 ACTOR BloodSplatter
 {
-	Radius 2
-	Height 4
-	+NOBLOCKMAP
-	+MISSILE
-	+DROPOFF
-	+NOTELEPORT
-	+CANNOTPUSH
-	Mass 5
+	DefaultProperties
+	{
+		Radius (2)
+		Height (4)
+		+NOBLOCKMAP
+		+MISSILE
+		+DROPOFF
+		+NOTELEPORT
+		+CANNOTPUSH
+		Mass (5)
+	}
+
 	States
 	{
 	Spawn:
-		BLUD CBA 8
+		BLUD CBA 8;
 		Stop
 	Death:
-		BLUD A 6
+		BLUD A 6;
 		Stop
 	}
 }
@@ -46,20 +58,24 @@ ACTOR BloodSplatter
 
 ACTOR AxeBlood
 {
-	Radius 2
-	Height 4
-	+NOBLOCKMAP
-	+NOGRAVITY
-	+DROPOFF
-	+NOTELEPORT
-	+CANNOTPUSH
-	Mass 5
+	DefaultProperties
+	{
+		Radius (2)
+		Height (4)
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DROPOFF
+		+NOTELEPORT
+		+CANNOTPUSH
+		Mass (5)
+	}
+
 	States
 	{
 	Spawn:
-		FAXE FGHIJ 3
+		FAXE FGHIJ 3;
 	Death:
-		FAXE K 3
+		FAXE K 3;
 		Stop
 	}
 }

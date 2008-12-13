@@ -1,12 +1,15 @@
 // Chex Warrior
 
-actor ChexPlayer : DoomPlayer
+ACTOR ChexPlayer : DoomPlayer
 {
-	player.displayname "Chex Warrior"
-	player.crouchsprite ""
-	player.colorrange 192, 207 //Not perfect, but its better than everyone being blue.
-	player.startitem "MiniZorcher"
-	player.startitem "Bootspoon"
-	player.startitem "MiniZorchRecharge", 50
-	player.damagescreencolor "60 b0 58"
+	DefaultProperties
+	{
+		player.displayname ("Chex Warrior")
+		player.crouchsprite ("")
+		player.colorrange (192, 207) //Not perfect, but its better than everyone being blue.
+		player.startitem ("MiniZorcher")
+		player.startitem ("Bootspoon")
+		player.startitem ("MiniZorchRecharge", 50)
+		player.damagescreencolor ("60 b0 58")
+	}
 }

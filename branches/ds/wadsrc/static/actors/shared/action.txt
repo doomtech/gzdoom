@@ -8,22 +8,25 @@
 
 ACTOR IceChunk
 {
-	Radius 3
-	Height 4
-	Mass 5
-	Gravity 0.125
-	+DROPOFF
-	+CANNOTPUSH
-	+FLOORCLIP
-	+NOTELEPORT
+	DefaultProperties
+	{
+		Radius (3)
+		Height (4)
+		Mass (5)
+		Gravity (0.125)
+		+DROPOFF
+		+CANNOTPUSH
+		+FLOORCLIP
+		+NOTELEPORT
+	}
 
-	action native A_IceSetTics ();
+	native action A_IceSetTics ();
 
 	States
 	{
 	Spawn:
-		ICEC A 1
-		ICEC ABCD 10 A_IceSetTics
+		ICEC A 1;
+		ICEC ABCD 10 A_IceSetTics;
 		Stop
 	}
 }
@@ -36,18 +39,22 @@ ACTOR IceChunk
 
 ACTOR IceChunkHead : PlayerChunk
 {
-	Radius 3
-	Height 4
-	Mass 5
-	Gravity 0.125
-	DamageType Ice	
-	+DROPOFF
-	+CANNOTPUSH
+	DefaultProperties
+	{
+		Radius (3)
+		Height (4)
+		Mass (5)
+		Gravity (0.125)
+		DamageType ("Ice")
+		+DROPOFF
+		+CANNOTPUSH
+	}
+
 	States
 	{
 	Spawn:
-		ICEC A 0
-		ICEC A 10 A_CheckPlayerDone
+		ICEC A 0;
+		ICEC A 10 A_CheckPlayerDone;
 		wait
 	}
 }

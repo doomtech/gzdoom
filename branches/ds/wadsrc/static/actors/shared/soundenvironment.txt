@@ -1,9 +1,17 @@
 
-ACTOR SoundEnvironment 9048 native
+ACTOR SoundEnvironment native
 {
-	+NOSECTOR
-	+NOBLOCKMAP
-	+NOGRAVITY
-	+DONTSPLASH
+	Info
+	{
+		DoomEdNum (9048)
+	}
+
+	DefaultProperties
+	{
+		+NOSECTOR
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+	}
 }
 

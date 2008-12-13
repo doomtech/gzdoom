@@ -1,3 +1,7 @@
-ACTOR Decal 9200 native
+ACTOR Decal native
 {
+	Info
+	{
+		DoomEdNum (9200)
+	}
 }
