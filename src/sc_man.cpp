@@ -1101,6 +1101,7 @@ void STACK_ARGS FScriptPosition::Message (int severity, const char *message, ...
 		break;
 
 	case MSG_ERROR:
+		ErrorCounter++;
 		type = "error";
 		break;
 
