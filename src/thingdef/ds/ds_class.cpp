@@ -41,6 +41,7 @@
 #include "doomerrors.h"
 #include "templates.h"
 #include "v_palette.h"
+#include "w_wad.h"
 #include "thingdef/thingdef.h"
 #include "thingdef/thingdef_statement.h"
 #include "thingdef/thingdef_exp.h"
@@ -113,7 +114,7 @@ void FsClass::DefineConstant(FsStatement *constant)
 
 void FsClass::AddFunction(Baggage &bag, FsFunction *func)
 {
-	if (bag.LumpNum == -1 || Wads.GetLumpFile(bag.LumpNum) > 0)
+	if (bag.Lumpnum == -1 || Wads.GetLumpFile(bag.Lumpnum) > 0)
 	{
 		func->ScriptPosition.Message(MSG_ERROR,
 			"action functions can only be imported by internal class and actor definitions!");
