@@ -141,7 +141,7 @@ public:
 	void AddProperty(Baggage &bag, FName name1, FName name2, FPropArgs *arguments, const FScriptPosition &pos, bool info);
 	void AddExpressionProperty(Baggage &bag, FName name1, FName name2, FxExpression *ex, const FScriptPosition &pos);
 	void AddFlag(FName name1, FName name2, bool on, const FScriptPosition &pos);
-	void AddFunction(FsFunction *func);
+	void AddFunction(Baggage &bag, FsFunction *func);
 
 };
 

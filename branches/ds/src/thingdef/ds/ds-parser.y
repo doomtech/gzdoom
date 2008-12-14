@@ -283,7 +283,7 @@
 
 	class_body(A) ::= class_body(B) function_prototype(C).
 	{
-		B->AddFunction(C);
+		B->AddFunction(*context, C);
 		A = B;
 	}
 
