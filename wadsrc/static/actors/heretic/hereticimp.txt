@@ -10,7 +10,7 @@ ACTOR HereticImp
 		SpawnID (5)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (40)
 		Radius (16)
@@ -93,7 +93,7 @@ ACTOR HereticImpLeader : HereticImp
 		SpawnID (7)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (80)
 		-MISSILEMORE
@@ -115,7 +115,7 @@ ACTOR HereticImpLeader : HereticImp
 
 ACTOR HereticImpChunk1
 {
-	DefaultProperties
+	Defaults
 	{
 		Mass (5)
 		Radius (4)
@@ -134,7 +134,7 @@ ACTOR HereticImpChunk1
 
 ACTOR HereticImpChunk2
 {
-	DefaultProperties
+	Defaults
 	{
 		Mass (5)
 		Radius (4)
@@ -159,7 +159,7 @@ ACTOR HereticImpBall
 		SpawnID (10)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (8)

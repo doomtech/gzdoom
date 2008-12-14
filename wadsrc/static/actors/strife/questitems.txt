@@ -77,7 +77,7 @@ ACTOR QuestItem4 : QuestItem
 		ConversationID (315, 296, 313)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Tag ("quest4")
 	}
@@ -90,7 +90,7 @@ ACTOR QuestItem5 : QuestItem
 		ConversationID (316, 297, 314)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Tag ("quest5")
 	}
@@ -103,7 +103,7 @@ ACTOR QuestItem6 : QuestItem
 		ConversationID (317, 298, 315)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Tag ("quest4")
 	}

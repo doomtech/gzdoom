@@ -60,7 +60,7 @@ actor DeadZombieMan : ZombieMan
 		Game ("Doom")
 	}
 	
-	DefaultProperties
+	Defaults
 	{
 		Skip_Super()
 		DropItem ("None")
@@ -100,7 +100,7 @@ actor DeadDoomImp : DoomImp
 		Game ("Doom")
 	}
 	
-	DefaultProperties
+	Defaults
 	{
 		Skip_Super()
 	}
@@ -122,7 +122,7 @@ actor DeadDemon : Demon
 		Game ("Doom")
 	}
 	
-	DefaultProperties
+	Defaults
 	{
 		Skip_Super()
 	}
@@ -144,7 +144,7 @@ actor DeadCacodemon : Cacodemon
 		Game ("Doom")
 	}
 	
-	DefaultProperties
+	Defaults
 	{
 		Skip_Super()
 	}
@@ -172,7 +172,7 @@ actor DeadLostSoul : LostSoul
 		Game ("Doom")
 	}
 	
-	DefaultProperties
+	Defaults
 	{
 		Skip_Super()
 	}

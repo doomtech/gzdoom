@@ -10,7 +10,7 @@ ACTOR Mummy
 		SpawnID (4)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (80)
 		Radius (22)
@@ -69,7 +69,7 @@ ACTOR MummyLeader : Mummy
 		SpawnID (2)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (100)
 		Painchance (64)
@@ -100,7 +100,7 @@ ACTOR MummyGhost : Mummy
 		SpawnID (8)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+SHADOW
 		+GHOST
@@ -120,7 +120,7 @@ ACTOR MummyLeaderGhost : MummyLeader
 		SpawnID (9)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+SHADOW
 		+GHOST
@@ -133,7 +133,7 @@ ACTOR MummyLeaderGhost : MummyLeader
 
 ACTOR MummySoul
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -158,7 +158,7 @@ ACTOR MummyFX1
 		SpawnID (131)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (14)

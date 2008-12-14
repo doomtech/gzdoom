@@ -8,7 +8,7 @@ ACTOR Reaver
 		ConversationID (52, -1, -1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (150)
 		Painchance (128)

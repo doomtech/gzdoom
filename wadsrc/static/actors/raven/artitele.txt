@@ -9,7 +9,7 @@ ACTOR ArtiTeleport : Inventory native
 		Game ("Raven")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+FLOATBOB

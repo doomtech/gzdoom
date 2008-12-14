@@ -8,7 +8,7 @@ ACTOR FireBall
 		SpawnID (10)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (2)
 		Radius (8)
@@ -42,7 +42,7 @@ ACTOR Arrow
 		SpawnID (50)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (6)
 		Radius (8)
@@ -73,7 +73,7 @@ ACTOR Dart
 		SpawnID (51)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (6)
 		Radius (8)
@@ -104,7 +104,7 @@ ACTOR PoisonDart : Dart
 		SpawnID (52)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PoisonDamage (20)
 	}
@@ -120,7 +120,7 @@ ACTOR RipperBall
 		SpawnID (53)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (6)
 		Radius (8)
@@ -159,7 +159,7 @@ ACTOR ProjectileBlade
 		SpawnID (64)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (6)
 		Radius (6)

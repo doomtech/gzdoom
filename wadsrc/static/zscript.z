@@ -9,7 +9,7 @@ ACTOR FS_Mapspot : Mapspot
 
 ACTOR DynamicLight native
 {
-	DefaultProperties
+	Defaults
 	{
 		Height (0)
 		Radius (0.1)
@@ -68,7 +68,7 @@ ACTOR PointLightAdditive : PointLight
 		DoomEdNum (9810)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEMORE
 	}
@@ -81,7 +81,7 @@ ACTOR PointLightPulseAdditive : PointLightPulse
 		DoomEdNum (9811)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEMORE
 	}
@@ -94,7 +94,8 @@ ACTOR PointLightFlickerAdditive : PointLightFlicker
 		DoomEdNum (9812)
 	}
 
-	DefaultProperties
+	Defaults
+
 	{
 		+MISSILEMORE
 	}
@@ -107,7 +108,7 @@ ACTOR SectorPointLightAdditive : SectorPointLight
 		DoomEdNum (9813)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEMORE
 	}
@@ -120,7 +121,7 @@ ACTOR PointLightFlickerRandomAdditive : PointLightFlickerRandom
 		DoomEdNum (9814)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEMORE
 	}
@@ -133,7 +134,7 @@ ACTOR PointLightSubtractive : PointLight
 		DoomEdNum (9820)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEEVENMORE
 	}
@@ -146,7 +147,7 @@ ACTOR PointLightPulseSubtractive : PointLightPulse
 		DoomEdNum (9821)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEEVENMORE
 	}
@@ -159,7 +160,7 @@ ACTOR PointLightFlickerSubtractive : PointLightFlicker
 		DoomEdNum (9822)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEEVENMORE
 	}
@@ -172,7 +173,7 @@ ACTOR SectorPointLightSubtractive : SectorPointLight
 		DoomEdNum (9823)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEEVENMORE
 	}
@@ -185,7 +186,7 @@ ACTOR PointLightFlickerRandomSubtractive : PointLightFlickerRandom
 		DoomEdNum (9824)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEEVENMORE
 	}

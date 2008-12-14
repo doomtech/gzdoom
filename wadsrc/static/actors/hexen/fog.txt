@@ -9,7 +9,7 @@ ACTOR FogSpawner
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOSECTOR +NOBLOCKMAP
 		+FLOATBOB
@@ -36,7 +36,7 @@ ACTOR FogPatchSmall
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (1)
 		+NOBLOCKMAP +NOGRAVITY +NOCLIP +FLOAT

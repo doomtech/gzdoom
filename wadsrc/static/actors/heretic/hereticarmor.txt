@@ -10,7 +10,7 @@ ACTOR SilverShield : BasicArmorPickup
 		SpawnID (68)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOATBOB
 		Inventory.Pickupmessage ("$TXT_ITEMSHIELD1")
@@ -38,7 +38,7 @@ ACTOR EnchantedShield : BasicArmorPickup
 		SpawnID (69)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOATBOB
 		Inventory.Pickupmessage ("$TXT_ITEMSHIELD2")

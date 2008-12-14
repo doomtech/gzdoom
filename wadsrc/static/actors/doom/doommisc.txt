@@ -9,7 +9,7 @@ ACTOR ExplosiveBarrel
 		SpawnID (125)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (20)
 		Radius (10)
@@ -52,7 +52,7 @@ ACTOR BulletPuff
 		SpawnID (131)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY

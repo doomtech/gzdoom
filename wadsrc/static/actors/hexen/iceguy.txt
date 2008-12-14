@@ -10,7 +10,7 @@ ACTOR IceGuy
 		SpawnID (20)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (120)
 		PainChance (144)
@@ -64,7 +64,7 @@ ACTOR IceGuy
 
 ACTOR IceGuyFX
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (14)
 		Radius (8)
@@ -96,7 +96,7 @@ ACTOR IceGuyFX
 
 ACTOR IceFXPuff
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (1)
 		Height (1)
@@ -119,7 +119,7 @@ ACTOR IceFXPuff
 
 ACTOR IceGuyFX2
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (10)
 		Radius (4)
@@ -144,7 +144,7 @@ ACTOR IceGuyFX2
 
 ACTOR IceGuyBit
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (1)
 		Height (1)
@@ -167,7 +167,7 @@ ACTOR IceGuyBit
 
 ACTOR IceGuyWisp1
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY +DROPOFF +MISSILE
 		+NOTELEPORT

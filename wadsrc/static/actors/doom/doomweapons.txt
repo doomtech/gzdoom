@@ -6,7 +6,7 @@
 
 ACTOR DoomWeapon : Weapon
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.Kickback (100)
 	}
@@ -20,7 +20,7 @@ ACTOR DoomWeapon : Weapon
 
 ACTOR Fist : Weapon
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (3700)
 		Weapon.Kickback (100)
@@ -64,7 +64,7 @@ ACTOR Pistol : DoomWeapon
 		DoomEdNum (5010)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (1900)
 		Weapon.AmmoUse (1)
@@ -118,7 +118,7 @@ ACTOR Chainsaw : Weapon
 		SpawnID (32)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Weapon.Kickback (0)
 		Weapon.SelectionOrder (2200)
@@ -166,7 +166,7 @@ ACTOR Shotgun : DoomWeapon
 		SpawnID (27)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (1300)
 		Weapon.AmmoUse (1)
@@ -221,7 +221,7 @@ ACTOR SuperShotgun : DoomWeapon
 		SpawnID (33)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (400)
 		Weapon.AmmoUse (2)
@@ -283,7 +283,7 @@ ACTOR Chaingun : DoomWeapon
 		SpawnID (28)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (700)
 		Weapon.AmmoUse (1)
@@ -334,7 +334,7 @@ ACTOR RocketLauncher : DoomWeapon
 		SpawnID (29)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (2500)
 		Weapon.AmmoUse (1)
@@ -379,7 +379,7 @@ ACTOR Rocket
 		SpawnID (127)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (11)
 		Height (8)
@@ -422,7 +422,7 @@ ACTOR PlasmaRifle : DoomWeapon
 		SpawnID (30)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (100)
 		Weapon.AmmoUse (1)
@@ -465,7 +465,7 @@ ACTOR PlasmaBall
 		SpawnID (51)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (13)
 		Height (8)
@@ -508,7 +508,7 @@ ACTOR BFG9000 : DoomWeapon
 		SpawnID (31)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Height (20)
 		Weapon.SelectionOrder (2800)
@@ -555,7 +555,7 @@ ACTOR BFGBall
 		SpawnID (128)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (13)
 		Height (8)
@@ -584,7 +584,7 @@ ACTOR BFGBall
 		
 ACTOR BFGExtra
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY

@@ -10,7 +10,7 @@ ACTOR ChexCivilian1 : GreenTorch
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (54)
 	}
@@ -24,7 +24,7 @@ ACTOR ChexCivilian2 : ShortGreenTorch
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (54)
 	}
@@ -38,7 +38,7 @@ ACTOR ChexCivilian3 : ShortRedTorch
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (48)
 	}
@@ -54,7 +54,7 @@ ACTOR ChexLandingLight : Column
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (35)
 	}
@@ -68,7 +68,7 @@ ACTOR ChexSpaceship : TechPillar
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (52)
 	}
@@ -84,7 +84,7 @@ ACTOR ChexAppleTree : Stalagtite
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (92)
 	}
@@ -98,7 +98,7 @@ ACTOR ChexBananaTree : BigTree
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (108)
 	}
@@ -112,7 +112,7 @@ ACTOR ChexOrangeTree : TorchTree
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (92)
 	}
@@ -126,7 +126,7 @@ ACTOR ChexSubmergedPlant : ShortGreenColumn
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (42)
 	}
@@ -140,7 +140,7 @@ ACTOR ChexTallFlower : HeadsOnAStick
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (25)
 	}
@@ -154,7 +154,7 @@ ACTOR ChexTallFlower2 : DeadStick
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (25)
 	}
@@ -170,7 +170,7 @@ ACTOR ChexSlimeFountain : BlueTorch
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (48)
 	}
@@ -193,7 +193,7 @@ ACTOR ChexCavernColumn : TallRedColumn
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (128)
 	}
@@ -207,7 +207,7 @@ ACTOR ChexCavernStalagmite : TallGreenColumn
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (60)
 	}
@@ -223,7 +223,7 @@ ACTOR ChexChemicalBurner : EvilEye
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (25)
 	}
@@ -237,7 +237,7 @@ ACTOR ChexChemicalFlask : Candlestick
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		renderstyle ("translucent")
 		alpha (0.75)
@@ -252,7 +252,7 @@ ACTOR ChexFlagOnPole : SkullColumn
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (128)
 	}
@@ -266,7 +266,7 @@ ACTOR ChexGasTank : Candelabra
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (36)
 	}
@@ -280,7 +280,7 @@ ACTOR ChexLightColumn : ShortBlueTorch
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (86)
 	}
@@ -294,7 +294,7 @@ ACTOR ChexMineCart : ShortRedColumn
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (30)
 	}

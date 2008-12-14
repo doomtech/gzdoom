@@ -3,7 +3,7 @@
 
 ACTOR Unknown
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (32)
 		Height (56)
@@ -29,7 +29,7 @@ ACTOR PatrolPoint
 		DoomEdNum (9024)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (8)
@@ -50,7 +50,7 @@ ACTOR PatrolSpecial
 		DoomEdNum (9047)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (8)
@@ -71,7 +71,7 @@ ACTOR MapSpot
 		DoomEdNum (9001)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOSECTOR
@@ -90,7 +90,7 @@ ACTOR MapSpotGravity : MapSpot
 		DoomEdNum (9013)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		-NOBLOCKMAP
 		-NOSECTOR
@@ -107,7 +107,7 @@ ACTOR PointPusher
 		DoomEdNum (5001)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+INVISIBLE
@@ -121,7 +121,7 @@ ACTOR PointPuller
 		DoomEdNum (5002)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+INVISIBLE
@@ -132,7 +132,7 @@ ACTOR PointPuller
 
 ACTOR RealGibs
 {
-	DefaultProperties
+	Defaults
 	{
 		+DROPOFF
 		+CORPSE
@@ -163,7 +163,7 @@ ACTOR Gibs : RealGibs
 		SpawnID (146)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		ClearFlags ()
 	}
@@ -178,7 +178,7 @@ ACTOR CustomSprite native
 		DoomEdNum (9988)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -207,7 +207,7 @@ ACTOR SwitchingDecoration : SwitchableDecoration native
 
 ACTOR RandomSpawner native
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOSECTOR
@@ -219,7 +219,7 @@ ACTOR RandomSpawner native
 
 ACTOR FastProjectile native
 {
-	DefaultProperties
+	Defaults
 	{
 		Projectile ()
 	}

@@ -6,7 +6,7 @@ ACTOR Spark native
 		DoomEdNum (9026)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOSECTOR
 		+NOBLOCKMAP

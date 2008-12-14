@@ -12,7 +12,7 @@ ACTOR LostSoul
 		SpawnID (110)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (100)
 		Radius (16)

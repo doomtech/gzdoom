@@ -10,7 +10,7 @@ ACTOR Ettin
 		SpawnID (4)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (175)
 		Radius (25)
@@ -77,7 +77,7 @@ ACTOR Ettin
 
 ACTOR EttinMace
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (5)
 		Height (5)
@@ -110,7 +110,7 @@ ACTOR EttinMash : Ettin
 		SpawnID (102)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOOD
 		+NOICEDEATH

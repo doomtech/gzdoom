@@ -12,7 +12,7 @@ ACTOR Arachnotron
 		SpawnID (6)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (500)
 		Radius (64)
@@ -78,7 +78,7 @@ ACTOR ArachnotronPlasma
 		SpawnID (129)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (13)
 		Height (8)

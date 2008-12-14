@@ -11,7 +11,7 @@ ACTOR GlassOfWater : HealthBonus
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		inventory.pickupmessage ("$GOTWATER")
 	}
@@ -25,7 +25,7 @@ ACTOR BowlOfFruit : Stimpack
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		inventory.pickupmessage ("$GOTFRUIT")
 	}
@@ -39,7 +39,7 @@ ACTOR BowlOfVegetables : Medikit
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		inventory.pickupmessage ("$GOTVEGETABLES")
 		health.lowmessage (25, "$GOTVEGETABLESNEED")
@@ -54,7 +54,7 @@ ACTOR SuperchargeBreakfast : Soulsphere
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		inventory.pickupmessage ("$GOTBREAKFAST")
 	}
@@ -70,7 +70,7 @@ ACTOR SlimeRepellent : ArmorBonus
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		inventory.pickupmessage ("$GOTREPELLENT")
 	}
@@ -84,7 +84,7 @@ ACTOR ChexArmor : GreenArmor
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		inventory.pickupmessage ("$GOTCHEXARMOR")
 	}
@@ -98,7 +98,7 @@ ACTOR SuperChexArmor : BlueArmor
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		inventory.pickupmessage ("$GOTSUPERCHEXARMOR")
 	}
@@ -114,7 +114,7 @@ ACTOR ComputerAreaMap : Allmap
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		inventory.pickupmessage ("$GOTCHEXMAP")
 	}
@@ -128,7 +128,7 @@ ACTOR SlimeProofSuit : RadSuit
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		inventory.pickupmessage ("$GOTSLIMESUIT")
 	}
@@ -142,7 +142,7 @@ ACTOR Zorchpack : Backpack
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		inventory.pickupmessage ("$GOTZORCHPACK")
 	}

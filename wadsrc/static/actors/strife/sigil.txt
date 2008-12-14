@@ -8,7 +8,7 @@ ACTOR Sigil : Weapon native
 		Game ("Strife")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Weapon.Kickback (100)
 		Weapon.SelectionOrder (4000)
@@ -132,7 +132,7 @@ ACTOR Sigil1 : Sigil
 		ConversationID (196, 190, 194)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_SGL1")
 		Health (1)
@@ -150,7 +150,7 @@ ACTOR Sigil2 : Sigil
 		ConversationID (197, 191, 195)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_SGL2")
 		Health (2)
@@ -168,7 +168,7 @@ ACTOR Sigil3 : Sigil
 		ConversationID (198, 192, 196)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_SGL3")
 		Health (3)
@@ -186,7 +186,7 @@ ACTOR Sigil4 : Sigil
 		ConversationID (199, 193, 197)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_SGL4")
 		Health (4)
@@ -204,7 +204,7 @@ ACTOR Sigil5 : Sigil
 		ConversationID (200, 194, 198)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_SGL5")
 		Health (5)

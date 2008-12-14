@@ -6,7 +6,7 @@ ACTOR Korax
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (5000)
 		Painchance (20)
@@ -89,7 +89,7 @@ ACTOR Korax
 
 ACTOR KoraxSpirit
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (8)
 		Projectile ()
@@ -115,7 +115,7 @@ ACTOR KoraxSpirit
 
 ACTOR KoraxBolt
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (15)
 		Height (35)

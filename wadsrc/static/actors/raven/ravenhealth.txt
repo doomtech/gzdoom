@@ -7,7 +7,7 @@ ACTOR CrystalVial : Health
 		SpawnID (23)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOATBOB
 		Inventory.Amount (10)

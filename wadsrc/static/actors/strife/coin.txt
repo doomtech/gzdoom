@@ -10,7 +10,7 @@ ACTOR Coin : Inventory native
 		ConversationID (168, 161, 165)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+DROPPED
 		+NOTDMATCH
@@ -42,7 +42,7 @@ ACTOR Gold10 : Coin
 		ConversationID (169, 162, 166)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Amount (10)
 		Tag ("10_gold")
@@ -68,7 +68,7 @@ ACTOR Gold25 : Coin
 		ConversationID (170, 163, 167)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Amount (25)
 		Tag ("25_gold")
@@ -94,7 +94,7 @@ ACTOR Gold50 : Coin
 		ConversationID (171, 164, 168)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Amount (50)
 		Tag ("50_gold")
@@ -118,7 +118,7 @@ ACTOR Gold300 : Coin
 		ConversationID (172, -1, -1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Amount (300)
 		Tag ("300_gold")

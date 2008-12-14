@@ -8,7 +8,7 @@ ACTOR StealthArachnotron : Arachnotron
 		SpawnID (117)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+STEALTH
 		RenderStyle ("Translucent")
@@ -26,7 +26,7 @@ ACTOR StealthArchvile : Archvile
 		SpawnID (118)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+STEALTH
 		RenderStyle ("Translucent")
@@ -44,7 +44,7 @@ ACTOR StealthBaron : BaronOfHell
 		SpawnID (100)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+STEALTH
 		RenderStyle ("Translucent")
@@ -63,7 +63,7 @@ ACTOR StealthCacodemon : Cacodemon
 		SpawnID (119)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+STEALTH
 		RenderStyle ("Translucent")
@@ -82,7 +82,7 @@ ACTOR StealthChaingunGuy : ChaingunGuy
 		SpawnID (120)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+STEALTH
 		RenderStyle ("Translucent")
@@ -100,7 +100,7 @@ ACTOR StealthDemon : Demon
 		SpawnID (121)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+STEALTH
 		RenderStyle ("Translucent")
@@ -119,7 +119,7 @@ ACTOR StealthHellKnight : HellKnight
 		SpawnID (101)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+STEALTH
 		RenderStyle ("Translucent")
@@ -138,7 +138,7 @@ ACTOR StealthDoomImp : DoomImp
 		SpawnID (122)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+STEALTH
 		RenderStyle ("Translucent")
@@ -157,7 +157,7 @@ ACTOR StealthFatso : Fatso
 		SpawnID (123)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+STEALTH
 		RenderStyle ("Translucent")
@@ -175,7 +175,7 @@ ACTOR StealthRevenant : Revenant
 		SpawnID (124)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+STEALTH
 		RenderStyle ("Translucent")
@@ -194,7 +194,7 @@ ACTOR StealthShotgunGuy : ShotgunGuy
 		SpawnID (103)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+STEALTH
 		RenderStyle ("Translucent")
@@ -212,7 +212,7 @@ ACTOR StealthZombieMan : ZombieMan
 		SpawnID (102)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+STEALTH
 		RenderStyle ("Translucent")

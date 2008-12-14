@@ -9,7 +9,7 @@ ACTOR Mana1 : Ammo
 		SpawnID (11)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Amount (15)
 		Inventory.MaxAmount (200)
@@ -41,7 +41,7 @@ ACTOR Mana2 : Ammo
 		SpawnID (12)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Amount (15)
 		Inventory.MaxAmount (200)
@@ -73,7 +73,7 @@ ACTOR Mana3 : CustomInventory
 		SpawnID (75)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (8)
@@ -104,7 +104,7 @@ ACTOR ArtiBoostMana : CustomInventory
 		SpawnID (26)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOATBOB
 		+COUNTITEM

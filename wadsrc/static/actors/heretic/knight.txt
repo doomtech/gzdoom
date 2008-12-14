@@ -10,7 +10,7 @@ ACTOR Knight
 		SpawnID (6)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (200)
 		Radius (24)
@@ -76,7 +76,7 @@ ACTOR KnightGhost : Knight
 		SpawnID (129)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+SHADOW
 		+GHOST
@@ -95,7 +95,7 @@ ACTOR KnightAxe
 		SpawnID (127)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (8)
@@ -133,7 +133,7 @@ ACTOR RedAxe : KnightAxe
 		SpawnID (128)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		-WINDTHRUST

@@ -12,7 +12,7 @@ ACTOR Fatso
 		SpawnID (112)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (600)
 		Radius (48)
@@ -80,7 +80,7 @@ ACTOR FatShot
 		SpawnID (153)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (6)
 		Height (8)

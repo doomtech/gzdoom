@@ -10,7 +10,7 @@ ACTOR Zombie : StrifeHumanoid
 		ConversationID (28, -1, -1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (31)
 		Radius (20)
@@ -60,7 +60,7 @@ ACTOR ZombieSpawner
 		ConversationID (30, -1, -1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (20)
 		+SHOOTABLE

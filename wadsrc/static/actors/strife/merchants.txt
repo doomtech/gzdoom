@@ -2,7 +2,7 @@
 
 ACTOR Merchant
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (10000000)
 		PainChance (256)	// a merchant should always enter the pain state when getting hurt
@@ -66,7 +66,7 @@ ACTOR WeaponSmith : Merchant
 		ConversationID (2)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PainSound ("smith/pain")
 		Tag ("Weapon_Smith")
@@ -85,7 +85,7 @@ ACTOR BarKeep : Merchant
 		ConversationID (3)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (4)
 		PainSound ("barkeep/pain")
@@ -106,7 +106,7 @@ ACTOR Armorer : Merchant
 		ConversationID (4)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (5)
 		PainSound ("armorer/pain")
@@ -126,7 +126,7 @@ ACTOR Medic : Merchant
 		ConversationID (5)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (6)
 		PainSound ("medic/pain")

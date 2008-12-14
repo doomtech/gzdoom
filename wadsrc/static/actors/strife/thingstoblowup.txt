@@ -7,7 +7,7 @@
 
 ACTOR Bang4Cloud
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -34,7 +34,7 @@ ACTOR Piston
 		ConversationID (123,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (100)
 		Speed (16)
@@ -79,7 +79,7 @@ ACTOR Computer
 		ConversationID (124,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (80)
 		Speed (27)
@@ -128,7 +128,7 @@ ACTOR PowerCrystal
 		ConversationID (201,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (50)
 		Speed (14)

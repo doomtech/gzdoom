@@ -1,6 +1,6 @@
 ACTOR FighterWeapon : Weapon native
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.Kickback (150)
 	}
@@ -8,7 +8,7 @@ ACTOR FighterWeapon : Weapon native
 
 ACTOR ClericWeapon : Weapon native
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.Kickback (150)
 	}
@@ -16,7 +16,7 @@ ACTOR ClericWeapon : Weapon native
 
 ACTOR MageWeapon : Weapon native
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.Kickback (150)
 	}

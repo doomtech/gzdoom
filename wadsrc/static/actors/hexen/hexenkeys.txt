@@ -1,7 +1,7 @@
 
 ACTOR HexenKey : Key
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (20)
@@ -17,7 +17,7 @@ ACTOR KeySteel : HexenKey
 		SpawnID (85)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("KEYSLOT1")
 		Inventory.PickupMessage ("$TXT_KEY_STEEL")
@@ -40,7 +40,7 @@ ACTOR KeyCave : HexenKey
 		SpawnID (86)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("KEYSLOT2")
 		Inventory.PickupMessage ("$TXT_KEY_CAVE")
@@ -63,7 +63,7 @@ ACTOR KeyAxe : HexenKey
 		SpawnID (87)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("KEYSLOT3")
 		Inventory.PickupMessage ("$TXT_KEY_AXE")
@@ -86,7 +86,7 @@ ACTOR KeyFire : HexenKey
 		SpawnID (88)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("KEYSLOT4")
 		Inventory.PickupMessage ("$TXT_KEY_FIRE")
@@ -109,7 +109,7 @@ ACTOR KeyEmerald : HexenKey
 		SpawnID (89)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("KEYSLOT5")
 		Inventory.PickupMessage ("$TXT_KEY_EMERALD")
@@ -132,7 +132,7 @@ ACTOR KeyDungeon : HexenKey
 		SpawnID (90)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("KEYSLOT6")
 		Inventory.PickupMessage ("$TXT_KEY_DUNGEON")
@@ -155,7 +155,7 @@ ACTOR KeySilver : HexenKey
 		SpawnID (91)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("KEYSLOT7")
 		Inventory.PickupMessage ("$TXT_KEY_SILVER")
@@ -178,7 +178,7 @@ ACTOR KeyRusted : HexenKey
 		SpawnID (92)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("KEYSLOT8")
 		Inventory.PickupMessage ("$TXT_KEY_RUSTED")
@@ -201,7 +201,7 @@ ACTOR KeyHorn : HexenKey
 		SpawnID (93)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("KEYSLOT9")
 		Inventory.PickupMessage ("$TXT_KEY_HORN")
@@ -224,7 +224,7 @@ ACTOR KeySwamp : HexenKey
 		SpawnID (94)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("KEYSLOTA")
 		Inventory.PickupMessage ("$TXT_KEY_SWAMP")
@@ -246,7 +246,7 @@ ACTOR KeyCastle : HexenKey
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("KEYSLOTB")
 		Inventory.PickupMessage ("$TXT_KEY_CASTLE")

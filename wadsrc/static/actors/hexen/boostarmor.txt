@@ -10,7 +10,7 @@ ACTOR ArtiBoostArmor : Inventory native
 		SpawnID (22)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+FLOATBOB

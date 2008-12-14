@@ -10,7 +10,7 @@ ACTOR GoldWandAmmo : Ammo
 		SpawnID (11)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$TXT_AMMOGOLDWAND1")
 		Inventory.Amount (10)
@@ -39,7 +39,7 @@ ACTOR GoldWandHefty : GoldWandAmmo
 		SpawnID (12)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$TXT_AMMOGOLDWAND2")
 		Inventory.Amount (50)
@@ -63,7 +63,7 @@ ACTOR CrossbowAmmo : Ammo
 		SpawnID (33)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$TXT_AMMOCROSSBOW1")
 		Inventory.Amount (5)
@@ -92,7 +92,7 @@ ACTOR CrossbowHefty : CrossbowAmmo
 		SpawnID (34)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$TXT_AMMOCROSSBOW2")
 		Inventory.Amount (20)
@@ -116,7 +116,7 @@ ACTOR MaceAmmo : Ammo
 		SpawnID (35)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$TXT_AMMOMACE1")
 		Inventory.Amount (20)
@@ -145,7 +145,7 @@ ACTOR MaceHefty : MaceAmmo
 		SpawnID (36)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$TXT_AMMOMACE2")
 		Inventory.Amount (100)
@@ -170,7 +170,7 @@ ACTOR BlasterAmmo : Ammo
 		SpawnID (37)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$TXT_AMMOBLASTER1")
 		Inventory.Amount (10)
@@ -199,7 +199,7 @@ ACTOR BlasterHefty : BlasterAmmo
 		SpawnID (38)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$TXT_AMMOBLASTER2")
 		Inventory.Amount (25)
@@ -224,7 +224,7 @@ ACTOR SkullRodAmmo : Ammo
 		SpawnID (158)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$TXT_AMMOSKULLROD1")
 		Inventory.Amount (20)
@@ -253,7 +253,7 @@ ACTOR SkullRodHefty : SkullRodAmmo
 		SpawnID (159)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$TXT_AMMOSKULLROD2")
 		Inventory.Amount (100)
@@ -278,7 +278,7 @@ ACTOR PhoenixRodAmmo : Ammo
 		SpawnID (161)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$TXT_AMMOPHOENIXROD1")
 		Inventory.Amount (1)
@@ -306,7 +306,7 @@ ACTOR PhoenixRodHefty : PhoenixRodAmmo
 		SpawnID (162)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$TXT_AMMOPHOENIXROD2")
 		Inventory.Amount (10)
@@ -331,7 +331,7 @@ ACTOR BagOfHolding : BackpackItem
 		SpawnID (136)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$TXT_ITEMBAGOFHOLDING")
 		+COUNTITEM

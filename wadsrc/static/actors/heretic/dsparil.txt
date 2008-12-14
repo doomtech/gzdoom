@@ -10,7 +10,7 @@ ACTOR BossSpot : SpecialSpot
 		SpawnID (141)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+INVISIBLE
 	}
@@ -27,7 +27,7 @@ ACTOR Sorcerer1
 		SpawnID (142)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (2000)
 		Radius (28)
@@ -105,7 +105,7 @@ ACTOR SorcererFX1
 		SpawnID (144)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (10)
@@ -141,7 +141,7 @@ ACTOR Sorcerer2
 		SpawnID (143)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (3500)
 		Radius (16)
@@ -227,7 +227,7 @@ ACTOR Sorcerer2FX1
 		SpawnID (145)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (6)
@@ -258,7 +258,7 @@ ACTOR Sorcerer2FX1
 
 ACTOR Sorcerer2FXSpark
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -287,7 +287,7 @@ ACTOR Sorcerer2FX2
 		SpawnID (146)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (6)
@@ -317,7 +317,7 @@ ACTOR Sorcerer2FX2
 
 ACTOR Sorcerer2Telefade
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 	}

@@ -10,7 +10,7 @@ ACTOR ArmorBonus : BasicArmorBonus
 		SpawnID (22)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -42,7 +42,7 @@ ACTOR GreenArmor : BasicArmorPickup
 		SpawnID (68)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -72,7 +72,7 @@ ACTOR BlueArmor : BasicArmorPickup
 		SpawnID (69)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)

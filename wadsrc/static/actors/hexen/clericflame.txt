@@ -9,7 +9,7 @@ ACTOR CWeapFlame : ClericWeapon
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOGRAVITY
 		Weapon.SelectionOrder (1000)
@@ -54,7 +54,7 @@ ACTOR CWeapFlame : ClericWeapon
 
 ACTOR CFlameFloor
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY
 		RenderStyle ("Add")
@@ -74,7 +74,7 @@ ACTOR CFlameFloor
 
 ACTOR FlamePuff
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (1)
 		Height (1)
@@ -134,7 +134,7 @@ ACTOR FlamePuff2 : FlamePuff
 
 ACTOR CircleFlame
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (6)
 		Damage (2)
@@ -178,7 +178,7 @@ ACTOR CircleFlame
 
 ACTOR CFlameMissile : FastProjectile native
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (200)
 		Radius (14)

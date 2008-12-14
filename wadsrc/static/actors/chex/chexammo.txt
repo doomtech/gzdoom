@@ -10,7 +10,7 @@ ACTOR MiniZorchRecharge : Clip
 		Game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		inventory.pickupmessage ("$GOTZORCHRECHARGE")
 	}
@@ -24,7 +24,7 @@ ACTOR MiniZorchPack : Clip
 		Game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$GOTMINIZORCHPACK")
 		Inventory.Amount (50)
@@ -48,7 +48,7 @@ ACTOR LargeZorchRecharge : Shell
 		Game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		inventory.pickupmessage ("$GOTLARGEZORCHERRECHARGE")
 	}
@@ -62,7 +62,7 @@ ACTOR LargeZorchPack : Shell
 		Game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$GOTLARGEZORCHERPACK")
 		Inventory.Amount (20)
@@ -86,7 +86,7 @@ ACTOR PropulsorZorch : RocketAmmo
 		Game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		inventory.pickupmessage ("$GOTPROPULSORRECHARGE")
 	}
@@ -100,7 +100,7 @@ ACTOR PropulsorZorchPack : RocketAmmo
 		Game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$GOTPROPULSORPACK")
 		Inventory.Amount (5)
@@ -124,7 +124,7 @@ ACTOR PhasingZorch : Cell
 		Game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		inventory.pickupmessage ("$GOTPHASINGZORCHERRECHARGE")
 	}
@@ -139,7 +139,7 @@ ACTOR PhasingZorchPack : Cell
 		SpawnID (142)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$GOTPHASINGZORCHERPACK")
 		Inventory.Amount (100)

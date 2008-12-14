@@ -3,7 +3,7 @@
 
 ACTOR Beggar : StrifeHumanoid
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (20)
 		PainChance (250)

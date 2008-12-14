@@ -8,7 +8,7 @@ ACTOR PoisonBag
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (5)
 		Height (5)
@@ -32,7 +32,7 @@ ACTOR PoisonBag
 
 ACTOR FireBomb
 {
-	DefaultProperties
+	Defaults
 	{
 		DamageType ("Fire")
 		+NOGRAVITY
@@ -66,7 +66,7 @@ ACTOR ThrowingBomb
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (48)
 		Speed (12)
@@ -120,7 +120,7 @@ ACTOR ArtiPoisonBag : Inventory native
 		SpawnID (72)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOATBOB
 		Inventory.DefMaxAmount ()
@@ -144,7 +144,7 @@ ACTOR ArtiPoisonBag : Inventory native
 
 ACTOR ArtiPoisonBag1 : ArtiPoisonBag native
 {
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("ARTIPSB1")
 	}
@@ -154,7 +154,7 @@ ACTOR ArtiPoisonBag1 : ArtiPoisonBag native
 
 ACTOR ArtiPoisonBag2 : ArtiPoisonBag native
 {
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("ARTIPSB2")
 	}
@@ -164,7 +164,7 @@ ACTOR ArtiPoisonBag2 : ArtiPoisonBag native
 
 ACTOR ArtiPoisonBag3 : ArtiPoisonBag native
 {
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("ARTIPSB3")
 	}
@@ -173,7 +173,7 @@ ACTOR ArtiPoisonBag3 : ArtiPoisonBag native
 
 ACTOR PoisonCloud native
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (30)
@@ -216,7 +216,7 @@ ACTOR ZPoisonShroom : PoisonBag
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (6)
 		Height (20)

@@ -13,7 +13,7 @@ ACTOR ZombieMan
 		SpawnID (4)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (20)
 		Radius (20)
@@ -83,7 +83,7 @@ ACTOR ShotgunGuy
 		SpawnID (1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (30)
 		Radius (20)
@@ -154,7 +154,7 @@ ACTOR ChaingunGuy
 		SpawnID (2)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (70)
 		Radius (20)
@@ -225,7 +225,7 @@ ACTOR WolfensteinSS
 		SpawnID (116)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (50)
 		Radius (20)

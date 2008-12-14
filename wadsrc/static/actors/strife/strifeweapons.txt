@@ -1,7 +1,7 @@
 
 ACTOR StrifeWeapon : Weapon
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.Kickback (100)
 	}
@@ -11,7 +11,7 @@ ACTOR StrifeWeapon : Weapon
 
 ACTOR StrifePuff
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -38,7 +38,7 @@ ACTOR StrifePuff
 
 ACTOR StrifeSpark : StrifePuff
 {
-	DefaultProperties
+	Defaults
 	{
 		RenderStyle ("Add")
 	}
@@ -55,7 +55,7 @@ ACTOR StrifeSpark : StrifePuff
 
 ACTOR PunchDagger : StrifeWeapon
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (3900)
 		+WEAPON.NOALERT
@@ -89,7 +89,7 @@ ACTOR PunchDagger : StrifeWeapon
 
 ACTOR StrifeZap1
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -118,7 +118,7 @@ ACTOR ElectricBolt : StrifeZap1
 		ConversationID (102,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (30)
 		Radius (10)
@@ -150,7 +150,7 @@ ACTOR PoisonBolt native
 		ConversationID (102,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (30)
 		Radius (10)
@@ -186,7 +186,7 @@ ACTOR StrifeCrossbow : StrifeWeapon
 		ConversationID (194, 188, 192)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		Weapon.SelectionOrder (1200)
@@ -238,7 +238,7 @@ ACTOR StrifeCrossbow : StrifeWeapon
 
 ACTOR StrifeCrossbow2 : StrifeCrossbow
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (2700)
 		Weapon.AmmoUse1 (1)
@@ -283,7 +283,7 @@ ACTOR AssaultGun : StrifeWeapon
 		ConversationID (188, 182, 186)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		Weapon.SelectionOrder (600)
@@ -330,7 +330,7 @@ ACTOR AssaultGunStanding : WeaponGiver
 		ConversationID (189, 183, 187)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		DropItem ("AssaultGun")
 		Inventory.PickupMessage ("$TXT_ASSAULTGUN")
@@ -357,7 +357,7 @@ ACTOR MiniMissileLauncher : StrifeWeapon
 		ConversationID (192, 186, 190)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		Weapon.SelectionOrder (1800)
@@ -407,7 +407,7 @@ ACTOR RocketTrail
 		ConversationID (51,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -428,7 +428,7 @@ ACTOR RocketTrail
 
 ACTOR MiniMissilePuff : StrifePuff
 {
-	DefaultProperties
+	Defaults
 	{
 		-ALLOWPARTICLES
 	}
@@ -449,7 +449,7 @@ ACTOR MiniMissile
 		ConversationID (99,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (20)
 		Radius (10)
@@ -489,7 +489,7 @@ ACTOR FlameThrower : StrifeWeapon
 		ConversationID (190, 184, 188)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		Weapon.SelectionOrder (2100)
@@ -532,7 +532,7 @@ ACTOR FlameThrower : StrifeWeapon
 
 ACTOR FlameMissile
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (15)
 		Height (11)
@@ -577,7 +577,7 @@ ACTOR Mauler : StrifeWeapon
 		ConversationID (193, 187, 191)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		Weapon.SelectionOrder (300)
@@ -623,7 +623,7 @@ ACTOR Mauler : StrifeWeapon
 
 ACTOR Mauler2 : Mauler
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (3300)
 		Weapon.AmmoUse1 (30)
@@ -663,7 +663,7 @@ ACTOR Mauler2 : Mauler
 
 ACTOR MaulerPuff
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -685,7 +685,7 @@ ACTOR MaulerPuff
 
 ACTOR MaulerTorpedo
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (20)
 		Height (8)
@@ -720,7 +720,7 @@ ACTOR MaulerTorpedo
 
 ACTOR MaulerTorpedoWave
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (35)
 		Radius (13)
@@ -753,7 +753,7 @@ ACTOR HEGrenade
 		ConversationID (106,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (15)
 		Radius (13)
@@ -798,7 +798,7 @@ ACTOR PhosphorousGrenade
 		ConversationID (107,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (15)
 		Radius (13)
@@ -835,7 +835,7 @@ ACTOR PhosphorousGrenade
 
 ACTOR PhosphorousFire native
 {
-	DefaultProperties
+	Defaults
 	{
 		Reactiontime (120)
 		DamageType ("Fire")
@@ -881,7 +881,7 @@ ACTOR StrifeGrenadeLauncher : StrifeWeapon
 		ConversationID (195, 189, 193)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		Weapon.SelectionOrder (2400)
@@ -930,7 +930,7 @@ ACTOR StrifeGrenadeLauncher : StrifeWeapon
 
 ACTOR StrifeGrenadeLauncher2 : StrifeGrenadeLauncher
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (3200)
 		Weapon.AmmoUse1 (1)

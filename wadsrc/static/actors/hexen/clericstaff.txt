@@ -10,7 +10,7 @@ ACTOR CWeapStaff : ClericWeapon
 		SpawnID (32)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (1600)
 		Weapon.AmmoUse1 (1)
@@ -66,7 +66,7 @@ ACTOR CWeapStaff : ClericWeapon
 
 ACTOR CStaffMissile native
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (22)
 		Radius (12)
@@ -93,7 +93,7 @@ ACTOR CStaffMissile native
 
 ACTOR CStaffPuff
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY
 		+PUFFONACTORS

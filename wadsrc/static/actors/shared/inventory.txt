@@ -1,6 +1,6 @@
 ACTOR Inventory native
 {
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Amount (1)
 		Inventory.MaxAmount (1)
@@ -73,7 +73,7 @@ ACTOR Inventory native
 
 ACTOR Ammo : Inventory native
 {
-	DefaultProperties
+	Defaults
 	{
 		+INVENTORY.KEEPDEPLETED
 		Inventory.PickupSound ("misc/ammo_pkup")
@@ -86,7 +86,7 @@ ACTOR BackpackItem : Inventory native
 
 ACTOR Armor : Inventory native
 {
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupSound ("misc/armor_pkup")
 	}
@@ -94,7 +94,7 @@ ACTOR Armor : Inventory native
 
 ACTOR BasicArmor : Armor native
 {
-	DefaultProperties
+	Defaults
 	{
 		+Inventory.KEEPDEPLETED
 	}
@@ -102,7 +102,7 @@ ACTOR BasicArmor : Armor native
 
 ACTOR BasicArmorBonus : Armor native
 {
-	DefaultProperties
+	Defaults
 	{
 		+Inventory.AUTOACTIVATE
 		+Inventory.ALWAYSPICKUP
@@ -113,7 +113,7 @@ ACTOR BasicArmorBonus : Armor native
 
 ACTOR BasicArmorPickup : Armor native
 {
-	DefaultProperties
+	Defaults
 	{
 		+Inventory.AUTOACTIVATE
 		Inventory.MaxAmount (0)
@@ -122,7 +122,7 @@ ACTOR BasicArmorPickup : Armor native
 
 ACTOR HexenArmor : Armor native
 {
-	DefaultProperties
+	Defaults
 	{
 		+Inventory.KEEPDEPLETED
 		+Inventory.UNDROPPABLE
@@ -143,7 +143,7 @@ ACTOR CustomInventory : Inventory native
 
 ACTOR Health : Inventory native
 {
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Amount (1)
 		Inventory.MaxAmount (0)
@@ -153,7 +153,7 @@ ACTOR Health : Inventory native
 
 ACTOR HealthPickup : Inventory native
 {
-	DefaultProperties
+	Defaults
 	{
 		Inventory.DefMaxAmount ()
 		+INVENTORY.INVBAR
@@ -162,7 +162,7 @@ ACTOR HealthPickup : Inventory native
 
 ACTOR Key : Inventory native
 {
-	DefaultProperties
+	Defaults
 	{
 		+INVENTORY.INTERHUBSTRIP
 		Inventory.PickupSound ("misc/k_pkup")
@@ -171,7 +171,7 @@ ACTOR Key : Inventory native
 
 ACTOR PowerupGiver : Inventory native
 {
-	DefaultProperties
+	Defaults
 	{
 		Inventory.DefMaxAmount ()
 		+INVENTORY.INVBAR
@@ -186,7 +186,7 @@ ACTOR Powerup : Inventory native
 
 ACTOR PowerInvulnerable : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-30)
 		inventory.icon ("SPSHLD0")
@@ -195,7 +195,7 @@ ACTOR PowerInvulnerable : Powerup native
 
 ACTOR PowerStrength : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (1)
 		Powerup.Color (255,0,0,0.5)
@@ -205,7 +205,7 @@ ACTOR PowerStrength : Powerup native
 
 ACTOR PowerInvisibility : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-60)
 	}
@@ -217,7 +217,7 @@ ACTOR PowerGhost : PowerInvisibility native
 
 ACTOR PowerShadow : PowerInvisibility native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-55)
 		+INVENTORY.HUBPOWER
@@ -226,7 +226,7 @@ ACTOR PowerShadow : PowerInvisibility native
 
 ACTOR PowerIronFeet : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-60)
 		Powerup.Color (0, 255, 0, 0.125)
@@ -235,7 +235,7 @@ ACTOR PowerIronFeet : Powerup native
 
 ACTOR PowerMask : PowerIronFeet native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-80)
 		Powerup.Color (0,0,0,0)
@@ -246,7 +246,7 @@ ACTOR PowerMask : PowerIronFeet native
 
 ACTOR PowerLightAmp : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-120)
 	}
@@ -258,7 +258,7 @@ ACTOR PowerTorch : PowerLightAmp native
 
 ACTOR PowerFlight : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-60)
 		+INVENTORY.HUBPOWER
@@ -267,7 +267,7 @@ ACTOR PowerFlight : Powerup native
 
 ACTOR PowerWeaponLevel2 : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-40)
 		Inventory.Icon ("SPINBK0")
@@ -276,7 +276,7 @@ ACTOR PowerWeaponLevel2 : Powerup native
 
 ACTOR PowerSpeed : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-45)
 		Speed (1.5)
@@ -288,7 +288,7 @@ ACTOR PowerSpeed : Powerup native
 
 ACTOR PlayerSpeedTrail native
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -299,7 +299,7 @@ ACTOR PlayerSpeedTrail native
 
 ACTOR PowerMinotaur : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-25)
 		Inventory.Icon ("SPMINO0")
@@ -308,7 +308,7 @@ ACTOR PowerMinotaur : Powerup native
 
 ACTOR PowerTargeter : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-160)
 		+INVENTORY.HUBPOWER
@@ -328,7 +328,7 @@ ACTOR PowerTargeter : Powerup native
 
 ACTOR PowerFrightener : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-60)
 	}
@@ -336,7 +336,7 @@ ACTOR PowerFrightener : Powerup native
 
 ACTOR PowerScanner : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-80)
 		+INVENTORY.HUBPOWER
@@ -345,7 +345,7 @@ ACTOR PowerScanner : Powerup native
 
 ACTOR PowerTimeFreezer : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-12)
 	}
@@ -353,7 +353,7 @@ ACTOR PowerTimeFreezer : Powerup native
 
 ACTOR PowerDamage : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-25)
 	}
@@ -361,7 +361,7 @@ ACTOR PowerDamage : Powerup native
 
 ACTOR PowerProtection : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-25)
 	}
@@ -369,7 +369,7 @@ ACTOR PowerProtection : Powerup native
 
 ACTOR PowerDrain : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-60)
 	}
@@ -377,7 +377,7 @@ ACTOR PowerDrain : Powerup native
 
 ACTOR PowerRegeneration : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-120)
 	}
@@ -389,7 +389,7 @@ ACTOR PowerHighJump : Powerup native
 
 ACTOR PowerMorph : Powerup native
 {
-	DefaultProperties
+	Defaults
 	{
 		Powerup.Duration (-40)
 	}
@@ -401,7 +401,7 @@ ACTOR MapRevealer : Inventory native
 
 ACTOR PuzzleItem : Inventory native
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOGRAVITY
 		+INVENTORY.INVBAR
@@ -413,7 +413,7 @@ ACTOR PuzzleItem : Inventory native
 
 ACTOR Weapon : Inventory native
 {
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupSound ("misc/w_pkup")
 		Weapon.DefaultKickback ()
@@ -433,7 +433,7 @@ ACTOR WeaponGiver : Weapon native
 
 ACTOR WeaponHolder : Inventory native
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOSECTOR

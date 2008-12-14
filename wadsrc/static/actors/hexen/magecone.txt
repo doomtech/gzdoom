@@ -10,7 +10,7 @@ ACTOR MWeapFrost : MageWeapon
 		SpawnID (36)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+BLOODSPLATTER
 		Weapon.SelectionOrder (1700)
@@ -56,7 +56,7 @@ ACTOR MWeapFrost : MageWeapon
 
 ACTOR FrostMissile native
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (25)
 		Radius (13)
@@ -93,7 +93,7 @@ ACTOR IceShard : FrostMissile
 		SpawnID (65)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		DamageType ("Ice")
 		-ACTIVATEIMPACT

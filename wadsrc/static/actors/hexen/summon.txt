@@ -10,7 +10,7 @@ ACTOR ArtiDarkServant : Inventory native
 		SpawnID (16)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+FLOATBOB
@@ -41,7 +41,7 @@ ACTOR SummoningDoll
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (20)
 		+NOBLOCKMAP +DROPOFF +MISSILE
@@ -71,7 +71,7 @@ ACTOR MinotaurSmoke
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY
 		+NOTELEPORT

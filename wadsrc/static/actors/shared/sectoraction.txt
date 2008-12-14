@@ -1,7 +1,7 @@
 
 ACTOR SectorAction native
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOSECTOR

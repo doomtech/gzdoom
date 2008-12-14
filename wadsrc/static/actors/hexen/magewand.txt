@@ -3,7 +3,7 @@
 
 ACTOR MWeapWand : MageWeapon
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (3600)
 		Weapon.KickBack (0)
@@ -34,7 +34,7 @@ ACTOR MWeapWand : MageWeapon
 
 ACTOR MageWandSmoke
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY +SHADOW
 		+NOTELEPORT +CANNOTPUSH +NODAMAGETHRUST
@@ -54,7 +54,7 @@ ACTOR MageWandSmoke
 
 ACTOR MageWandMissile : FastProjectile native
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (184)
 		Radius (12)

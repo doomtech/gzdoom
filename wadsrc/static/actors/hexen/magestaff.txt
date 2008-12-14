@@ -3,7 +3,7 @@
 
 ACTOR MageWeaponPiece : WeaponPiece native
 {
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupSound ("misc/w_pkup")
 		Inventory.PickupMessage ("$TXT_BLOODSCOURGE_PIECE")
@@ -23,7 +23,7 @@ ACTOR MWeaponPiece1 : MageWeaponPiece
 		SpawnID (37)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		WeaponPiece.Number (1)
 	}
@@ -47,7 +47,7 @@ ACTOR MWeaponPiece2 : MageWeaponPiece
 		SpawnID (38)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		WeaponPiece.Number (2)
 	}
@@ -71,7 +71,7 @@ ACTOR MWeaponPiece3 : MageWeaponPiece
 		SpawnID (39)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		WeaponPiece.Number (3)
 	}
@@ -101,7 +101,7 @@ ACTOR BloodscourgeDrop
 
 ACTOR MWeapBloodscourge : MageWeapon native
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (3)
 		Weapon.SelectionOrder (3100)
@@ -151,7 +151,7 @@ ACTOR MWeapBloodscourge : MageWeapon native
 
 ACTOR MageStaffFX2 native
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (17)
 		Height (8)

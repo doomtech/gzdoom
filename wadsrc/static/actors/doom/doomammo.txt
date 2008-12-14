@@ -9,7 +9,7 @@ ACTOR Clip : Ammo
 		SpawnID (11)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$GOTCLIP")
 		Inventory.Amount (10)
@@ -38,7 +38,7 @@ ACTOR ClipBox : Clip
 		SpawnID (139)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$GOTCLIPBOX")
 		Inventory.Amount (50)
@@ -63,7 +63,7 @@ ACTOR RocketAmmo : Ammo
 		SpawnID (140)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$GOTROCKET")
 		Inventory.Amount (1)
@@ -92,7 +92,7 @@ ACTOR RocketBox : RocketAmmo
 		SpawnID (141)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$GOTROCKBOX")
 		Inventory.Amount (5)
@@ -117,7 +117,7 @@ ACTOR Cell : Ammo
 		SpawnID (75)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$GOTCELL")
 		Inventory.Amount (20)
@@ -146,7 +146,7 @@ ACTOR CellPack : Cell
 		SpawnID (142)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$GOTCELLBOX")
 		Inventory.Amount (100)
@@ -171,7 +171,7 @@ ACTOR Shell : Ammo
 		SpawnID (12)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$GOTSHELLS")
 		Inventory.Amount (4)
@@ -200,7 +200,7 @@ ACTOR ShellBox : Shell
 		SpawnID (143)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupMessage ("$GOTSHELLBOX")
 		Inventory.Amount (20)
@@ -225,7 +225,7 @@ ACTOR Backpack : BackpackItem
 		SpawnID (144)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Height (26)
 		Inventory.PickupMessage ("$GOTBACKPACK")

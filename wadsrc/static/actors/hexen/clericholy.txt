@@ -3,7 +3,7 @@
 
 ACTOR ClericWeaponPiece : WeaponPiece native
 {
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupSound ("misc/w_pkup")
 		Inventory.PickupMessage ("$TXT_WRAITHVERGE_PIECE")
@@ -23,7 +23,7 @@ ACTOR CWeaponPiece1 : ClericWeaponPiece
 		SpawnID (33)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		WeaponPiece.Number (1)
 	}
@@ -47,7 +47,7 @@ ACTOR CWeaponPiece2 : ClericWeaponPiece
 		SpawnID (34)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		WeaponPiece.Number (2)
 	}
@@ -71,7 +71,7 @@ ACTOR CWeaponPiece3 : ClericWeaponPiece
 		SpawnID (35)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		WeaponPiece.Number (3)
 	}
@@ -101,7 +101,7 @@ ACTOR WraithvergeDrop
 
 ACTOR CWeapWraithverge : ClericWeapon native
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (3)
 		Weapon.SelectionOrder (3000)
@@ -150,7 +150,7 @@ ACTOR CWeapWraithverge : ClericWeapon native
 
 ACTOR HolyMissile
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (30)
 		Radius (15)
@@ -177,7 +177,7 @@ ACTOR HolyMissile
 
 ACTOR HolyMissilePuff
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (4)
 		Height (8)
@@ -199,7 +199,7 @@ ACTOR HolyMissilePuff
 
 ACTOR HolyPuff
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY
 		RenderStyle ("Translucent")
@@ -218,7 +218,7 @@ ACTOR HolyPuff
 
 ACTOR HolySpirit native
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (105)
 		Speed (12)
@@ -255,7 +255,7 @@ ACTOR HolySpirit native
 
 ACTOR HolyTail
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (1)
 		Height (1)

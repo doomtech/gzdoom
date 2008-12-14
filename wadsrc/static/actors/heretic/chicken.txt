@@ -3,7 +3,7 @@
 
 ACTOR BeakPuff : StaffPuff
 {
-	DefaultProperties
+	Defaults
 	{
 		Mass (5)
 		Renderstyle ("Translucent")
@@ -17,7 +17,7 @@ ACTOR BeakPuff : StaffPuff
 
 ACTOR Beak : Weapon
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (10000)
 		+WEAPON.DONTBOB
@@ -49,7 +49,7 @@ ACTOR Beak : Weapon
 
 ACTOR BeakPowered : Beak
 {
-	DefaultProperties
+	Defaults
 	{
 		+WEAPON.POWERED_UP
 		Weapon.SisterWeapon ("Beak")
@@ -69,7 +69,7 @@ ACTOR BeakPowered : Beak
 
 ACTOR ChickenPlayer : PlayerPawn native
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (30)
 		ReactionTime (0)
@@ -131,7 +131,7 @@ ACTOR Chicken : MorphedMonster
 		SpawnID (122)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (10)
 		Radius (9)
@@ -190,7 +190,7 @@ ACTOR Feather
 		SpawnID (121)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (2)
 		Height (4)

@@ -9,7 +9,7 @@ ACTOR SuperMap : MapRevealer
 		SpawnID (137)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+INVENTORY.ALWAYSPICKUP
@@ -38,7 +38,7 @@ ACTOR ArtiInvisibility : PowerupGiver
 		SpawnID (135)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+FLOATBOB
@@ -71,7 +71,7 @@ ACTOR ArtiTomeOfPower : PowerupGiver native
 		SpawnID (134)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+FLOATBOB
@@ -94,7 +94,7 @@ ACTOR ArtiTomeOfPower : PowerupGiver native
 
 ACTOR ActivatedTimeBomb
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOGRAVITY
 		RenderStyle ("Translucent")
@@ -125,7 +125,7 @@ ACTOR ArtiTimeBomb : Inventory native
 		SpawnID (72)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+FLOATBOB

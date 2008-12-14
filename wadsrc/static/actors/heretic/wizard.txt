@@ -10,7 +10,7 @@ ACTOR Wizard
 		SpawnID (19)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (180)
 		Radius (16)
@@ -89,7 +89,7 @@ ACTOR WizardFX1
 		SpawnID (140)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (6)

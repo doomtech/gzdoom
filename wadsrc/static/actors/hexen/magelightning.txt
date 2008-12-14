@@ -9,7 +9,7 @@ ACTOR MWeapLightning : MageWeapon
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOGRAVITY
 		Weapon.SelectionOrder (1100)
@@ -65,7 +65,7 @@ ACTOR Lightning native
 
 ACTOR LightningCeiling : Lightning
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (144)
 		Speed (25)
@@ -108,7 +108,7 @@ ACTOR LightningCeiling : Lightning
 
 ACTOR LightningFloor : LightningCeiling
 {
-	DefaultProperties
+	Defaults
 	{
 		-CEILINGHUGGER
 		+FLOORHUGGER
@@ -141,7 +141,7 @@ ACTOR LightningFloor : LightningCeiling
 
 ACTOR LightningZap native
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (15)
 		Height (35)

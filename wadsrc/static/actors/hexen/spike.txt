@@ -3,7 +3,7 @@
 
 ACTOR DirtClump
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOTELEPORT
@@ -21,7 +21,7 @@ ACTOR DirtClump
 
 ACTOR ThrustFloor native
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (128)
@@ -95,7 +95,7 @@ ACTOR ThrustFloorUp : ThrustFloor
 		SpawnID (104)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+SOLID
 		+NOTELEPORT +FLOORCLIP
@@ -119,7 +119,7 @@ ACTOR ThrustFloorDown : ThrustFloor
 		SpawnID (105)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOTELEPORT +FLOORCLIP
 		+INVISIBLE

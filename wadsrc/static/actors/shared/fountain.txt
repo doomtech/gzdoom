@@ -1,6 +1,6 @@
 ACTOR ParticleFountain native
 {
-	DefaultProperties
+	Defaults
 	{
 		Height (0)
 		+NOBLOCKMAP
@@ -16,7 +16,7 @@ ACTOR RedParticleFountain : ParticleFountain
 		DoomEdNum (9027)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (1)
 	}
@@ -29,7 +29,7 @@ ACTOR GreenParticleFountain : ParticleFountain
 		DoomEdNum (9028)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (2)
 	}
@@ -42,7 +42,7 @@ ACTOR BlueParticleFountain : ParticleFountain
 		DoomEdNum (9029)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (3)
 	}
@@ -55,7 +55,7 @@ ACTOR YellowParticleFountain : ParticleFountain
 		DoomEdNum (9030)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (4)
 	}
@@ -68,7 +68,7 @@ ACTOR PurpleParticleFountain : ParticleFountain
 		DoomEdNum (9031)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (5)
 	}
@@ -81,7 +81,7 @@ ACTOR BlackParticleFountain : ParticleFountain
 		DoomEdNum (9032)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (6)
 	}
@@ -94,7 +94,7 @@ ACTOR WhiteParticleFountain : ParticleFountain
 		DoomEdNum (9033)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (7)
 	}

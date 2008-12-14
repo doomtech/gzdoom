@@ -5,7 +5,7 @@ ACTOR WaterZone native
 		DoomEdNum (9045)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOSECTOR
 		+NOBLOCKMAP

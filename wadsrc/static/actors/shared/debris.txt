@@ -8,7 +8,7 @@ ACTOR Rock1
 		SpawnID (41)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+DROPOFF
@@ -34,7 +34,7 @@ ACTOR Rock2
 		SpawnID (42)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+DROPOFF
@@ -61,7 +61,7 @@ ACTOR Rock3
 		SpawnID (43)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+DROPOFF
@@ -90,7 +90,7 @@ ACTOR Dirt1
 		SpawnID (44)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+DROPOFF
@@ -116,7 +116,7 @@ ACTOR Dirt2
 		SpawnID (45)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+DROPOFF
@@ -142,7 +142,7 @@ ACTOR Dirt3
 		SpawnID (46)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+DROPOFF
@@ -168,7 +168,7 @@ ACTOR Dirt4
 		SpawnID (47)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+DROPOFF
@@ -194,7 +194,7 @@ ACTOR Dirt5
 		SpawnID (48)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+DROPOFF
@@ -220,7 +220,7 @@ ACTOR Dirt6
 		SpawnID (49)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+DROPOFF
@@ -243,7 +243,7 @@ ACTOR Dirt6
 
 ACTOR GlassShard native
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (5)
 		Mass (5)
@@ -437,7 +437,7 @@ ACTOR SGShard0 : GlassShard
 
 ACTOR GlassJunk
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOCLIP
 		+NOBLOCKMAP

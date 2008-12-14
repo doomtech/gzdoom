@@ -10,7 +10,7 @@ ACTOR StrifeBishop
 		ConversationID (64,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (500)
 		Painchance (128)
@@ -75,7 +75,7 @@ ACTOR StrifeBishop
 
 ACTOR BishopMissile
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (20)
 		Radius (10)

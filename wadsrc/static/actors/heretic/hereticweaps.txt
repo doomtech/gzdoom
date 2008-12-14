@@ -1,7 +1,7 @@
 
 ACTOR HereticWeapon : Weapon
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.Kickback (150)
 	}
@@ -12,7 +12,7 @@ ACTOR HereticWeapon : Weapon
 
 ACTOR Staff : HereticWeapon
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (3800)
 		+THRUGHOST
@@ -44,7 +44,7 @@ ACTOR Staff : HereticWeapon
 
 ACTOR StaffPowered : Staff
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.sisterweapon ("Staff")
 		Weapon.ReadySound ("weapons/staffcrackle")
@@ -77,7 +77,7 @@ ACTOR StaffPowered : Staff
 
 ACTOR StaffPuff
 {
-	DefaultProperties
+	Defaults
 	{
 		RenderStyle ("Translucent")
 		Alpha (0.4)
@@ -101,7 +101,7 @@ ACTOR StaffPuff
 
 ACTOR StaffPuff2
 {
-	DefaultProperties
+	Defaults
 	{
 		RenderStyle ("Add")
 		+NOBLOCKMAP
@@ -124,7 +124,7 @@ ACTOR StaffPuff2
 
 ACTOR GoldWand : HereticWeapon
 {
-	DefaultProperties
+	Defaults
 	{
 		+BLOODSPLATTER
 		Weapon.SelectionOrder (2000)
@@ -159,7 +159,7 @@ ACTOR GoldWand : HereticWeapon
 
 ACTOR GoldWandPowered : GoldWand
 {
-	DefaultProperties
+	Defaults
 	{
 		+WEAPON.POWERED_UP
 		Weapon.AmmoGive (0)
@@ -190,7 +190,7 @@ ACTOR GoldWandFX1
 		SpawnID (151)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (6)
@@ -222,7 +222,7 @@ ACTOR GoldWandFX2 : GoldWandFX1
 		SpawnID (152)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (18)
 		Damage (1)
@@ -241,7 +241,7 @@ ACTOR GoldWandFX2 : GoldWandFX1
 
 ACTOR GoldWandPuff1
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -261,7 +261,7 @@ ACTOR GoldWandPuff1
 
 ACTOR GoldWandPuff2 : GoldWandFX1
 {
-	DefaultProperties
+	Defaults
 	{
 		Skip_Super ()
 		+NOBLOCKMAP
@@ -287,7 +287,7 @@ ACTOR Crossbow : HereticWeapon
 		SpawnID (27)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (800)
 		Weapon.AmmoUse (1)
@@ -326,7 +326,7 @@ ACTOR Crossbow : HereticWeapon
 
 ACTOR CrossbowPowered : Crossbow
 {
-	DefaultProperties
+	Defaults
 	{
 		+WEAPON.POWERED_UP
 		Weapon.AmmoGive (0)
@@ -361,7 +361,7 @@ ACTOR CrossbowFX1
 		SpawnID (147)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (11)
 		Height (8)
@@ -395,7 +395,7 @@ ACTOR CrossbowFX2 : CrossbowFX1
 		SpawnID (148)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (32)
 		Damage (6)
@@ -419,7 +419,7 @@ ACTOR CrossbowFX3 : CrossbowFX1
 		SpawnID (149)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (20)
 		Damage (2)
@@ -444,7 +444,7 @@ ACTOR CrossbowFX3 : CrossbowFX1
 
 ACTOR CrossbowFX4
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		Gravity (0.125)
@@ -473,7 +473,7 @@ ACTOR Gauntlets : Weapon
 		SpawnID (32)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+BLOODSPLATTER
 		Weapon.SelectionOrder (2300)
@@ -516,7 +516,7 @@ ACTOR Gauntlets : Weapon
 
 ACTOR GauntletsPowered : Gauntlets
 {
-	DefaultProperties
+	Defaults
 	{
 		+WEAPON.POWERED_UP
 		Weapon.SisterWeapon ("Gauntlets")
@@ -549,7 +549,7 @@ ACTOR GauntletsPowered : Gauntlets
 
 ACTOR GauntletPuff1
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -590,7 +590,7 @@ ACTOR Mace : HereticWeapon
 		SpawnID (31)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (1400)
 		Weapon.AmmoUse (1)
@@ -629,7 +629,7 @@ ACTOR Mace : HereticWeapon
 
 ACTOR MacePowered : Mace
 {
-	DefaultProperties
+	Defaults
 	{
 		+WEAPON.POWERED_UP
 		Weapon.AmmoUse (5)
@@ -661,7 +661,7 @@ ACTOR MaceFX1
 		SpawnID (154)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (6)
@@ -698,7 +698,7 @@ ACTOR MaceFX2 : MaceFX1
 		SpawnID (156)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (10)
 		Damage (6)
@@ -730,7 +730,7 @@ ACTOR MaceFX3 : MaceFX1
 		SpawnID (155)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (7)
 		Damage (4)
@@ -757,7 +757,7 @@ ACTOR MaceFX4 native
 		SpawnID (153)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (6)
@@ -797,7 +797,7 @@ ACTOR MaceSpawner : SpecialSpot
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOSECTOR
 		+NOBLOCKMAP
@@ -824,7 +824,7 @@ ACTOR Blaster : HereticWeapon
 		SpawnID (28)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+BLOODSPLATTER
 		Weapon.SelectionOrder (500)
@@ -864,7 +864,7 @@ ACTOR Blaster : HereticWeapon
 
 ACTOR BlasterPowered : Blaster
 {
-	DefaultProperties
+	Defaults
 	{
 		+WEAPON.POWERED_UP
 		Weapon.AmmoUse (5)
@@ -888,7 +888,7 @@ ACTOR BlasterPowered : Blaster
 
 ACTOR BlasterFX1 : FastProjectile native
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (8)
@@ -918,7 +918,7 @@ ACTOR BlasterFX1 : FastProjectile native
 
 ACTOR BlasterSmoke
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -946,7 +946,7 @@ ACTOR Ripper native
 		SpawnID (157)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (6)
@@ -973,7 +973,7 @@ ACTOR Ripper native
 
 ACTOR BlasterPuff
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -1005,7 +1005,7 @@ ACTOR SkullRod : HereticWeapon
 		SpawnID (30)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (200)
 		Weapon.AmmoUse1 (1)
@@ -1041,7 +1041,7 @@ ACTOR SkullRod : HereticWeapon
 
 ACTOR SkullRodPowered : SkullRod
 {
-	DefaultProperties
+	Defaults
 	{
 		+WEAPON.POWERED_UP
 		Weapon.AmmoUse1 (5)
@@ -1077,7 +1077,7 @@ ACTOR HornRodFX1
 		SpawnID (160)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (8)
@@ -1109,7 +1109,7 @@ ACTOR HornRodFX1
 
 ACTOR HornRodFX2 native
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (8)
@@ -1149,7 +1149,7 @@ ACTOR HornRodFX2 native
 
 ACTOR RainPillar native
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (5)
 		Height (12)
@@ -1183,7 +1183,7 @@ ACTOR RainPillar native
 
 ACTOR RainTracker : Inventory native
 {
-	DefaultProperties
+	Defaults
 	{
 		+INVENTORY.UNDROPPABLE
 	}
@@ -1201,7 +1201,7 @@ ACTOR PhoenixRod : Weapon native
 		SpawnID (29)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+WEAPON.NOAUTOFIRE
 		Weapon.SelectionOrder (2600)
@@ -1241,7 +1241,7 @@ ACTOR PhoenixRod : Weapon native
 
 ACTOR PhoenixRodPowered : PhoenixRod native
 {
-	DefaultProperties
+	Defaults
 	{
 		+WEAPON.POWERED_UP
 		Weapon.SisterWeapon ("PhoenixRod")
@@ -1275,7 +1275,7 @@ ACTOR PhoenixFX1 native
 		SpawnID (163)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (11)
 		Height (8)
@@ -1308,7 +1308,7 @@ ACTOR PhoenixFX1 native
 
 ACTOR PhoenixPuff
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -1330,7 +1330,7 @@ ACTOR PhoenixPuff
 
 ACTOR PhoenixFX2 native
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (6)
 		Height (8)

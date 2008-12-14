@@ -10,7 +10,7 @@ ACTOR Beast
 		SpawnID (3)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (220)
 		Radius (32)
@@ -77,7 +77,7 @@ ACTOR BeastBall
 		SpawnID (120)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (9)
 		Height (8)
@@ -110,7 +110,7 @@ ACTOR BeastBall
 
 ACTOR Puffy
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (6)
 		Height (8)

@@ -9,7 +9,7 @@ ACTOR Dragon
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (640)
 		PainChance (128)
@@ -70,7 +70,7 @@ ACTOR Dragon
 
 ACTOR DragonFireball
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (24)
 		Radius (12)
@@ -102,7 +102,7 @@ ACTOR DragonFireball
 
 ACTOR DragonExplosion
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (8)

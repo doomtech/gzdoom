@@ -9,7 +9,7 @@ ACTOR HealthBonus : Health
 		SpawnID (152)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+INVENTORY.ALWAYSPICKUP
@@ -37,7 +37,7 @@ ACTOR Stimpack : Health
 		SpawnID (23)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Amount (10)
 		Inventory.PickupMessage ("$GOTSTIM")
@@ -62,7 +62,7 @@ ACTOR Medikit : Health
 		SpawnID (24)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Amount (25)
 		Inventory.PickupMessage ("$GOTMEDIKIT")

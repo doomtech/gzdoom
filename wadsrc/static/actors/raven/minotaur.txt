@@ -6,7 +6,7 @@ ACTOR Minotaur native
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (3000)
 		Radius (28)
@@ -112,7 +112,7 @@ ACTOR Minotaur native
 
 ACTOR MinotaurFriend : Minotaur native
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (2500)
 		-DROPOFF
@@ -144,7 +144,7 @@ ACTOR MinotaurFriend : Minotaur native
 
 ACTOR MinotaurFX1
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (6)
@@ -174,7 +174,7 @@ ACTOR MinotaurFX1
 
 ACTOR MinotaurFX2 : MinotaurFX1
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (5)
 		Height (12)
@@ -204,7 +204,7 @@ ACTOR MinotaurFX2 : MinotaurFX1
 
 ACTOR MinotaurFX3 : MinotaurFX2
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (16)
@@ -227,7 +227,7 @@ ACTOR MinotaurFX3 : MinotaurFX2
 
 ACTOR MinotaurSmokeExit
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOTELEPORT

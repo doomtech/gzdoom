@@ -9,7 +9,7 @@ ACTOR TechLamp
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (80)
@@ -35,7 +35,7 @@ ACTOR TechLamp2
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (60)
@@ -61,7 +61,7 @@ ACTOR Column
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (48)
@@ -87,7 +87,7 @@ ACTOR TallGreenColumn
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (52)
@@ -113,7 +113,7 @@ ACTOR ShortGreenColumn
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (40)
@@ -139,7 +139,7 @@ ACTOR TallRedColumn
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (52)
@@ -165,7 +165,7 @@ ACTOR ShortRedColumn
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (40)
@@ -191,7 +191,7 @@ ACTOR SkullColumn
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (40)
@@ -217,7 +217,7 @@ ACTOR HeartColumn
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (40)
@@ -243,7 +243,7 @@ ACTOR EvilEye
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (54)
@@ -269,7 +269,7 @@ ACTOR FloatingSkull
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (26)
@@ -295,7 +295,7 @@ ACTOR TorchTree
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (56)
@@ -321,7 +321,7 @@ ACTOR BlueTorch
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (68)
@@ -347,7 +347,7 @@ ACTOR GreenTorch
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (68)
@@ -373,7 +373,7 @@ ACTOR RedTorch
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (68)
@@ -399,7 +399,7 @@ ACTOR ShortBlueTorch
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (37)
@@ -425,7 +425,7 @@ ACTOR ShortGreenTorch
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (37)
@@ -451,7 +451,7 @@ ACTOR ShortRedTorch
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (37)
@@ -477,7 +477,7 @@ ACTOR Stalagtite
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (40)
@@ -503,7 +503,7 @@ ACTOR TechPillar
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (128)
@@ -529,7 +529,7 @@ ACTOR Candlestick
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (14)
@@ -554,7 +554,7 @@ ACTOR Candelabra
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (60)
@@ -580,7 +580,7 @@ ACTOR BloodyTwitch
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (68)
@@ -610,7 +610,7 @@ ACTOR Meat2
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (84)
@@ -637,7 +637,7 @@ ACTOR Meat3
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (84)
@@ -664,7 +664,7 @@ ACTOR Meat4
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (68)
@@ -691,7 +691,7 @@ ACTOR Meat5
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (52)
@@ -718,7 +718,7 @@ ACTOR NonsolidMeat2 : Meat2
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		-SOLID
 		Radius (20)
@@ -733,7 +733,7 @@ ACTOR NonsolidMeat3 : Meat3
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		-SOLID
 		Radius (20)
@@ -748,7 +748,7 @@ ACTOR NonsolidMeat4 : Meat4
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		-SOLID
 		Radius (20)
@@ -763,7 +763,7 @@ ACTOR NonsolidMeat5 : Meat5
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		-SOLID
 		Radius (20)
@@ -780,7 +780,7 @@ ACTOR NonsolidTwitch : BloodyTwitch
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		-SOLID
 		Radius (20)
@@ -797,7 +797,7 @@ ACTOR HeadOnAStick
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (56)
@@ -823,7 +823,7 @@ ACTOR HeadsOnAStick
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (64)
@@ -849,7 +849,7 @@ ACTOR HeadCandles
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (42)
@@ -875,7 +875,7 @@ ACTOR DeadStick
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (64)
@@ -901,7 +901,7 @@ ACTOR LiveStick
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (64)
@@ -928,7 +928,7 @@ ACTOR BigTree
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (32)
 		Height (108)
@@ -955,7 +955,7 @@ ACTOR BurningBarrel
 		SpawnID (149)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (32)
@@ -981,7 +981,7 @@ ACTOR HangNoGuts
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (88)
@@ -1008,7 +1008,7 @@ ACTOR HangBNoBrain
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (88)
@@ -1035,7 +1035,7 @@ ACTOR HangTLookingDown
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (64)
@@ -1062,7 +1062,7 @@ ACTOR HangTLookingUp
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (64)
@@ -1089,7 +1089,7 @@ ACTOR HangTSkull
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (64)
@@ -1116,7 +1116,7 @@ ACTOR HangTNoBrain
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (64)
@@ -1144,7 +1144,7 @@ ACTOR ColonGibs
 		SpawnID (147)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (4)
@@ -1169,7 +1169,7 @@ ACTOR SmallBloodPool
 		SpawnID (148)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (1)
@@ -1194,7 +1194,7 @@ ACTOR BrainStem
 		SpawnID (150)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (4)

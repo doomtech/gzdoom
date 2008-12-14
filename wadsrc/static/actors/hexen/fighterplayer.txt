@@ -2,7 +2,7 @@
 
 ACTOR FighterPlayer : PlayerPawn
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (100)
 		PainChance (255)

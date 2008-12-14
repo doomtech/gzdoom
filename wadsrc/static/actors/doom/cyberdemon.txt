@@ -13,7 +13,7 @@ ACTOR Cyberdemon
 		SpawnID (114)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (4000)
 		Radius (40)

@@ -8,7 +8,7 @@ ACTOR Snake
 		SpawnID (132)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (280)
 		Radius (22)
@@ -65,7 +65,7 @@ ACTOR SnakeProjA
 		SpawnID (138)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (8)
@@ -105,7 +105,7 @@ ACTOR SnakeProjB : SnakeProjA
 		SpawnID (139)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Damage (3)
 		+NOBLOCKMAP

@@ -9,7 +9,7 @@ ACTOR ArtiSpeedBoots : PowerupGiver
 		SpawnID (13)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOATBOB
 		+COUNTITEM

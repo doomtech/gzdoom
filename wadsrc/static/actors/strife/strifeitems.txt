@@ -9,7 +9,7 @@ ACTOR MedPatch : HealthPickup
 		ConversationID (125, 121, 124)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (10)
 		+FLOORCLIP
@@ -40,7 +40,7 @@ ACTOR MedicalKit : HealthPickup
 		ConversationID (126, 122, 125)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (25)
 		+FLOORCLIP
@@ -71,7 +71,7 @@ ACTOR SurgeryKit : HealthPickup
 		ConversationID (127, 123, 126)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		+INVENTORY.INVBAR
@@ -103,7 +103,7 @@ ACTOR StrifeMap : MapRevealer
 		ConversationID (164, 160, 163)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		Inventory.PickupSound ("misc/p_pkup")
@@ -129,7 +129,7 @@ ACTOR BeldinsRing : Inventory
 		ConversationID (173, 165, 169)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOTDMATCH
 		+FLOORCLIP
@@ -160,7 +160,7 @@ ACTOR OfferingChalice : Inventory
 		ConversationID (174, 166, 170)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+DROPPED
 		+FLOORCLIP
@@ -192,7 +192,7 @@ ACTOR Ear : Inventory
 		ConversationID (175, 167, 171)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		+INVENTORY.INVBAR
@@ -222,7 +222,7 @@ ACTOR BrokenPowerCoupling : Inventory
 		ConversationID (289, -1, -1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (40)
 		+DROPPED
@@ -258,7 +258,7 @@ ACTOR ShadowArmor : PowerupGiver
 		ConversationID (160, 156, 159)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		+VISIBILITYPULSE
@@ -294,7 +294,7 @@ ACTOR EnvironmentalSuit : PowerupGiver
 		ConversationID (161, 157, 160)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		+INVENTORY.INVBAR
@@ -327,7 +327,7 @@ ACTOR GuardUniform : Inventory
 		ConversationID (162, 158, 161)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		+INVENTORY.INVBAR
@@ -357,7 +357,7 @@ ACTOR OfficersUniform : Inventory
 		ConversationID (163, 159, 162)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		+INVENTORY.INVBAR
@@ -385,7 +385,7 @@ ACTOR FlameThrowerParts : Inventory
 		ConversationID (191, 185, 189)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		+INVENTORY.INVBAR
@@ -415,7 +415,7 @@ ACTOR InterrogatorReport : Inventory
 		ConversationID (308, 289, 306)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		Tag ("report")
@@ -441,7 +441,7 @@ ACTOR "Info" : Inventory	// Info is a keyword hence the qutation marks
 		ConversationID (300, 282, 299)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		+INVENTORY.INVBAR
@@ -470,7 +470,7 @@ ACTOR Targeter : PowerupGiver
 		ConversationID (167, 169, 173)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		+INVENTORY.INVBAR
@@ -502,7 +502,7 @@ ACTOR Communicator : Inventory
 		ConversationID (176, 168, 172)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOTDMATCH
 		Tag ("Communicator")
@@ -530,7 +530,7 @@ ACTOR DegninOre : Inventory native
 		ConversationID (128, 124, 127)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (10)
 		Radius (16)
@@ -573,7 +573,7 @@ ACTOR GunTraining : Inventory
 		ConversationID (310,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		+INVENTORY.INVBAR
@@ -601,7 +601,7 @@ ACTOR HealthTraining : Inventory native
 		ConversationID (309,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		+INVENTORY.INVBAR
@@ -632,7 +632,7 @@ ACTOR Scanner : PowerupGiver native
 		ConversationID (165,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+FLOORCLIP
 		+INVENTORY.FANCYPICKUPSOUND
@@ -662,7 +662,7 @@ ACTOR PrisonPass : Key native
 		ConversationID (304, 286, 303)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_TOKN")
 		Tag ("Prison_pass")
@@ -701,7 +701,7 @@ ACTOR RaiseAlarm : DummyStrifeItem native
 		ConversationID (301, 283, 300)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Tag ("alarm")
 	}
@@ -746,7 +746,7 @@ ACTOR AmmoFillup : DummyStrifeItem native
 		ConversationID (298,280,297)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Tag ("Ammo")
 	}
@@ -761,7 +761,7 @@ ACTOR HealthFillup : DummyStrifeItem native
 		ConversationID (299,281,298)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Tag ("Health")
 	}
@@ -776,7 +776,7 @@ ACTOR UpgradeStamina : DummyStrifeItem native
 		ConversationID (306, 287, 307)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Amount (10)
 		Inventory.MaxAmount (100)
