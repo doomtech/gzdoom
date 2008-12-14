@@ -1,0 +1,223 @@
+
+ACTOR StealthArachnotron : Arachnotron
+{
+	Info
+	{
+		DoomEdNum (9050)
+		Game ("Doom")
+		SpawnID (117)
+	}
+
+	Defaults
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHBABY")
+	}
+}
+
+ACTOR StealthArchvile : Archvile
+{
+	Info
+	{
+		DoomEdNum (9051)
+		Game ("Doom")
+		SpawnID (118)
+	}
+
+	Defaults
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHVILE")
+	}
+}
+
+ACTOR StealthBaron : BaronOfHell
+{
+	Info
+	{
+		DoomEdNum (9052)
+		Game ("Doom")
+		SpawnID (100)
+	}
+
+	Defaults
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHBARON")
+		HitObituary ("$OB_STEALTHBARON")
+	}
+}
+
+ACTOR StealthCacodemon : Cacodemon
+{
+	Info
+	{
+		DoomEdNum (9053)
+		Game ("Doom")
+		SpawnID (119)
+	}
+
+	Defaults
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHCACO")
+		HitObituary ("$OB_STEALTHCACO")
+	}
+}
+
+ACTOR StealthChaingunGuy : ChaingunGuy
+{
+	Info
+	{
+		DoomEdNum (9054)
+		Game ("Doom")
+		SpawnID (120)
+	}
+
+	Defaults
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHCHAINGUY")
+	}
+}
+
+ACTOR StealthDemon : Demon
+{
+	Info
+	{
+		DoomEdNum (9055)
+		Game ("Doom")
+		SpawnID (121)
+	}
+
+	Defaults
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHDEMON")
+		HitObituary ("$OB_STEALTHDEMON")
+	}
+}
+
+ACTOR StealthHellKnight : HellKnight
+{
+	Info
+	{
+		DoomEdNum (9056)
+		Game ("Doom")
+		SpawnID (101)
+	}
+
+	Defaults
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHKNIGHT")
+		HitObituary ("$OB_STEALTHKNIGHT")
+	}
+}
+
+ACTOR StealthDoomImp : DoomImp
+{
+	Info
+	{
+		DoomEdNum (9057)
+		Game ("Doom")
+		SpawnID (122)
+	}
+
+	Defaults
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHIMP")
+		HitObituary ("$OB_STEALTHIMP")
+	}
+}
+
+ACTOR StealthFatso : Fatso
+{
+	Info
+	{
+		DoomEdNum (9058)
+		Game ("Doom")
+		SpawnID (123)
+	}
+
+	Defaults
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHFATSO")
+	}
+}
+
+ACTOR StealthRevenant : Revenant
+{
+	Info
+	{
+		DoomEdNum (9059)
+		Game ("Doom")
+		SpawnID (124)
+	}
+
+	Defaults
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHUNDEAD")
+		HitObituary ("$OB_STEALTHUNDEAD")
+	}
+}
+
+ACTOR StealthShotgunGuy : ShotgunGuy
+{
+	Info
+	{
+		DoomEdNum (9060)
+		Game ("Doom")
+		SpawnID (103)
+	}
+
+	Defaults
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHSHOTGUNGUY")
+	}
+}
+
+ACTOR StealthZombieMan : ZombieMan
+{
+	Info
+	{
+		DoomEdNum (9061)
+		Game ("Doom")
+		SpawnID (102)
+	}
+
+	Defaults
+	{
+		+STEALTH
+		RenderStyle ("Translucent")
+		Alpha (0)
+		Obituary ("$OB_STEALTHZOMBIE")
+	}
+}
+

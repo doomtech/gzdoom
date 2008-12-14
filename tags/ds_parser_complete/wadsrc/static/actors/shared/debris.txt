@@ -1,0 +1,469 @@
+
+// Rocks --------------------------------------------------------------------
+
+ACTOR Rock1
+{
+	Info
+	{
+		SpawnID (41)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+DROPOFF
+		+MISSILE
+		+NOTELEPORT
+	}
+
+	States
+	{
+	Spawn:
+		ROKK A 20;
+		Loop
+	Death:
+		ROKK A 10;
+		Stop
+	}
+}
+	
+ACTOR Rock2
+{
+	Info
+	{
+		SpawnID (42)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+DROPOFF
+		+MISSILE
+		+NOTELEPORT
+	}
+
+	States
+	{
+	Spawn:
+		ROKK B 20;
+		Loop
+	Death:
+		ROKK B 10;
+		Stop
+	}
+}
+
+
+ACTOR Rock3
+{
+	Info
+	{
+		SpawnID (43)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+DROPOFF
+		+MISSILE
+		+NOTELEPORT
+	}
+
+	States
+	{
+	Spawn:
+		ROKK C 20;
+		Loop
+	Death:
+		ROKK C 10;
+		Stop
+	}
+}
+
+
+// Dirt --------------------------------------------------------------------
+
+ACTOR Dirt1
+{
+	Info
+	{
+		SpawnID (44)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+DROPOFF
+		+MISSILE
+		+NOTELEPORT
+	}
+
+	States
+	{
+	Spawn:
+		ROKK D 20;
+		Loop
+	Death:
+		ROKK D 10;
+		Stop
+	}
+}
+
+ACTOR Dirt2
+{
+	Info
+	{
+		SpawnID (45)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+DROPOFF
+		+MISSILE
+		+NOTELEPORT
+	}
+
+	States
+	{
+	Spawn:
+		ROKK E 20;
+		Loop
+	Death:
+		ROKK E 10;
+		Stop
+	}
+}
+
+ACTOR Dirt3
+{
+	Info
+	{
+		SpawnID (46)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+DROPOFF
+		+MISSILE
+		+NOTELEPORT
+	}
+
+	States
+	{
+	Spawn:
+		ROKK F 20;
+		Loop
+	Death:
+		ROKK F 10;
+		Stop
+	}
+}
+
+ACTOR Dirt4
+{
+	Info
+	{
+		SpawnID (47)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+DROPOFF
+		+MISSILE
+		+NOTELEPORT
+	}
+
+	States
+	{
+	Spawn:
+		ROKK G 20;
+		Loop
+	Death:
+		ROKK G 10;
+		Stop
+	}
+}
+
+ACTOR Dirt5
+{
+	Info
+	{
+		SpawnID (48)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+DROPOFF
+		+MISSILE
+		+NOTELEPORT
+	}
+
+	States
+	{
+	Spawn:
+		ROKK H 20;
+		Loop
+	Death:
+		ROKK H 10;
+		Stop
+	}
+}
+
+ACTOR Dirt6
+{
+	Info
+	{
+		SpawnID (49)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+DROPOFF
+		+MISSILE
+		+NOTELEPORT
+	}
+
+	States
+	{
+	Spawn:
+		ROKK I 20;
+		Loop
+	Death:
+		ROKK I 10;
+		Stop
+	}
+}
+
+// Stained glass ------------------------------------------------------------
+
+ACTOR GlassShard native
+{
+	Defaults
+	{
+		Radius (5)
+		Mass (5)
+		Projectile ()
+		-ACTIVATEPCROSS
+		-ACTIVATEIMPACT
+		+HEXENBOUNCE
+		BounceFactor (0.3)
+	}
+}
+
+ACTOR SGShard1 : GlassShard
+{
+	Info
+	{
+		SpawnID (54)
+	}
+
+	States
+	{
+	Spawn:
+		SGSA ABCDE 4;
+		Loop
+	Death:
+		SGSA E 30;
+		Stop
+	}
+}
+
+ACTOR SGShard2 : GlassShard
+{
+	Info
+	{
+		SpawnID (55)
+	}
+
+	States
+	{
+	Spawn:
+		SGSA FGHIJ 4;
+		Loop
+	Death:
+		SGSA J 30;
+		Stop
+	}
+}
+
+ACTOR SGShard3 : GlassShard
+{
+	Info
+	{
+		SpawnID (56)
+	}
+
+	States
+	{
+	Spawn:
+		SGSA KLMNO 4;
+		Loop
+	Death:
+		SGSA O 30;
+		Stop
+	}
+}
+
+ACTOR SGShard4 : GlassShard
+{
+	Info
+	{
+		SpawnID (57)
+	}
+
+	States
+	{
+	Spawn:
+		SGSA PQRST 4;
+		Loop
+	Death:
+		SGSA T 30;
+		Stop
+	}
+}
+
+ACTOR SGShard5 : GlassShard
+{
+	Info
+	{
+		SpawnID (58)
+	}
+
+	States
+	{
+	Spawn:
+		SGSA UVWXY 4;
+		Loop
+	Death:
+		SGSA Y 30;
+		Stop
+	}
+}
+
+ACTOR SGShard6 : GlassShard
+{
+	Info
+	{
+		SpawnID (59)
+	}
+
+	States
+	{
+	Spawn:
+		SGSB A 4;
+		Loop
+	Death:
+		SGSB A 30;
+		Stop
+	}
+}
+
+ACTOR SGShard7 : GlassShard
+{
+	Info
+	{
+		SpawnID (60)
+	}
+
+	States
+	{
+	Spawn:
+		SGSB B 4;
+		Loop
+	Death:
+		SGSB B 30;
+		Stop
+	}
+}
+
+ACTOR SGShard8 : GlassShard
+{
+	Info
+	{
+		SpawnID (61)
+	}
+
+	States
+	{
+	Spawn:
+		SGSB C 4;
+		Loop
+	Death:
+		SGSB C 30;
+		Stop
+	}
+}
+
+ACTOR SGShard9 : GlassShard
+{
+	Info
+	{
+		SpawnID (62)
+	}
+
+	States
+	{
+	Spawn:
+		SGSB D 4;
+		Loop
+	Death:
+		SGSB D 30;
+		Stop
+	}
+}
+
+ACTOR SGShard0 : GlassShard
+{
+	Info
+	{
+		SpawnID (63)
+	}
+
+	States
+	{
+	Spawn:
+		SGSB E 4;
+		Loop
+	Death:
+		SGSB E 30;
+		Stop
+	}
+}
+
+ACTOR GlassJunk
+{
+	Defaults
+	{
+		+NOCLIP
+		+NOBLOCKMAP
+		RenderStyle ("Translucent")
+		Alpha (0.4)
+		Health (3)	// Number of different shards
+	}
+
+	States
+	{
+		// Are the first three frames used anywhere?;
+		SHAR A 128;
+		Goto Death
+		SHAR B 128;
+		Goto Death
+		SHAR C 128;
+		Goto Death
+	Spawn:
+		SHAR D 128;
+		Goto Death
+		SHAR E 128;
+		Goto Death
+		SHAR F 128;
+		Goto Death
+	Death:
+		"----" A 1 A_FadeOut(0.03);
+		Wait
+	}
+}

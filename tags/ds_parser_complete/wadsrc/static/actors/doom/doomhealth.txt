@@ -1,0 +1,78 @@
+// Health bonus -------------------------------------------------------------
+
+ACTOR HealthBonus : Health
+{
+	Info
+	{
+		DoomEdNum (2014)
+		Game ("Doom")
+		SpawnID (152)
+	}
+
+	Defaults
+	{
+		+COUNTITEM
+		+INVENTORY.ALWAYSPICKUP
+		Inventory.Amount (1)
+		Inventory.MaxAmount (200)
+		Inventory.PickupMessage ("$GOTHTHBONUS")
+	}
+
+	States
+	{
+	Spawn:
+		BON1 ABCDCB 6;
+		Loop
+	}
+}
+	
+// Stimpack -----------------------------------------------------------------
+
+ACTOR Stimpack : Health
+{
+	Info
+	{
+		DoomEdNum (2011)
+		Game ("Doom")
+		SpawnID (23)
+	}
+
+	Defaults
+	{
+		Inventory.Amount (10)
+		Inventory.PickupMessage ("$GOTSTIM")
+	}
+
+	States
+	{
+	Spawn:
+		STIM A -1;
+		Stop
+	}
+}
+
+// Medikit -----------------------------------------------------------------
+
+ACTOR Medikit : Health
+{
+	Info
+	{
+		DoomEdNum (2012)
+		Game ("Doom")
+		SpawnID (24)
+	}
+
+	Defaults
+	{
+		Inventory.Amount (25)
+		Inventory.PickupMessage ("$GOTMEDIKIT")
+		Health.LowMessage (25, "$GOTMEDINEED")
+	}
+
+	States
+	{
+	Spawn:
+		MEDI A -1;
+		Stop
+	}
+}

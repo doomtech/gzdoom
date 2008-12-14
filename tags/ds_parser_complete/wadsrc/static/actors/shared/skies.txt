@@ -1,0 +1,69 @@
+ACTOR SkyViewpoint native
+{
+	Info
+	{
+		DoomEdNum (9080)
+	}
+
+	Defaults
+	{
+		+NOSECTOR
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+	}
+}
+
+ACTOR SkyPicker native
+{
+	Info
+	{
+		DoomEdNum (9081)
+	}
+
+	Defaults
+	{
+		+NOSECTOR
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+	}
+}
+
+
+ACTOR StackPoint : SkyViewpoint native
+{
+}
+
+ACTOR UpperStackLookOnly : StackPoint native
+{
+	Info
+	{
+		DoomEdNum (9077)
+	}
+}
+
+ACTOR LowerStackLookOnly : StackPoint native
+{
+	Info
+	{
+		DoomEdNum (9078)
+	}
+}
+
+
+ACTOR SectorSilencer native
+{
+	Info
+	{
+		DoomEdNum (9082)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+		RenderStyle ("None")
+	}
+}

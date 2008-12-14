@@ -1,0 +1,21 @@
+ACTOR MorphProjectile native
+{
+	Defaults
+	{
+		Damage (1)
+		Projectile ()
+		-ACTIVATEIMPACT
+		-ACTIVATEPCROSS
+	}
+}
+
+ACTOR MorphedMonster native
+{
+	Defaults
+	{
+		Monster ()
+		-COUNTKILL
+		+FLOORCLIP
+	}
+}
+

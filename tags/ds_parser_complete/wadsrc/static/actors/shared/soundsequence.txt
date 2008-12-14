@@ -1,0 +1,183 @@
+
+ACTOR AmbientSound native
+{
+	Info
+	{
+		DoomEdNum (14065)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+NOSECTOR
+		+DONTSPLASH
+	}
+}
+
+ACTOR SoundSequenceSlot native
+{
+	Defaults
+	{
+		+NOSECTOR
+		+NOBLOCKMAP
+		+DONTSPLASH
+	}
+}
+
+ACTOR SoundSequence native
+{
+	Info
+	{
+		DoomEdNum (14066)
+	}
+
+	Defaults
+	{
+		+NOSECTOR
+		+NOBLOCKMAP
+		+DONTSPLASH
+	}
+}
+
+// Heretic Sound sequences -----------------------------------------------------------
+
+ACTOR HereticSoundSequence1 : SoundSequence
+{
+	Info
+	{
+		DoomEdNum (1200)
+		Game ("Heretic")
+	}
+
+	Defaults
+	{
+		Args (0)
+	}
+}
+
+ACTOR HereticSoundSequence2 : SoundSequence
+{
+	Info
+	{
+		DoomEdNum (1201)
+		Game ("Heretic")
+	}
+
+	Defaults
+	{
+		Args (1)
+	}
+}
+
+ACTOR HereticSoundSequence3 : SoundSequence
+{
+	Info
+	{
+		DoomEdNum (1202)
+		Game ("Heretic")
+	}
+
+	Defaults
+	{
+		Args (2)
+	}
+}
+
+ACTOR HereticSoundSequence4 : SoundSequence
+{
+	Info
+	{
+		DoomEdNum (1203)
+		Game ("Heretic")
+	}
+
+	Defaults
+	{
+		Args (3)
+	}
+}
+
+ACTOR HereticSoundSequence5 : SoundSequence
+{
+	Info
+	{
+		DoomEdNum (1204)
+		Game ("Heretic")
+	}
+
+	Defaults
+	{
+		Args (4)
+	}
+}
+
+ACTOR HereticSoundSequence6 : SoundSequence
+{
+	Info
+	{
+		DoomEdNum (1205)
+		Game ("Heretic")
+	}
+
+	Defaults
+	{
+		Args (5)
+	}
+}
+
+ACTOR HereticSoundSequence7 : SoundSequence
+{
+	Info
+	{
+		DoomEdNum (1206)
+		Game ("Heretic")
+	}
+
+	Defaults
+	{
+		Args (6)
+	}
+}
+
+ACTOR HereticSoundSequence8 : SoundSequence
+{
+	Info
+	{
+		DoomEdNum (1207)
+		Game ("Heretic")
+	}
+
+	Defaults
+	{
+		Args (7)
+	}
+}
+
+ACTOR HereticSoundSequence9 : SoundSequence
+{
+	Info
+	{
+		DoomEdNum (1208)
+		Game ("Heretic")
+	}
+
+	Defaults
+	{
+		Args (8)
+	}
+}
+
+ACTOR HereticSoundSequence10 : SoundSequence
+{
+	Info
+	{
+		DoomEdNum (1209)
+		Game ("Heretic")
+	}
+
+	Defaults
+	{
+		Args (9)
+	}
+}
+

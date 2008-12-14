@@ -1,0 +1,24 @@
+
+ACTOR MapMarker native
+{
+	Info
+	{
+		DoomEdNum (9040)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+		+INVISIBLE
+		Scale (0.5)
+	}
+
+	States
+	{
+	Spawn:
+		AMRK A -1;
+		Stop
+	}
+}

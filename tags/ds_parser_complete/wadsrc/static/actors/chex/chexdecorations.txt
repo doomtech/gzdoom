@@ -1,0 +1,301 @@
+// Doom items renamed with height changes
+
+// Civilians ------------------------------------------------------------------
+
+ACTOR ChexCivilian1 : GreenTorch
+{
+	Info
+	{
+		DoomEdNum (45)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (54)
+	}
+}
+
+ACTOR ChexCivilian2 : ShortGreenTorch
+{
+	Info
+	{
+		DoomEdNum (56)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (54)
+	}
+}
+
+ACTOR ChexCivilian3 : ShortRedTorch
+{
+	Info
+	{
+		DoomEdNum (57)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (48)
+	}
+}
+
+// Landing Zone ---------------------------------------------------------------
+
+ACTOR ChexLandingLight : Column
+{
+	Info
+	{
+		DoomEdNum (2028)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (35)
+	}
+}
+
+ACTOR ChexSpaceship : TechPillar
+{
+	Info
+	{
+		DoomEdNum (48)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (52)
+	}
+}
+
+// Trees and Plants -----------------------------------------------------------
+
+ACTOR ChexAppleTree : Stalagtite
+{
+	Info
+	{
+		DoomEdNum (47)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (92)
+	}
+}
+
+ACTOR ChexBananaTree : BigTree
+{
+	Info
+	{
+		DoomEdNum (54)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (108)
+	}
+}
+
+ACTOR ChexOrangeTree : TorchTree
+{
+	Info
+	{
+		DoomEdNum (43)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (92)
+	}
+}
+
+ACTOR ChexSubmergedPlant : ShortGreenColumn
+{
+	Info
+	{
+		DoomEdNum (31)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (42)
+	}
+}
+
+ACTOR ChexTallFlower : HeadsOnAStick
+{
+	Info
+	{
+		DoomEdNum (28)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (25)
+	}
+}
+
+ACTOR ChexTallFlower2 : DeadStick
+{
+	Info
+	{
+		DoomEdNum (25)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (25)
+	}
+}
+
+// Slime Fountain -------------------------------------------------------------
+
+ACTOR ChexSlimeFountain : BlueTorch
+{
+	Info
+	{
+		DoomEdNum (44)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (48)
+	}
+
+	States
+	{
+	Spawn:
+		TBLU ABCD 4;
+		Loop
+	}
+}
+
+// Cavern Decorations ---------------------------------------------------------
+
+ACTOR ChexCavernColumn : TallRedColumn
+{
+	Info
+	{
+		DoomEdNum (32)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (128)
+	}
+}
+
+ACTOR ChexCavernStalagmite : TallGreenColumn
+{
+	Info
+	{
+		DoomEdNum (30)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (60)
+	}
+}
+
+// Misc. Props ----------------------------------------------------------------
+
+ACTOR ChexChemicalBurner : EvilEye
+{
+	Info
+	{
+		DoomEdNum (41)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (25)
+	}
+}
+
+ACTOR ChexChemicalFlask : Candlestick
+{
+	Info
+	{
+		DoomEdNum (34)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		renderstyle ("translucent")
+		alpha (0.75)
+	}
+}
+
+ACTOR ChexFlagOnPole : SkullColumn
+{
+	Info
+	{
+		DoomEdNum (37)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (128)
+	}
+}
+
+ACTOR ChexGasTank : Candelabra
+{
+	Info
+	{
+		DoomEdNum (35)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (36)
+	}
+}
+
+ACTOR ChexLightColumn : ShortBlueTorch
+{
+	Info
+	{
+		DoomEdNum (55)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (86)
+	}
+}
+
+ACTOR ChexMineCart : ShortRedColumn
+{
+	Info
+	{
+		DoomEdNum (33)
+		game ("Chex")
+	}
+
+	Defaults
+	{
+		height (30)
+	}
+}

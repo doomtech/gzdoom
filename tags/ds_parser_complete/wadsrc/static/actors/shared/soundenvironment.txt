@@ -1,0 +1,17 @@
+
+ACTOR SoundEnvironment native
+{
+	Info
+	{
+		DoomEdNum (9048)
+	}
+
+	Defaults
+	{
+		+NOSECTOR
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+	}
+}
+

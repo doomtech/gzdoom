@@ -1,0 +1,15 @@
+ACTOR WaterZone native
+{
+	Info
+	{
+		DoomEdNum (9045)
+	}
+
+	Defaults
+	{
+		+NOSECTOR
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+	}
+}

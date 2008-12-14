@@ -1,0 +1,49 @@
+
+ACTOR ArtiBlastRadius : Inventory native
+{
+	Info
+	{
+		DoomEdNum (10110)
+		Game ("Hexen")
+		SpawnID (74)
+	}
+
+	Defaults
+	{
+		+FLOATBOB
+		Inventory.DefMaxAmount ()
+		Inventory.PickupFlash ("PickupFlash")
+		+INVENTORY.INVBAR 
+		+INVENTORY.FANCYPICKUPSOUND
+		Inventory.Icon ("ARTIBLST")
+		Inventory.PickupSound ("misc/p_pkup")
+		Inventory.PickupMessage ("$TXT_ARTIBLASTRADIUS")
+	}
+
+	States
+	{
+	Spawn:
+		BLST ABCDEFGH 4 Bright;
+		Loop
+	}
+}
+
+// Blast Effect -------------------------------------------------------------
+
+ACTOR BlastEffect
+{
+	Defaults
+	{
+		+NOBLOCKMAP +NOGRAVITY +NOCLIP
+		+NOTELEPORT
+		RenderStyle ("Translucent")
+		Alpha (0.666)
+	}
+
+	States
+	{
+	Spawn:
+		RADE ABCDEFGHI 4;
+		Stop
+	}
+}

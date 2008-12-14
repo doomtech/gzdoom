@@ -1,0 +1,33 @@
+
+// Teleport (self) ----------------------------------------------------------
+
+ACTOR ArtiTeleport : Inventory native
+{
+	Info
+	{
+		DoomEdNum (36)
+		Game ("Raven")
+	}
+
+	Defaults
+	{
+		+COUNTITEM
+		+FLOATBOB
+		+INVENTORY.INVBAR
+		+INVENTORY.PICKUPFLASH
+		+INVENTORY.FANCYPICKUPSOUND
+		Inventory.DefMaxAmount ()
+		Inventory.Icon ("ARTIATLP")
+		Inventory.PickupSound ("misc/p_pkup")
+		Inventory.PickupMessage ("$TXT_ARTITELEPORT")
+	}
+
+	States
+	{
+	Spawn:
+		ATLP ABCB 4;
+		Loop
+	}
+}
+
+

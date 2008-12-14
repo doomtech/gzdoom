@@ -1,0 +1,65 @@
+ACTOR InterpolationPoint native
+{
+	Info
+	{
+		DoomEdNum (9070)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+		RenderStyle ("None")
+	}
+}
+
+ACTOR InterpolationSpecial native
+{
+	Info
+	{
+		DoomEdNum (9075)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+NOSECTOR
+		+NOGRAVITY
+		+DONTSPLASH
+	}
+}
+
+ACTOR PathFollower native
+{
+	Info
+	{
+		DoomEdNum (9071)
+	}
+
+	Defaults
+	{
+		+NOBLOCKMAP
+		+NOSECTOR
+		+NOGRAVITY
+		+DONTSPLASH
+	}
+}
+
+ACTOR ActorMover : PathFollower native
+{
+	Info
+	{
+		DoomEdNum (9074)
+	}
+}
+
+ACTOR MovingCamera : PathFollower native
+{
+	Info
+	{
+		DoomEdNum (9072)
+	}
+}
+
+

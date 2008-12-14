@@ -1,0 +1,28 @@
+
+
+// Hate Target --------------------------------------------------------------
+
+ACTOR HateTarget native
+{
+	Info
+	{
+		DoomEdNum (9076)
+	}
+
+	Defaults
+	{
+		Radius (20)
+		Height (56)
+		+SHOOTABLE
+		+NOGRAVITY
+		+NOBLOOD
+		+DONTSPLASH
+		Mass (0x7fffffff)
+	}
+
+	States
+	{
+	Spawn:
+		TNT1 A -1;
+	}
+}

@@ -1,0 +1,16 @@
+
+ACTOR Spark native
+{
+	Info
+	{
+		DoomEdNum (9026)
+	}
+
+	Defaults
+	{
+		+NOSECTOR
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+DONTSPLASH
+	}
+}
