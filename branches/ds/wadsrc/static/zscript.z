@@ -1,9 +1,5 @@
-ACTOR FS_Mapspot : Mapspot
+ACTOR FS
 {
-	Info
-	{
-		DoomEdNum (5004)
-	}
 }
 
 
@@ -21,45 +17,72 @@ ACTOR DynamicLight native
 }
 
 
-ACTOR PointLight : DynamicLight native
+ACTOR PointLight : DynamicLight
 {
 	Info
 	{
 		DoomEdNum (9800)
 	}
+
+	Defaults
+	{
+		DynamicLight.Type ("Point")
+	}
 }
 
-ACTOR PointLightPulse : PointLight native
+ACTOR PointLightPultse : PointLight
 {
 	Info
 	{
 		DoomEdNum (9801)
 	}
+
+	Defaults
+	{
+		DynamicLight.Type ("Pulse")
+	}
 }
 
-ACTOR PointLightFlicker : PointLight native
+ACTOR PointLightFlicker : PointLight
 {
 	Info
 	{
 		DoomEdNum (9802)
 	}
+
+	Defaults
+	{
+		DynamicLight.Type ("Flicker")
+	}
 }
 
-ACTOR SectorPointLight : PointLight native
+ACTOR SectorPointLight : PointLight
 {
 	Info
 	{
 		DoomEdNum (9803)
 	}
+
+	Defaults
+	{
+		DynamicLight.Type ("Sector")
+	}
 }
 
-ACTOR PointLightFlickerRandom : PointLight native
+ACTOR PointLightFlickerRandom : PointLight
 {
 	Info
 	{
 		DoomEdNum (9804)
 	}
+
+	Defaults
+	{
+		DynamicLight.Type ("RandomFlicker")
+	}
 }
+
+// MISSILEMORE and MISSILEEVENMORE are used by the lights for additive and subtractive lighrs
 
 ACTOR PointLightAdditive : PointLight
 {
@@ -74,7 +97,7 @@ ACTOR PointLightAdditive : PointLight
 	}
 }
 
-ACTOR PointLightPulseAdditive : PointLightPulse
+ACTOR PointLightPultseAdditive : PointLightPultse
 {
 	Info
 	{
@@ -95,7 +118,6 @@ ACTOR PointLightFlickerAdditive : PointLightFlicker
 	}
 
 	Defaults
-
 	{
 		+MISSILEMORE
 	}
@@ -140,7 +162,7 @@ ACTOR PointLightSubtractive : PointLight
 	}
 }
 
-ACTOR PointLightPulseSubtractive : PointLightPulse
+ACTOR PointLightPultseSubtractive : PointLightPultse
 {
 	Info
 	{
