@@ -10,7 +10,7 @@ ACTOR FWeapAxe : FighterWeapon native
 		SpawnID (27)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (1500)
 		+WEAPON.AXEBLOOD +WEAPON.AMMO_OPTIONAL +WEAPON.MELEEWEAPON
@@ -90,7 +90,7 @@ ACTOR FWeapAxe : FighterWeapon native
 
 ACTOR AxePuff
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY
 		+PUFFONACTORS
@@ -113,7 +113,7 @@ ACTOR AxePuff
 
 ACTOR AxePuffGlow : AxePuff
 {
-	DefaultProperties
+	Defaults
 	{
 		+PUFFONACTORS
 		RenderStyle ("Add")

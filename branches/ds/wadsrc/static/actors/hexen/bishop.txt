@@ -10,7 +10,7 @@ ACTOR Bishop
 		SpawnID (19)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (130)
 		Radius (22)
@@ -94,7 +94,7 @@ ACTOR BishopPuff
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY
 		RenderStyle ("Translucent")
@@ -120,7 +120,7 @@ ACTOR BishopPainBlur
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY
 		RenderStyle ("Translucent")
@@ -144,7 +144,7 @@ ACTOR BishopFX
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (6)
@@ -175,7 +175,7 @@ ACTOR BishopFX
 
 ACTOR BishopBlur
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY
 		RenderStyle ("Translucent")

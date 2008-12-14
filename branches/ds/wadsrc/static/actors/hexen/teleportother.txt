@@ -10,7 +10,7 @@ ACTOR ArtiTeleportOther : Inventory native
 		SpawnID (17)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+FLOATBOB
@@ -36,7 +36,7 @@ ACTOR ArtiTeleportOther : Inventory native
 
 ACTOR TelOtherFX1 native
 {
-	DefaultProperties
+	Defaults
 	{
 		Damage (10001)
 		Projectile ()
@@ -75,7 +75,7 @@ ACTOR TelOtherFX1 native
 
 ACTOR TelOtherFX2 : TelOtherFX1
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (16)
 	}
@@ -91,7 +91,7 @@ ACTOR TelOtherFX2 : TelOtherFX1
 
 ACTOR TelOtherFX3 : TelOtherFX1
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (16)
 	}
@@ -107,7 +107,7 @@ ACTOR TelOtherFX3 : TelOtherFX1
 
 ACTOR TelOtherFX4 : TelOtherFX1
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (16)
 	}
@@ -123,7 +123,7 @@ ACTOR TelOtherFX4 : TelOtherFX1
 
 ACTOR TelOtherFX5 : TelOtherFX1
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (16)
 	}

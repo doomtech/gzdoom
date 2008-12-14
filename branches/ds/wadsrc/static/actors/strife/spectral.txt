@@ -4,7 +4,7 @@
 
 ACTOR SpectralMonster native
 {
-	DefaultProperties
+	Defaults
 	{
 		Monster ()
 		+SPECIAL
@@ -23,7 +23,7 @@ ACTOR SpectralMonster native
 
 ACTOR SpectralLightningBase
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOTELEPORT
 		+ACTIVATEIMPACT
@@ -89,7 +89,7 @@ ACTOR SpectralLightningBall1 : SpectralLightningBase
 		ConversationID (80,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (30)
 		Radius (8)
@@ -116,7 +116,7 @@ ACTOR SpectralLightningBall2 : SpectralLightningBall1
 		ConversationID (81,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Damage (20)
 	}
@@ -131,7 +131,7 @@ ACTOR SpectralLightningH1 : SpectralLightningBase
 		ConversationID (78,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (30)
 		Radius (8)
@@ -162,7 +162,7 @@ ACTOR SpectralLightningH2 : SpectralLightningH1
 		ConversationID (79,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Damage (20)
 	}
@@ -177,7 +177,7 @@ ACTOR SpectralLightningH3 : SpectralLightningH1
 		ConversationID (82,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Damage (10)
 	}
@@ -187,7 +187,7 @@ ACTOR SpectralLightningH3 : SpectralLightningH1
 
 ACTOR SpectralLightningHTail
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -212,7 +212,7 @@ ACTOR SpectralLightningBigBall1 : SpectralLightningDeath2
 		ConversationID (84,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (18)
 		Radius (20)
@@ -243,7 +243,7 @@ ACTOR SpectralLightningBigBall2 : SpectralLightningBigBall1
 		ConversationID (85,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Damage (30)
 	}
@@ -258,7 +258,7 @@ ACTOR SpectralLightningV1 : SpectralLightningDeathShort
 		ConversationID (86,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (22)
 		Radius (8)
@@ -286,7 +286,7 @@ ACTOR SpectralLightningV2 : SpectralLightningV1
 		ConversationID (87,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Damage (50)
 	}
@@ -301,7 +301,7 @@ ACTOR SpectralLightningSpot : SpectralLightningDeath1
 		ConversationID (88,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (18)
 		ReactionTime (70)
@@ -333,7 +333,7 @@ ACTOR SpectralLightningBigV1 : SpectralLightningDeath1
 		ConversationID (89,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (28)
 		Radius (8)
@@ -360,7 +360,7 @@ ACTOR SpectralLightningBigV2 : SpectralLightningBigV1
 		ConversationID (90, -1, -1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Damage (60)
 	}

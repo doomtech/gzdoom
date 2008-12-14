@@ -8,7 +8,7 @@ ACTOR RatBuddy
 		ConversationID (202, 196, 200)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (5)
 		Speed (13)

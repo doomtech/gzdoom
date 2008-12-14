@@ -8,7 +8,7 @@ ACTOR Blood
 		SpawnID (130)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Mass (5)
 		+NOBLOCKMAP
@@ -31,7 +31,7 @@ ACTOR Blood
 
 ACTOR BloodSplatter
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (2)
 		Height (4)
@@ -58,7 +58,7 @@ ACTOR BloodSplatter
 
 ACTOR AxeBlood
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (2)
 		Height (4)

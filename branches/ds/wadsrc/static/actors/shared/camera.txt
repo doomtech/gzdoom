@@ -21,7 +21,7 @@ ACTOR SecurityCamera native
 		DoomEdNum (9025)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP 
 		+NOGRAVITY

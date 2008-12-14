@@ -10,7 +10,7 @@ ACTOR FireDemon
 		SpawnID (5)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (80)
 		ReactionTime (8)
@@ -88,7 +88,7 @@ ACTOR FireDemonSplotch1
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (1000)
 		ReactionTime (8)
@@ -132,7 +132,7 @@ ACTOR FireDemonRock1
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (1000)
 		ReactionTime (8)
@@ -250,7 +250,7 @@ ACTOR FireDemonRock5 : FireDemonRock1
 
 ACTOR FireDemonMissile
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (1000)
 		ReactionTime (8)

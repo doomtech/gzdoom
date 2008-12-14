@@ -10,7 +10,7 @@ ACTOR Loremaster
 		ConversationID (66, 63, 64)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (800	)
 		Speed (10)
@@ -90,7 +90,7 @@ ACTOR LoreShot native
 		ConversationID (97,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (20)
 		Height (14)
@@ -125,7 +125,7 @@ ACTOR LoreShot2
 		ConversationID (98,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY

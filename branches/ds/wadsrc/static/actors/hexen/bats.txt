@@ -9,7 +9,7 @@ ACTOR BatSpawner : SwitchableDecoration
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOSECTOR +NOGRAVITY
 		RenderStyle ("None")
@@ -36,7 +36,7 @@ ACTOR BatSpawner : SwitchableDecoration
 
 ACTOR Bat
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (5)
 		Radius (3)

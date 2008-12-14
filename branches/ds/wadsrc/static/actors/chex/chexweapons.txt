@@ -7,7 +7,7 @@ ACTOR Bootspoon : Fist
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		obituary ("$OB_MPSPOON")
 	}
@@ -21,7 +21,7 @@ ACTOR SuperBootspork : Chainsaw
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		obituary ("$OB_MPBOOTSPORK")
 		Inventory.PickupMessage ("$GOTSUPERBOOTSPORK")
@@ -35,7 +35,7 @@ ACTOR MiniZorcher : Pistol
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		obituary ("$OP_MPZORCH")
 		inventory.pickupmessage ("$GOTMINIZORCHER")
@@ -56,7 +56,7 @@ ACTOR LargeZorcher : Shotgun
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		obituary ("$OP_MPZORCH")
 		inventory.pickupmessage ("$GOTLARGEZORCHER")
@@ -71,7 +71,7 @@ ACTOR SuperLargeZorcher : SuperShotgun
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		obituary ("$OB_MPMEGAZORCH")
 		inventory.pickupmessage ("$GOTSUPERLARGEZORCHER")
@@ -86,7 +86,7 @@ ACTOR RapidZorcher : Chaingun
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		obituary ("$OB_MPRAPIDZORCH")
 		inventory.pickupmessage ("$GOTRAPIDZORCHER")
@@ -101,7 +101,7 @@ ACTOR ZorchPropulsor : RocketLauncher
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		obituary ("")
 		inventory.pickupmessage ("$GOTZORCHPROPULSOR")
@@ -119,7 +119,7 @@ ACTOR ZorchPropulsor : RocketLauncher
 
 ACTOR PropulsorMissile : Rocket
 {
-	DefaultProperties
+	Defaults
 	{
 		-ROCKETTRAIL
 		-DEHEXPLOSION
@@ -137,7 +137,7 @@ ACTOR PhasingZorcher : PlasmaRifle
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		obituary ("")
 		inventory.pickupmessage ("$GOTPHASINGZORCHER")
@@ -162,7 +162,7 @@ ACTOR PhasingZorcher : PlasmaRifle
 
 ACTOR PhaseZorchMissile : PlasmaBall
 {
-	DefaultProperties
+	Defaults
 	{
 		RenderStyle ("Translucent")
 		Obituary ("$OB_MPPHASEZORCH")
@@ -178,7 +178,7 @@ ACTOR LAZDevice : BFG9000
 		game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		obituary ("")
 		inventory.pickupmessage ("$GOTLAZDEVICE")
@@ -197,7 +197,7 @@ ACTOR LAZDevice : BFG9000
 
 ACTOR LAZBall : BFGBall
 {
-	DefaultProperties
+	Defaults
 	{
 		RenderStyle ("Translucent")
 		Obituary ("$OB_MPLAZ_BOOM")

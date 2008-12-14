@@ -1,6 +1,6 @@
 ACTOR StrifeKey : Key
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -20,7 +20,7 @@ ACTOR BaseKey : StrifeKey
 		ConversationID (133, 129, 132)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_FUSL")
 		Tag ("Base_Key")
@@ -46,7 +46,7 @@ ACTOR GovsKey : StrifeKey
 		ConversationID (134, 130, 133)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_REBL")
 		Tag ("Govs_Key")	// "Rebel_Key" in the Teaser
@@ -73,7 +73,7 @@ ACTOR Passcard : StrifeKey
 		ConversationID (135, 131, 134)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_TPAS")
 		Tag ("Passcard")
@@ -100,7 +100,7 @@ ACTOR IDBadge : StrifeKey
 		ConversationID (136, 132, 135)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_CRD1")
 		Tag ("ID_Badge")
@@ -126,7 +126,7 @@ ACTOR PrisonKey : StrifeKey
 		ConversationID (137, 133, 136)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_PRIS")
 		Tag ("Prison_Key")
@@ -154,7 +154,7 @@ ACTOR SeveredHand : StrifeKey
 		ConversationID (138, 134, 137)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_HAND")
 		Tag ("Severed_Hand")
@@ -181,7 +181,7 @@ ACTOR Power1Key : StrifeKey
 		ConversationID (139, 135, 138)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_PWR1")
 		Tag ("Power1_Key")
@@ -207,7 +207,7 @@ ACTOR Power2Key : StrifeKey
 		ConversationID (140, 136, 139)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_PWR2")
 		Tag ("Power2_Key")
@@ -233,7 +233,7 @@ ACTOR Power3Key : StrifeKey
 		ConversationID (141, 137, 140)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_PWR3")
 		Tag ("Power3_Key")
@@ -260,7 +260,7 @@ ACTOR GoldKey : StrifeKey
 		ConversationID (142, 138, 141)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_KY1G")
 		Tag ("Gold_Key")
@@ -287,7 +287,7 @@ ACTOR IDCard : StrifeKey
 		ConversationID (143, 139, 142)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_CRD2")
 		Tag ("ID_Card")
@@ -314,7 +314,7 @@ ACTOR SilverKey : StrifeKey
 		ConversationID (144, 140, 143)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_KY2S")
 		Tag ("Silver_Key")
@@ -341,7 +341,7 @@ ACTOR OracleKey : StrifeKey
 		ConversationID (145, 141, 144)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_ORAC")
 		Tag ("Oracle_Key")
@@ -367,7 +367,7 @@ ACTOR MilitaryID : StrifeKey
 		ConversationID (146, 142, 145)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_GYID")
 		Tag ("Military ID")
@@ -394,7 +394,7 @@ ACTOR OrderKey : StrifeKey
 		ConversationID (147, 143, 146)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_FUBR")
 		Tag ("Order_Key")
@@ -421,7 +421,7 @@ ACTOR WarehouseKey : StrifeKey
 		ConversationID (148, 144, 147)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_WARE")
 		Tag ("Warehouse_Key")
@@ -448,7 +448,7 @@ ACTOR BrassKey : StrifeKey
 		ConversationID (149, 145, 148)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_KY3B")
 		Tag ("Brass_Key")
@@ -475,7 +475,7 @@ ACTOR RedCrystalKey : StrifeKey
 		ConversationID (150, 146, 149)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_RCRY")
 		Tag ("Red_Crystal_Key")
@@ -502,7 +502,7 @@ ACTOR BlueCrystalKey : StrifeKey
 		ConversationID (151, 147, 150)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_BCRY")
 		Tag ("Blue_Crystal_Key")
@@ -529,7 +529,7 @@ ACTOR ChapelKey : StrifeKey
 		ConversationID (152, 148, 151)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_CHAP")
 		Tag ("Chapel_Key")
@@ -555,7 +555,7 @@ ACTOR CatacombKey : StrifeKey
 		ConversationID (153, 149, 152)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_TUNL")
 		Tag ("Catacomb_Key")	// "Tunnel_Key" in the Teaser
@@ -582,7 +582,7 @@ ACTOR SecurityKey : StrifeKey
 		ConversationID (154, 150, 153)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_SECK")
 		Tag ("Security_Key")
@@ -609,7 +609,7 @@ ACTOR CoreKey : StrifeKey
 		ConversationID (155, 151, 154)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_GOID")
 		Tag ("Core_Key")	// "New_Key1" in the Teaser
@@ -636,7 +636,7 @@ ACTOR MaulerKey : StrifeKey
 		ConversationID (156, 152, 155)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_BLTK")
 		Tag ("Mauler_Key")	// "New_Key2" in the Teaser
@@ -663,7 +663,7 @@ ACTOR FactoryKey : StrifeKey
 		ConversationID (157, 153, 156)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_PROC")
 		Tag ("Factory_Key")	// "New_Key3" in the Teaser
@@ -690,7 +690,7 @@ ACTOR MineKey : StrifeKey
 		ConversationID (158, 154, 157)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_MINE")	// "New_Key4" in the Teaser
 		Tag ("MINE_KEY")
@@ -716,7 +716,7 @@ ACTOR NewKey5 : StrifeKey
 		ConversationID (159, 155, 158)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Icon ("I_BLTK")
 		Tag ("New_Key5")
@@ -742,7 +742,7 @@ ACTOR OraclePass : Inventory
 		ConversationID (311, 292, 309)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+INVENTORY.INVBAR
 		Inventory.Icon ("I_OTOK")

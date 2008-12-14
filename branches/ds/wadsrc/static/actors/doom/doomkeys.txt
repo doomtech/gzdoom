@@ -1,7 +1,7 @@
 
 ACTOR DoomKey : Key
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -20,7 +20,7 @@ ACTOR BlueCard : DoomKey
 		SpawnID (85)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Pickupmessage ("$GOTBLUECARD")
 		Inventory.Icon ("STKEYS0")
@@ -46,7 +46,7 @@ ACTOR YellowCard : DoomKey
 		SpawnID (87)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Pickupmessage ("$GOTYELWCARD")
 		Inventory.Icon ("STKEYS1")
@@ -72,7 +72,7 @@ ACTOR RedCard : DoomKey
 		SpawnID (86)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Pickupmessage ("$GOTREDCARD")
 		Inventory.Icon ("STKEYS2")
@@ -98,7 +98,7 @@ ACTOR BlueSkull : DoomKey
 		SpawnID (90)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Pickupmessage ("$GOTBLUESKUL")
 		Inventory.Icon ("STKEYS3")
@@ -124,7 +124,7 @@ ACTOR YellowSkull : DoomKey
 		SpawnID (88)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Pickupmessage ("$GOTYELWSKUL")
 		Inventory.Icon ("STKEYS4")
@@ -150,7 +150,7 @@ ACTOR RedSkull : DoomKey
 		SpawnID (89)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Pickupmessage ("$GOTREDSKUL")
 		Inventory.Icon ("STKEYS5")

@@ -1,7 +1,7 @@
 
 ACTOR CajunBodyNode
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOSECTOR
 		+NOGRAVITY
@@ -11,7 +11,7 @@ ACTOR CajunBodyNode
 
 ACTOR CajunTrace
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (12)
 		Radius (6)

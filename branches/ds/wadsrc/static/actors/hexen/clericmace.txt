@@ -3,7 +3,7 @@
 
 ACTOR CWeapMace : ClericWeapon
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (3500)
 		Weapon.KickBack (150)

@@ -10,7 +10,7 @@ ACTOR Ironlich
 		SpawnID (20)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (700)
 		Radius (40)
@@ -69,7 +69,7 @@ ACTOR HeadFX1
 		SpawnID (164)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (6)
@@ -101,7 +101,7 @@ ACTOR HeadFX1
 
 ACTOR HeadFX2
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (6)
@@ -129,7 +129,7 @@ ACTOR HeadFX2
 
 ACTOR HeadFX3
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (12)
@@ -171,7 +171,7 @@ ACTOR Whirlwind native
 		SpawnID (165)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (74)

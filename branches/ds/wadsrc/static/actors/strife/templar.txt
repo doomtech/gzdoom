@@ -8,7 +8,7 @@ ACTOR Templar
 		ConversationID (62, 61, 62)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (300)
 		Painchance (100)

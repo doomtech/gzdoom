@@ -9,7 +9,7 @@ ACTOR HateTarget native
 		DoomEdNum (9076)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (56)

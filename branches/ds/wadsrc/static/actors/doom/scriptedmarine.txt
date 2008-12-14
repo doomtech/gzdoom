@@ -10,7 +10,7 @@ ACTOR ScriptedMarine native
 		SpawnID (151)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (100)
 		Radius (16)

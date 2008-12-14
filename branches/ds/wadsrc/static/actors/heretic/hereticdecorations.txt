@@ -6,7 +6,7 @@ ACTOR SkullHang70
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (70)
@@ -30,7 +30,7 @@ ACTOR SkullHang60
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (60)
@@ -54,7 +54,7 @@ ACTOR SkullHang45
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (45)
@@ -78,7 +78,7 @@ ACTOR SkullHang35
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (35)
@@ -102,7 +102,7 @@ ACTOR Chandelier
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (60)
@@ -126,7 +126,7 @@ ACTOR SerpentTorch
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (54)
@@ -149,7 +149,7 @@ ACTOR SmallPillar
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (34)
@@ -172,7 +172,7 @@ ACTOR StalagmiteSmall
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (32)
@@ -195,7 +195,7 @@ ACTOR StalagmiteLarge
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (64)
@@ -218,7 +218,7 @@ ACTOR StalactiteSmall
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (36)
@@ -243,7 +243,7 @@ ACTOR StalactiteLarge
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (68)
@@ -268,7 +268,7 @@ ACTOR FireBrazier
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (44)
@@ -291,7 +291,7 @@ ACTOR Barrel
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (32)
@@ -314,7 +314,7 @@ ACTOR BrownPillar
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (128)
@@ -337,7 +337,7 @@ ACTOR Moss1
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (23)
@@ -361,7 +361,7 @@ ACTOR Moss2
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (27)
@@ -385,7 +385,7 @@ ACTOR WallTorch
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (6)
 		Height (16)
@@ -409,7 +409,7 @@ ACTOR HangingCorpse
 		Game ("Heretic")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (104)

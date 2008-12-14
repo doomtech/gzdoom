@@ -1,7 +1,7 @@
 
 ACTOR TeleportFog native
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOTELEPORT
@@ -32,7 +32,7 @@ ACTOR TeleportDest
 		DoomEdNum (14)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOSECTOR
@@ -47,7 +47,7 @@ ACTOR TeleportDest2 : TeleportDest
 		DoomEdNum (9044)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOGRAVITY
 	}
@@ -60,7 +60,7 @@ ACTOR TeleportDest3 : TeleportDest2
 		DoomEdNum (9043)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		-NOGRAVITY
 	}

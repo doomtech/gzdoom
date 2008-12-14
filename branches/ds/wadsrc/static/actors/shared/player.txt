@@ -1,6 +1,6 @@
 ACTOR PlayerPawn : Actor native
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (100)
 		Radius (16)
@@ -34,7 +34,7 @@ ACTOR PlayerPawn : Actor native
 
 ACTOR PlayerChunk : PlayerPawn native
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOSKIN
 		-SOLID

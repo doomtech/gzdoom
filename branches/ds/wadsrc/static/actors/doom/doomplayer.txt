@@ -5,7 +5,7 @@
 //===========================================================================
 ACTOR DoomPlayer : PlayerPawn
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (1)
 		Health (100)

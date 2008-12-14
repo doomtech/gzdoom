@@ -10,7 +10,7 @@ ACTOR Oracle native
 		ConversationID (65, 62, 63)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (1)
 		Radius (15)

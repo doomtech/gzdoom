@@ -5,7 +5,7 @@ ACTOR ColorSetter native
 		DoomEdNum (9038)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -22,7 +22,7 @@ ACTOR FadeSetter native
 		DoomEdNum (9039)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY

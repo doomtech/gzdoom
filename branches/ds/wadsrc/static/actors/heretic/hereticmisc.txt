@@ -10,7 +10,7 @@ ACTOR Pod
 		SpawnID (125)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (45)
 		Radius (16)
@@ -51,7 +51,7 @@ ACTOR Pod
 
 ACTOR PodGoo
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (2)
 		Height (4)
@@ -82,7 +82,7 @@ ACTOR PodGenerator
 		SpawnID (126)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOSECTOR
@@ -111,7 +111,7 @@ ACTOR TeleGlitterGenerator1
 		SpawnID (166)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP 
 		+NOSECTOR 
@@ -138,7 +138,7 @@ ACTOR TeleGlitterGenerator2
 		SpawnID (167)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP 
 		+NOSECTOR 
@@ -159,7 +159,7 @@ ACTOR TeleGlitterGenerator2
 
 ACTOR TeleGlitter1
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY +MISSILE
 		RenderStyle ("Add")
@@ -208,7 +208,7 @@ ACTOR Volcano
 		SpawnID (150)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (20)
@@ -239,7 +239,7 @@ ACTOR VolcanoBlast
 		SpawnID (123)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (8)
@@ -277,7 +277,7 @@ ACTOR VolcanoTBlast
 		SpawnID (124)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (6)

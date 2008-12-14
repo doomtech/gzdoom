@@ -4,7 +4,7 @@
 
 ACTOR SnoutPuff
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -25,7 +25,7 @@ ACTOR SnoutPuff
 
 ACTOR Snout : Weapon
 {
-	DefaultProperties
+	Defaults
 	{
 		Weapon.SelectionOrder (10000)
 		+WEAPON.DONTBOB
@@ -61,7 +61,7 @@ ACTOR Snout : Weapon
 
 ACTOR PigPlayer : PlayerPawn native
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (30)
 		ReactionTime (0)
@@ -121,7 +121,7 @@ ACTOR PigPlayer : PlayerPawn native
 
 ACTOR Pig : MorphedMonster
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (25)
 		Painchance (128)

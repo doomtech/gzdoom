@@ -1,6 +1,6 @@
 ACTOR Actor native
 {
-	DefaultProperties
+	Defaults
 	{
 		Scale (1)
 		Health (1000)

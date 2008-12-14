@@ -12,7 +12,7 @@ ACTOR SpiderMastermind
 		SpawnID (7)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (3000)
 		Radius (100)

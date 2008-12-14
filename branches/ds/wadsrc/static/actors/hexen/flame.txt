@@ -9,7 +9,7 @@ ACTOR FlameSmallTemp
 		SpawnID (96)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOTELEPORT
 		RenderStyle ("Add")
@@ -39,7 +39,7 @@ ACTOR FlameLargeTemp
 		SpawnID (98)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOTELEPORT
 		RenderStyle ("Add")
@@ -79,7 +79,7 @@ ACTOR FlameSmall : SwitchableDecoration
 		SpawnID (97)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOTELEPORT
 		+INVISIBLE
@@ -123,7 +123,7 @@ ACTOR FlameLarge : SwitchableDecoration
 		SpawnID (99)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOTELEPORT
 		+INVISIBLE

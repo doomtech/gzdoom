@@ -5,7 +5,7 @@ ACTOR InterpolationPoint native
 		DoomEdNum (9070)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -21,7 +21,7 @@ ACTOR InterpolationSpecial native
 		DoomEdNum (9075)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOSECTOR
@@ -37,7 +37,7 @@ ACTOR PathFollower native
 		DoomEdNum (9071)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOSECTOR

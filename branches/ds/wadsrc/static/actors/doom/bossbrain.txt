@@ -13,7 +13,7 @@ ACTOR BossBrain
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (250)
 		Mass (10000000)
@@ -60,7 +60,7 @@ ACTOR BossEye
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Height (32)
 		+NOBLOCKMAP
@@ -93,7 +93,7 @@ ACTOR BossTarget : SpecialSpot
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Height (32)
 		+NOBLOCKMAP
@@ -109,7 +109,7 @@ ACTOR BossTarget : SpecialSpot
 
 ACTOR SpawnShot
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (6)
 		Height (32)
@@ -140,7 +140,7 @@ ACTOR SpawnShot
 
 ACTOR SpawnFire
 {
-	DefaultProperties
+	Defaults
 	{
 		Height (78)
 		+NOBLOCKMAP

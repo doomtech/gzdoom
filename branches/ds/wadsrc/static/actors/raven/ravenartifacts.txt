@@ -10,7 +10,7 @@ ACTOR ArtiHealth : HealthPickup
 		SpawnID (24)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (25)
 		+COUNTITEM
@@ -41,7 +41,7 @@ ACTOR ArtiSuperHealth : HealthPickup
 		SpawnID (25)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (100)
 		+COUNTITEM
@@ -72,7 +72,7 @@ ACTOR ArtiFly : PowerupGiver
 		SpawnID (15)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+FLOATBOB
@@ -103,7 +103,7 @@ ACTOR ArtiInvulnerability : PowerupGiver
 		SpawnID (133)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+FLOATBOB
@@ -134,7 +134,7 @@ ACTOR ArtiInvulnerability2 : PowerupGiver
 		SpawnID (133)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+FLOATBOB
@@ -164,7 +164,7 @@ ACTOR ArtiTorch : PowerupGiver
 		SpawnID (73)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+FLOATBOB

@@ -10,7 +10,7 @@ ACTOR PuzzSkull : PuzzleItem
 		SpawnID (76)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (0)
 		Inventory.Icon ("ARTISKLL")
@@ -37,7 +37,7 @@ ACTOR PuzzGemBig : PuzzleItem
 		SpawnID (77)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (1)
 		Inventory.Icon ("ARTIBGEM")
@@ -63,7 +63,7 @@ ACTOR PuzzGemRed : PuzzleItem
 		SpawnID (78)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (2)
 		Inventory.Icon ("ARTIGEMR")
@@ -90,7 +90,7 @@ ACTOR PuzzGemGreen1 : PuzzleItem
 		SpawnID (79)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (3)
 		Inventory.Icon ("ARTIGEMG")
@@ -117,7 +117,7 @@ ACTOR PuzzGemGreen2 : PuzzleItem
 		SpawnID (80)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (4)
 		Inventory.Icon ("ARTIGMG2")
@@ -144,7 +144,7 @@ ACTOR PuzzGemBlue1 : PuzzleItem
 		SpawnID (81)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (5)
 		Inventory.Icon ("ARTIGEMB")
@@ -171,7 +171,7 @@ ACTOR PuzzGemBlue2 : PuzzleItem
 		SpawnID (82)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (6)
 		Inventory.Icon ("ARTIGMB2")
@@ -198,7 +198,7 @@ ACTOR PuzzBook1 : PuzzleItem
 		SpawnID (83)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (7)
 		Inventory.Icon ("ARTIBOK1")
@@ -225,7 +225,7 @@ ACTOR PuzzBook2 : PuzzleItem
 		SpawnID (84)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (8)
 		Inventory.Icon ("ARTIBOK2")
@@ -252,7 +252,7 @@ ACTOR PuzzFlameMask : PuzzleItem
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (9)
 		Inventory.Icon ("ARTISKL2")
@@ -277,7 +277,7 @@ ACTOR PuzzFWeapon : PuzzleItem
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (10)
 		Inventory.Icon ("ARTIFWEP")
@@ -303,7 +303,7 @@ ACTOR PuzzCWeapon : PuzzleItem
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (11)
 		Inventory.Icon ("ARTICWEP")
@@ -329,7 +329,7 @@ ACTOR PuzzMWeapon : PuzzleItem
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (12)
 		Inventory.Icon ("ARTIMWEP")
@@ -354,7 +354,7 @@ ACTOR PuzzGear1 : PuzzleItem
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (13)
 		Inventory.Icon ("ARTIGEAR")
@@ -380,7 +380,7 @@ ACTOR PuzzGear2 : PuzzleItem
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (14)
 		Inventory.Icon ("ARTIGER2")
@@ -406,7 +406,7 @@ ACTOR PuzzGear3 : PuzzleItem
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (15)
 		Inventory.Icon ("ARTIGER3")
@@ -432,7 +432,7 @@ ACTOR PuzzGear4 : PuzzleItem
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		PuzzleItem.Number (16)
 		Inventory.Icon ("ARTIGER4")

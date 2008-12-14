@@ -10,7 +10,7 @@ ACTOR Demon1
 		SpawnID (3)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (250)
 		Painchance (50)
@@ -86,7 +86,7 @@ ACTOR Demon1Mash : Demon1
 		SpawnID (100)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOOD
 		+BLASTED
@@ -109,7 +109,7 @@ ACTOR Demon1Mash : Demon1
 
 ACTOR DemonChunk
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (5)
 		Height (5)
@@ -209,7 +209,7 @@ ACTOR Demon1Chunk5 : DemonChunk
 
 ACTOR Demon1FX1
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (15)
 		Radius (10)
@@ -245,7 +245,7 @@ ACTOR Demon2 : Demon1
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Obituary ("$OB_DEMON2")
 	}
@@ -301,7 +301,7 @@ ACTOR Demon2Mash : Demon2
 		SpawnID (101)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOOD
 		+BLASTED
@@ -409,7 +409,7 @@ ACTOR Demon2Chunk5 : DemonChunk
 
 ACTOR Demon2FX1
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (15)
 		Radius (10)

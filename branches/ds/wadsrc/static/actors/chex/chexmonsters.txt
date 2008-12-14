@@ -13,7 +13,7 @@ ACTOR FlemoidusCommonus : ZombieMan
 		Game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		DropItem ("")
 		Obituary ("$OB_COMMONUS")
@@ -42,7 +42,7 @@ ACTOR FlemoidusBipedicus : ShotgunGuy
 		Game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		DropItem ("")
 		Obituary ("$OB_BIPEDICUS")
@@ -71,7 +71,7 @@ ACTOR ArmoredFlemoidusBipedicus : DoomImp
 		Game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Obituary ("$OB_BIPEDICUS2")
 		HitObituary ("$OB_BIPEDICUS2")
@@ -92,7 +92,7 @@ ACTOR FlemoidusCycloptisCommonus : Demon
 		Game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Obituary ("$OB_CYCLOPTIS")
 	}
@@ -112,7 +112,7 @@ ACTOR Flembrane : BaronOfHell
 		Game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		radius (44)
 		height (100)
@@ -139,7 +139,7 @@ ACTOR ChexSoul : LostSoul
 		Game ("Chex")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		height (0)
 	}

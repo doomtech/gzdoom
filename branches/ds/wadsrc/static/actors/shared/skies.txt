@@ -5,7 +5,7 @@ ACTOR SkyViewpoint native
 		DoomEdNum (9080)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOSECTOR
 		+NOBLOCKMAP
@@ -21,7 +21,7 @@ ACTOR SkyPicker native
 		DoomEdNum (9081)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOSECTOR
 		+NOBLOCKMAP
@@ -59,7 +59,7 @@ ACTOR SectorSilencer native
 		DoomEdNum (9082)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY

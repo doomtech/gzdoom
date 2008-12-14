@@ -2,7 +2,7 @@
 
 ACTOR StrifePlayer : PlayerPawn
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (100)
 		Radius (18)

@@ -10,7 +10,7 @@ ACTOR FWeapHammer : FighterWeapon
 		SpawnID (28)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+BLOODSPLATTER
 		Weapon.SelectionOrder (900)
@@ -61,7 +61,7 @@ ACTOR FWeapHammer : FighterWeapon
 
 ACTOR HammerMissile
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (25)
 		Radius (14)
@@ -94,7 +94,7 @@ ACTOR HammerMissile
 
 ACTOR HammerPuff
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY
 		+PUFFONACTORS

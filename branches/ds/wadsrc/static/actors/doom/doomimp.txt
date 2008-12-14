@@ -12,7 +12,7 @@ ACTOR DoomImp
 		SpawnID (5)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (60)
 		Radius (20)
@@ -81,7 +81,7 @@ ACTOR DoomImpBall
 		SpawnID (10)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (6)
 		Height (8)

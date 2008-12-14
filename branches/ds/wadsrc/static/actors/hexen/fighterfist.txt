@@ -3,7 +3,7 @@
 
 ACTOR FWeapFist : FighterWeapon
 {
-	DefaultProperties
+	Defaults
 	{
 		+BLOODSPLATTER
 		Weapon.SelectionOrder (3400)
@@ -48,7 +48,7 @@ ACTOR FWeapFist : FighterWeapon
 
 ACTOR PunchPuff
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY
 		+PUFFONACTORS

@@ -10,7 +10,7 @@ ACTOR MeshArmor : HexenArmor
 		SpawnID (68)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOGRAVITY
 		Health (0)	// Armor class
@@ -37,7 +37,7 @@ ACTOR FalconShield : HexenArmor
 		SpawnID (69)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOGRAVITY
 		Health (1)	// Armor class
@@ -64,7 +64,7 @@ ACTOR PlatinumHelm : HexenArmor
 		SpawnID (70)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOGRAVITY
 		Health (2)	// Armor class
@@ -91,7 +91,7 @@ ACTOR AmuletOfWarding : HexenArmor
 		SpawnID (71)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOGRAVITY
 		Health (3)	// Armor class

@@ -10,7 +10,7 @@ ACTOR AlienSpectre1 : SpectralMonster
 		ConversationID (67,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (1000)
 		Painchance (250)
@@ -96,7 +96,7 @@ ACTOR AlienSpectre2 : AlienSpectre1
 		ConversationID (70)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (1200)
 		Painchance (50)
@@ -126,7 +126,7 @@ ACTOR AlienSpectre3 : AlienSpectre1
 		ConversationID (71,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (1500)
 		Painchance (50)
@@ -176,7 +176,7 @@ ACTOR AlienSpectre4 : AlienSpectre1
 		ConversationID (72,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (1700)
 		Painchance (50)
@@ -206,7 +206,7 @@ ACTOR AlienSpectre5 : AlienSpectre1
 		ConversationID (73,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (2000)
 		Painchance (50)
@@ -233,7 +233,7 @@ ACTOR AlienChunkSmall
 		ConversationID (68,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOCLIP
@@ -256,7 +256,7 @@ ACTOR AlienChunkLarge
 		ConversationID (69,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOCLIP

@@ -6,7 +6,7 @@ ACTOR ZWingedStatue
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (62)
@@ -29,7 +29,7 @@ ACTOR ZRock1
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -51,7 +51,7 @@ ACTOR ZRock2
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -73,7 +73,7 @@ ACTOR ZRock3
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -95,7 +95,7 @@ ACTOR ZRock4
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -117,7 +117,7 @@ ACTOR ZChandelier
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (60)
@@ -141,7 +141,7 @@ ACTOR ZChandelierUnlit
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (60)
@@ -165,7 +165,7 @@ ACTOR ZTreeDead
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (96)
@@ -188,7 +188,7 @@ ACTOR ZTree
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (15)
 		Height (128)
@@ -211,7 +211,7 @@ ACTOR ZTreeSwamp150
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (150)
@@ -234,7 +234,7 @@ ACTOR ZTreeSwamp120
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (120)
@@ -257,7 +257,7 @@ ACTOR ZStumpBurned
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (20)
@@ -280,7 +280,7 @@ ACTOR ZStumpBare
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (20)
@@ -303,7 +303,7 @@ ACTOR ZStumpSwamp1
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -325,7 +325,7 @@ ACTOR ZStumpSwamp2
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -347,7 +347,7 @@ ACTOR ZShroomLarge1
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -369,7 +369,7 @@ ACTOR ZShroomLarge2
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -391,7 +391,7 @@ ACTOR ZShroomLarge3
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -413,7 +413,7 @@ ACTOR ZShroomSmall1
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -435,7 +435,7 @@ ACTOR ZShroomSmall2
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -457,7 +457,7 @@ ACTOR ZShroomSmall3
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -479,7 +479,7 @@ ACTOR ZShroomSmall4
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -501,7 +501,7 @@ ACTOR ZShroomSmall5
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -523,7 +523,7 @@ ACTOR ZStalagmitePillar
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (138)
@@ -546,7 +546,7 @@ ACTOR ZStalagmiteLarge
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (48)
@@ -569,7 +569,7 @@ ACTOR ZStalagmiteMedium
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (6)
 		Height (40)
@@ -592,7 +592,7 @@ ACTOR ZStalagmiteSmall
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (36)
@@ -615,7 +615,7 @@ ACTOR ZStalactiteLarge
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (66)
@@ -640,7 +640,7 @@ ACTOR ZStalactiteMedium
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (6)
 		Height (50)
@@ -665,7 +665,7 @@ ACTOR ZStalactiteSmall
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (40)
@@ -690,7 +690,7 @@ ACTOR ZMossCeiling1
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (20)
@@ -714,7 +714,7 @@ ACTOR ZMossCeiling2
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (24)
@@ -738,7 +738,7 @@ ACTOR ZSwampVine
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (52)
@@ -761,7 +761,7 @@ ACTOR ZCorpseKabob
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (92)
@@ -784,7 +784,7 @@ ACTOR ZCorpseSleeping
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -806,7 +806,7 @@ ACTOR ZTombstoneRIP
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (46)
@@ -829,7 +829,7 @@ ACTOR ZTombstoneShane
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (46)
@@ -852,7 +852,7 @@ ACTOR ZTombstoneBigCross
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (46)
@@ -875,7 +875,7 @@ ACTOR ZTombstoneBrianR
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (52)
@@ -898,7 +898,7 @@ ACTOR ZTombstoneCrossCircle
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (10)
 		Height (52)
@@ -921,7 +921,7 @@ ACTOR ZTombstoneSmallCross
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (46)
@@ -944,7 +944,7 @@ ACTOR ZTombstoneBrianP
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (46)
@@ -967,7 +967,7 @@ ACTOR ZCorpseHanging
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (6)
 		Height (75)
@@ -992,7 +992,7 @@ ACTOR ZStatueGargoyleGreenTall
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (108)
@@ -1015,7 +1015,7 @@ ACTOR ZStatueGargoyleBlueTall
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (108)
@@ -1038,7 +1038,7 @@ ACTOR ZStatueGargoyleGreenShort
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (62)
@@ -1061,7 +1061,7 @@ ACTOR ZStatueGargoyleBlueShort
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (62)
@@ -1084,7 +1084,7 @@ ACTOR ZStatueGargoyleStripeTall
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (108)
@@ -1107,7 +1107,7 @@ ACTOR ZStatueGargoyleDarkRedTall
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (108)
@@ -1130,7 +1130,7 @@ ACTOR ZStatueGargoyleRedTall
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (108)
@@ -1153,7 +1153,7 @@ ACTOR ZStatueGargoyleTanTall
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (108)
@@ -1176,7 +1176,7 @@ ACTOR ZStatueGargoyleRustTall
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (108)
@@ -1199,7 +1199,7 @@ ACTOR ZStatueGargoyleDarkRedShort
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (62)
@@ -1222,7 +1222,7 @@ ACTOR ZStatueGargoyleRedShort
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (62)
@@ -1245,7 +1245,7 @@ ACTOR ZStatueGargoyleTanShort
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (62)
@@ -1268,7 +1268,7 @@ ACTOR ZStatueGargoyleRustShort
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (14)
 		Height (62)
@@ -1291,7 +1291,7 @@ ACTOR ZBannerTattered
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (120)
@@ -1314,7 +1314,7 @@ ACTOR ZTreeLarge1
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (15)
 		Height (180)
@@ -1337,7 +1337,7 @@ ACTOR ZTreeLarge2
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (15)
 		Height (180)
@@ -1360,7 +1360,7 @@ ACTOR ZTreeGnarled1
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (22)
 		Height (100)
@@ -1383,7 +1383,7 @@ ACTOR ZTreeGnarled2
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (22)
 		Height (100)
@@ -1406,7 +1406,7 @@ ACTOR ZLog
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (25)
@@ -1429,7 +1429,7 @@ ACTOR ZStalactiteIceLarge
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (66)
@@ -1454,7 +1454,7 @@ ACTOR ZStalactiteIceMedium
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (5)
 		Height (50)
@@ -1479,7 +1479,7 @@ ACTOR ZStalactiteIceSmall
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (4)
 		Height (32)
@@ -1504,7 +1504,7 @@ ACTOR ZStalactiteIceTiny
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (4)
 		Height (8)
@@ -1529,7 +1529,7 @@ ACTOR ZStalagmiteIceLarge
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (66)
@@ -1552,7 +1552,7 @@ ACTOR ZStalagmiteIceMedium
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (5)
 		Height (50)
@@ -1575,7 +1575,7 @@ ACTOR ZStalagmiteIceSmall
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (4)
 		Height (32)
@@ -1598,7 +1598,7 @@ ACTOR ZStalagmiteIceTiny
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (4)
 		Height (8)
@@ -1621,7 +1621,7 @@ ACTOR ZRockBrown1
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (17)
 		Height (72)
@@ -1644,7 +1644,7 @@ ACTOR ZRockBrown2
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (15)
 		Height (50)
@@ -1667,7 +1667,7 @@ ACTOR ZRockBlack
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (40)
@@ -1690,7 +1690,7 @@ ACTOR ZRubble1
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -1712,7 +1712,7 @@ ACTOR ZRubble2
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -1734,7 +1734,7 @@ ACTOR ZRubble3
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -1756,7 +1756,7 @@ ACTOR ZVasePillar
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (54)
@@ -1779,7 +1779,7 @@ ACTOR ZCorpseLynched
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (11)
 		Height (95)
@@ -1804,7 +1804,7 @@ ACTOR ZCandle
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -1828,7 +1828,7 @@ ACTOR ZBarrel
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (15)
 		Height (32)
@@ -1851,7 +1851,7 @@ ACTOR ZBucket
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (72)
@@ -1876,7 +1876,7 @@ ACTOR FireThing
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (5)
 		Height (10)
@@ -1907,7 +1907,7 @@ ACTOR BrassTorch
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (6)
 		Height (35)
@@ -1930,7 +1930,7 @@ ACTOR ZBlueCandle
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -1953,7 +1953,7 @@ ACTOR ZIronMaiden
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (12)
 		Height (60)
@@ -1976,7 +1976,7 @@ ACTOR ZChainBit32
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (4)
 		Height (32)
@@ -2001,7 +2001,7 @@ ACTOR ZChainBit64
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (4)
 		Height (64)
@@ -2026,7 +2026,7 @@ ACTOR ZChainEndHeart
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (4)
 		Height (32)
@@ -2051,7 +2051,7 @@ ACTOR ZChainEndHook1
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (4)
 		Height (32)
@@ -2076,7 +2076,7 @@ ACTOR ZChainEndHook2
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (4)
 		Height (32)
@@ -2101,7 +2101,7 @@ ACTOR ZChainEndSpike
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (4)
 		Height (32)
@@ -2126,7 +2126,7 @@ ACTOR ZChainEndSkull
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (4)
 		Height (32)
@@ -2151,7 +2151,7 @@ ACTOR TableShit1
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -2174,7 +2174,7 @@ ACTOR TableShit2
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -2197,7 +2197,7 @@ ACTOR TableShit3
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -2220,7 +2220,7 @@ ACTOR TableShit4
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -2243,7 +2243,7 @@ ACTOR TableShit5
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -2266,7 +2266,7 @@ ACTOR TableShit6
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -2289,7 +2289,7 @@ ACTOR TableShit7
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -2312,7 +2312,7 @@ ACTOR TableShit8
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -2335,7 +2335,7 @@ ACTOR TableShit9
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -2358,7 +2358,7 @@ ACTOR TableShit10
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)
@@ -2381,7 +2381,7 @@ ACTOR TeleSmoke
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (20)
 		Height (16)

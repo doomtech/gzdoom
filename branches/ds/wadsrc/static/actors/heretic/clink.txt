@@ -8,7 +8,7 @@ ACTOR Clink
 		SpawnID (1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (150)
 		Radius (20)

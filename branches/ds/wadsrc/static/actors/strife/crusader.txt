@@ -10,7 +10,7 @@ ACTOR Crusader
 		ConversationID (63,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (8)
 		Radius (40)
@@ -83,7 +83,7 @@ ACTOR Crusader
 
 ACTOR FastFlameMissile : FlameMissile
 {
-	DefaultProperties
+	Defaults
 	{
 		Mass (50)
 		Damage (1)
@@ -97,7 +97,7 @@ ACTOR FastFlameMissile : FlameMissile
 
 ACTOR CrusaderMissile
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (20)
 		Radius (10)

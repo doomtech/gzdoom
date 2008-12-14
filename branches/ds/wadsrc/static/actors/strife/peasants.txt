@@ -3,7 +3,7 @@
 
 ACTOR Peasant : StrifeHumanoid
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (31)
 		PainChance (200)
@@ -78,7 +78,7 @@ ACTOR Peasant1 : Peasant
 		ConversationID (6)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (4)
 	}
@@ -93,7 +93,7 @@ ACTOR Peasant2 : Peasant
 		ConversationID (7)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (5)
 	}
@@ -108,7 +108,7 @@ ACTOR Peasant3 : Peasant
 		ConversationID (8)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (5)
 	}
@@ -123,7 +123,7 @@ ACTOR Peasant4 : Peasant
 		ConversationID (9)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (0)
 		Speed (7)
@@ -139,7 +139,7 @@ ACTOR Peasant5 : Peasant
 		ConversationID (10)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (0)
 		Speed (7)
@@ -155,7 +155,7 @@ ACTOR Peasant6 : Peasant
 		ConversationID (11)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (0)
 		Speed (7)
@@ -171,7 +171,7 @@ ACTOR Peasant7 : Peasant
 		ConversationID (12)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (2)
 	}
@@ -186,7 +186,7 @@ ACTOR Peasant8 : Peasant
 		ConversationID (13)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (2)
 	}
@@ -201,7 +201,7 @@ ACTOR Peasant9 : Peasant
 		ConversationID (14)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (2)
 	}
@@ -216,7 +216,7 @@ ACTOR Peasant10 : Peasant
 		ConversationID (15)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (1)
 	}
@@ -231,7 +231,7 @@ ACTOR Peasant11 : Peasant
 		ConversationID (16)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (1)
 	}
@@ -246,7 +246,7 @@ ACTOR Peasant12 : Peasant
 		ConversationID (17)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (1)
 	}
@@ -261,7 +261,7 @@ ACTOR Peasant13 : Peasant
 		ConversationID (18)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (3)
 	}
@@ -276,7 +276,7 @@ ACTOR Peasant14 : Peasant
 		ConversationID (19)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (3)
 	}
@@ -291,7 +291,7 @@ ACTOR Peasant15 : Peasant
 		ConversationID (20)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (3)
 	}
@@ -306,7 +306,7 @@ ACTOR Peasant16 : Peasant
 		ConversationID (21)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (5)
 	}
@@ -321,7 +321,7 @@ ACTOR Peasant17 : Peasant
 		ConversationID (22)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (5)
 	}
@@ -336,7 +336,7 @@ ACTOR Peasant18 : Peasant
 		ConversationID (23)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (5)
 	}
@@ -351,7 +351,7 @@ ACTOR Peasant19 : Peasant
 		ConversationID (24)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (4)
 	}
@@ -366,7 +366,7 @@ ACTOR Peasant20 : Peasant
 		ConversationID (25)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (4)
 	}
@@ -381,7 +381,7 @@ ACTOR Peasant21 : Peasant
 		ConversationID (26)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (4)
 	}
@@ -396,7 +396,7 @@ ACTOR Peasant22 : Peasant
 		ConversationID (27)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Translation (6)
 	}

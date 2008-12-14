@@ -12,7 +12,7 @@ ACTOR Revenant
 		SpawnID (20)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (300)
 		Radius (20)
@@ -85,7 +85,7 @@ ACTOR RevenantTracer
 		SpawnID (53)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (11)
 		Height (8)
@@ -120,7 +120,7 @@ ACTOR RevenantTracer
 //===========================================================================
 ACTOR RevenantTracerSmoke
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY

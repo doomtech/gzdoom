@@ -11,7 +11,7 @@ ACTOR CommanderKeen
 		Game ("Doom")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (100)
 		Radius (16)

@@ -2,7 +2,7 @@
 
 ACTOR MagePlayer : PlayerPawn
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (100)
 		ReactionTime (0)

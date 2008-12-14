@@ -2,7 +2,7 @@
 
 ACTOR ChexPlayer : DoomPlayer
 {
-	DefaultProperties
+	Defaults
 	{
 		player.displayname ("Chex Warrior")
 		player.crouchsprite ("")

@@ -6,7 +6,7 @@ ACTOR MapMarker native
 		DoomEdNum (9040)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY

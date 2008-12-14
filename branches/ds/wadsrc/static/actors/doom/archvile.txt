@@ -13,7 +13,7 @@ ACTOR Archvile
 		SpawnID (111)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (700)
 		Radius (20)
@@ -82,7 +82,7 @@ ACTOR ArchvileFire
 		SpawnID (98)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY
 		RenderStyle ("Add")

@@ -9,7 +9,7 @@ ACTOR EggFX : MorphProjectile
 		SpawnID (40)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (8)
@@ -42,7 +42,7 @@ ACTOR ArtiEgg : CustomInventory
 		SpawnID (14)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+FLOATBOB
@@ -80,7 +80,7 @@ ACTOR PorkFX : MorphProjectile
 		SpawnID (40)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (8)
@@ -112,7 +112,7 @@ ACTOR ArtiPork : CustomInventory
 		SpawnID (14)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+FLOATBOB

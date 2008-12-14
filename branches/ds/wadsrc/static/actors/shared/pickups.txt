@@ -6,7 +6,7 @@
 
 ACTOR ItemFog
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -24,7 +24,7 @@ ACTOR ItemFog
 
 ACTOR PickupFlash
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOGRAVITY
 	}

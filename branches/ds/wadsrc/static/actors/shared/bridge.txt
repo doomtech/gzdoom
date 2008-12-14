@@ -2,7 +2,7 @@
 
 ACTOR BridgeBall
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOTELEPORT
@@ -29,7 +29,7 @@ ACTOR CustomBridge native
 		DoomEdNum (9991)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+SOLID
 		+NOGRAVITY
@@ -70,7 +70,7 @@ ACTOR Bridge : CustomBridge
 		SpawnID (21)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		RenderStyle ("None")
 		Args (32, 2, 3, 0)
@@ -88,7 +88,7 @@ ACTOR ZBridge : CustomBridge
 		SpawnID (21)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Args (36, 4, 0, 0)
 	}
@@ -104,7 +104,7 @@ ACTOR InvisibleBridge native
 		DoomEdNum (9990)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		RenderStyle ("None")
 		Radius (32)
@@ -132,7 +132,7 @@ ACTOR InvisibleBridge32 : InvisibleBridge
 		DoomEdNum (5061)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (32)
 		Height (8)
@@ -146,7 +146,7 @@ ACTOR InvisibleBridge16 : InvisibleBridge
 		DoomEdNum (5064)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (16)
 		Height (8)
@@ -160,7 +160,7 @@ ACTOR InvisibleBridge8 : InvisibleBridge
 		DoomEdNum (5065)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (8)
 		Height (8)

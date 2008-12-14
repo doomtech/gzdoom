@@ -3,7 +3,7 @@
 
 ACTOR Acolyte : StrifeHumanoid
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (70)
 		PainChance (150)
@@ -89,7 +89,7 @@ ACTOR AcolyteTan : Acolyte
 		ConversationID (53, 52, 53)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEMORE +MISSILEEVENMORE
 		DropItem ("ClipOfBullets")
@@ -107,7 +107,7 @@ ACTOR AcolyteRed : Acolyte
 		ConversationID (54, 53, 54)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEMORE +MISSILEEVENMORE
 		Translation (0)
@@ -125,7 +125,7 @@ ACTOR AcolyteRust : Acolyte
 		ConversationID (55, 54, 55)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEMORE +MISSILEEVENMORE
 		Translation (1)
@@ -143,7 +143,7 @@ ACTOR AcolyteGray : Acolyte
 		ConversationID (56, 55, 56)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEMORE +MISSILEEVENMORE
 		Translation (2)
@@ -161,7 +161,7 @@ ACTOR AcolyteDGreen : Acolyte
 		ConversationID (57, 56, 57)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEMORE +MISSILEEVENMORE
 		Translation (3)
@@ -179,7 +179,7 @@ ACTOR AcolyteGold : Acolyte
 		ConversationID (58, 57, 58)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEMORE +MISSILEEVENMORE
 		Translation (4)
@@ -197,7 +197,7 @@ ACTOR AcolyteLGreen : Acolyte
 		ConversationID (59, -1, -1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (60)
 		Translation (5)
@@ -215,7 +215,7 @@ ACTOR AcolyteBlue : Acolyte
 		ConversationID (60, -1, -1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (60)
 		Translation (6)
@@ -233,7 +233,7 @@ ACTOR AcolyteShadow : Acolyte
 		ConversationID (61, 58, 59)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+MISSILEMORE
 		DropItem ("ClipOfBullets")
@@ -262,7 +262,7 @@ ACTOR AcolyteToBe : Acolyte
 		ConversationID (29, -1, -1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (61)
 		Radius (20)

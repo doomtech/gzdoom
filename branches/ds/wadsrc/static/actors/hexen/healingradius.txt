@@ -9,7 +9,7 @@ ACTOR ArtiHealingRadius : Inventory native
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+FLOATBOB

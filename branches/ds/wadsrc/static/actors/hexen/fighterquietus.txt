@@ -3,7 +3,7 @@
 
 ACTOR FighterWeaponPiece : WeaponPiece native
 {
-	DefaultProperties
+	Defaults
 	{
 		Inventory.PickupSound ("misc/w_pkup")
 		Inventory.PickupMessage ("$TXT_QUIETUS_PIECE")
@@ -23,7 +23,7 @@ ACTOR FWeaponPiece1 : FighterWeaponPiece
 		SpawnID (29)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		WeaponPiece.Number (1)
 	}
@@ -47,7 +47,7 @@ ACTOR FWeaponPiece2 : FighterWeaponPiece
 		SpawnID (30)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		WeaponPiece.Number (2)
 	}
@@ -71,7 +71,7 @@ ACTOR FWeaponPiece3 : FighterWeaponPiece
 		SpawnID (31)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		WeaponPiece.Number (3)
 	}
@@ -101,7 +101,7 @@ ACTOR QuietusDrop
 
 ACTOR FWeapQuietus : FighterWeapon
 {
-	DefaultProperties
+	Defaults
 	{
 		Health (3)
 		Weapon.SelectionOrder (2900)
@@ -155,7 +155,7 @@ ACTOR FWeapQuietus : FighterWeapon
 
 ACTOR FSwordMissile native
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (30)
 		Radius (16)
@@ -191,7 +191,7 @@ ACTOR FSwordMissile native
 
 ACTOR FSwordFlame
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP +NOGRAVITY
 		RenderStyle ("Translucent")

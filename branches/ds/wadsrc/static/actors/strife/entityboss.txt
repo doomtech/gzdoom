@@ -10,7 +10,7 @@ ACTOR EntityNest
 		ConversationID (76,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (84)
 		Height (47)
@@ -38,7 +38,7 @@ ACTOR EntityPod
 		ConversationID (77,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (25)
 		Height (91)
@@ -76,7 +76,7 @@ ACTOR EntityBoss : SpectralMonster
 		ConversationID (74,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (2500)
 		Painchance (255)
@@ -162,7 +162,7 @@ ACTOR EntitySecond : SpectralMonster
 		ConversationID (75,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (990)
 		Painchance (255)

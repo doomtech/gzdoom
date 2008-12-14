@@ -12,7 +12,7 @@ ACTOR Demon
 		SpawnID (8)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (150)
 		PainChance (180)
@@ -75,7 +75,7 @@ ACTOR Spectre : Demon
 		SpawnID (9)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+SHADOW
 		RenderStyle ("OptFuzzy")

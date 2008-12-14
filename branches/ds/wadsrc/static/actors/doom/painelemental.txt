@@ -12,7 +12,7 @@ ACTOR PainElemental
 		SpawnID (115)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (400)
 		Radius (31)

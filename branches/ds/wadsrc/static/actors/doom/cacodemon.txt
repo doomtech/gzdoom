@@ -12,7 +12,7 @@ ACTOR Cacodemon
 		SpawnID (19)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (400)
 		Radius (31)
@@ -76,7 +76,7 @@ ACTOR CacodemonBall
 		SpawnID (126)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (6)
 		Height (8)

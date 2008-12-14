@@ -9,7 +9,7 @@ ACTOR InvulnerabilitySphere : PowerupGiver
 		SpawnID (133)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+INVENTORY.AUTOACTIVATE
@@ -40,7 +40,7 @@ ACTOR Soulsphere : Health
 		SpawnID (25)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+INVENTORY.AUTOACTIVATE
@@ -64,7 +64,7 @@ ACTOR Soulsphere : Health
 
 ACTOR MegasphereHealth : Health
 {
-	DefaultProperties
+	Defaults
 	{
 		Inventory.Amount (200)
 		Inventory.MaxAmount (200)
@@ -75,7 +75,7 @@ ACTOR MegasphereHealth : Health
 // DeHackEd can only modify the blue armor's type, not the megasphere's.
 ACTOR BlueArmorForMegasphere : BlueArmor
 {
-	DefaultProperties
+	Defaults
 	{
 		Armor.SavePercent (50)
 		Armor.SaveAmount (200)
@@ -91,7 +91,7 @@ ACTOR Megasphere : CustomInventory
 		SpawnID (132)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+INVENTORY.ALWAYSPICKUP
@@ -122,7 +122,7 @@ ACTOR BlurSphere : PowerupGiver
 		SpawnID (135)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+VISIBILITYPULSE
@@ -154,7 +154,7 @@ ACTOR RadSuit : PowerupGiver
 		SpawnID (136)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Height (46)
 		+INVENTORY.AUTOACTIVATE
@@ -183,7 +183,7 @@ ACTOR Infrared : PowerupGiver
 		SpawnID (138)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+INVENTORY.AUTOACTIVATE
@@ -213,7 +213,7 @@ ACTOR Allmap : MapRevealer
 		SpawnID (137)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+INVENTORY.FANCYPICKUPSOUND
@@ -242,7 +242,7 @@ ACTOR Berserk : CustomInventory
 		SpawnID (134)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+COUNTITEM
 		+INVENTORY.ALWAYSPICKUP

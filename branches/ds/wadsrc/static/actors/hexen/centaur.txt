@@ -9,7 +9,7 @@ ACTOR Centaur
 		SpawnID (1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (200)
 		Painchance (135)
@@ -96,7 +96,7 @@ ACTOR CentaurLeader : Centaur
 		SpawnID (2)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (250)
 		PainChance (96 )
@@ -129,7 +129,7 @@ ACTOR CentaurMash : Centaur
 		SpawnID (103)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOOD
 		+BLASTED
@@ -152,7 +152,7 @@ ACTOR CentaurMash : Centaur
 
 ACTOR CentaurFX
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (20)
 		Damage (4)
@@ -182,7 +182,7 @@ ACTOR CentaurFX
 
 ACTOR CentaurShield
 {
-	DefaultProperties
+	Defaults
 	{
 		+DROPOFF
 		+CORPSE
@@ -207,7 +207,7 @@ ACTOR CentaurShield
 
 ACTOR CentaurSword
 {
-	DefaultProperties
+	Defaults
 	{
 		+DROPOFF
 		+CORPSE

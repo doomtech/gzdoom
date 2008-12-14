@@ -12,7 +12,7 @@ ACTOR BaronOfHell
 		SpawnID (3)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (1000)
 		Radius (24)
@@ -77,7 +77,7 @@ ACTOR HellKnight : BaronOfHell
 		SpawnID (113)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (500)
 		-BOSSDEATH
@@ -134,7 +134,7 @@ ACTOR BaronBall
 		SpawnID (154)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (6)
 		Height (16)

@@ -9,7 +9,7 @@ ACTOR MageBoss
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (800)
 		PainChance (50)

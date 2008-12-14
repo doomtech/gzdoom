@@ -10,7 +10,7 @@ ACTOR Wraith
 		SpawnID (8)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (150)
 		PainChance (25)
@@ -98,7 +98,7 @@ ACTOR WraithBuried : Wraith
 		SpawnID (9)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Height (68)
 		-SHOOTABLE
@@ -133,7 +133,7 @@ ACTOR WraithBuried : Wraith
 
 ACTOR WraithFX1
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (14)
 		Radius (10)
@@ -176,7 +176,7 @@ ACTOR WraithFX2
 		SpawnID (108)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (2)
 		Height (5)
@@ -197,7 +197,7 @@ ACTOR WraithFX2
 
 ACTOR WraithFX3
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (2)
 		Height (5)
@@ -228,7 +228,7 @@ ACTOR WraithFX4
 		SpawnID (106)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Radius (2)
 		Height (5)

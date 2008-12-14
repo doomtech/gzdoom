@@ -6,7 +6,7 @@ ACTOR SoundEnvironment native
 		DoomEdNum (9048)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		+NOSECTOR
 		+NOBLOCKMAP

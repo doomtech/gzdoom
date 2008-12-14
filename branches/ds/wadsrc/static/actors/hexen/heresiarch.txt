@@ -9,7 +9,7 @@ ACTOR Heresiarch native
 		Game ("Hexen")
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (5000)
 		Painchance (10)
@@ -82,7 +82,7 @@ ACTOR Heresiarch native
 
 ACTOR SorcBall native
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (10)
 		Radius (5)
@@ -175,7 +175,7 @@ ACTOR SorcBall3 : SorcBall native
 
 ACTOR SorcFX1
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (7)
 		Radius (5)
@@ -213,7 +213,7 @@ ACTOR SorcFX1
 
 ACTOR SorcFX2
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (15)
 		Radius (5)
@@ -245,7 +245,7 @@ ACTOR SorcFX2
 
 ACTOR SorcFX2T1 : SorcFX2
 {
-	DefaultProperties
+	Defaults
 	{
 		RenderStyle ("Translucent")
 		Alpha (0.4)
@@ -263,7 +263,7 @@ ACTOR SorcFX2T1 : SorcFX2
 
 ACTOR SorcFX3
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (15)
 		Radius (22)
@@ -297,7 +297,7 @@ ACTOR SorcFX3
 
 ACTOR SorcFX3Explosion
 {
-	DefaultProperties
+	Defaults
 	{
 		+NOBLOCKMAP
 		+NOGRAVITY
@@ -319,7 +319,7 @@ ACTOR SorcFX3Explosion
 
 ACTOR SorcFX4
 {
-	DefaultProperties
+	Defaults
 	{
 		Speed (12)
 		Radius (10)
@@ -350,7 +350,7 @@ ACTOR SorcFX4
 
 ACTOR SorcSpark1
 {
-	DefaultProperties
+	Defaults
 	{
 		Radius (5)
 		Height (5)

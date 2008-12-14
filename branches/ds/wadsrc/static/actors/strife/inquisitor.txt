@@ -10,7 +10,7 @@ ACTOR Inquisitor
 		ConversationID (93,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Health (1000)
 		Speed (12)
@@ -100,7 +100,7 @@ ACTOR InquisitorShot
 		ConversationID (108,-1,-1)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		ReactionTime (15)
 		Speed (25)
@@ -147,7 +147,7 @@ ACTOR InquisitorArm
 		ConversationID (94)
 	}
 
-	DefaultProperties
+	Defaults
 	{
 		Speed (25)
 		+NOBLOCKMAP
