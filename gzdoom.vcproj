@@ -1049,10 +1049,6 @@
 				Name="Decorate++"
 				>
 				<File
-					RelativePath=".\src\codepointers.h"
-					>
-				</File>
-				<File
 					RelativePath=".\src\thingdef\olddecorations.cpp"
 					>
 				</File>
@@ -6462,6 +6458,10 @@
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_scene.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\gl\gl_sections.cpp"
 				>
 			</File>
 			<File
