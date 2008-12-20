@@ -34,6 +34,7 @@
 // SECTORS do store MObjs anyway.
 #include "actor.h"
 struct FLightNode;
+struct FGLSection;
 
 #include "dthinker.h"
 #include "farchive.h"
@@ -770,6 +771,7 @@ struct line_t
 
 };
 
+
 // phares 3/14/98
 //
 // Sector list node showing all sectors an object appears in.
@@ -814,6 +816,7 @@ struct subsector_t
 	fixed_t		CenterX, CenterY;
 
 	// subsector related GL data
+	FGLSection *	section;		// section this subsector belongs to
 	FLightNode *	lighthead[2];	// Light nodes (blended and additive)
 	sector_t *		render_sector;	// The sector this belongs to for rendering
 	int				firstvertex;	// index into the gl_vertices array
