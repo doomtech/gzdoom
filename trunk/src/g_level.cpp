@@ -631,6 +631,8 @@ void G_ParseMapInfo ()
 {
 	int lump, lastlump = 0;
 
+	gl_AddMapinfoParser() ;
+
 	atterm (G_UnloadMapInfo);
 
 	SetLevelDefaults (&gamedefaults);
