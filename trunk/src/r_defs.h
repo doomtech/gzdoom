@@ -513,7 +513,6 @@ struct sector_t
 		FTextureID old = planes[pos].Texture;
 		planes[pos].Texture = tex;
 		if (floorclip && pos == floor && tex != old) AdjustFloorClip();
-		SetDirty();	// may need recalculation of clipping info.
 	}
 
 	fixed_t GetPlaneTexZ(int pos) const
@@ -523,7 +522,6 @@ struct sector_t
 
 	void SetPlaneTexZ(int pos, fixed_t val)
 	{
-		SetDirty();	// needs recalculation of clipping info.
 		planes[pos].TexZ = val;
 	}
 
@@ -699,7 +697,6 @@ struct side_t
 	}
 	void SetTexture(int which, FTextureID tex)
 	{
-		clipinfo = 0;
 		textures[which].texture = tex;
 	}
 
@@ -756,11 +753,6 @@ struct side_t
 		ClipLowerDone = 32,
 	};
 
-	BYTE clipinfo;
-	void SetDirty()
-	{
-		clipinfo = 0;	
-	}
 
 };
 
