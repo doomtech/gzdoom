@@ -606,6 +606,7 @@ add_executable( zdoom WIN32
 	gl/gfxfuncs.cpp
 	gl/gl_bsp.cpp
 	gl/gl_clipper.cpp
+	gl/gl_clock.cpp
 	gl/gl_cycler.cpp
 	gl/gl_data.cpp
 	gl/gl_decal.cpp
