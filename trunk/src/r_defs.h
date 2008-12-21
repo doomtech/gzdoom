@@ -259,6 +259,7 @@ enum
 	SECF_SILENT			= 1,	// actors in sector make no noise
 	SECF_NOFALLINGDAMAGE= 2,	// No falling damage in this sector
 	SECF_FLOORDROP		= 4,	// all actors standing on this floor will remain on it when it lowers very fast.
+	SECF_NORESPAWN		= 8,	// players can not respawn in this sector
 };
 
 enum
@@ -770,7 +771,6 @@ struct line_t
 	int 		validcount;	// if == validcount, already checked
 
 };
-
 
 // phares 3/14/98
 //
