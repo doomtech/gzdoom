@@ -197,9 +197,27 @@ void gl_CheckViewArea(vertex_t *v1, vertex_t *v2, sector_t *frontsector, sector_
 
 //==========================================================================
 //
+// Flags all lines bordering this sector as 'dirty' so that clipping info
+// needs to be recalculated for them
+//
+//==========================================================================
+
+void sector_t::SetDirty()
+{
+	for(int i = linecount-1; i>=0; i--)
+	{
+		line_t *line = lines[linecount];
+		if (line->sidenum[0] != NO_SIDE) sides[line->sidenum[0]].SetDirty();
+		if (line->sidenum[1] != NO_SIDE) sides[line->sidenum[1]].SetDirty();
+	}
+}
+
+//==========================================================================
+//
 //
 //
 //==========================================================================
+
 static bool CopyPlaneIfValid (secplane_t *dest, const secplane_t *source, const secplane_t *opp)
 {
 	bool copy = false;

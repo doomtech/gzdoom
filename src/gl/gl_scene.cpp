@@ -72,6 +72,7 @@ CVAR(Bool, gl_forcemultipass, false, 0)
 
 void R_SetupFrame (AActor * camera);
 extern int viewpitch;
+int gl_anglecache;
  
 int rendered_lines,rendered_flats,rendered_sprites,render_vertexsplit,render_texsplit,rendered_decals;
 int iter_dlightf, iter_dlight, draw_dlight, draw_dlightf;
@@ -335,6 +336,7 @@ static void ProcessScene()
 	ProcessAll.Clock();
 
 	// clip the scene and fill the drawlists
+	gl_anglecache++;	// Need to recalculate vertex angles for new scene
 	gl_spriteindex=0;
 	gl_RenderBSPNode (nodes + numnodes - 1);
 

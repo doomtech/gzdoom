@@ -71,11 +71,15 @@ extern size_t MaxDrawSegs;
 struct vertex_t
 {
 	fixed_t x, y;
+	angle_t viewangle;	// precalculated angle for clipping
+	int angletime;		// recalculation time for view angle
 
 	bool operator== (const vertex_t &other)
 	{
 		return x == other.x && y == other.y;
 	}
+
+	angle_t GetViewAngle();
 };
 
 // Forward of LineDefs, for Sectors.
@@ -509,6 +513,7 @@ struct sector_t
 		FTextureID old = planes[pos].Texture;
 		planes[pos].Texture = tex;
 		if (floorclip && pos == floor && tex != old) AdjustFloorClip();
+		SetDirty();	// may need recalculation of clipping info.
 	}
 
 	fixed_t GetPlaneTexZ(int pos) const
@@ -518,6 +523,7 @@ struct sector_t
 
 	void SetPlaneTexZ(int pos, fixed_t val)
 	{
+		SetDirty();	// needs recalculation of clipping info.
 		planes[pos].TexZ = val;
 	}
 
@@ -626,6 +632,7 @@ struct sector_t
 
 	float GetFloorReflect() { return gl_plane_reflection_i? floor_reflect : 0; }
 	float GetCeilingReflect() { return gl_plane_reflection_i? ceiling_reflect : 0; }
+	void SetDirty();
 
 };
 
@@ -692,6 +699,7 @@ struct side_t
 	}
 	void SetTexture(int which, FTextureID tex)
 	{
+		clipinfo = 0;
 		textures[which].texture = tex;
 	}
 
@@ -737,6 +745,23 @@ struct side_t
 	void StopInterpolation(int position);
 	//For GL
 	FLightNode * lighthead[2];				// all blended lights that may affect this wall
+
+	enum EClipBits
+	{
+		ClipUpper = 1,
+		ClipNormal = 2,
+		ClipLower = 4,
+		ClipUpperDone = 8,
+		ClipNormalDone = 16,
+		ClipLowerDone = 32,
+	};
+
+	BYTE clipinfo;
+	void SetDirty()
+	{
+		clipinfo = 0;	
+	}
+
 };
 
 FArchive &operator<< (FArchive &arc, side_t::part &p);
@@ -769,7 +794,6 @@ struct line_t
 	slopetype_t	slopetype;	// To aid move clipping.
 	sector_t	*frontsector, *backsector;
 	int 		validcount;	// if == validcount, already checked
-
 };
 
 // phares 3/14/98
