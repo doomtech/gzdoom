@@ -8,6 +8,11 @@
 
 #include <intrin.h>
 
+
+extern double gl_SecondsPerCycle;
+extern double gl_MillisecPerCycle;
+
+
 inline long long GetClockCycle ()
 {
 #if _M_X64
@@ -72,12 +77,12 @@ public:
 	
 	double Time()
 	{
-		return double(Counter) / 1000; // * GLPerfToSec;
+		return double(Counter) * gl_SecondsPerCycle;
 	}
 	
 	double TimeMS()
 	{
-		return double(Counter); // * GLPerfToMillisec;
+		return double(Counter) * gl_MillisecPerCycle;
 	}
 
 private:
