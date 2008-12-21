@@ -74,6 +74,7 @@ bool gl_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsecto
 	//if (linedef->special==Line_Mirror || linedef->special==Line_Horizon) return true;
 
 	// Lines with stacked sectors must never block!
+
 	if (backsector->CeilingSkyBox && backsector->CeilingSkyBox->bAlways) return false;
 	if (backsector->FloorSkyBox && backsector->FloorSkyBox->bAlways) return false;
 	if (frontsector->CeilingSkyBox && frontsector->CeilingSkyBox->bAlways) return false;
@@ -194,23 +195,6 @@ void gl_CheckViewArea(vertex_t *v1, vertex_t *v2, sector_t *frontsector, sector_
 	}
 }
 
-
-//==========================================================================
-//
-// Flags all lines bordering this sector as 'dirty' so that clipping info
-// needs to be recalculated for them
-//
-//==========================================================================
-
-void sector_t::SetDirty()
-{
-	for(int i = linecount-1; i>=0; i--)
-	{
-		line_t *line = lines[linecount];
-		if (line->sidenum[0] != NO_SIDE) sides[line->sidenum[0]].SetDirty();
-		if (line->sidenum[1] != NO_SIDE) sides[line->sidenum[1]].SetDirty();
-	}
-}
 
 //==========================================================================
 //
