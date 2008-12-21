@@ -117,7 +117,7 @@ static void AddLine (seg_t *seg,sector_t * sector,subsector_t * polysub)
 			}
 			backsector=sector;
 		}
-		else if (sector->sectornum != seg->backsector->sectornum)
+		else
 		{
 			// clipping checks are only needed when the backsector is not the same as the front sector
 			gl_CheckViewArea(seg->v1, seg->v2, seg->frontsector, seg->backsector);
