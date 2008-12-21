@@ -83,8 +83,8 @@ static void AddLine (seg_t *seg,sector_t * sector,subsector_t * polysub)
 		}
 	}
 
-	startAngle = R_PointToAngle(seg->v2->x, seg->v2->y);
-	endAngle = R_PointToAngle(seg->v1->x, seg->v1->y);
+	startAngle = seg->v2->GetViewAngle();
+	endAngle = seg->v1->GetViewAngle();
 
 	// Back side, i.e. backface culling	- read: endAngle >= startAngle!
 	if (startAngle-endAngle<ANGLE_180 || !seg->linedef)  
@@ -117,8 +117,9 @@ static void AddLine (seg_t *seg,sector_t * sector,subsector_t * polysub)
 			}
 			backsector=sector;
 		}
-		else
+		else if (sector->sectornum != seg->backsector->sectornum)
 		{
+			// clipping checks are only needed when the backsector is not the same as the front sector
 			gl_CheckViewArea(seg->v1, seg->v2, seg->frontsector, seg->backsector);
 
 			backsector = gl_FakeFlat(seg->backsector, &bs, true);
