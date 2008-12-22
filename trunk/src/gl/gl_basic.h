@@ -24,6 +24,9 @@ inline long long GetClockCycle ()
 
 #elif defined(__GNUG__) && defined(__i386__)
 
+extern double gl_SecondsPerCycle;
+extern double gl_MillisecPerCycle;
+
 inline long long GetClockCycle()
 {
 	if (CPU.bRDTSC)
@@ -39,6 +42,9 @@ inline long long GetClockCycle()
 }
 
 #else
+
+extern double gl_SecondsPerCycle;
+extern double gl_MillisecPerCycle;
 
 inline long long GetClockCycle ()
 {

@@ -628,6 +628,7 @@ add_executable( zdoom WIN32
 	gl/gl_nodes.cpp
 	gl/gl_portal.cpp
 	gl/gl_scene.cpp
+	gl/gl_sections.cpp
 	gl/gl_shader.cpp
 	gl/gl_sky.cpp
 	gl/gl_skydome.cpp
