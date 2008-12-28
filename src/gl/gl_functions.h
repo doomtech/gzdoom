@@ -131,11 +131,6 @@ angle_t gl_FrustumAngle();
 void gl_LinkLights();
 
 
-// ZDBSP shittiness compensation
-void gl_CollectMissingLines();
-void gl_RenderMissingLines();
-
-
 void gl_SetActorLights(AActor *);
 void gl_DeleteAllAttachedLights();
 void gl_RecreateAllAttachedLights();

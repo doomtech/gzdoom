@@ -247,7 +247,7 @@ private:
 
 public:
 
-	void Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, subsector_t * polysub);
+	void Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, subsector_t * polysub, bool render_segs);
 	void ProcessLowerMiniseg(seg_t *seg, sector_t * frontsector, sector_t * backsector);
 	void Draw(int pass);
 

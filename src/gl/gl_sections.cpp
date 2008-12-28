@@ -163,6 +163,8 @@ public:
 		line.sidedef = seg->sidedef;
 		line.linedef = seg->linedef;
 		line.refseg = seg;
+		line.polysub = NULL;
+		line.otherside = -1;
 
 		if (loop->numlines == 0)
 		{

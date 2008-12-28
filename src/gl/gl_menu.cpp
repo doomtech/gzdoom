@@ -39,6 +39,10 @@ EXTERN_CVAR (Bool, gl_lights_additive)
 EXTERN_CVAR (Float, gl_light_ambient)
 EXTERN_CVAR(Int, gl_billboard_mode)
 EXTERN_CVAR(Int, gl_particles_style)
+EXTERN_CVAR(Int, gl_texture_hqresize)
+EXTERN_CVAR(Flag, gl_texture_hqresize_textures)
+EXTERN_CVAR(Flag, gl_texture_hqresize_sprites)
+EXTERN_CVAR(Flag, gl_texture_hqresize_fonts)
 
 static value_t SpriteclipModes[]=
 {
@@ -133,6 +137,20 @@ static value_t Particles[] =
 	{ 2.0, "Smooth" },
 };
 
+static value_t HqResizeModes[] =
+{
+   { 0.0, "Off" },
+   { 1.0, "Scale2x" },
+   { 2.0, "Scale3x" },
+   { 3.0, "Scale4x" },
+};
+ 
+static value_t HqResizeTargets[] =
+{
+   { 0.0, "Everything" },
+   { 1.0, "Sprites/fonts" },
+};
+ 
 static value_t FogMode[] =
 {
 	{ 0.0, "Off" },
@@ -168,6 +186,10 @@ menuitem_t GLTextureItems[] = {
 	{ discrete, "Anisotropic filter",		{&gl_texture_filter_anisotropic},{5.0},{0.0}, {0.0}, {Anisotropy} },
 	{ discrete, "Texture Format",			{&gl_texture_format},			{8.0}, {0.0}, {0.0}, {TextureFormats} },
 	{ discrete, "Enable hires textures",	{&gl_texture_usehires},			{2.0}, {0.0}, {0.0}, {YesNo} },
+	{ discrete, "High Quality Resize mode",	{&gl_texture_hqresize},			{4.0}, {0.0}, {0.0}, {HqResizeModes} },
+	{ discrete, "Resize textures",			{&gl_texture_hqresize_textures},{2.0}, {0.0}, {0.0}, {OnOff} },
+	{ discrete, "Resize sprites",			{&gl_texture_hqresize_sprites},	{2.0}, {0.0}, {0.0}, {OnOff} },
+	{ discrete, "Resize fonts",				{&gl_texture_hqresize_fonts},	{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Precache GL textures",		{&gl_precache},					{2.0}, {0.0}, {0.0}, {YesNo} },
 };
 
