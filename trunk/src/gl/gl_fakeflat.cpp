@@ -254,6 +254,7 @@ sector_t * gl_FakeFlat(sector_t * sec, sector_t * dest, bool back)
 #endif
 #endif
 
+	area_t in_area = ::in_area;
 
 	if (in_area==area_above)
 	{

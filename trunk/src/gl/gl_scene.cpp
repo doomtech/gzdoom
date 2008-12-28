@@ -342,7 +342,6 @@ static void ProcessScene()
 
 	// And now the crappy hacks that have to be done to avoid rendering anomalies:
 
-	gl_RenderMissingLines();	// Omitted lines by the node builder
 	gl_drawinfo->HandleMissingTextures();	// Missing upper/lower textures
 	gl_drawinfo->HandleHackedSubsectors();	// open sector hacks for deep water
 	gl_drawinfo->ProcessSectorStacks();		// merge visplanes of sector stacks

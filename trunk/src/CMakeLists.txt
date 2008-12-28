@@ -620,7 +620,6 @@ add_executable( zdoom WIN32
 	gl/gl_hirestex.cpp
 	gl/gl_light.cpp
 	gl/gl_menu.cpp
-	gl/gl_missinglines.cpp
 	gl/gl_missingtexture.cpp
 	gl/gl_models.cpp
 	gl/gl_models_md2.cpp

@@ -151,7 +151,7 @@ static void AddLine (seg_t *seg,sector_t * sector,subsector_t * polysub)
 
 	SetupWall.Clock();
 
-	wall.Process(seg, sector, backsector, polysub);
+	wall.Process(seg, sector, backsector, polysub, gl_render_segs);
 	rendered_lines++;
 
 	SetupWall.Unclock();

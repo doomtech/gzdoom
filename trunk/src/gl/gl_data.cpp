@@ -727,7 +727,6 @@ void gl_PreprocessLevel()
 			vt->vt = vtx;
 		}
 	}
-	gl_CollectMissingLines();
 	gl_InitVertexData();
 	gl_CreateSections();
 
