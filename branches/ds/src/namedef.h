@@ -401,6 +401,7 @@ xx(Desaturation)
 xx(Silent)
 xx(Nofallingdamage)
 xx(Dropactors)
+xx(NoRespawn)
 
 xx(offsetx_top)
 xx(offsety_top)

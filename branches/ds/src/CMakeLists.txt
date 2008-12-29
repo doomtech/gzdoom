@@ -606,6 +606,7 @@ add_executable( zdoom WIN32
 	gl/gfxfuncs.cpp
 	gl/gl_bsp.cpp
 	gl/gl_clipper.cpp
+	gl/gl_clock.cpp
 	gl/gl_cycler.cpp
 	gl/gl_data.cpp
 	gl/gl_decal.cpp
@@ -616,10 +617,10 @@ add_executable( zdoom WIN32
 	gl/gl_framebuffer.cpp
 	gl/gl_geometric.cpp
 	gl/gl_glow.cpp
+	gl/gl_hqresize.cpp
 	gl/gl_hirestex.cpp
 	gl/gl_light.cpp
 	gl/gl_menu.cpp
-	gl/gl_missinglines.cpp
 	gl/gl_missingtexture.cpp
 	gl/gl_models.cpp
 	gl/gl_models_md2.cpp
@@ -627,6 +628,7 @@ add_executable( zdoom WIN32
 	gl/gl_nodes.cpp
 	gl/gl_portal.cpp
 	gl/gl_scene.cpp
+	gl/gl_sections.cpp
 	gl/gl_shader.cpp
 	gl/gl_sky.cpp
 	gl/gl_skydome.cpp

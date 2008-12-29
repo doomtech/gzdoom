@@ -6437,6 +6437,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\gl\gl_clock.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\gl\gl_cycler.cpp"
 				>
 			</File>
@@ -6481,15 +6485,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\gl\gl_hqresize.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\gl\gl_light.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_menu.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_missinglines.cpp"
 				>
 			</File>
 			<File
@@ -6518,6 +6522,10 @@
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_scene.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\gl\gl_sections.cpp"
 				>
 			</File>
 			<File
@@ -6609,6 +6617,10 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\gl_include.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\gl_hqresize.h"
 					>
 				</File>
 				<File
