@@ -58,6 +58,7 @@
 
 GLRenderSettings glset;
 
+void gl_CreateSections();
 
 EXTERN_CVAR(Bool, gl_nocoloredspritelighting)
 
@@ -171,10 +172,6 @@ TArray<GLVertex> gl_vertices(1024);
 
 extern bool gl_disabled;
 
-// A simple means so that I don't have to link to the debug stuff when I don't need it!
-void (*gl_DebugHook)();
-
-
 
 //==========================================================================
 //
@@ -192,6 +189,7 @@ struct FGLROptions : public FOptionalMapinfoData
 		skyfog = 0;
 		lightmode = -1;
 		nocoloredspritelighting = -1;
+		skyrotatevector = FVector3(0,0,1);
 	}
 	virtual FOptionalMapinfoData *Clone() const
 	{
@@ -202,6 +200,7 @@ struct FGLROptions : public FOptionalMapinfoData
 		newopt->skyfog = skyfog;
 		newopt->lightmode = lightmode;
 		newopt->nocoloredspritelighting = nocoloredspritelighting;
+		newopt->skyrotatevector = skyrotatevector;
 		return newopt;
 	}
 	int			fogdensity;
@@ -209,6 +208,7 @@ struct FGLROptions : public FOptionalMapinfoData
 	int			skyfog;
 	int			lightmode;
 	bool		nocoloredspritelighting;
+	FVector3	skyrotatevector;
 };
 
 static void ParseFunc(FScanner &sc, level_info_t *info)
@@ -260,6 +260,17 @@ static void ParseFunc(FScanner &sc, level_info_t *info)
 				opt->nocoloredspritelighting = true;
 			}
 		}
+		else if (sc.Compare("skyrotate"))
+		{
+			sc.MustGetFloat();
+			opt->skyrotatevector.X = (float)sc.Float;
+			sc.MustGetFloat();
+			opt->skyrotatevector.Y = (float)sc.Float;
+			sc.MustGetFloat();
+			opt->skyrotatevector.Z = (float)sc.Float;
+			sc.MustGetFloat();
+			opt->skyrotatevector.MakeUnit();
+		}
 		else
 		{
 			sc.ScriptError("Unknown keyword %s", sc.String);
@@ -285,12 +296,14 @@ static void InitGLRMapinfoData()
 
 		glset.map_lightmode = opt->lightmode;
 		glset.map_nocoloredspritelighting = opt->nocoloredspritelighting;
+		glset.skyrotatevector = opt->skyrotatevector;
 	}
 	else
 	{
 		gl_SetFogParams(0, level.info->outsidefog, 0, 0);
 		glset.map_lightmode = -1;
 		glset.map_nocoloredspritelighting = -1;
+		glset.skyrotatevector = FVector3(0,0,1);
 	}
 
 	if (glset.map_lightmode < 0 || glset.map_lightmode > 4) glset.lightmode = gl_lightmode;
@@ -533,7 +546,7 @@ static void PrepareSectorData()
 						seg[j].PartnerSeg!=NULL && 
 						subsectors[i].render_sector != seg[j].PartnerSeg->Subsector->render_sector)
 				{
-					//Printf("Found hack: %d,%d %d,%d\n", seg[j].v1->x>>16, seg[j].v1->y>>16, seg[j].v2->x>>16, seg[j].v2->y>>16);
+					DPrintf("Found hack: (%d,%d) (%d,%d)\n", seg[j].v1->x>>16, seg[j].v1->y>>16, seg[j].v2->x>>16, seg[j].v2->y>>16);
 					subsectors[i].hacked|=1;
 					SpreadHackedFlag(&subsectors[i]);
 				}
@@ -628,12 +641,12 @@ static void PrepareTransparentDoors(sector_t * sector)
 }
 
 
+//=============================================================================
+//
+//
+//
+//=============================================================================
 
-//=============================================================================
-//
-//
-//
-//=============================================================================
 side_t* getNextSide(sector_t * sec, line_t* line)
 {
 	if (sec==line->frontsector)
@@ -730,13 +743,12 @@ void gl_PreprocessLevel()
 			vt->vt = vtx;
 		}
 	}
-	gl_CollectMissingLines();
 	gl_InitVertexData();
+	gl_CreateSections();
 
 	// This code can be called when the hardware renderer is inactive!
 	if (currentrenderer!=0) gl.ArrayPointer(&gl_vertices[0], sizeof(GLVertex));
 
-	if (gl_DebugHook) gl_DebugHook();
 	AdjustSpriteOffsets();
 	InitGLRMapinfoData();
 }

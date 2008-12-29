@@ -34,6 +34,7 @@
 // SECTORS do store MObjs anyway.
 #include "actor.h"
 struct FLightNode;
+struct FGLSection;
 
 #include "dthinker.h"
 #include "farchive.h"
@@ -70,11 +71,15 @@ extern size_t MaxDrawSegs;
 struct vertex_t
 {
 	fixed_t x, y;
+	angle_t viewangle;	// precalculated angle for clipping
+	int angletime;		// recalculation time for view angle
 
 	bool operator== (const vertex_t &other)
 	{
 		return x == other.x && y == other.y;
 	}
+
+	angle_t GetViewAngle();
 };
 
 // Forward of LineDefs, for Sectors.
@@ -258,6 +263,7 @@ enum
 	SECF_SILENT			= 1,	// actors in sector make no noise
 	SECF_NOFALLINGDAMAGE= 2,	// No falling damage in this sector
 	SECF_FLOORDROP		= 4,	// all actors standing on this floor will remain on it when it lowers very fast.
+	SECF_NORESPAWN		= 8,	// players can not respawn in this sector
 };
 
 enum
@@ -624,6 +630,7 @@ struct sector_t
 
 	float GetFloorReflect() { return gl_plane_reflection_i? floor_reflect : 0; }
 	float GetCeilingReflect() { return gl_plane_reflection_i? ceiling_reflect : 0; }
+	void SetDirty();
 
 };
 
@@ -735,6 +742,18 @@ struct side_t
 	void StopInterpolation(int position);
 	//For GL
 	FLightNode * lighthead[2];				// all blended lights that may affect this wall
+
+	enum EClipBits
+	{
+		ClipUpper = 1,
+		ClipNormal = 2,
+		ClipLower = 4,
+		ClipUpperDone = 8,
+		ClipNormalDone = 16,
+		ClipLowerDone = 32,
+	};
+
+
 };
 
 FArchive &operator<< (FArchive &arc, side_t::part &p);
@@ -767,7 +786,6 @@ struct line_t
 	slopetype_t	slopetype;	// To aid move clipping.
 	sector_t	*frontsector, *backsector;
 	int 		validcount;	// if == validcount, already checked
-
 };
 
 // phares 3/14/98
@@ -814,6 +832,7 @@ struct subsector_t
 	fixed_t		CenterX, CenterY;
 
 	// subsector related GL data
+	FGLSection *	section;		// section this subsector belongs to
 	FLightNode *	lighthead[2];	// Light nodes (blended and additive)
 	sector_t *		render_sector;	// The sector this belongs to for rendering
 	int				firstvertex;	// index into the gl_vertices array

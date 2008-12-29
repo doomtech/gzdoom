@@ -72,6 +72,8 @@ struct GLRenderSettings
 	SBYTE map_lightmode;
 	SBYTE map_nocoloredspritelighting;
 
+	FVector3 skyrotatevector;
+
 };
 
 extern GLRenderSettings glset;
@@ -156,9 +158,9 @@ public:
 	
 	fixed_t viewdistance;
 
-	byte lightlevel;
-	byte type;
-	byte flags;
+	BYTE lightlevel;
+	BYTE type;
+	BYTE flags;
 	short rellight;
 
 	float topglowcolor[3];
@@ -247,7 +249,7 @@ private:
 
 public:
 
-	void Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, subsector_t * polysub);
+	void Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, subsector_t * polysub, bool render_segs);
 	void ProcessLowerMiniseg(seg_t *seg, sector_t * frontsector, sector_t * backsector);
 	void Draw(int pass);
 
@@ -295,7 +297,7 @@ public:
 	bool stack;
 	bool foggy;
 	bool ceiling;
-	byte renderflags;
+	BYTE renderflags;
 
 	void DrawSubsector(subsector_t * sub);
 	void DrawSubsectorLights(subsector_t * sub, int pass);
@@ -322,9 +324,9 @@ public:
 	friend struct GLDrawList;
 	friend void Mod_RenderModel(GLSprite * spr, model_t * mdl, int framenumber);
 
-	byte lightlevel;
-	byte foglevel;
-	byte hw_styleflags;
+	BYTE lightlevel;
+	BYTE foglevel;
+	BYTE hw_styleflags;
 	PalEntry ThingColor;	// thing's own color
 	FColormap Colormap;
 	FSpriteModelFrame * modelframe;
@@ -499,7 +501,7 @@ class GLDrawInfo
 	struct SubsectorHackInfo
 	{
 		subsector_t * sub;
-		byte flags;
+		BYTE flags;
 	};
 
 	struct wallseg
@@ -509,8 +511,8 @@ class GLDrawInfo
 
 	bool temporary;
 
-	TArray<byte> sectorrenderflags;
-	TArray<byte> ss_renderflags;
+	TArray<BYTE> sectorrenderflags;
+	TArray<BYTE> ss_renderflags;
 
 	TArray<gl_subsectorrendernode*> otherfloorplanes;
 	TArray<gl_subsectorrendernode*> otherceilingplanes;
