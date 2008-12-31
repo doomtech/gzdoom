@@ -617,6 +617,7 @@ add_executable( zdoom WIN32
 	gl/gl_framebuffer.cpp
 	gl/gl_geometric.cpp
 	gl/gl_glow.cpp
+	gl/gl_hqresize.cpp
 	gl/gl_hirestex.cpp
 	gl/gl_light.cpp
 	gl/gl_menu.cpp

@@ -145,7 +145,7 @@ int gl_CheckForMissingSegs()
 		TVector2<double> lvec(line->dx, line->dy);
 		float linelen = float(lvec.Length());
 
-		missing += (added_seglen[i] < linelen - 1);
+		missing += (added_seglen[i] < linelen - FRACUNIT);
 	}
 
 	delete [] added_seglen;

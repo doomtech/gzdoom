@@ -72,6 +72,8 @@ struct GLRenderSettings
 	SBYTE map_lightmode;
 	SBYTE map_nocoloredspritelighting;
 
+	FVector3 skyrotatevector;
+
 };
 
 extern GLRenderSettings glset;

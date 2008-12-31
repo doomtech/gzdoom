@@ -189,6 +189,7 @@ struct FGLROptions : public FOptionalMapinfoData
 		skyfog = 0;
 		lightmode = -1;
 		nocoloredspritelighting = -1;
+		skyrotatevector = FVector3(0,0,1);
 	}
 	virtual FOptionalMapinfoData *Clone() const
 	{
@@ -199,6 +200,7 @@ struct FGLROptions : public FOptionalMapinfoData
 		newopt->skyfog = skyfog;
 		newopt->lightmode = lightmode;
 		newopt->nocoloredspritelighting = nocoloredspritelighting;
+		newopt->skyrotatevector = skyrotatevector;
 		return newopt;
 	}
 	int			fogdensity;
@@ -206,6 +208,7 @@ struct FGLROptions : public FOptionalMapinfoData
 	int			skyfog;
 	int			lightmode;
 	bool		nocoloredspritelighting;
+	FVector3	skyrotatevector;
 };
 
 static void ParseFunc(FScanner &sc, level_info_t *info)
@@ -257,6 +260,17 @@ static void ParseFunc(FScanner &sc, level_info_t *info)
 				opt->nocoloredspritelighting = true;
 			}
 		}
+		else if (sc.Compare("skyrotate"))
+		{
+			sc.MustGetFloat();
+			opt->skyrotatevector.X = (float)sc.Float;
+			sc.MustGetFloat();
+			opt->skyrotatevector.Y = (float)sc.Float;
+			sc.MustGetFloat();
+			opt->skyrotatevector.Z = (float)sc.Float;
+			sc.MustGetFloat();
+			opt->skyrotatevector.MakeUnit();
+		}
 		else
 		{
 			sc.ScriptError("Unknown keyword %s", sc.String);
@@ -282,12 +296,14 @@ static void InitGLRMapinfoData()
 
 		glset.map_lightmode = opt->lightmode;
 		glset.map_nocoloredspritelighting = opt->nocoloredspritelighting;
+		glset.skyrotatevector = opt->skyrotatevector;
 	}
 	else
 	{
 		gl_SetFogParams(0, level.info->outsidefog, 0, 0);
 		glset.map_lightmode = -1;
 		glset.map_nocoloredspritelighting = -1;
+		glset.skyrotatevector = FVector3(0,0,1);
 	}
 
 	if (glset.map_lightmode < 0 || glset.map_lightmode > 4) glset.lightmode = gl_lightmode;
