@@ -2506,7 +2506,7 @@ bool aim_t::AimTraverse3DFloors(const divline_t &trace, intercept_t * in)
 				crossedffloors=true;
 				rover=s->e->XFloor.ffloors[k];
 			
-				if(!(rover->flags & FF_SOLID) || !(rover->flags & FF_EXISTS)) continue;
+				if((rover->flags & FF_SHOOTTHROUGH) || !(rover->flags & FF_EXISTS)) continue;
 				
 				fixed_t ff_bottom=rover->bottom.plane->ZatPoint(trX, trY);
 				fixed_t ff_top=rover->top.plane->ZatPoint(trX, trY);
