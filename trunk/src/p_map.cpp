@@ -166,7 +166,7 @@ static bool PIT_FindFloorCeiling (line_t *ld, const FBoundingBox &box, FCheckPos
 //
 //==========================================================================
 
-void P_FindFloorCeiling (AActor *actor, bool onlymidtex)
+void P_FindFloorCeiling (AActor *actor, bool onlyspawnpos)
 {
 	sector_t *sec;
 	FCheckPosition tmf;
@@ -197,7 +197,7 @@ void P_FindFloorCeiling (AActor *actor, bool onlymidtex)
 
 	if (tmf.touchmidtex) tmf.dropoffz = tmf.floorz;
 
-	if (!onlymidtex || (tmf.touchmidtex && (tmf.floorz <= actor->z)))
+	if (!onlyspawnpos || (tmf.touchmidtex && (tmf.floorz <= actor->z)))
 	{
 		actor->floorz = tmf.floorz;
 		actor->dropoffz = tmf.dropoffz;
@@ -206,6 +206,26 @@ void P_FindFloorCeiling (AActor *actor, bool onlymidtex)
 		actor->floorsector = tmf.floorsector;
 		actor->ceilingpic = tmf.ceilingpic;
 		actor->ceilingsector = tmf.ceilingsector;
+	}
+
+	// also check 3D floors at the spawn position if the result from the block lines iterator cannot be used.
+	if (onlyspawnpos)
+	{
+		for(unsigned int i=0;i<actor->Sector->e->XFloor.ffloors.Size();i++)
+		{
+			F3DFloor*  rover=actor->Sector->e->XFloor.ffloors[i];
+
+			if (!(rover->flags & FF_SOLID) || !(rover->flags & FF_EXISTS)) continue;
+
+			fixed_t ff_bottom=rover->bottom.plane->ZatPoint(actor->x, actor->y);
+			fixed_t ff_top=rover->top.plane->ZatPoint(actor->x, actor->y);
+			
+			fixed_t delta1 = actor->z - (ff_bottom + ((ff_top-ff_bottom)/2));
+			fixed_t delta2 = actor->z + (actor->height? actor->height:1) - (ff_bottom + ((ff_top-ff_bottom)/2));
+
+			if (ff_top > actor->floorz && abs(delta1) < abs(delta2)) actor->floorz = ff_top;
+			if (ff_bottom < actor->ceilingz && abs(delta1) >= abs(delta2)) actor->ceilingz = ff_bottom;
+		}
 	}
 }
 

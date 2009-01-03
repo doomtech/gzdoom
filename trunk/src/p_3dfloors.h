@@ -90,7 +90,7 @@ bool P_CheckFor3DCeilingHit(AActor * mo);
 void P_Recalculate3DFloors(sector_t *);
 void P_RecalculateAttached3DFloors(sector_t * sec);
 lightlist_t * P_GetPlaneLight(sector_t * , secplane_t * plane, bool underside);
-void P_SpawnSpecials2( void );
+void P_Spawn3DFloors( void );
 
 struct FLineOpening;
 

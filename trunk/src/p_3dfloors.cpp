@@ -627,10 +627,10 @@ void P_LineOpening_XFloors (FLineOpening &open, AActor * thing, const line_t *li
 
 //==========================================================================
 //
-// Spawns non-ZDoom specials
+// Spawns 3D floors
 //
 //==========================================================================
-void P_SpawnSpecials2 (void)
+void P_Spawn3DFloors (void)
 {
 	static int flagvals[] = {128+512, 2+512, 512};
 	int i;
@@ -669,27 +669,6 @@ void P_SpawnSpecials2 (void)
 		}
 		line->special=0;
 		line->args[0] = line->args[1] = line->args[2] = line->args[3] = line->args[4] = 0;
-	}
-
-	//
-	// Also do some tweaks to the spawned actors
-	//
-	TThinkerIterator<AActor> it;
-	AActor * mo;
-
-	while ((mo=it.Next()))
-	{
-		// Don't count monsters in end-of-level sectors
-		// In 99.9% of all occurences they are part of a trap
-		// and not supposed to be killed.
-		if (mo->flags & MF_COUNTKILL)
-		{
-			if (mo->Sector->special == dDamage_End)
-			{
-				level.total_monsters--;
-				mo->flags&=~(MF_COUNTKILL);
-			}
-		}
 	}
 }
 

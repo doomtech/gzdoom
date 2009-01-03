@@ -268,7 +268,6 @@ static void ParseFunc(FScanner &sc, level_info_t *info)
 			opt->skyrotatevector.Y = (float)sc.Float;
 			sc.MustGetFloat();
 			opt->skyrotatevector.Z = (float)sc.Float;
-			sc.MustGetFloat();
 			opt->skyrotatevector.MakeUnit();
 		}
 		else
