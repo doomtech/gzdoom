@@ -55,6 +55,7 @@ class SightCheck
 	fixed_t topslope, bottomslope;	// slopes to top and bottom of target
 	int SeePastBlockEverything, SeePastShootableLines;
 	divline_t trace;
+	int myseethrough;
 
 	bool PTR_SightTraverse (intercept_t *in);
 	bool P_SightCheckLine (line_t *ld);
@@ -140,7 +141,7 @@ bool SightCheck::PTR_SightTraverse (intercept_t *in)
 			{
 				F3DFloor*  rover=s->e->XFloor.ffloors[j];
 
-				if(!(rover->flags & FF_SOLID) || !(rover->flags & FF_EXISTS)) continue;
+				if((rover->flags & FF_SEETHROUGH) == myseethrough || !(rover->flags & FF_EXISTS)) continue;
 				
 				fixed_t ff_bottom=rover->bottom.plane->ZatPoint(trX, trY);
 				fixed_t ff_top=rover->top.plane->ZatPoint(trX, trY);
@@ -172,7 +173,7 @@ bool SightCheck::PTR_SightTraverse (intercept_t *in)
 					{
 						F3DFloor*  rover2=sb->e->XFloor.ffloors[k];
 
-						if(!(rover2->flags & FF_SOLID) || !(rover2->flags & FF_EXISTS)) continue;
+						if((rover2->flags & FF_SEETHROUGH) == myseethrough || !(rover2->flags & FF_EXISTS)) continue;
 						
 						fixed_t ffb_bottom=rover2->bottom.plane->ZatPoint(trX, trY);
 						fixed_t ffb_top=rover2->top.plane->ZatPoint(trX, trY);
@@ -400,7 +401,7 @@ bool SightCheck::P_SightTraverseIntercepts ()
 		{
 			F3DFloor*  rover = lastsector->e->XFloor.ffloors[i];
 
-			if(!(rover->flags & FF_SOLID) || !(rover->flags & FF_EXISTS)) continue;
+			if((rover->flags & FF_SOLID) == myseethrough || !(rover->flags & FF_EXISTS)) continue;
 			
 			fixed_t ff_bottom=rover->bottom.plane->ZatPoint(seeingthing->x, seeingthing->y);
 			fixed_t ff_top=rover->top.plane->ZatPoint(seeingthing->x, seeingthing->y);
@@ -436,6 +437,26 @@ bool SightCheck::P_SightPathTraverse (fixed_t x1, fixed_t y1, fixed_t x2, fixed_
 
 	validcount++;
 	intercepts.Clear ();
+
+	// for FF_SEETHROUIGH the following rule applies:
+	// If the viewer is in an area without FF_SEETHROUGH he can only see into areas without this flag
+	// If the viewer is in an area with FF_SEETHROUGH he can only see into areas with this flag
+	for(unsigned int i=0;i<lastsector->e->XFloor.ffloors.Size();i++)
+	{
+		F3DFloor*  rover = lastsector->e->XFloor.ffloors[i];
+
+		if(!(rover->flags & FF_EXISTS)) continue;
+		
+		fixed_t ff_bottom=rover->bottom.plane->ZatPoint(sightthing->x, sightthing->y);
+		fixed_t ff_top=rover->top.plane->ZatPoint(sightthing->x, sightthing->y);
+
+		if (sightzstart < ff_top && sightzstart >= ff_bottom) 
+		{
+			myseethrough = rover->flags & FF_SEETHROUGH;
+			break;
+		}
+	}
+
 
 	if ( ((x1-bmaporgx)&(MAPBLOCKSIZE-1)) == 0)
 		x1 += FRACUNIT;							// don't side exactly on a line
