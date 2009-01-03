@@ -1851,28 +1851,6 @@ void P_ZMovement (AActor *mo)
 	fixed_t delta;
 	fixed_t oldz = mo->z;
 
-	// Intercept the stupid 'fall through 3dfloors' bug SSNTails 06-13-2002
-
-	// [GrafZahl] This is a really ugly workaround... :(
-	// But unless the collision code is completely rewritten it is the 
-	// only way to avoid problems caused by incorrect positioning info...
-	for(unsigned int i=0;i<mo->Sector->e->XFloor.ffloors.Size();i++)
-    {
-		F3DFloor*  rover=mo->Sector->e->XFloor.ffloors[i];
-
-		if (!(rover->flags&FF_EXISTS)) continue;
-		if(!(rover->flags & FF_SOLID) || !(rover->flags & FF_EXISTS)) continue;
-
-		fixed_t ff_bottom=rover->bottom.plane->ZatPoint(mo->x, mo->y);
-		fixed_t ff_top=rover->top.plane->ZatPoint(mo->x, mo->y);
-		
-		fixed_t delta1 = mo->z - (ff_bottom + ((ff_top-ff_bottom)/2));
-		fixed_t delta2 = mo->z + (mo->height? mo->height:1) - (ff_bottom + ((ff_top-ff_bottom)/2));
-
-		if(ff_top > mo->floorz && abs(delta1) < abs(delta2)) mo->floorz = ff_top;
-		if(ff_bottom < mo->ceilingz && abs(delta1) >= abs(delta2)) mo->ceilingz = ff_bottom;
-    }
-
 //	
 // check for smooth step up
 //
@@ -4613,6 +4591,26 @@ void P_PlaySpawnSound(AActor *missile, AActor *spawner)
 	}
 }
 
+static AActor * SpawnMissile (const PClass *type, fixed_t x, fixed_t y, fixed_t z)
+{
+	AActor *th = Spawn (type, x, y, z, ALLOW_REPLACE);
+
+	if (th != NULL)
+	{
+		// Force floor huggers to the floor and ceiling huggers to the ceiling
+		if (th->flags3 & MF3_FLOORHUGGER)
+		{
+			z = th->floorz;
+		}
+		else if (th->flags3 & MF3_CEILINGHUGGER)
+		{
+			z = th->ceilingz - th->height;
+		}
+	}
+	return th;
+}
+
+
 //---------------------------------------------------------------------------
 //
 // FUNC P_SpawnMissile
@@ -4642,22 +4640,13 @@ AActor *P_SpawnMissileXYZ (fixed_t x, fixed_t y, fixed_t z,
 			type->TypeName.GetChars(), source->GetClass()->TypeName.GetChars());
 		return NULL;
 	}
-	int defflags3 = GetDefaultByType (type)->flags3;
 
-	if (defflags3 & MF3_FLOORHUGGER)
-	{
-		z = ONFLOORZ;
-	}
-	else if (defflags3 & MF3_CEILINGHUGGER)
-	{
-		z = ONCEILINGZ;
-	}
-	else if (z != ONFLOORZ)
+	if (z != ONFLOORZ && z != ONCEILINGZ) 
 	{
 		z -= source->floorclip;
 	}
 
-	AActor *th = Spawn (type, x, y, z, ALLOW_REPLACE);
+	AActor *th = SpawnMissile (type, x, y, z);
 	
 	P_PlaySpawnSound(th, source);
 	th->target = source;		// record missile's originator
@@ -4672,7 +4661,7 @@ AActor *P_SpawnMissileXYZ (fixed_t x, fixed_t y, fixed_t z,
 
 	FVector3 velocity(dest->x - source->x, dest->y - source->y, dest->z - source->z);
 	// Floor and ceiling huggers should never have a vertical component to their velocity
-	if (defflags3 & (MF3_FLOORHUGGER|MF3_CEILINGHUGGER))
+	if (th->flags3 & (MF3_FLOORHUGGER|MF3_CEILINGHUGGER))
 	{
 		velocity.Z = 0;
 	}
@@ -4766,21 +4755,14 @@ AActor *P_SpawnMissileAngleZSpeed (AActor *source, fixed_t z,
 	const PClass *type, angle_t angle, fixed_t momz, fixed_t speed, AActor *owner, bool checkspawn)
 {
 	AActor *mo;
-	int defflags3 = GetDefaultByType (type)->flags3;
 
-	if (defflags3 & MF3_FLOORHUGGER)
-	{
-		z = ONFLOORZ;
-	}
-	else if (defflags3 & MF3_CEILINGHUGGER)
-	{
-		z = ONCEILINGZ;
-	}
-	if (z != ONFLOORZ)
+	if (z != ONFLOORZ && z != ONCEILINGZ && source != NULL) 
 	{
 		z -= source->floorclip;
 	}
-	mo = Spawn (type, source->x, source->y, z, ALLOW_REPLACE);
+
+	mo = SpawnMissile (type, source->x, source->y, z);
+
 	P_PlaySpawnSound(mo, source);
 	mo->target = owner != NULL ? owner : source; // Originator
 	mo->angle = angle;

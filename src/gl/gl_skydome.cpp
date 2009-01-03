@@ -382,7 +382,7 @@ static void RenderDome(FTextureID texno, FGLTexture * tex, float x_offset, float
 
 		if (texh>190 && skystretch) texh=190;
 
-		gl.Rotatef(-180.0f+x_offset, glset.skyrotatevector.X, glset.skyrotatevector.Z, glset.skyrotatevector.Y);
+		gl.Rotatef(-180.0f+x_offset, 0.f, 1.f, 0.f);
 
 		yAdd = y_offset/texh;
 
@@ -463,7 +463,7 @@ static void RenderDome(FTextureID texno, FGLTexture * tex, float x_offset, float
 
 	if (tex)
 	{
-		gl.Rotatef(180.0f-x_offset, glset.skyrotatevector.X, glset.skyrotatevector.Z, glset.skyrotatevector.Y);
+		gl.Rotatef(180.0f-x_offset, 0, 1, 0);
 	}
 }
 
@@ -480,7 +480,7 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 	int faces;
 	FGLTexture * tex;
 
-	gl.Rotatef(-180.0f+x_offset, 0.f, 1.f, 0.f);
+	gl.Rotatef(-180.0f+x_offset, glset.skyrotatevector.X, glset.skyrotatevector.Z, glset.skyrotatevector.Y);
 	gl.Color3f(R, G ,B);
 
 	if (sb->faces[5]) 

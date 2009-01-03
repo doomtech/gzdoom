@@ -3555,6 +3555,9 @@ void P_SetupLevel (char *lumpname, int position)
 
 	deathmatchstarts.Clear ();
 
+	// Spawn 3d floors - must be done before spawning things so it can't be done in P_SpawnSpecials
+	P_Spawn3DFloors();
+
 	if (!buildmap)
 	{
 		times[14].Clock();
@@ -3585,8 +3588,6 @@ void P_SetupLevel (char *lumpname, int position)
 	// set up world state
 	P_SpawnSpecials ();
 
-	// Spawn extended specials
-	P_SpawnSpecials2();
 	P_InitTagLists();
 
 	// This must be done BEFORE the PolyObj Spawn!!!
@@ -3605,6 +3606,26 @@ void P_SetupLevel (char *lumpname, int position)
 			{
 				players[i].mo = NULL;
 				G_DeathMatchSpawnPlayer (i);
+			}
+		}
+	}
+
+	// Don't count monsters in end-of-level sectors
+	// In 99.9% of all occurences they are part of a trap
+	// and not supposed to be killed.
+	{
+		TThinkerIterator<AActor> it;
+		AActor * mo;
+
+		while ((mo=it.Next()))
+		{
+			if (mo->flags & MF_COUNTKILL)
+			{
+				if (mo->Sector->special == dDamage_End)
+				{
+					level.total_monsters--;
+					mo->flags&=~(MF_COUNTKILL);
+				}
 			}
 		}
 	}
