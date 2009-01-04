@@ -121,6 +121,7 @@ bool SightCheck::PTR_SightTraverse (intercept_t *in)
 	if (topslope <= bottomslope)
 		return false;		// stop
 
+#ifdef _3DFLOORS
 	// now handle 3D-floors
 	if(li->frontsector->e->XFloor.ffloors.Size() || li->backsector->e->XFloor.ffloors.Size())
 	{
@@ -207,8 +208,10 @@ bool SightCheck::PTR_SightTraverse (intercept_t *in)
 		lastsector = frontflag==0 ? li->backsector : li->frontsector;
 	}
 	else lastsector=NULL;	// don't need it if there are no 3D-floors
+
 	lastztop= FixedMul (topslope, in->frac) + sightzstart;
 	lastzbottom= FixedMul (bottomslope, in->frac) + sightzstart;
+#endif
 
 	return true;			// keep going
 }
@@ -276,6 +279,7 @@ bool SightCheck::P_SightCheckLine (line_t *ld)
 		}
 	}
 
+	sightcounts[3]++;
 	// store the line for later intersection testing
 	intercept_t newintercept;
 	newintercept.isaline = true;
@@ -365,7 +369,6 @@ bool SightCheck::P_SightTraverseIntercepts ()
 // go through in order
 // [RH] Is it really necessary to go through in order? All we care about is if
 // the trace is obstructed, not what specifically obstructed it.
-// [CO] Answer: Yes, it is! It makes handling 3D floors considerably easier!
 //
 	in = NULL;
 
@@ -390,6 +393,7 @@ bool SightCheck::P_SightTraverseIntercepts ()
 		}
 	}
 
+#ifdef _3DFLOORS
 	if (lastsector==seeingthing->Sector && lastsector->e->XFloor.ffloors.Size())
 	{
 		// we must do one last check whether the trace has crossed a 3D floor in the last sector
@@ -411,6 +415,7 @@ bool SightCheck::P_SightTraverseIntercepts ()
 		}
 	
 	}
+#endif
 	return true;			// everything was traversed
 }
 
@@ -438,7 +443,8 @@ bool SightCheck::P_SightPathTraverse (fixed_t x1, fixed_t y1, fixed_t x2, fixed_
 	validcount++;
 	intercepts.Clear ();
 
-	// for FF_SEETHROUIGH the following rule applies:
+#ifdef _3DFLOORS
+	// for FF_SEETHROUGH the following rule applies:
 	// If the viewer is in an area without FF_SEETHROUGH he can only see into areas without this flag
 	// If the viewer is in an area with FF_SEETHROUGH he can only see into areas with this flag
 	for(unsigned int i=0;i<lastsector->e->XFloor.ffloors.Size();i++)
@@ -456,7 +462,7 @@ bool SightCheck::P_SightPathTraverse (fixed_t x1, fixed_t y1, fixed_t x2, fixed_
 			break;
 		}
 	}
-
+#endif
 
 	if ( ((x1-bmaporgx)&(MAPBLOCKSIZE-1)) == 0)
 		x1 += FRACUNIT;							// don't side exactly on a line

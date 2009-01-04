@@ -58,9 +58,19 @@
 
 GLRenderSettings glset;
 
-void gl_CreateSections();
+CUSTOM_CVAR(Float, maxviewpitch, 90.f, CVAR_ARCHIVE|CVAR_SERVERINFO)
+{
+	if (self>90.f) self=90.f;
+	else if (self<-90.f) self=-90.f;
+}
 
-EXTERN_CVAR(Bool, gl_nocoloredspritelighting)
+
+CUSTOM_CVAR(Bool, gl_nocoloredspritelighting, false, 0)
+{
+	glset.nocoloredspritelighting = self;
+}
+
+void gl_CreateSections();
 
 FTexture *glpart2;
 FTexture *glpart;
@@ -743,7 +753,9 @@ void gl_PreprocessLevel()
 		}
 	}
 	gl_InitVertexData();
+#if 0
 	gl_CreateSections();
+#endif
 
 	// This code can be called when the hardware renderer is inactive!
 	if (currentrenderer!=0) gl.ArrayPointer(&gl_vertices[0], sizeof(GLVertex));

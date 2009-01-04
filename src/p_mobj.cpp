@@ -61,8 +61,6 @@
 #include "v_palette.h"
 #include "gl/gl_functions.h"
 
-#include "fragglescript/t_fs.h"
-
 // MACROS ------------------------------------------------------------------
 
 #define WATER_SINK_FACTOR		3
@@ -1072,6 +1070,7 @@ void P_ExplodeMissile (AActor *mo, line_t *line, AActor *target)
 					z = mo->z;
 
 					F3DFloor * ffloor=NULL;
+#ifdef _3DFLOORS
 					if (line->sidenum[side^1]!=NO_SIDE)
 					{
 						sector_t * backsector=sides[line->sidenum[side^1]].sector;
@@ -1091,6 +1090,7 @@ void P_ExplodeMissile (AActor *mo, line_t *line, AActor *target)
 							}
 						}
 					}
+#endif
 
 					DImpactDecal::StaticCreate (base->GetDecal (),
 						x, y, z, sides + line->sidenum[side], ffloor);
@@ -1749,6 +1749,7 @@ explode:
 			{
 				if (mo->dropoffz != mo->floorz) // 3DMidtex or other special cases that must be excluded
 				{
+#ifdef _3DFLOORS
 					unsigned i;
 					for(i=0;i<mo->Sector->e->XFloor.ffloors.Size();i++)
 					{
@@ -1758,7 +1759,9 @@ explode:
 						if (!(rover->flags&FF_EXISTS)) continue;
 						if (rover->flags&FF_SOLID && rover->top.plane->ZatPoint(mo->x,mo->y)==mo->floorz) break;
 					}
-					if (i==mo->Sector->e->XFloor.ffloors.Size()) return;
+					if (i==mo->Sector->e->XFloor.ffloors.Size()) 
+#endif
+						return;
 				}
 			}
 		}
@@ -2868,6 +2871,7 @@ void AActor::Tick ()
 			const secplane_t * floorplane = &floorsector->floorplane;
 			static secplane_t copyplane;
 
+#ifdef _3DFLOORS
 			// Check 3D floors as well
 			if (floorsector->e)	// apparently this can be called when the data is already gone-
 			for(unsigned int i=0;i<floorsector->e->XFloor.ffloors.Size();i++)
@@ -2883,6 +2887,7 @@ void AActor::Tick ()
 					break;
 				}
 			}
+#endif
 
 			if (floorplane->c < STEEPSLOPE &&
 				floorplane->ZatPoint (x, y) <= floorz)
@@ -3108,6 +3113,7 @@ bool AActor::UpdateWaterLevel (fixed_t oldz, bool dosplash)
 			// But the water level must be reset when this function returns
 			if (!(hsec->MoreFlags&SECF_UNDERWATERMASK)) reset=true;
 		}
+#ifdef _3DFLOORS
 		else
 		{
 			// Check 3D floors as well!
@@ -3141,6 +3147,7 @@ bool AActor::UpdateWaterLevel (fixed_t oldz, bool dosplash)
 				break;
 			}
 		}
+#endif
 	}
 		
 	// some additional checks to make deep sectors like Boom's splash without setting
@@ -3222,8 +3229,9 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 		actor->ceilingsector = actor->Sector;
 		actor->ceilingpic = actor->ceilingsector->GetTexture(sector_t::ceiling);
 		// Check if there's something solid to stand on between the current position and the
-		// current sector's floor.
-		P_FindFloorCeiling(actor, true);
+		// current sector's floor. For map spawns this must be delayed until after setting the
+		// z-coordinate.
+		if (!SpawningMapThing) P_FindFloorCeiling(actor, true);
 	}
 	else if (!(actor->flags5 & MF5_NOINTERACTION))
 	{
@@ -4338,6 +4346,7 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t x, fixed_t y, fixed_t z
 	// don't splash above the object
 	if (checkabove && z > thing->z + (thing->height >> 1)) return false;
 
+#ifdef _3DFLOORS
 	for(unsigned int i=0;i<sec->e->XFloor.ffloors.Size();i++)
 	{		
 		F3DFloor * rover = sec->e->XFloor.ffloors[i];
@@ -4354,6 +4363,7 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t x, fixed_t y, fixed_t z
 		planez = rover->bottom.plane->ZatPoint(x, y);
 		if (planez < z) return false;
 	}
+#endif
 	if (sec->heightsec == NULL ||
 		//!sec->heightsec->waterzone ||
 		(sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC) ||
@@ -4365,7 +4375,9 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t x, fixed_t y, fixed_t z
 	{
 		terrainnum = TerrainTypes[sec->heightsec->GetTexture(sector_t::floor)];
 	}
+#ifdef _3DFLOORS
 foundone:
+#endif
 
 	int splashnum = Terrains[terrainnum].Splash;
 	bool smallsplash = false;
@@ -4461,6 +4473,7 @@ bool P_HitFloor (AActor *thing)
 			break;
 		}
 
+#ifdef _3DFLOORS
 		// Check 3D floors
 		for(unsigned int i=0;i<m->m_sector->e->XFloor.ffloors.Size();i++)
 		{		
@@ -4474,6 +4487,7 @@ bool P_HitFloor (AActor *thing)
 				}
 			}
 		}
+#endif
 	}
 	if (m == NULL ||
 		(m->m_sector->heightsec != NULL &&
