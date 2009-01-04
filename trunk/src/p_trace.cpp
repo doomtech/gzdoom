@@ -100,6 +100,7 @@ bool Trace (fixed_t x, fixed_t y, fixed_t z, sector_t *sector,
 	memset(&res, 0, sizeof(res));
 	inf.sectorsel=0;
 
+#ifdef _3DFLOORS
 	TDeletingArray<F3DFloor*> &ff = sector->e->XFloor.ffloors;
 
 	if (ff.Size())
@@ -160,6 +161,7 @@ bool Trace (fixed_t x, fixed_t y, fixed_t z, sector_t *sector,
 			}
 		}
 	}
+#endif
 
 	// check for overflows and clip if necessary
 	SQWORD xd= (SQWORD)x + ( ( SQWORD(vx) * SQWORD(maxDist) )>>16);
@@ -337,6 +339,7 @@ bool FTraceInfo::TraceTraverse (int ptflags)
 			}
 			else
 			{ 	// made it past the wall
+#ifdef _3DFLOORS
 				// check for 3D floors first
 				if (entersector->e->XFloor.ffloors.Size())
 				{
@@ -390,6 +393,7 @@ bool FTraceInfo::TraceTraverse (int ptflags)
 						}
 					}
 				}
+#endif
 
 
 
@@ -404,7 +408,9 @@ bool FTraceInfo::TraceTraverse (int ptflags)
 					P_ActivateLine (in->d.line, IgnoreThis, lineside, SPAC_Impact);
 				}
 			}
+#ifdef _3DFLOORS
 cont:
+#endif
 
 			if (Results->HitType != TRACE_HitNone)
 			{

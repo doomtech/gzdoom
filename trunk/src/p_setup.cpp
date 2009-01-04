@@ -1282,6 +1282,7 @@ void P_LoadSectors (MapData * map)
 		// killough 8/28/98: initialize all sectors to normal friction
 		ss->friction = ORIG_FRICTION;
 		ss->movefactor = ORIG_FRICTION_FACTOR;
+		ss->sectornum = i;
 	}
 	delete[] msp;
 }
@@ -2172,6 +2173,7 @@ void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, mapside
 		}
 		break;
 
+#ifdef _3DFLOORS
 	case Sector_Set3DFloor:
 		if (msd->toptexture[0]=='#')
 		{
@@ -2191,6 +2193,7 @@ void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, mapside
 		strncpy (name, msd->bottomtexture, 8);
 		sd->SetTexture(side_t::bottom, TexMan.GetTexture (name, FTexture::TEX_Wall, FTextureManager::TEXMAN_Overridable));
 		break;
+#endif
 
 	case TranslucentLine:	// killough 4/11/98: apply translucency to 2s normal texture
 		if (checktranmap)

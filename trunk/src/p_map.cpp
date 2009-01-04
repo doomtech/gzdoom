@@ -208,6 +208,7 @@ void P_FindFloorCeiling (AActor *actor, bool onlyspawnpos)
 		actor->ceilingsector = tmf.ceilingsector;
 	}
 
+#ifdef _3DFLOORS
 	// also check 3D floors at the spawn position if the result from the block lines iterator cannot be used.
 	if (onlyspawnpos)
 	{
@@ -227,6 +228,7 @@ void P_FindFloorCeiling (AActor *actor, bool onlyspawnpos)
 			if (ff_bottom < actor->ceilingz && abs(delta1) >= abs(delta2)) actor->ceilingz = ff_bottom;
 		}
 	}
+#endif
 }
 
 //
@@ -428,7 +430,8 @@ int P_GetFriction (const AActor *mo, int *frictionfactor)
 		{
 			sec = m->m_sector;
 
-			// 3D floors must be checked, too!
+#ifdef _3DFLOORS
+			// 3D floors must be checked, too
 			for(unsigned i=0;i<sec->e->XFloor.ffloors.Size();i++)
 			{
 				F3DFloor * rover=sec->e->XFloor.ffloors[i];
@@ -444,6 +447,7 @@ int P_GetFriction (const AActor *mo, int *frictionfactor)
 					movefactor = secmovefac(rover->model);
 				}
 			}
+#endif
 
 			if (!(sec->special & FRICTION_MASK) &&
 				Terrains[TerrainTypes[sec->GetTexture(sector_t::floor)]].Friction == 0)
@@ -1098,6 +1102,7 @@ bool P_CheckPosition (AActor *thing, fixed_t x, fixed_t y, FCheckPosition &tm)
 	//Added by MC: Fill the tmsector.
 	tm.sector = newsec;
 	
+#ifdef _3DFLOORS
 	//Check 3D floors
 	if(newsec->e->XFloor.ffloors.Size())
 	{
@@ -1129,6 +1134,7 @@ bool P_CheckPosition (AActor *thing, fixed_t x, fixed_t y, FCheckPosition &tm)
 			}
 		}
 	}
+#endif
 	
 	validcount++;
 	spechit.Clear ();
@@ -2166,6 +2172,7 @@ const secplane_t * P_CheckSlopeWalk (AActor *actor, fixed_t &xmove, fixed_t &ymo
 	const secplane_t *plane = &actor->floorsector->floorplane;
 	fixed_t planezhere = plane->ZatPoint (actor->x, actor->y);
 
+#ifdef _3DFLOORS
 	for(unsigned int i=0;i<actor->floorsector->e->XFloor.ffloors.Size();i++)
 	{
 		F3DFloor * rover= actor->floorsector->e->XFloor.ffloors[i];
@@ -2181,6 +2188,7 @@ const secplane_t * P_CheckSlopeWalk (AActor *actor, fixed_t &xmove, fixed_t &ymo
 			planezhere=thisplanez;
 		}
 	}
+
 	if (actor->floorsector != actor->Sector)
 	{
 		for(unsigned int i=0;i<actor->Sector->e->XFloor.ffloors.Size();i++)
@@ -2199,6 +2207,7 @@ const secplane_t * P_CheckSlopeWalk (AActor *actor, fixed_t &xmove, fixed_t &ymo
 			}
 		}
 	}
+#endif
 
 	if (actor->floorsector != actor->Sector)
 	{
@@ -2475,17 +2484,21 @@ struct aim_t
 	angle_t			pitch_friend, pitch_other;
 	bool			notsmart;
 	bool			check3d;
+#ifdef _3DFLOORS
 	sector_t *		lastsector;
 	secplane_t *	lastfloorplane;
 	secplane_t *	lastceilingplane;
 
 	bool			crossedffloors;
 
-	void AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t endy);
 	bool AimTraverse3DFloors(const divline_t &trace, intercept_t * in);
+#endif
+
+	void AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t endy);
 
 };
 
+#ifdef _3DFLOORS
 //============================================================================
 //
 // AimTraverse3DFloors
@@ -2589,6 +2602,7 @@ bool aim_t::AimTraverse3DFloors(const divline_t &trace, intercept_t * in)
 	lastfloorplane=nextbottomplane;
 	return true;
 }
+#endif
 
 //============================================================================
 //
@@ -2640,8 +2654,10 @@ void aim_t::AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t e
 
 			if (toppitch >= bottompitch)
 				return;				// stop
-							
+						
+#ifdef _3DFLOORS
 			if (!AimTraverse3DFloors(it.Trace(), in)) return;
+#endif
 			continue;					// shot continues
 		}
 
@@ -2664,6 +2680,7 @@ void aim_t::AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t e
 			
 		dist = FixedMul (attackrange, in->frac);
 
+#ifdef _3DFLOORS
 		// we must do one last check whether the trace has crossed a 3D floor
 		if (lastsector==th->Sector && th->Sector->e->XFloor.ffloors.Size())
 		{
@@ -2688,6 +2705,7 @@ void aim_t::AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t e
 				}
 			}
 		}
+#endif
 
 		// check angles to see if the thing can be aimed at
 
@@ -2701,6 +2719,7 @@ void aim_t::AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t e
 		if (thingbottompitch < toppitch)
 			continue;					// shot under the thing
 		
+#ifdef _3DFLOORS
 		if (crossedffloors)
 		{
 			// if 3D floors were in the way do an extra visibility check for safety
@@ -2719,6 +2738,8 @@ void aim_t::AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t e
 				else return;
 			}
 		}
+#endif
+
 		// this thing can be hit!
 		if (thingtoppitch < toppitch)
 			thingtoppitch = toppitch;
@@ -2838,6 +2859,8 @@ fixed_t P_AimLineAttack (AActor *t1, angle_t angle, fixed_t distance, AActor **p
 
 	// Information for tracking crossed 3D floors
 	aim.aimpitch=t1->pitch;
+
+#ifdef _3DFLOORS
 	aim.crossedffloors=t1->Sector->e->XFloor.ffloors.Size()!=0;
 	aim.lastsector=t1->Sector;
 	aim.lastfloorplane=aim.lastceilingplane=NULL;
@@ -2853,6 +2876,7 @@ fixed_t P_AimLineAttack (AActor *t1, angle_t angle, fixed_t distance, AActor **p
 		bottomz=rover->top.plane->ZatPoint(t1->x, t1->y);
 		if (bottomz<=t1->z) aim.lastfloorplane=rover->top.plane;
 	}
+#endif
 
 	aim.AimTraverse (t1->x, t1->y, x2, y2);
 
@@ -4411,6 +4435,7 @@ bool P_ChangeSector (sector_t *sector, int crunch, int amt, int floorOrCeil, boo
 	cpos.movemidtex = false;
 	cpos.sector = sector;
 
+#ifdef _3DFLOORS
 	// Also process all sectors that have 3D floors transferred from the
 	// changed sector.
 	if(sector->e->XFloor.attached.Size())
@@ -4455,6 +4480,7 @@ bool P_ChangeSector (sector_t *sector, int crunch, int amt, int floorOrCeil, boo
 		}
 	}
 	P_Recalculate3DFloors(sector);			// Must recalculate the 3d floor and light lists
+#endif
 
 
 	// [RH] Use different functions for the four different types of sector

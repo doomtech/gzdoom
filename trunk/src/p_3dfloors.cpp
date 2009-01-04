@@ -35,6 +35,8 @@
 **
 */
 
+#ifdef _3DFLOORS
+
 #include "templates.h"
 #include "p_local.h"
 #include "p_lnspec.h"
@@ -42,7 +44,6 @@
 #include "sc_man.h"
 #include "v_palette.h"
 #include "g_level.h"
-#include "gl/gl_lights.h"
 
 //==========================================================================
 //
@@ -674,3 +675,4 @@ void P_Spawn3DFloors (void)
 
 
 
+#endif

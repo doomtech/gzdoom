@@ -272,6 +272,7 @@ FTextureID DBaseDecal::StickToWall (side_t *wall, fixed_t x, fixed_t y, F3DFloor
 			Z -= back->GetPlaneTexZ(sector_t::ceiling);
 		tex = wall->GetTexture(side_t::top);
 	}
+#ifdef _3DFLOORS
 	else if (ffloor) // this is a 3d-floor segment - do this only if we know which one!
 	{
 		Sector=ffloor->model;
@@ -294,6 +295,7 @@ FTextureID DBaseDecal::StickToWall (side_t *wall, fixed_t x, fixed_t y, F3DFloor
 			tex = sides[ffloor->master->sidenum[0]].GetTexture(side_t::mid);
 		}
 	}
+#endif
 	else return FNullTextureID();
 	CalcFracPos (wall, x, y);
 
