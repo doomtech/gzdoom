@@ -220,12 +220,9 @@ void P_FindFloorCeiling (AActor *actor, bool onlyspawnpos)
 
 			fixed_t ff_bottom=rover->bottom.plane->ZatPoint(actor->x, actor->y);
 			fixed_t ff_top=rover->top.plane->ZatPoint(actor->x, actor->y);
-			
-			fixed_t delta1 = actor->z - (ff_bottom + ((ff_top-ff_bottom)/2));
-			fixed_t delta2 = actor->z + (actor->height? actor->height:1) - (ff_bottom + ((ff_top-ff_bottom)/2));
 
-			if (ff_top > actor->floorz && abs(delta1) < abs(delta2)) actor->floorz = ff_top;
-			if (ff_bottom < actor->ceilingz && abs(delta1) >= abs(delta2)) actor->ceilingz = ff_bottom;
+			if (ff_top > actor->floorz && ff_top < actor->z) actor->floorz = ff_top;
+			if (ff_bottom < actor->ceilingz && ff_bottom > actor->z + actor->height) actor->ceilingz = ff_bottom;
 		}
 	}
 #endif
