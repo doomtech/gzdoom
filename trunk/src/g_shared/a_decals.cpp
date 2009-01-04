@@ -653,7 +653,7 @@ DImpactDecal *DImpactDecal::StaticCreate (const FDecalTemplate *tpl, fixed_t x, 
 		DImpactDecal::CheckMax();
 		decal = new DImpactDecal (z);
 
-		FTextureID stickypic = decal->StickToWall (wall, x, y);
+		FTextureID stickypic = decal->StickToWall (wall, x, y, ffloor);
 		FTexture *tex = TexMan[stickypic];
 
 		if (tex != NULL && tex->bNoDecals)
@@ -774,12 +774,12 @@ void ADecal::BeginPlay ()
 			{
 				decal = new DBaseDecal (this);
 				wall = sides + trace.Line->sidenum[trace.Side];
-				decal->StickToWall (wall, trace.X, trace.Y);
+				decal->StickToWall (wall, trace.X, trace.Y, trace.ffloor);
 				tpl->ApplyToDecal (decal, wall);
 				// Spread decal to nearby walls if it does not all fit on this one
 				if (cl_spreaddecals)
 				{
-					decal->Spread (tpl, wall, trace.X, trace.Y, z);
+					decal->Spread (tpl, wall, trace.X, trace.Y, z, trace.ffloor);
 				}
 			}
 			else

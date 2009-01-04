@@ -3145,10 +3145,13 @@ bool AActor::UpdateWaterLevel (fixed_t oldz, bool dosplash)
 		
 	// some additional checks to make deep sectors like Boom's splash without setting
 	// the water flags. 
-	if (boomwaterlevel == 0 && waterlevel != 0 && dosplash) P_HitWater(this, Sector, fh);
+	if (boomwaterlevel == 0 && waterlevel != 0 && dosplash) 
+	{
+		P_HitWater(this, Sector, FIXED_MIN, FIXED_MIN, fh, true);
+	}
 	boomwaterlevel=waterlevel;
 	if (reset) waterlevel=lastwaterlevel;
-	return false;	// we did the splash ourselves! ;)
+	return false;	// we did the splash ourselves
 }
 
 //==========================================================================
@@ -4317,7 +4320,7 @@ int P_GetThingFloorType (AActor *thing)
 // Returns true if hit liquid and splashed, false if not.
 //---------------------------------------------------------------------------
 
-bool P_HitWater (AActor * thing, sector_t * sec, fixed_t z)
+bool P_HitWater (AActor * thing, sector_t * sec, fixed_t x, fixed_t y, fixed_t z, bool checkabove)
 {
 	if (thing->flags2 & MF2_FLOATBOB || thing->flags3 & MF3_DONTSPLASH)
 		return false;
@@ -4329,16 +4332,18 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t z)
 	FSplashDef *splash;
 	int terrainnum;
 	
-	if (z==FIXED_MIN) z=thing->z;
+	if (x == FIXED_MIN) x = thing->x;
+	if (y == FIXED_MIN) y = thing->y;
+	if (z == FIXED_MIN) z = thing->z;
 	// don't splash above the object
-	else if (z>thing->z+(thing->height>>1)) return false;
+	if (checkabove && z > thing->z + (thing->height >> 1)) return false;
 
 	for(unsigned int i=0;i<sec->e->XFloor.ffloors.Size();i++)
 	{		
 		F3DFloor * rover = sec->e->XFloor.ffloors[i];
 		if (!(rover->flags & FF_EXISTS)) continue;
-		fixed_t planez = rover->top.plane->ZatPoint(thing->x, thing->y);
-		if (z >= planez - 2*FRACUNIT && z <= planez + 3*FRACUNIT)	// account for offset used in P_LineAttack
+		fixed_t planez = rover->top.plane->ZatPoint(x, y);
+		if (z > planez - FRACUNIT/2 && z < planez + FRACUNIT/2)	// allow minor imprecisions
 		{
 			if (rover->flags & (FF_SOLID|FF_SWIMMABLE) )
 			{
@@ -4346,7 +4351,7 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t z)
 				goto foundone;
 			}
 		}
-		planez = rover->bottom.plane->ZatPoint(thing->x, thing->y);
+		planez = rover->bottom.plane->ZatPoint(x, y);
 		if (planez < z) return false;
 	}
 	if (sec->heightsec == NULL ||
@@ -4389,14 +4394,14 @@ foundone:
 
 	if (smallsplash && splash->SmallSplash)
 	{
-		mo = Spawn (splash->SmallSplash, thing->x, thing->y, z, ALLOW_REPLACE);
+		mo = Spawn (splash->SmallSplash, x, y, z, ALLOW_REPLACE);
 		if (mo) mo->floorclip += splash->SmallSplashClip;
 	}
 	else
 	{
 		if (splash->SplashChunk)
 		{
-			mo = Spawn (splash->SplashChunk, thing->x, thing->y, z, ALLOW_REPLACE);
+			mo = Spawn (splash->SplashChunk, x, y, z, ALLOW_REPLACE);
 			mo->target = thing;
 			if (splash->ChunkXVelShift != 255)
 			{
@@ -4410,7 +4415,7 @@ foundone:
 		}
 		if (splash->SplashBase)
 		{
-			mo = Spawn (splash->SplashBase, thing->x, thing->y, z, ALLOW_REPLACE);
+			mo = Spawn (splash->SplashBase, x, y, z, ALLOW_REPLACE);
 		}
 		if (thing->player && !splash->NoAlert)
 		{
@@ -4425,7 +4430,7 @@ foundone:
 	}
 	else
 	{
-		S_Sound (thing->x, thing->y, z, CHAN_ITEM, smallsplash ?
+		S_Sound (x, y, z, CHAN_ITEM, smallsplash ?
 			splash->SmallSplashSound : splash->NormalSplashSound,
 			1, ATTN_IDLE);
 	}
