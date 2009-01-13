@@ -386,21 +386,15 @@ static void RenderDome(FTextureID texno, FGLTexture * tex, float x_offset, float
 
 		yAdd = y_offset/texh;
 
-		// The non-stretched skies still need some work
-
 		if (texh<=180) // && skystretch)
 		{
 			yMult=1.0f;
+			if (!skystretch)
+				gl.Scalef(1.f, texh/180.f, 1.f);
 		}
 		else
 		{
 			yMult= 180.0f/texh;
-			/*
-			if (texh<=180)
-			{
-				yAdd-=(180-texh)/(float)texh;
-			}
-			*/
 		}
 	}
 
@@ -464,6 +458,7 @@ static void RenderDome(FTextureID texno, FGLTexture * tex, float x_offset, float
 	if (tex)
 	{
 		gl.Rotatef(180.0f-x_offset, 0, 1, 0);
+		gl.Scalef(1.f, 1.f, 1.f);
 	}
 }
 

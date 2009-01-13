@@ -1779,11 +1779,6 @@ bool P_CheckMove(AActor *thing, fixed_t x, fixed_t y)
 {
 	FCheckPosition tm;
 	fixed_t		newz = thing->z;
-	int 		side;
-	int 		oldside;
-	line_t* 	ld;
-	sector_t*	oldsec = thing->Sector;	// [RH] for sector actions
-	sector_t*	newsec;
 
 	if (!P_CheckPosition (thing, x, y, tm))
 	{
