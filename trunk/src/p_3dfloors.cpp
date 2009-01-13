@@ -604,7 +604,7 @@ void P_LineOpening_XFloors (FLineOpening &open, AActor * thing, const line_t *li
 						highestfloor = ff_top;
 						highestfloorpic = *rover->top.texture;
 					}
-					if(ff_top > lowestfloor[j] && ff_top <= thing->z) lowestfloor[j] = ff_top;
+					if(ff_top > lowestfloor[j] && ff_top <= thing->z + thing->MaxStepHeight) lowestfloor[j] = ff_top;
 				}
 			}
 			
