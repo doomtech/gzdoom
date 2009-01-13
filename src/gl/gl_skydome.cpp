@@ -59,6 +59,7 @@ class FSkyBox : public FTexture
 public:
 
 	FTexture * faces[6];
+	bool fliptop;
 
 	FSkyBox() 
 	{ 
@@ -124,6 +125,10 @@ void gl_ParseSkybox(FScanner &sc)
 	FSkyBox * sb = new FSkyBox;
 	uppercopy(sb->Name, sc.String);
 	sb->Name[8]=0;
+	if (sc.CheckString("fliptop"))
+	{
+		sb->fliptop = true;
+	}
 	sc.MustGetStringName("{");
 	while (!sc.CheckString("}"))
 	{
@@ -603,14 +608,28 @@ static void RenderBox(FTextureID texno, FGLTexture * gltex, float x_offset, int 
 	tex->BindPatch(CM_Index, 0);
 	gl_ApplyShader();
 	gl.Begin(GL_TRIANGLE_FAN);
-	gl.TexCoord2f(0, 0);
-	gl.Vertex3f(128.f, 128.f, -128.f);
-	gl.TexCoord2f(1, 0);
-	gl.Vertex3f(-128.f, 128.f, -128.f);
-	gl.TexCoord2f(1, 1);
-	gl.Vertex3f(-128.f, 128.f, 128.f);
-	gl.TexCoord2f(0, 1);
-	gl.Vertex3f(128.f, 128.f, 128.f);
+	if (!sb->fliptop)
+	{
+		gl.TexCoord2f(0, 0);
+		gl.Vertex3f(128.f, 128.f, -128.f);
+		gl.TexCoord2f(1, 0);
+		gl.Vertex3f(-128.f, 128.f, -128.f);
+		gl.TexCoord2f(1, 1);
+		gl.Vertex3f(-128.f, 128.f, 128.f);
+		gl.TexCoord2f(0, 1);
+		gl.Vertex3f(128.f, 128.f, 128.f);
+	}
+	else
+	{
+		gl.TexCoord2f(0, 0);
+		gl.Vertex3f(128.f, 128.f, 128.f);
+		gl.TexCoord2f(1, 0);
+		gl.Vertex3f(-128.f, 128.f, 128.f);
+		gl.TexCoord2f(1, 1);
+		gl.Vertex3f(-128.f, 128.f, -128.f);
+		gl.TexCoord2f(0, 1);
+		gl.Vertex3f(128.f, 128.f, -128.f);
+	}
 	gl.End();
 
 
