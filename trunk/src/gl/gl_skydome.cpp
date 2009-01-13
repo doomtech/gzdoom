@@ -66,6 +66,7 @@ public:
 		faces[0]=faces[1]=faces[2]=faces[3]=faces[4]=faces[5]=NULL; 
 		UseType=TEX_Override;
 		gl_info.bSkybox = true;
+		fliptop = false;
 	}
 	~FSkyBox()
 	{
