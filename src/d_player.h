@@ -27,6 +27,7 @@
 // is buffered within the player data struct,
 // as commands per game tick.
 #include "d_ticcmd.h"
+#include "doomstat.h"
 
 #include "a_artifacts.h"
 
@@ -197,7 +198,6 @@ struct userinfo_t
 {
 	char		netname[MAXPLAYERNAME+1];
 	BYTE		team;
-	int			savedaimdist;
 	int			aimdist;
 	int			color;
 	int			skin;
@@ -205,6 +205,8 @@ struct userinfo_t
 	bool		neverswitch;
 	fixed_t		MoveBob, StillBob;
 	int			PlayerClass;
+
+	int GetAimDist() const { return (dmflags2 & DF2_NOAUTOAIM)? 0 : aimdist; }
 };
 
 FArchive &operator<< (FArchive &arc, userinfo_t &info);

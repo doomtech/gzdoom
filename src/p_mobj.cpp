@@ -521,7 +521,7 @@ bool AActor::SetState (FState *newstate)
 			}
 		}
 
-		if (newstate->CallAction(this))
+		if (newstate->CallAction(this, this))
 		{
 			// Check whether the called action function resulted in destroying the actor
 			if (ObjectFlags & OF_EuthanizeMe)
@@ -3217,13 +3217,27 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 	if (G_SkillProperty(SKILLP_FastMonsters))
 		actor->Speed = actor->GetClass()->Meta.GetMetaFixed(AMETA_FastSpeed, actor->Speed);
 
+
 	// set subsector and/or block links
 	actor->LinkToWorld (SpawningMapThing);
+
+	actor->dropoffz =			// killough 11/98: for tracking dropoffs
+	actor->floorz = actor->Sector->floorplane.ZatPoint (ix, iy);
+	actor->ceilingz = actor->Sector->ceilingplane.ZatPoint (ix, iy);
+
+	// The z-coordinate needs to be set once before calling P_FindFloorCeiling
+	// For FLOATRANDZ just use the floor here.
+	if (iz == ONFLOORZ || iz == FLOATRANDZ)
+	{
+		actor->z = actor->floorz;
+	}
+	else if (iz == ONCEILINGZ)
+	{
+		actor->z = actor->ceilingz - actor->height;
+	}
+
 	if (SpawningMapThing || !type->IsDescendantOf (RUNTIME_CLASS(APlayerPawn)))
 	{
-		actor->dropoffz =			// killough 11/98: for tracking dropoffs
-		actor->floorz = actor->Sector->floorplane.ZatPoint (ix, iy);
-		actor->ceilingz = actor->Sector->ceilingplane.ZatPoint (ix, iy);
 		actor->floorsector = actor->Sector;
 		actor->floorpic = actor->floorsector->GetTexture(sector_t::floor);
 		actor->ceilingsector = actor->Sector;
@@ -3239,9 +3253,6 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 	}
 	else
 	{
-		actor->floorz = FIXED_MIN;
-		actor->dropoffz = FIXED_MIN;
-		actor->ceilingz = FIXED_MAX;
 		actor->floorpic = actor->Sector->GetTexture(sector_t::floor);
 		actor->floorsector = actor->Sector;
 		actor->ceilingpic = actor->Sector->GetTexture(sector_t::ceiling);
@@ -4812,24 +4823,27 @@ AActor *P_SpawnPlayerMissile (AActor *source, const PClass *type, angle_t angle)
 }
 
 AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
-							  const PClass *type, angle_t angle, AActor **pLineTarget, AActor **pMissileActor)
+							  const PClass *type, angle_t angle, AActor **pLineTarget, AActor **pMissileActor,
+							  bool nofreeaim)
 {
 	static const int angdiff[3] = { -1<<26, 1<<26, 0 };
 	int i;
 	angle_t an;
 	angle_t pitch;
 	AActor *linetarget;
+	int vrange = nofreeaim? ANGLE_1*35 : 0;
 
 	// see which target is to be aimed at
 	i = 2;
 	do
 	{
 		an = angle + angdiff[i];
-		pitch = P_AimLineAttack (source, an, 16*64*FRACUNIT, &linetarget);
+		pitch = P_AimLineAttack (source, an, 16*64*FRACUNIT, &linetarget, vrange);
 
 		if (source->player != NULL &&
+			!nofreeaim &&
 			level.IsFreelookAllowed() &&
-			source->player->userinfo.aimdist <= ANGLE_1/2)
+			source->player->userinfo.GetAimDist() <= ANGLE_1/2)
 		{
 			break;
 		}
