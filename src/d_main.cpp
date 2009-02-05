@@ -523,7 +523,7 @@ CUSTOM_CVAR (Int, compatflags, 0, CVAR_ARCHIVE|CVAR_SERVERINFO)
 	i_compatflags = GetCompatibility(self);
 }
 
-CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_SERVERINFO)
+CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_SERVERINFO|CVAR_NOINITCALL)
 {
 	int v;
 
@@ -542,7 +542,7 @@ CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_SERVERINFO)
 	case 2:	// same as 1 but stricter (NO_PASSMOBJ and INVISIBILITY are also set)
 		v = COMPATF_SHORTTEX|COMPATF_STAIRINDEX|COMPATF_USEBLOCKING|COMPATF_NODOORLIGHT|
 			COMPATF_TRACE|COMPATF_MISSILECLIP|COMPATF_SOUNDTARGET|COMPATF_NO_PASSMOBJ|COMPATF_LIMITPAIN|
-			COMPATF_DEHHEALTH|COMPATF_INVISIBILITY;
+			COMPATF_DEHHEALTH|COMPATF_INVISIBILITY|COMPATF_CROSSDROPOFF;
 		break;
 
 	case 3:
@@ -2447,7 +2447,7 @@ void D_DoomMain (void)
 	}
 	if (devparm)
 	{
-		Printf (GStrings("D_DEVSTR"));
+		Printf ("%s", GStrings("D_DEVSTR"));
 	}
 
 #ifndef unix
@@ -2456,7 +2456,7 @@ void D_DoomMain (void)
 	// the user's home directory.
 	if (Args->CheckParm("-cdrom"))
 	{
-		Printf (GStrings("D_CDROM"));
+		Printf ("%s", GStrings("D_CDROM"));
 		mkdir (CDROM_DIR, 0);
 	}
 #endif
@@ -2521,9 +2521,9 @@ void D_DoomMain (void)
 	// Now that all textues have been loaded the crosshair can be initialized.
 	crosshair.Callback ();
 
-	// [CW] Parse any TEAMINFO lumps
-	Printf ("TEAMINFO_Init: Load team definitions.\n");
-	TEAMINFO_Init ();
+	// [CW] Parse any TEAMINFO lumps.
+	Printf ("ParseTeamInfo: Load team definitions.\n");
+	TeamLibrary.ParseTeamInfo ();
 
 	FActorInfo::StaticInit ();
 
