@@ -482,7 +482,7 @@ CCMD (error)
 	if (argv.argc() > 1)
 	{
 		char *textcopy = copystring (argv[1]);
-		I_Error (textcopy);
+		I_Error ("%s", textcopy);
 	}
 	else
 	{
@@ -495,7 +495,7 @@ CCMD (error_fatal)
 	if (argv.argc() > 1)
 	{
 		char *textcopy = copystring (argv[1]);
-		I_FatalError (textcopy);
+		I_FatalError ("%s", textcopy);
 	}
 	else
 	{
@@ -858,7 +858,7 @@ CCMD(nextmap)
 
 	if (next != NULL && strncmp(next, "enDSeQ", 6))
 	{
-		G_InitNew(next, false);
+		G_DeferedInitNew(next, false);
 	}
 	else
 	{
@@ -879,7 +879,7 @@ CCMD(nextsecret)
 
 	if (next != NULL && strncmp(next, "enDSeQ", 6))
 	{
-		G_InitNew(next, false);
+		G_DeferedInitNew(next, false);
 	}
 	else
 	{

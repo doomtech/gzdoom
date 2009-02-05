@@ -1963,7 +1963,7 @@ void Net_DoCommand (int type, BYTE **stream, int player)
 			BYTE who = ReadByte (stream);
 
 			s = ReadString (stream);
-			if (((who & 1) == 0) || players[player].userinfo.team == TEAM_None)
+			if (((who & 1) == 0) || players[player].userinfo.team == TEAM_NONE)
 			{ // Said to everyone
 				if (who & 2)
 				{
@@ -1997,7 +1997,7 @@ void Net_DoCommand (int type, BYTE **stream, int player)
 
 	case DEM_PRINT:
 		s = ReadString (stream);
-		Printf (s);
+		Printf ("%s", s);
 		break;
 
 	case DEM_CENTERPRINT:
