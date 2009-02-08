@@ -38,6 +38,8 @@
 #define HU_INPUTX		0
 #define HU_INPUTY		(0 + (screen->Font->GetHeight () + 1))
 
+void CT_PasteChat(const char *clip);
+
 EXTERN_CVAR (Int, con_scaletext)
 
 EXTERN_CVAR (Bool, sb_cooperative_enable)
@@ -150,17 +152,7 @@ bool CT_Responder (event_t *ev)
 			}
 			else if (ev->data1 == 'V' && (ev->data3 & GKM_CTRL))
 			{
-				char *clip = I_GetFromClipboard ();
-				if (clip != NULL)
-				{
-					char *clip_p = clip;
-					strtok (clip, "\n\r\b");
-					while (*clip_p)
-					{
-						CT_AddChar (*clip_p++);
-					}
-					delete[] clip;
-				}
+				CT_PasteChat(I_GetFromClipboard());
 			}
 		}
 		else if (ev->subtype == EV_GUI_Char)
@@ -177,9 +169,35 @@ bool CT_Responder (event_t *ev)
 			}
 			return true;
 		}
+		else if (ev->subtype == EV_GUI_MButtonDown)
+		{
+			CT_PasteChat(I_GetFromClipboard());
+		}
 	}
 
 	return false;
+}
+
+//===========================================================================
+//
+// CT_PasteChat
+//
+//===========================================================================
+
+void CT_PasteChat(const char *clip)
+{
+	if (clip != NULL)
+	{
+		// Only paste the first line.
+		while (*clip != '\0')
+		{
+			if (*clip == '\n' || *clip == '\r' || *clip == '\b')
+			{
+				break;
+			}
+			CT_AddChar (*clip++);
+		}
+	}
 }
 
 //===========================================================================

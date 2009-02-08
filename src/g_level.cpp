@@ -622,7 +622,7 @@ void G_ChangeLevel(const char *levelname, int position, bool keepFacing, int nex
 
 			// If this is co-op, respawn any dead players now so they can
 			// keep their inventory on the next map.
-			if (multiplayer && !deathmatch && player->playerstate == PST_DEAD)
+			if ((multiplayer || level.flags2 & LEVEL2_ALLOWRESPAWN) && !deathmatch && player->playerstate == PST_DEAD)
 			{
 				// Copied from the end of P_DeathThink [[
 				player->cls = NULL;		// Force a new class if the player is using a random class
@@ -1206,6 +1206,10 @@ void G_FinishTravel ()
 				inv->Travelled ();
 				inv->dynamiclights.Clear();	// remove all dynamic lights from the previous level
 			}
+			if (ib_compatflags & BCOMPATF_RESETPLAYERSPEED)
+			{
+				pawn->Speed = pawn->GetDefault()->Speed;
+			}
 			if (level.FromSnapshot)
 			{
 				FBehavior::StaticStartTypedScripts (SCRIPT_Return, pawn, true);
@@ -1286,6 +1290,7 @@ void G_InitLevelLocals ()
 		level.cluster = info->cluster;
 		level.clusterflags = clus ? clus->flags : 0;
 		level.flags |= info->flags;
+		level.flags2 |= info->flags2;
 		level.levelnum = info->levelnum;
 		level.Music = info->Music;
 		level.musicorder = info->musicorder;
@@ -1312,6 +1317,7 @@ void G_InitLevelLocals ()
 		strcpy (level.skypic1, "SKY1");
 		strcpy (level.skypic2, "SKY1");
 		level.flags = 0;
+		level.flags2 = 0;
 		level.levelnum = 1;
 	}
 

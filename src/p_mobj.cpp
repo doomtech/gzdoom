@@ -3751,7 +3751,6 @@ APlayerPawn *P_SpawnPlayer (FMapThing *mthing, bool tempplayer)
 		mobj->z = mobj->ceilingz - mobj->height;
 	}
 
-
 	// [BC] Do script stuff
 	if (!tempplayer)
 	{
@@ -3777,7 +3776,6 @@ APlayerPawn *P_SpawnPlayer (FMapThing *mthing, bool tempplayer)
 			{
 				if (sectors[i].SoundTarget == oldactor) sectors[i].SoundTarget = NULL;
 			}
-
 
 			DObject::StaticPointerSubstitution (oldactor, p->mo);
 			// PointerSubstitution() will also affect the bodyque, so undo that now.

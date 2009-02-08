@@ -100,6 +100,7 @@
 #include "d_netinf.h"
 #include "v_palette.h"
 #include "m_cheat.h"
+#include "compatibility.h"
 
 EXTERN_CVAR(Bool, hud_althud)
 void DrawHUD();
@@ -509,6 +510,7 @@ CVAR (Flag, sv_noautoaim,			dmflags2, DF2_NOAUTOAIM);
 //==========================================================================
 
 int i_compatflags;	// internal compatflags composed from the compatflags CVAR and MAPINFO settings
+int ii_compatflags, ib_compatflags;
 
 EXTERN_CVAR(Int, compatmode)
 
@@ -520,7 +522,7 @@ static int GetCompatibility(int mask)
 
 CUSTOM_CVAR (Int, compatflags, 0, CVAR_ARCHIVE|CVAR_SERVERINFO)
 {
-	i_compatflags = GetCompatibility(self);
+	i_compatflags = GetCompatibility(self) | ii_compatflags;
 }
 
 CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_SERVERINFO|CVAR_NOINITCALL)
@@ -2261,20 +2263,12 @@ void D_DoomMain (void)
 #endif
 		file += "skins";
 		D_AddDirectory (file);
-	
-		const char *home = getenv ("HOME");
-		if (home)
-		{
-			file = home;
-			if (home[strlen(home) - 1] != '/')
-			{
-				file += '/';
-			}
-			file += ".zdoom/skins";
-			D_AddDirectory (file);
-		}
-	
-	
+
+#ifdef unix
+		file = NicePath("~/" GAME_DIR "/skins");
+		D_AddDirectory (file);
+#endif	
+
 		// Add common (global) wads
 		D_AddConfigWads ("Global.Autoload");
 
@@ -2365,6 +2359,8 @@ void D_DoomMain (void)
 
 	Printf ("ST_Init: Init startup screen.\n");
 	StartScreen = FStartupScreen::CreateInstance (R_GuesstimateNumTextures() + 5);
+
+	ParseCompatibility();
 
 	Printf ("P_Init: Checking cmd-line parameters...\n");
 	flags = dmflags;
