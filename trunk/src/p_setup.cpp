@@ -63,6 +63,8 @@
 #include "r_sky.h"
 #include "cmdlib.h"
 #include "g_level.h"
+#include "md5.h"
+#include "compatibility.h"
 
 #include "gl/gl_functions.h"
 
@@ -512,6 +514,51 @@ bool P_CheckMapData(const char *mapname)
 	if (mapd == NULL) return false;
 	delete mapd;
 	return true;
+}
+
+//===========================================================================
+//
+// MapData :: GetChecksum
+//
+// Hashes a map based on its header, THINGS, LINEDEFS, SIDEDEFS, SECTORS,
+// and BEHAVIOR lumps. Node-builder generated lumps are not included.
+//
+//===========================================================================
+
+void MapData::GetChecksum(BYTE cksum[16])
+{
+	MD5Context md5;
+
+	if (file != NULL)
+	{
+		if (isText)
+		{
+			file->Seek(MapLumps[ML_TEXTMAP].FilePos, SEEK_SET);
+			md5.Update(file, MapLumps[ML_TEXTMAP].Size);
+		}
+		else
+		{
+			if (MapLumps[ML_LABEL].Size != 0)
+			{
+				file->Seek(MapLumps[ML_LABEL].FilePos, SEEK_SET);
+				md5.Update(file, MapLumps[ML_LABEL].Size);
+			}
+			file->Seek(MapLumps[ML_THINGS].FilePos, SEEK_SET);
+			md5.Update(file, MapLumps[ML_THINGS].Size);
+			file->Seek(MapLumps[ML_LINEDEFS].FilePos, SEEK_SET);
+			md5.Update(file, MapLumps[ML_LINEDEFS].Size);
+			file->Seek(MapLumps[ML_SIDEDEFS].FilePos, SEEK_SET);
+			md5.Update(file, MapLumps[ML_SIDEDEFS].Size);
+			file->Seek(MapLumps[ML_SECTORS].FilePos, SEEK_SET);
+			md5.Update(file, MapLumps[ML_SECTORS].Size);
+		}
+		if (HasBehavior)
+		{
+			file->Seek(MapLumps[ML_BEHAVIOR].FilePos, SEEK_SET);
+			md5.Update(file, MapLumps[ML_BEHAVIOR].Size);
+		}
+	}
+	md5.Final(cksum);
 }
 
 //===========================================================================
@@ -3343,6 +3390,7 @@ void P_SetupLevel (char *lumpname, int position)
 	{
 		// note: most of this ordering is important 
 		ForceNodeBuild = gennodes;
+
 		// [RH] Load in the BEHAVIOR lump
 		FBehavior::StaticUnloadModules ();
 		if (map->HasBehavior)
@@ -3356,6 +3404,7 @@ void P_SetupLevel (char *lumpname, int position)
 			// If none has been defined in a map use the game's default.
 			P_LoadTranslator(!level.info->Translator.IsEmpty()? level.info->Translator.GetChars() : gameinfo.translator);
 		}
+		CheckCompatibility(map);
 		T_LoadScripts(map);
 
 		if (!map->HasBehavior || map->isText)
@@ -3416,6 +3465,16 @@ void P_SetupLevel (char *lumpname, int position)
 				P_LoadThings (map);
 			else
 				P_LoadThings2 (map);	// [RH] Load Hexen-style things
+
+			if (ib_compatflags & BCOMPATF_SPECHITOVERFLOW)
+			{
+				// restoring the original behavior doesn't work so we have to patch the levels in other ways.
+				// Fortunately the only known level depending on this bug is Strain's MAP07 and that's easy to fix.
+				if (numlines == 1022)
+				{
+					lines[1021].flags &= ~ML_BLOCKING;
+				}
+			}
 		}
 		else
 		{

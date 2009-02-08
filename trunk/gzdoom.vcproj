@@ -538,6 +538,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\compatibility.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\configfile.cpp"
 				>
 			</File>
@@ -691,6 +695,10 @@
 			</File>
 			<File
 				RelativePath=".\src\m_random.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\md5.cpp"
 				>
 			</File>
 			<File
@@ -1167,6 +1175,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\compatibility.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\configfile.h"
 				>
 			</File>
@@ -1368,6 +1380,10 @@
 			</File>
 			<File
 				RelativePath=".\src\m_swap.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\md5.h"
 				>
 			</File>
 			<File
