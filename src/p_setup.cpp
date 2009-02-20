@@ -3650,8 +3650,6 @@ void P_SetupLevel (char *lumpname, int position)
 	// set up world state
 	P_SpawnSpecials ();
 
-	P_InitTagLists();
-
 	// This must be done BEFORE the PolyObj Spawn!!!
 	gl_PreprocessLevel();
 
