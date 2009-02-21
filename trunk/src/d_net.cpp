@@ -1963,15 +1963,16 @@ void Net_DoCommand (int type, BYTE **stream, int player)
 			BYTE who = ReadByte (stream);
 
 			s = ReadString (stream);
+			CleanseString (s);
 			if (((who & 1) == 0) || players[player].userinfo.team == TEAM_NONE)
 			{ // Said to everyone
 				if (who & 2)
 				{
-					Printf (PRINT_CHAT, TEXTCOLOR_BOLD "* %s%s\n", name, s);
+					Printf (PRINT_CHAT, TEXTCOLOR_BOLD "* %s" TEXTCOLOR_BOLD "%s" TEXTCOLOR_BOLD "\n", name, s);
 				}
 				else
 				{
-					Printf (PRINT_CHAT, "%s: %s\n", name, s);
+					Printf (PRINT_CHAT, "%s" TEXTCOLOR_CHAT ": %s" TEXTCOLOR_CHAT "\n", name, s);
 				}
 				S_Sound (CHAN_VOICE | CHAN_UI, gameinfo.chatSound, 1, ATTN_NONE);
 			}
@@ -1979,11 +1980,11 @@ void Net_DoCommand (int type, BYTE **stream, int player)
 			{ // Said only to members of the player's team
 				if (who & 2)
 				{
-					Printf (PRINT_TEAMCHAT, TEXTCOLOR_BOLD "* (%s)%s\n", name, s);
+					Printf (PRINT_TEAMCHAT, TEXTCOLOR_BOLD "* (%s" TEXTCOLOR_BOLD ")%s" TEXTCOLOR_BOLD "\n", name, s);
 				}
 				else
 				{
-					Printf (PRINT_TEAMCHAT, "(%s): %s\n", name, s);
+					Printf (PRINT_TEAMCHAT, "(%s" TEXTCOLOR_TEAMCHAT "): %s" TEXTCOLOR_TEAMCHAT "\n", name, s);
 				}
 				S_Sound (CHAN_VOICE | CHAN_UI, gameinfo.chatSound, 1, ATTN_NONE);
 			}
@@ -2377,6 +2378,40 @@ void Net_DoCommand (int type, BYTE **stream, int player)
 		P_ConversationCommand (player, stream);
 		break;
 
+	case DEM_SETSLOT:
+		{
+			BYTE playernum = ReadByte(stream);
+			BYTE slot = ReadByte(stream);
+			BYTE count = ReadByte(stream);
+			TArray<const char *> weapons;
+
+			weapons.Resize(count);
+			for(int i = 0; i < count; i++)
+			{
+				weapons[i] = ReadStringConst(stream);
+			}
+			players[playernum].weapons.SetSlot(slot, weapons);
+		}
+		break;
+
+	case DEM_ADDSLOT:
+		{
+			BYTE playernum = ReadByte(stream);
+			BYTE slot = ReadByte(stream);
+			const char *weap = ReadStringConst(stream);
+			players[playernum].weapons.AddSlot(slot, weap);
+		}
+		break;
+
+	case DEM_ADDSLOTDEFAULT:
+		{
+			BYTE playernum = ReadByte(stream);
+			BYTE slot = ReadByte(stream);
+			const char *weap = ReadStringConst(stream);
+			players[playernum].weapons.AddSlotDefault(slot, weap);
+		}
+		break;
+
 	default:
 		I_Error ("Unknown net command: %d", type);
 		break;
@@ -2494,6 +2529,22 @@ void Net_SkipCommand (int type, BYTE **stream)
 				}
 			}
 			break;
+
+		case DEM_SETSLOT:
+			{
+				skip = 3;
+				for(int numweapons = *(*stream + 2); numweapons > 0; numweapons--)
+				{
+					skip += strlen ((char *)(*stream + skip)) + 1;
+				}
+			}
+			break;
+
+		case DEM_ADDSLOT:
+		case DEM_ADDSLOTDEFAULT:
+			skip = strlen ((char *)(*stream + 2)) + 3;
+			break;
+
 
 		default:
 			return;
