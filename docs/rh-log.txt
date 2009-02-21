@@ -1,3 +1,41 @@
+﻿February 21, 2009  (Changes by Graf Zahl)
+- Fixed: Untranslated colors in fonts had an alpha value of 0 but need 255.
+- Fixed: The Doom status bar's ammo display may not use the INDEXFONT for 
+  the alternative HUD. Instead it has to create a separate one out of the
+  STYSNUM characters.
+- Fixed: skins can not be sorted for binary search because the player class
+  code depends on the original indices.
+- Fixed: P_StartConversation set the global dialog node variable for all
+  players, not just the consoleplayer.
+- Fixed: AWeapon::PickupForAmmo assumed that any weapon having a secondary
+  ammo type also has a primary one.
+
+February 20, 2009  (Changes by Graf Zahl)
+- Bumped netgame, demo and min demo version for the weapon slot changes.
+- changed weapon slots to be stored per player. Information is now transmitted
+  across the network so that all machines know each player's current weapon
+  configuration so that it can be used by cheats or HUD display routines.
+- fixed: level_info_t::mapbg was not initialized
+
+February 17, 2009
+- Fixed: Player names and chat macros that end with incomplete \c escapes now
+  have those escapes stripped before printing so that they do not merge with
+  subsequent text.
+
+February 15, 2009  (Changes by Graf Zahl)
+- Fixed: The CHARFORMAT structure that is used to set the color in a Windows
+  Rich Edit control was not fully initialized resulting in incorrect colors
+  being set.
+
+Feburary 14, 2009
+- Moved default weapon slot assignments into the player classes.
+  Weapon.SlotNumber is now used solely for mods that want to add new weapons
+  without completely redoing the player's arsenal. Restored some config-based
+  weapon slot customization, though slots are no longer automatically saved
+  to the config and section names have changed slightly. However, unlike
+  before, config slots are now the definitive word on slot assignments and
+  cannot be overridden by any other files loaded.
+
 February 14, 2009  (Changes by Graf Zahl)
 - Added MF5_CANTSEEK flag to prevent seeker missiles from homing in on
   certain actors and added an option to APowerInvisibility to set this
@@ -17,7 +55,16 @@ February 14, 2009  (Changes by Graf Zahl)
 - Fixed: The MAPINFO parser ignored missing terminating braces of the last
   block in the file.
 
+February 11, 2009
+- Fixed: Several weapons were missing a game filter from their definitions.
+- Removed storage of weapon slots in the config so that weapon slots can
+  be setup in the weapons themselves. Slots are still configurable, since
+  they need to be for KEYCONF to work; any changes simply won't be saved
+  when you quit.
+- Removed limit on weapon slot sizes.
+
 February 10, 2009
+- Fixed: DirectInput8Create() used the wrong calling convention.
 - Moved the V_InitFontColors() call earlier in the startup sequence so that
   colored error messages appear colored in the startup window. Also lightened
   up the "Flat" red to contrast better on the startup background.
@@ -31,6 +78,8 @@ February 9, 2009
 - Added middle mouse button selection pasting for X systems.
 
 February 8, 2009  (Changes by Graf Zahl)
+- Fixed parsing of 'cluster' keyword when format is not yet known.
+- Moved CheckCompatibility call so that it is done after setting LEVEL_HEXENFORMAT.
 - Fixed parsing for MustConfirm key in skill parser.
 - Converted internal MAPINFOs to new syntax.
 - Added a range parameter to SNDINFO's $limit.
