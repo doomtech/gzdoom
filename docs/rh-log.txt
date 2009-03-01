@@ -1,4 +1,83 @@
-﻿February 21, 2009  (Changes by Graf Zahl)
+﻿February 28, 2009
+- Fixed: The TeleporterBeacon tried to enter its See state rather than its
+  Drop state. Also changed it to fade out when it's done rather than
+  disappearing abruptly.
+
+February 28, 2009  (Changes by Graf Zahl)
+- Fixed: Strife's quest based line actions also work in Deathmatch.
+- Fixed: Gravity application was not correct. For actors with no vertical 
+  momentum the initial pull is supposed to be twice as strong as when 
+  vertical movement already takes place.
+- added invquery CCMD like in Strife. Also removed all underscores from the
+  tag strings so that they can be printed properly.
+- Fixed: Skill baby was missing 'autousehealth' for all games.
+- Added a new CVAR: sv_disableautohealth
+- Autouse of health items is no longer hardwired to the default item classes. 
+  There's a new property HealthPickup.Autouse. 0 means no autouse, 1 a small 
+  Raven health item, 2 a large Raven health item and 3 a Strife item.
+
+February 26, 2009
+- Removed an early-out in wallscan_striped() that is invalid when drawing a
+  skybox.
+
+February 25, 2009  (Changes by Graf Zahl)
+- fixed: nextmap and nextsecret CCMDs set skill to 0.
+- fixed: level.flags2 was not stored in savegames. Also bumped min. savegame
+  version and removed old compatibility handlings.
+
+February 25, 2009
+- The SFX Reverb unit is now moved so that it serves as an input to the water
+  effect rather than as an input to the ChannelGroup Target Unit. This means
+  the water effect is now applied after any room reverb, rather than in
+  parallel with it.
+- Fixed: UI sounds should not have reverb applied to them.
+- Removed the delay for starting all sounds from one tic at exactly the same
+  DSP position. Without also synchronizing the stopping of sounds, it can
+  cause problems with things like the chainsaw where the sound is stopped and
+  immediately restarted, causing occassional gaps between the stopping of the
+  sound and the starting of the new one. (I added the start synchronization to
+  combat flanging of paired moving polyobjects when moving around, but I think
+  just removing velocity from the player for sound calculations takes care of
+  that well enough.)
+
+February 24, 2009  (Changes by Graf Zahl)
+- Added GCC headers for intptr_t to tarray.h.
+- Added MF5_PAINLESS flag for projectiles that don't make the target go into
+  the pain state.
+
+February 23, 2009
+- Changed DEM_ADDSLOTDEFAULT, DEM_ADDSLOT, and DEM_SETSLOT to be more space-
+  efficient.
+- Fixed: player->oldbuttons was copied from the current button set at the end
+  of P_PlayerThink(), well before ACS could ever get at it with GetPlayerInput.
+
+February 23, 2009  (Changes by Graf Zahl)
+- Fixed: The map name display on the automap was incomplete.
+- Added FakeInventory.Respawns DECORATe property
+- Fixed: Unsetting the MF5_INCONVERSATION flag did not work when quitting the
+  conversation by pressing Escape.
+
+February 22, 2009  (Changes by Graf Zahl)
+- added ML_BLOCKPROJECTILE flag to lines.
+- Fixed: With opl_onechip set the second OPL chip was never set to anything valid
+  so it contained an invalid pointer. There were also a few other places that
+  simply assumed that the second chip is set to something valid.
+- Fixed: NPCs which are engaged in a conversation should not move.
+- Fixed: Player movement animation was not stopped when starting a conversation.
+
+February 21, 2009
+- Added selective compression of network packets. Interestingly, most packets
+  don't actually compress all that well, even the ones that aren't too short
+  to possibly compress. (Maybe make the whole thing one long, never-ending
+  zlib data stream with Z_SYNC_FLUSH used to chunk things at packet
+  boundaries? That would probably help the compression ratio, but it would
+  require changing the way the netcode determines sequence, which would be
+  a much more invasive change.)
+
+February 21, 2009  (Changes by Graf Zahl)
+- Fixed: Heretic's fullscreen HUD crashed when the player had armor without
+  a valid icon.
+- Fixed: The StrifePlayer was missing a RunHealth setting.
 - Fixed: Untranslated colors in fonts had an alpha value of 0 but need 255.
 - Fixed: The Doom status bar's ammo display may not use the INDEXFONT for 
   the alternative HUD. Instead it has to create a separate one out of the

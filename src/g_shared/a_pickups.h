@@ -73,14 +73,19 @@ struct FWeaponSlots
 	int RestoreSlots (FConfigFile *config, const char *section);
 	void PrintSettings();
 
-	void SetSlot(int slot, TArray<const char *> argv);
-	void AddSlot(int slot, const char *name);
-	void AddSlotDefault(int slot, const char *name);
+	void AddSlot(int slot, const PClass *type, bool feedback);
+	void AddSlotDefault(int slot, const PClass *type, bool feedback);
 
 };
 
 void P_PlaybackKeyConfWeapons();
-void P_CompleteWeaponSetup(int playernum, const PClass *type);
+void P_CompleteWeaponSetup();
+void Net_WriteWeapon(const PClass *type);
+const PClass *Net_ReadWeapon(BYTE **stream);
+
+void P_SetupWeapons_ntohton();
+void P_WriteDemoWeaponsChunk(BYTE **demo);
+void P_ReadDemoWeaponsChunk(BYTE **demo);
 
 /************************************************************************/
 /* Class definitions													*/
@@ -336,6 +341,9 @@ class AHealthPickup : public AInventory
 {
 	DECLARE_CLASS (AHealthPickup, AInventory)
 public:
+	int autousemode;
+
+	virtual void Serialize (FArchive &arc);
 	virtual AInventory *CreateCopy (AActor *other);
 	virtual AInventory *CreateTossable ();
 	virtual bool HandlePickup (AInventory *item);
