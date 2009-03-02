@@ -1,0 +1,222 @@
+# created on 4/12/2006 by James Bentler
+
+FMOD_PREFIX = /usr/local
+CXX ?= g++
+CC ?= gcc
+NASM ?= nasm
+CCDV = @./ccdv
+
+# Can be libdumbd.a, if you really need to debug DUMB
+DUMBLIB ?= libdumbd.a
+
+ifndef X64
+  ifeq (x86_64,$(shell uname -m))
+    X64=64
+  else
+    X64=
+  endif
+endif
+
+ifdef DEBUG
+  CFLAGS ?= -pipe -Wall -Wno-unused -fno-strict-aliasing
+else
+  CFLAGS ?= -pipe -Wall -Wno-unused -fno-strict-aliasing -O2 -fomit-frame-pointer
+endif
+
+CFLAGS += `pkg-config gtk+-2.0 --cflags`
+CFLAGS += -DHAVE_FILELENGTH -D__forceinline=inline `sdl-config --cflags`
+CFLAGS += -DNEED_STRUPR
+CFLAGS += -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp
+LDFLAGS += -lz $(FMOD_PREFIX)/lib/libfmodex${X64}.so `sdl-config --libs`
+LDFLAGS += -ljpeg `pkg-config gtk+-2.0 --libs`
+LDFLAGS += -lGL -lGLU
+NASMFLAGS += -f elf -DM_TARGET_LINUX
+
+ifdef VALGRIND
+  NOSTRIP = 1
+  NASMFLAGS += -DVALGRIND_AWARE
+endif
+
+SRCDIRS = src/ $(addprefix src/,g_doom/ g_heretic/ g_hexen/ g_raven/ g_shared/ g_strife/ oplsynth/ sound/ fragglescript/ thingdef/ Linux/ sdl/ gl/ gl/r_render/ textures/ xlat/ timidity/)
+INCLUDES = $(addprefix -I,$(SRCDIRS))
+INCLUDES += -Isnes_spc/snes_spc/ -I$(FMOD_PREFIX)/include/fmodex/
+CFLAGS += $(INCLUDES)
+
+RELEASEOBJ ?= releaseobj
+DEBUGOBJ ?= debugobj
+
+CPPSRCS = $(wildcard $(addsuffix *.cpp,$(SRCDIRS)))
+CSRCS = $(filter-out src/xlat/xlat_parser.c, $(wildcard $(addsuffix *.c,$(SRCDIRS))))
+ifdef X64
+  NOASM=1
+endif
+ifdef NOASM
+  CFLAGS += -DNOASM
+else
+  ASRCS = $(wildcard src/*.nas)
+  CFLAGS += -DUSEASM=1
+endif
+SRCS = $(CSRCS) $(CPPSRCS) $(ASRCS)
+CPPOBJFILES = $(notdir $(patsubst %.cpp,%.o,$(CPPSRCS)))
+COBJFILES = $(notdir $(patsubst %.c,%.o,$(CSRCS)))
+AOBJFILES = $(notdir $(patsubst %.nas,%.o,$(ASRCS)))
+
+ZDOOM = gzdoom
+ZDOOMDEBUG = gzdoomd
+
+ifndef DEBUG
+  OBJDIR = $(RELEASEOBJ)
+  CFLAGS += -DNDEBUG
+  LDFLAGS += -Wl,-Map=$(ZDOOM).map
+  ZDOOMBIN = $(ZDOOM)
+else
+  OBJDIR = $(DEBUGOBJ)
+  CFLAGS += -D_DEBUG -g3
+  NASMFLAGS += -g
+  ZDOOMBIN = $(ZDOOMDEBUG)
+endif
+CXXFLAGS += $(CFLAGS)
+
+COBJS = $(addprefix $(OBJDIR)/,$(CPPOBJFILES) $(COBJFILES))
+DEPS = $(patsubst %.o,%.d,$(COBJS))
+OBJS = $(addprefix $(OBJDIR)/,$(AOBJFILES)) $(COBJS)
+
+# controls whether to start another instance of make at deps
+RESTART?=1
+
+# rule pattern for dependencies
+define DEPBUILD_PATTERN
+_dep_: _src_
+	$(CCDV) $(CXX) _src_ -MM $(CXXFLAGS) -MT "$$(patsubst %.d,%.o,_dep_) _dep_" -MF _dep_
+endef
+
+# rule pattern for assembly files
+define ASMBUILD_PATTERN
+_obj_: _src_
+	$(CCDV) $(NASM) -o _obj_ $(NASMFLAGS) _src_
+endef
+
+define CBUILD_PATTERN
+_obj_: _src_
+	$(CCDV) $(CC) -c $(CFLAGS) -o _obj_ -c _src_
+endef
+
+all: $(ZDOOMBIN) toolsandpk3 gzdoom.pk3 brightmaps.pk3 lights.pk3
+
+$(ZDOOMBIN): ccdv $(if $(RESTART),updaterev) src/xlat/xlat_parser.h src/xlat/xlat_parser.c $(OBJDIR) $(if $(RESTART),deps) $(OBJS) snes_spc/libsnes_spc.a dumb/lib/$(DUMBLIB)
+ifndef RESTART
+	$(CCDV) $(CXX) $(LDFLAGS) $(OBJDIR)/autostart.o \
+	$(filter-out %/autostart.o %/autozend.o,$(OBJS)) \
+	snes_spc/libsnes_spc.a dumb/lib/$(DUMBLIB) $(OBJDIR)/autozend.o -o $(ZDOOMBIN)
+endif
+
+# include any of the dep files that already exist
+$(foreach dep,$(DEPS),$(if $(wildcard $(dep)),$(eval include $(dep))))
+
+# textually substitute in the _dep_ and the _src_ it depends on to create rules
+# for creating dependency files without any existing dependency files
+$(foreach src,$(CPPSRCS) $(CSRCS), $(eval $(subst _src_,$(src),$(subst \
+_dep_,$(OBJDIR)/$(patsubst %.c,%.d,$(patsubst %.cpp,%.d,$(notdir $$$(src)))),\
+$(DEPBUILD_PATTERN)))))
+
+# textually substitute in the _obj_ and the _src_ it depends on to create rules
+$(foreach src,$(ASRCS), $(eval $(subst _src_,$(src),$(subst \
+_obj_,$(OBJDIR)/$(patsubst %.nas,%.o,$(notdir $$$(src))),$(ASMBUILD_PATTERN)))))
+
+# textually substitute in the _obj_ and the _src_ it depends on to create rules
+$(foreach src,$(CSRCS), $(eval $(subst _src_,$(src),$(subst \
+_obj_,$(OBJDIR)/$(patsubst %.c,%.o,$(notdir $$$(src))),$(CBUILD_PATTERN)))))
+
+# added by legolas558 for missing built files
+ifndef DEBUG
+MISSING=src/sdl/glstubs.cpp src/sdl/hardware.cpp src/sdl/sdlglvideo.cpp src/gl/a_dynlight.cpp 
+# textually substitute in the _obj_ and the _src_ it depends on to create rules
+$(foreach src,$(MISSING), $(eval $(subst _src_,$(src),$(subst \
+_obj_,$(OBJDIR)/$(patsubst %.cpp,%.o,$(notdir $$$(src))),$(CBUILD_PATTERN)))))
+endif
+
+$(OBJDIR)/%.o:
+	$(CCDV) $(CXX) -c $(CXXFLAGS) -o $@ -c $<
+
+# start a new instance of make after dependency files have been made
+deps: $(DEPS)
+ifdef RESTART
+	@make -f $(firstword $(MAKEFILE_LIST)) RESTART=
+endif
+
+# This file needs special handling so that it actually gets compiled with SSE2 support.
+$(OBJDIR)/nodebuild_classify_sse2.o: src/nodebuild_classify_sse2.cpp
+	$(CCDV) $(CXX) $(CXXFLAGS) -msse2 -mfpmath=sse -c -o $@ $<
+
+# This file needs special handling because GCC misoptimizes it otherwise.
+$(OBJDIR)/fmopl.o: src/oplsynth/fmopl.cpp
+	$(CCDV) $(CXX) $(CXXFLAGS) -fno-tree-dominator-opts -fno-tree-fre -c -o $@ $<
+
+src/xlat/xlat_parser.h src/xlat/xlat_parser.c: tools/lemon/lemon src/xlat/xlat_parser.y
+	$(CCDV) tools/lemon/lemon -s src/xlat/xlat_parser.y
+
+$(OBJDIR):
+	mkdir $(OBJDIR)
+
+toolsandpk3: ccdv tools/makewad/makewad tools/lemon/lemon tools/updaterevision/updaterevision
+	$(MAKE) -C wadsrc/
+	$(MAKE) -C wadsrc_bm/
+	$(MAKE) -C wadsrc_lights/
+
+gzdoom.pk3: toolsandpk3
+	ln -sf wadsrc/gzdoom.pk3 ./
+
+brightmaps.pk3: toolsandpk3
+	ln -sf wadsrc_bm/brightmaps.pk3 ./
+
+lights.pk3: toolsandpk3
+	ln -sf wadsrc_lights/lights.pk3 ./
+
+snes_spc/libsnes_spc.a: ccdv
+	$(MAKE) -C snes_spc/
+
+dumb/lib/libdumb.a: ccdv
+	$(MAKE) -C dumb/
+
+dumb/lib/libdumbd.a: ccdv
+	$(MAKE) CONFIG=Debug -C dumb/
+
+tools/makewad/makewad: ccdv
+	$(MAKE) -C tools/makewad/
+
+tools/lemon/lemon: ccdv
+	$(MAKE) -C tools/lemon/
+
+tools/updaterevision/updaterevision: ccdv
+	$(MAKE) -C tools/updaterevision/
+
+updaterev: tools/updaterevision/updaterevision
+	tools/updaterevision/updaterevision . src/svnrevision_gz.h
+
+ccdv: ccdv-posix.c
+	@gcc -Os -s ccdv-posix.c -o ccdv
+
+.PHONY : clean cleandeps cleanobjs distclean deps toolsandpk3 updaterev
+
+clean: cleanobjs
+	rm -f $(ZDOOMDEBUG) $(ZDOOM) $(ZDOOM).map
+	rm -f $(ZDOOM).pk3
+	rm -f ccdv
+
+cleandebug:
+	rm -f $(ZDOOMDEBUG) $(DEBUGOBJ)/*.o $(DEBUGOBJ)/*.d
+	-rmdir $(DEBUGOBJ)
+
+cleanrelease:
+	rm -f $(ZDOOM) $(ZDOOM).map $(RELEASEOBJ)/*.o $(RELEASEOBJ)/*.o
+	-rmdir $(RELEASEOBJ)
+
+# I could use a recursive delete instead, but that could be dangerous...
+distclean: clean cleandeps
+	-rmdir $(RELEASEOBJ) $(DEBUGOBJ)
+
+cleandeps:
+	rm -f $(RELEASEOBJ)/*.d $(DEBUGOBJ)/*.d
+
+cleanobjs:
+	rm -f $(RELEASEOBJ)/*.o $(DEBUGOBJ)/*.o

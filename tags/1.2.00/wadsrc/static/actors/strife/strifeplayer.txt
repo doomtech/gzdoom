@@ -1,0 +1,91 @@
+// The player ---------------------------------------------------------------
+
+ACTOR StrifePlayer : PlayerPawn
+{
+	Health 100
+	Radius 18
+	Height 56
+	Mass 100
+	PainChance 255
+	Speed 1
+	MaxStepHeight 16
+	Player.ColorRange 128, 143
+	Player.DisplayName "Rebel"
+	Player.StartItem "PunchDagger"
+	Player.RunHealth 16
+	Player.WeaponSlot 1, PunchDagger
+	Player.WeaponSlot 2, StrifeCrossbow2, StrifeCrossbow
+	Player.WeaponSlot 3, AssaultGun
+	Player.WeaponSlot 4, MiniMissileLauncher
+	Player.WeaponSlot 5, StrifeGrenadeLauncher2, StrifeGrenadeLauncher
+	Player.WeaponSlot 6, FlameThrower
+	Player.WeaponSlot 7, Mauler2, Mauler
+	Player.WeaponSlot 8, Sigil
+
+	action native A_ItBurnsItBurns();
+	action native A_CrispyPlayer();
+	action native A_HandLower();
+	
+	States
+	{
+	Spawn:
+		PLAY A -1
+		stop
+	See:
+		PLAY ABCD 4 
+		loop
+	Missile:
+		PLAY E 12
+		goto Spawn
+	Melee:
+		PLAY F 6
+		goto Missile
+	Pain:
+		PLAY Q 4
+		PLAY Q 4 A_Pain
+		Goto Spawn
+	Death:
+		PLAY H 3
+		PLAY I 3 A_PlayerScream
+		PLAY J 3 A_NoBlocking
+		PLAY KLMNO 4
+		PLAY P -1
+		Stop
+	XDeath:
+		RGIB A 5 A_TossGib
+		RGIB B 5 A_XScream
+		RGIB C 5 A_NoBlocking
+		RGIB DEFG 5 A_TossGib
+		RGIB H -1 A_TossGib
+	Burn:
+		BURN A 3 Bright A_ItBurnsItBurns
+		BURN B 3 Bright A_DropFire
+		BURN C 3 Bright A_Wander
+		BURN D 3 Bright A_NoBlocking
+		BURN E 5 Bright A_DropFire
+		BURN FGH 5 Bright A_Wander
+		BURN I 5 Bright A_DropFire
+		BURN JKL 5 Bright A_Wander
+		BURN M 5 Bright A_DropFire
+		BURN N 5 Bright A_CrispyPlayer
+		BURN OPQPQ 5 Bright
+		BURN RSTU 7 Bright
+		BURN V -1
+		Stop
+	Disintegrate:
+		DISR A 5 A_PlaySoundEx("misc/disruptordeath", "Voice")
+		DISR BC 5
+		DISR D 5 A_NoBlocking
+		DISR EF 5
+		DISR GHIJ 4
+		MEAT D -1
+		Stop
+	Firehands:
+		WAVE ABCD 3
+		Loop
+	Firehandslower:
+		WAVE ABCD 3 A_HandLower
+		Loop
+	}
+}
+		
