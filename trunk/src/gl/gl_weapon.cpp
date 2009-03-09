@@ -162,7 +162,7 @@ void gl_DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 	if (player->fixedcolormap==0)
 	{
 		for (i=0, psp=player->psprites; i<=ps_flash; i++,psp++)
-			if (psp->state != NULL) statebright[i] = psp->state->GetFullbright();
+			if (psp->state != NULL) statebright[i] = !!psp->state->GetFullbright();
 	}
 
 	if (gl_fixedcolormap) 

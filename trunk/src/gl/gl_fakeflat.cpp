@@ -90,7 +90,7 @@ bool gl_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsecto
 	}
 	else
 	{
-		fs_ceilingheight2=fs_ceilingheight1=frontsector->GetPlaneTexZ(sector_t::ceiling);
+		fs_ceilingheight2=fs_ceilingheight1 = frontsector->ceilingplane.d;
 	}
 
 	if (frontsector->floorplane.a | frontsector->floorplane.b)
@@ -100,7 +100,7 @@ bool gl_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsecto
 	}
 	else
 	{
-		fs_floorheight2=fs_floorheight1=frontsector->GetPlaneTexZ(sector_t::floor);
+		fs_floorheight2=fs_floorheight1 = -frontsector->floorplane.d;
 	}
 	
 	if (backsector->ceilingplane.a | backsector->ceilingplane.b)
@@ -110,7 +110,7 @@ bool gl_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsecto
 	}
 	else
 	{
-		bs_ceilingheight2=bs_ceilingheight1=backsector->GetPlaneTexZ(sector_t::ceiling);
+		bs_ceilingheight2=bs_ceilingheight1=backsector->ceilingplane.d;
 	}
 
 	if (backsector->floorplane.a | backsector->floorplane.b)
@@ -120,7 +120,7 @@ bool gl_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsecto
 	}
 	else
 	{
-		bs_floorheight2=bs_floorheight1=backsector->GetPlaneTexZ(sector_t::floor);
+		bs_floorheight2=bs_floorheight1=-backsector->floorplane.d;
 	}
 
 	// now check for closed sectors!
@@ -304,13 +304,13 @@ sector_t * gl_FakeFlat(sector_t * sec, sector_t * dest, bool back)
 			if (CopyPlaneIfValid (&dest->ceilingplane, &s->ceilingplane, &sec->floorplane))
 			{
 				dest->SetTexture(sector_t::ceiling, s->GetTexture(sector_t::ceiling), false);
-				dest->SetPlaneTexZ(sector_t::ceiling, s->GetPlaneTexZ(sector_t::ceiling));
+				dest->SetPlaneTexZ(sector_t::ceiling, s->ceilingplane.d);
 			}
 		}
 		else
 		{
 			dest->ceilingplane  = s->ceilingplane;
-			dest->SetPlaneTexZ(sector_t::ceiling, s->GetPlaneTexZ(sector_t::ceiling));
+			dest->SetPlaneTexZ(sector_t::ceiling, s->ceilingplane.d);
 		}
 	}
 
@@ -358,8 +358,8 @@ sector_t * gl_FakeFlat(sector_t * sec, sector_t * dest, bool back)
 	else if (in_area==area_above)
 	{
 		dest->ColorMap=s->ColorMap;
-		dest->SetPlaneTexZ(sector_t::ceiling, sec->GetPlaneTexZ(sector_t::ceiling));
-		dest->SetPlaneTexZ(sector_t::floor, s->GetPlaneTexZ(sector_t::ceiling));
+		dest->SetPlaneTexZ(sector_t::ceiling, sec->ceilingplane.d);
+		dest->SetPlaneTexZ(sector_t::floor, s->ceilingplane.d);
 		dest->ceilingplane= sec->ceilingplane;
 		dest->floorplane = s->ceilingplane;
 		dest->floorplane.FlipVert();
