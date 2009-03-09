@@ -1987,14 +1987,11 @@ void P_ZMovement (AActor *mo)
 			mo->z = mo->floorz;
 			if (mo->momz < 0)
 			{
-				// [RH] avoid integer roundoff by doing comparisons with floats
-				// I can't think of any good reason why this varied with gravity
-				float minmom = 800.f /*level.gravity * mo->Sector->gravity*/ * -655.36f;
-				float mom = (float)mo->momz;
+				const fixed_t minmom = -9*FRACUNIT;	// landing speed from a jump with normal gravity
 
 				// Spawn splashes, etc.
 				P_HitFloor (mo);
-				if (mo->DamageType == NAME_Ice && mom < minmom)
+				if (mo->DamageType == NAME_Ice && mo->momz < minmom)
 				{
 					mo->tics = 1;
 					mo->momx = 0;
@@ -2007,7 +2004,7 @@ void P_ZMovement (AActor *mo)
 				if (mo->player)
 				{
 					mo->player->jumpTics = 7;	// delay any jumping for a short while
-					if (mom < minmom && !(mo->flags & MF_NOGRAVITY))
+					if (mo->momz < minmom && !(mo->flags & MF_NOGRAVITY))
 					{
 						// Squat down.
 						// Decrease viewheight for a moment after hitting the ground (hard),
@@ -3788,10 +3785,6 @@ APlayerPawn *P_SpawnPlayer (FMapThing *mthing, bool tempplayer)
 			FBehavior::StaticStartTypedScripts (SCRIPT_Respawn, p->mo, true);
 		}
 	}
-	if (playernum == consoleplayer)
-	{
-		P_CompleteWeaponSetup();
-	}
 	return mobj;
 }
 
@@ -4422,7 +4415,7 @@ foundone:
 
 	// Don't splash for living things with small vertical velocities.
 	// There are levels where the constant splashing from the monsters gets extremely annoying
-	if ((thing->flags3&MF3_ISMONSTER || thing->player) && thing->momz>=-5*FRACUNIT) return Terrains[terrainnum].IsLiquid;
+	if ((thing->flags3&MF3_ISMONSTER || thing->player) && thing->momz>=-6*FRACUNIT) return Terrains[terrainnum].IsLiquid;
 
 	splash = &Splashes[splashnum];
 
