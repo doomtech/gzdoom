@@ -2613,7 +2613,8 @@ bool aim_t::AimTraverse3DFloors(const divline_t &trace, intercept_t * in)
 	nextsector=NULL;
 	nexttopplane=nextbottomplane=NULL;
 
-    if(li->frontsector->e->XFloor.ffloors.Size() || li->backsector->e->XFloor.ffloors.Size())
+    if ((li->frontsector && li->frontsector->e->XFloor.ffloors.Size()) || 
+		(li->backsector && li->backsector->e->XFloor.ffloors.Size()))
     {
 		int  frontflag;
 		F3DFloor* rover;
