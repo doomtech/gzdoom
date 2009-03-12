@@ -54,6 +54,7 @@ extern HWND Window;
 #include "v_text.h"
 #include "v_video.h"
 #include "v_palette.h"
+#include "cmdlib.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -159,6 +160,7 @@ static const FEnumList OutputNames[] =
 	{ "OSS",					FMOD_OUTPUTTYPE_OSS },
 	{ "ALSA",					FMOD_OUTPUTTYPE_ALSA },
 	{ "ESD",					FMOD_OUTPUTTYPE_ESD },
+	{ "SDL",					666 },
 
 	// Mac
 	{ "Sound Manager",			FMOD_OUTPUTTYPE_SOUNDMANAGER },
@@ -612,6 +614,7 @@ bool FMODSoundRenderer::Init()
 	ChannelGroupTargetUnit = NULL;
 	SfxReverbHooked = false;
 	SfxReverbPlaceholder = NULL;
+	OutputPlugin = 0;
 
 	Printf("I_InitSound: Initializing FMOD\n");
 
@@ -692,21 +695,65 @@ bool FMODSoundRenderer::Init()
 	}
 #endif
 
+#ifndef _WIN32
+	// Try to load SDL output plugin
+	result = Sys->setPluginPath(progdir);	// Should we really look for it in the program directory?
+	result = Sys->loadPlugin("liboutput_sdl.so", &OutputPlugin);
+	if (result != FMOD_OK)
+	{
+		OutputPlugin = 0;
+	}
+#endif
+
 	// Set the user specified output mode.
 	eval = Enum_NumForName(OutputNames, snd_output);
 	if (eval >= 0)
 	{
-		result = Sys->setOutput(FMOD_OUTPUTTYPE(eval));
+		if (eval == 666 && OutputPlugin != 0)
+		{
+			result = Sys->setOutputByPlugin(OutputPlugin);
+		}
+		else
+		{
+			result = Sys->setOutput(FMOD_OUTPUTTYPE(eval));
+		}
 		if (result != FMOD_OK)
 		{
 			Printf(TEXTCOLOR_BLUE"Setting output type '%s' failed. Using default instead. (Error %d)\n", *snd_output, result);
+			eval = FMOD_OUTPUTTYPE_AUTODETECT;
 			Sys->setOutput(FMOD_OUTPUTTYPE_AUTODETECT);
 		}
 	}
-
+	
 	result = Sys->getNumDrivers(&driver);
+#ifdef unix
 	if (result == FMOD_OK)
 	{
+		// On Linux, FMOD defaults to OSS. If OSS is not present, it doesn't
+		// try ALSA, it just fails. We'll try for it, but only if OSS wasn't
+		// explicitly specified for snd_output.
+		if (driver == 0 && eval == FMOD_OUTPUTTYPE_AUTODETECT)
+		{
+			FMOD_OUTPUTTYPE output;
+			if (FMOD_OK == Sys->getOutput(&output))
+			{
+				if (output == FMOD_OUTPUTTYPE_OSS)
+				{
+					Printf(TEXTCOLOR_BLUE"OSS could not be initialized. Trying ALSA.\n");
+					Sys->setOutput(FMOD_OUTPUTTYPE_ALSA);
+					result = Sys->getNumDrivers(&driver);
+				}
+			}
+		}
+	}
+#endif
+	if (result == FMOD_OK)
+	{
+		if (driver == 0)
+		{
+			Printf(TEXTCOLOR_ORANGE"No working sound devices found. Try a different snd_output?\n");
+			return false;
+		}
 		if (snd_driver >= driver)
 		{
 			Printf(TEXTCOLOR_BLUE"Driver %d does not exist. Using 0.\n", *snd_driver);
@@ -1056,6 +1103,11 @@ void FMODSoundRenderer::Shutdown()
 		}
 
 		Sys->close();
+		if (OutputPlugin != 0)
+		{
+			Sys->unloadPlugin(OutputPlugin);
+			OutputPlugin = 0;
+		}
 		Sys->release();
 		Sys = NULL;
 	}

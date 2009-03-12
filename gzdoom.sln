@@ -51,6 +51,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zipdir", "tools\zipdir\zipd
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gdtoa", "gdtoa\gdtoa.vcproj", "{B68E0ABF-B627-48A3-A92F-D8F827A75054}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lzmalib", "lzma\lzmalib.vcproj", "{6EB27E78-7C7A-4F08-8E19-957E8EB3A20F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bzip2", "bzip2\bzip2.vcproj", "{A7DE5C73-D623-4118-A48A-BDFD1FAE97D4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
