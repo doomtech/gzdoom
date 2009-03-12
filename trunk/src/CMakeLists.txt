@@ -761,7 +761,7 @@ add_executable( zdoom WIN32
 set_source_files_properties( xlat/parse_xlat.cpp PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/xlat_parser.c" )
 set_source_files_properties( sc_man.cpp PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/sc_man_scanner.h" )
 
-target_link_libraries( zdoom ${ZDOOM_LIBS} snes_spc gdtoa dumb )
+target_link_libraries( zdoom ${ZDOOM_LIBS} snes_spc gdtoa dumb bzip2 lzma )
 include_directories( .
 	g_doom
 	g_heretic

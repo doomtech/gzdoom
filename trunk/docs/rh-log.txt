@@ -1,4 +1,77 @@
-﻿February 28, 2009
+﻿March 11, 2009
+- Moved weapon slot initialization into APlayerPawn::PostBeginPlay() so that
+  they can be initialized when players respawn in multiplayer.
+
+March 11, 2009  (Changes by Graf Zahl)
+- Added a Check for the Vavoom namespace to the UDMF parser. Functionally
+  it's 100% identical with ZDoom's own but needs to be checked for in
+  case Vavoom compatible UDMF maps are released.
+
+March 10, 2009
+- Added an SDL output plugin, so FMOD can produce sound using SDL's audio
+  support instead of its own OSS/ALSA/ESD support. This is selectable by
+  setting snd_output to "sdl".
+- Fixed: On Linux systems with ALSA but no OSS support, trying to start
+  the sound system with snd_output "default" would fail instead of trying
+  to use ALSA.
+- Added sdl_nokeyrepeat to disable key repeating in the menus and console
+  on Linux.
+- Added support for zip/pk3 files with LZMA and bzip2 compression to ZDoom.
+- Added more output to zipdir and a -q option to turn it off.
+- Added -u option to zipdir to only recompress those files in a zip that have
+  changed. 
+
+March 7, 2009
+- Added -d and -f options to zipdir. -d forces deflate compression, and -f
+  forces a write of the zip, even if it's newer than all the files it contains.
+
+March 7, 2009  (Changes by Graf Zahl)
+- Fixed: P_CompleteWeaponSetup was missing a NULL pointer check for the player.
+- Adjusted some gravity related thresholds for the fix from Feb 28. Also removed
+  some unnecessary floating point math from this code.
+
+March 6, 2009
+- Added support for bzip2 and LZMA compression to zipdir.
+
+March 6, 2009  (Changes by Graf Zahl)
+- Added Hirogen2's patch for unlimited ammo CVAR.
+
+March 4, 2009
+- Fixed: You couldn't easily play with the compatibility options menu during
+  the title screen, because the demo loop reset the server cvars after each
+  attempt to play a demo, even though the demos never actually played. The
+  proper long-term solution would be to make shadow copies of all cvars
+  touched by demos and use those for the demo and the real things for
+  everything else, but this should do for now and is a lot easier.
+- Fixed: When using BOOM-style sector flags and specials together, the
+  special was ignored unless it was "secret".
+- Fixed: One byte is too short for DUMB_IT_SIGRENDERER to store song tempo.
+  Changed it to a word.
+- Went back to using RDTSC for timing on Win32. Ironically,
+  QueryPerformanceCounter() is obviously using the TSC for its timing on my
+  machine, yet the overhead it has to do to keep the timer sane is apparently
+  noticeable on a few maps. I suppose I should at some time check
+  clock_gettime() and see if it has similar issues on Linux.
+
+March 3, 2009  (Changes by Graf Zahl)
+- changed: If a monster with the BOSSDEATH flag is crushed A_BossDeath will
+  be called now.
+- fixed: D'Sparil's second form was missing the BOSSDEATH flag.
+- fixed: D'Sparil's first form requires the DONTGIB flag.
+- fixed: Heretic doesn't crush monsters. To handle this in a more generic
+  fashion this depends on the presence of a gib sprite now.
+
+March 1, 2009  (Changes by Graf Zahl)
+- Changed burn and Acolyte death sequences so that they leave corpses that
+  don't vanish.
+- Fixed: AActor::SetOrigin must call P_FindFloorCeiling to get the true
+  floor and ceiling heights. Otherwise the actor will fall right through
+  3DMidtex textures (and 3D-floors.)
+
+February 29, 2008
+- Version bump to 2.3.0.
+
+February 28, 2009
 - Fixed: The TeleporterBeacon tried to enter its See state rather than its
   Drop state. Also changed it to fade out when it's done rather than
   disappearing abruptly.
