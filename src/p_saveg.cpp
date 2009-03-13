@@ -93,7 +93,6 @@ void P_SerializePlayers (FArchive &arc, bool skipload)
 		if (numPlayers == 1)
 		{
 			ReadOnePlayer (arc, skipload);
-			players[0].mo->PostBeginPlay();
 		}
 		else
 		{

@@ -100,6 +100,7 @@ public:
 	virtual void GiveDeathmatchInventory ();
 	virtual void FilterCoopRespawnInventory (APlayerPawn *oldplayer);
 
+	void SetupWeaponSlots ();
 	void GiveDefaultInventory ();
 	void PlayAttacking ();
 	void PlayAttacking2 ();
