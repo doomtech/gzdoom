@@ -21,7 +21,7 @@ ACTOR MetalArmor : BasicArmorPickup
 		Inventory.PickupMessage ("$TXT_METALARMOR")
 		Armor.SaveAmount (200)
 		Armor.SavePercent (50)
-		Tag ("Metal_Armor")
+		Tag ("Metal Armor")
 	}
 
 	States
@@ -54,7 +54,7 @@ ACTOR LeatherArmor : BasicArmorPickup
 		Inventory.PickupMessage ("$TXT_LEATHERARMOR")
 		Armor.SaveAmount (100)
 		Armor.SavePercent (33.335)
-		Tag ("Leather_Armor")
+		Tag ("Leather Armor")
 	}
 
 	States

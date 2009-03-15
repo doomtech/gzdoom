@@ -101,6 +101,11 @@ ACTOR WraithvergeDrop
 
 ACTOR CWeapWraithverge : ClericWeapon native
 {
+	Info
+	{
+		Game ("Hexen")
+	}
+
 	Defaults
 	{
 		Health (3)

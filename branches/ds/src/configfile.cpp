@@ -251,7 +251,8 @@ bool FConfigFile::SetSection (const char *name, bool allowCreate)
 //
 // FConfigFile :: SetFirstSection
 //
-// Sets the current section to the first one in the file.
+// Sets the current section to the first one in the file. Returns
+// false if there are no sections.
 //
 //====================================================================
 
@@ -270,7 +271,8 @@ bool FConfigFile::SetFirstSection ()
 //
 // FConfigFile :: SetNextSection
 //
-// Advances the current section to the next one in the file.
+// Advances the current section to the next one in the file. Returns
+// false if there are no more sections.
 //
 //====================================================================
 
@@ -329,6 +331,77 @@ void FConfigFile::ClearCurrentSection ()
 		}
 		CurrentSection->RootEntry = NULL;
 		CurrentSection->LastEntryPtr = &CurrentSection->RootEntry;
+	}
+}
+
+//====================================================================
+//
+// FConfigFile :: DeleteCurrentSection
+//
+// Completely removes the current section. The current section is
+// advanced to the next section. Returns true if there is still a
+// current section.
+//
+//====================================================================
+
+bool FConfigFile::DeleteCurrentSection()
+{
+	if (CurrentSection != NULL)
+	{
+		FConfigSection *sec;
+
+		ClearCurrentSection();
+
+		// Find the preceding section.
+		for (sec = Sections; sec != NULL && sec->Next != CurrentSection; sec = sec->Next)
+		{ }
+
+		sec->Next = CurrentSection->Next;
+		if (LastSectionPtr == &CurrentSection->Next)
+		{
+			LastSectionPtr = &sec->Next;
+		}
+
+		CurrentSection->~FConfigSection();
+		delete[] (char *)CurrentSection;
+
+		CurrentSection = sec->Next;
+		return CurrentSection != NULL;
+	}
+	return false;
+}
+
+//====================================================================
+//
+// FConfigFile :: ClearKey
+//
+// Removes a key from the current section, if found. If there are
+// duplicates, only the first is removed.
+//
+//====================================================================
+
+void FConfigFile::ClearKey(const char *key)
+{
+	if (CurrentSection->RootEntry == NULL)
+	{
+		return;
+	}
+	FConfigEntry **prober = &CurrentSection->RootEntry, *probe = *prober;
+
+	while (probe != NULL && stricmp(probe->Key, key) != 0)
+	{
+		prober = &probe->Next;
+		probe = *prober;
+	}
+	if (probe != NULL)
+	{
+		*prober = probe->Next;
+		if (CurrentSection->LastEntryPtr == &probe->Next)
+		{
+			CurrentSection->LastEntryPtr = prober;
+		}
+		delete[] probe->Value;
+		delete[] (char *)probe;
 	}
 }
 

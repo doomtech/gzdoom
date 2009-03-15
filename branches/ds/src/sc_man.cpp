@@ -22,6 +22,7 @@
 #include "m_misc.h"
 #include "templates.h"
 #include "doomstat.h"
+#include "v_text.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -752,16 +753,21 @@ void FScanner::UnGet ()
 //
 //==========================================================================
 
-int FScanner::MatchString (const char **strings)
+int FScanner::MatchString (const char **strings, size_t stride)
 {
 	int i;
 
+	assert(stride % sizeof(const char*) == 0);
+
+	stride /= sizeof(const char*);
+
 	for (i = 0; *strings != NULL; i++)
 	{
-		if (Compare (*strings++))
+		if (Compare (*strings))
 		{
 			return i;
 		}
+		strings += stride;
 	}
 	return -1;
 }
@@ -772,11 +778,11 @@ int FScanner::MatchString (const char **strings)
 //
 //==========================================================================
 
-int FScanner::MustMatchString (const char **strings)
+int FScanner::MustMatchString (const char **strings, size_t stride)
 {
 	int i;
 
-	i = MatchString (strings);
+	i = MatchString (strings, stride);
 	if (i == -1)
 	{
 		ScriptError (NULL);
@@ -1015,7 +1021,7 @@ void STACK_ARGS FScanner::ScriptMessage (const char *message, ...)
 		va_end (arglist);
 	}
 
-	Printf ("Script error, \"%s\" line %d:\n%s\n", ScriptName.GetChars(),
+	Printf (TEXTCOLOR_RED"Script error, \"%s\" line %d:\n"TEXTCOLOR_RED"%s\n", ScriptName.GetChars(),
 		AlreadyGot? AlreadyGotLine : Line, composed.GetChars());
 }
 
@@ -1089,6 +1095,7 @@ void STACK_ARGS FScriptPosition::Message (int severity, const char *message, ...
 		va_end (arglist);
 	}
 	const char *type = "";
+	const char *color;
 	int level = PRINT_HIGH;
 
 	switch (severity)
@@ -1098,29 +1105,35 @@ void STACK_ARGS FScriptPosition::Message (int severity, const char *message, ...
 
 	case MSG_WARNING:
 		type = "warning";
+		color = TEXTCOLOR_YELLOW;
 		break;
 
 	case MSG_ERROR:
 		ErrorCounter++;
 		type = "error";
+		color = TEXTCOLOR_RED;
 		break;
 
+	case MSG_MESSAGE:
 	case MSG_DEBUG:
 		type = "message";
+		color = TEXTCOLOR_GREEN;
 		break;
 
 	case MSG_DEBUGLOG:
 	case MSG_LOG:
 		type = "message";
 		level = PRINT_LOG;
+		color = "";
 		break;
 
 	case MSG_FATAL:
 		I_Error ("Script error, \"%s\" line %d:\n%s\n",
 			FileName.GetChars(), ScriptLine, composed.GetChars());
+		return;
 	}
-	Printf (level, "Script %s, \"%s\" line %d:\n%s\n",
-		type, FileName.GetChars(), ScriptLine, composed.GetChars());
+	Printf (level, "%sScript %s, \"%s\" line %d:\n%s%s\n",
+		color, type, FileName.GetChars(), ScriptLine, color, composed.GetChars());
 }
 
 

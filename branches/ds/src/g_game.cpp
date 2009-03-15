@@ -73,6 +73,7 @@
 #include "cmdlib.h"
 #include "d_net.h"
 #include "d_event.h"
+#include "p_acs.h"
 
 #include <zlib.h>
 
@@ -263,7 +264,7 @@ CCMD (slot)
 
 		if (slot < NUM_WEAPON_SLOTS)
 		{
-			SendItemUse = LocalWeapons.Slots[slot].PickWeapon (&players[consoleplayer]);
+			SendItemUse = players[consoleplayer].weapons.Slots[slot].PickWeapon (&players[consoleplayer]);
 		}
 	}
 }
@@ -295,12 +296,12 @@ CCMD (turn180)
 
 CCMD (weapnext)
 {
-	SendItemUse = PickNextWeapon (&players[consoleplayer]);
+	SendItemUse = players[consoleplayer].weapons.PickNextWeapon (&players[consoleplayer]);
 }
 
 CCMD (weapprev)
 {
-	SendItemUse = PickPrevWeapon (&players[consoleplayer]);
+	SendItemUse = players[consoleplayer].weapons.PickPrevWeapon (&players[consoleplayer]);
 }
 
 CCMD (invnext)
@@ -373,6 +374,17 @@ CCMD (invuse)
 	players[consoleplayer].inventorytics = 0;
 }
 
+CCMD(invquery)
+{
+	AInventory *inv = players[consoleplayer].mo->InvSel;
+	if (inv != NULL)
+	{
+		const char *description = inv->GetClass()->Meta.GetMetaString(AMETA_StrifeName);
+		if (description == NULL) description = inv->GetClass()->TypeName;
+		Printf(PRINT_HIGH, "%s (%dx)\n", description, inv->Amount);
+	}
+}
+
 CCMD (use)
 {
 	if (argv.argc() > 1 && who != NULL)
@@ -384,6 +396,11 @@ CCMD (use)
 CCMD (invdrop)
 {
 	if (players[consoleplayer].mo) SendItemDrop = players[consoleplayer].mo->InvSel;
+}
+
+CCMD (weapdrop)
+{
+	SendItemDrop = players[consoleplayer].ReadyWeapon;
 }
 
 CCMD (drop)
@@ -983,6 +1000,7 @@ void G_Ticker ()
 			{
 				G_WriteDemoTiccmd (newcmd, i, buf);
 			}
+			players[i].oldbuttons = cmd->ucmd.buttons;
 			// If the user alt-tabbed away, paused gets set to -1. In this case,
 			// we do not want to read more demo commands until paused is no
 			// longer negative.
@@ -1124,7 +1142,7 @@ void G_PlayerFinishLevel (int player, EFinishLevelType mode, bool resetinventory
 		}
 	}
 
-	if (mode == FINISH_NoHub && !(level.flags & LEVEL_KEEPFULLINVENTORY))
+	if (mode == FINISH_NoHub && !(level.flags2 & LEVEL2_KEEPFULLINVENTORY))
 	{ // Reduce all owned (visible) inventory to 1 item each
 		for (item = p->mo->Inventory; item != NULL; item = item->Inventory)
 		{
@@ -1424,7 +1442,7 @@ static void G_QueueBody (AActor *body)
 //
 void G_DoReborn (int playernum, bool freshbot)
 {
-	if (!multiplayer && !(level.flags & LEVEL_ALLOWRESPAWN))
+	if (!multiplayer && !(level.flags2 & LEVEL2_ALLOWRESPAWN))
 	{
 		if (BackupSaveName.Len() > 0 && FileExists (BackupSaveName.GetChars()))
 		{ // Load game from the last point it was saved
@@ -1574,128 +1592,6 @@ bool G_CheckSaveGameWads (PNGHandle *png, bool printwarn)
 	return true;
 }
 
-static void WriteVars (FILE *file, SDWORD *vars, size_t count, DWORD id)
-{
-	size_t i, j;
-
-	for (i = 0; i < count; ++i)
-	{
-		if (vars[i] != 0)
-			break;
-	}
-	if (i < count)
-	{
-		// Find last non-zero var. Anything beyond the last stored variable
-		// will be zeroed at load time.
-		for (j = count-1; j > i; --j)
-		{
-			if (vars[j] != 0)
-				break;
-		}
-		FPNGChunkArchive arc (file, id);
-		for (i = 0; i <= j; ++i)
-		{
-			DWORD var = vars[i];
-			arc << var;
-		}
-	}
-}
-
-static void ReadVars (PNGHandle *png, SDWORD *vars, size_t count, DWORD id)
-{
-	size_t len = M_FindPNGChunk (png, id);
-	size_t used = 0;
-
-	if (len != 0)
-	{
-		DWORD var;
-		size_t i;
-		FPNGChunkArchive arc (png->File->GetFile(), id, len);
-		used = len / 4;
-
-		for (i = 0; i < used; ++i)
-		{
-			arc << var;
-			vars[i] = var;
-		}
-		png->File->ResetFilePtr();
-	}
-	if (used < count)
-	{
-		memset (&vars[used], 0, (count-used)*4);
-	}
-}
-
-static void WriteArrayVars (FILE *file, FWorldGlobalArray *vars, unsigned int count, DWORD id)
-{
-	unsigned int i, j;
-
-	// Find the first non-empty array.
-	for (i = 0; i < count; ++i)
-	{
-		if (vars[i].CountUsed() != 0)
-			break;
-	}
-	if (i < count)
-	{
-		// Find last non-empty array. Anything beyond the last stored array
-		// will be emptied at load time.
-		for (j = count-1; j > i; --j)
-		{
-			if (vars[j].CountUsed() != 0)
-				break;
-		}
-		FPNGChunkArchive arc (file, id);
-		arc.WriteCount (i);
-		arc.WriteCount (j);
-		for (; i <= j; ++i)
-		{
-			arc.WriteCount (vars[i].CountUsed());
-
-			FWorldGlobalArray::ConstIterator it(vars[i]);
-			const FWorldGlobalArray::Pair *pair;
-
-			while (it.NextPair (pair))
-			{
-				arc.WriteCount (pair->Key);
-				arc.WriteCount (pair->Value);
-			}
-		}
-	}
-}
-
-static void ReadArrayVars (PNGHandle *png, FWorldGlobalArray *vars, size_t count, DWORD id)
-{
-	size_t len = M_FindPNGChunk (png, id);
-	unsigned int i, k;
-
-	for (i = 0; i < count; ++i)
-	{
-		vars[i].Clear ();
-	}
-
-	if (len != 0)
-	{
-		DWORD max, size;
-		FPNGChunkArchive arc (png->File->GetFile(), id, len);
-
-		i = arc.ReadCount ();
-		max = arc.ReadCount ();
-
-		for (; i <= max; ++i)
-		{
-			size = arc.ReadCount ();
-			for (k = 0; k < size; ++k)
-			{
-				SDWORD key, val;
-				key = arc.ReadCount();
-				val = arc.ReadCount();
-				vars[i].Insert (key, val);
-			}
-		}
-		png->File->ResetFilePtr();
-	}
-}
 
 void G_DoLoadGame ()
 {
@@ -1815,10 +1711,7 @@ void G_DoLoadGame ()
 	delete[] map;
 	savegamerestore = false;
 
-	ReadVars (png, ACS_WorldVars, NUM_WORLDVARS, MAKE_ID('w','v','A','r'));
-	ReadVars (png, ACS_GlobalVars, NUM_GLOBALVARS, MAKE_ID('g','v','A','r'));
-	ReadArrayVars (png, ACS_WorldArrays, NUM_WORLDVARS, MAKE_ID('w','a','R','r'));
-	ReadArrayVars (png, ACS_GlobalArrays, NUM_GLOBALVARS, MAKE_ID('g','a','R','r'));
+	P_ReadACSVars(png);
 
 	NextSkill = -1;
 	if (M_FindPNGChunk (png, MAKE_ID('s','n','X','t')) == 1)
@@ -1980,7 +1873,7 @@ static void PutSaveComment (FILE *file)
 
 	// Get level name
 	//strcpy (comment, level.level_name);
-	mysnprintf(comment, countof(comment), "%s - %s", level.mapname, level.level_name);
+	mysnprintf(comment, countof(comment), "%s - %s", level.mapname, level.LevelName.GetChars());
 	len = (WORD)strlen (comment);
 	comment[len] = '\n';
 
@@ -2064,10 +1957,7 @@ void G_DoSaveGame (bool okForQuicksave, FString filename, const char *descriptio
 	FRandom::StaticWriteRNGState (stdfile);
 	P_WriteACSDefereds (stdfile);
 
-	WriteVars (stdfile, ACS_WorldVars, NUM_WORLDVARS, MAKE_ID('w','v','A','r'));
-	WriteVars (stdfile, ACS_GlobalVars, NUM_GLOBALVARS, MAKE_ID('g','v','A','r'));
-	WriteArrayVars (stdfile, ACS_WorldArrays, NUM_WORLDVARS, MAKE_ID('w','a','R','r'));
-	WriteArrayVars (stdfile, ACS_GlobalArrays, NUM_GLOBALVARS, MAKE_ID('g','a','R','r'));
+	P_WriteACSVars(stdfile);
 
 	if (NextSkill != -1)
 	{
@@ -2296,6 +2186,11 @@ void G_BeginRecording (const char *startmap)
 	C_WriteCVars (&demo_p, CVAR_SERVERINFO|CVAR_DEMOSAVE);
 	FinishChunk (&demo_p);
 
+	// Write weapon ordering chunk
+	StartChunk (WEAP_ID, &demo_p);
+	P_WriteDemoWeaponsChunk(&demo_p);
+	FinishChunk (&demo_p);
+
 	// Indicate body is compressed
 	StartChunk (COMP_ID, &demo_p);
 	democompspot = demo_p;
@@ -2422,6 +2317,10 @@ bool G_ProcessIFFDemo (char *mapname)
 			multiplayer = true;
 			break;
 
+		case WEAP_ID:
+			P_ReadDemoWeaponsChunk(&demo_p);
+			break;
+
 		case BODY_ID:
 			bodyHit = true;
 			zdembodyend = demo_p + len;
@@ -2501,16 +2400,16 @@ void G_DoPlayDemo (void)
 	{
 		const char *eek = "Cannot play non-ZDoom demos.\n(They would go out of sync badly.)\n";
 
-		C_RestoreCVars();
+		C_ForgetCVars();
 		M_Free(demobuffer);
 		demo_p = demobuffer = NULL;
 		if (singledemo)
 		{
-			I_Error (eek);
+			I_Error ("%s", eek);
 		}
 		else
 		{
-			Printf (PRINT_BOLD, eek);
+			Printf (PRINT_BOLD, "%s", eek);
 			gameaction = ga_nothing;
 		}
 	}
@@ -2522,7 +2421,6 @@ void G_DoPlayDemo (void)
 	}
 	else
 	{
-	
 		// don't spend a lot of time in loadlevel 
 		precache = false;
 		demonew = true;
@@ -2577,19 +2475,16 @@ bool G_CheckDemoStatus (void)
 			endtime = I_GetTime (false) - starttime;
 
 		C_RestoreCVars ();		// [RH] Restore cvars demo might have changed
-
 		M_Free (demobuffer);
+
+		P_SetupWeapons_ntohton();
 		demoplayback = false;
 		netdemo = false;
 		netgame = false;
 		multiplayer = false;
 		singletics = false;
-		{
-			int i;
-
-			for (i = 1; i < MAXPLAYERS; i++)
-				playeringame[i] = 0;
-		}
+		for (int i = 1; i < MAXPLAYERS; i++)
+			playeringame[i] = 0;
 		consoleplayer = 0;
 		players[0].camera = NULL;
 		StatusBar->AttachToPlayer (&players[0]);

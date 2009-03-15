@@ -30,6 +30,7 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #ifndef NO_GTK
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
@@ -109,16 +110,18 @@ void I_EndRead(void)
 {
 }
 
-// [RH] Returns time in milliseconds
-unsigned int I_MSTime (void)
-{
-	return SDL_GetTicks ();
-}
 
 static DWORD TicStart;
 static DWORD TicNext;
 static DWORD BaseTime;
 static int TicFrozen;
+
+// [RH] Returns time in milliseconds
+unsigned int I_MSTime (void)
+{
+	unsigned int time = SDL_GetTicks ();
+	return time - BaseTime;
+}
 
 //
 // I_GetTime
@@ -131,11 +134,7 @@ int I_GetTimePolled (bool saveMS)
 		return TicFrozen;
 	}
 
-	DWORD tm = SDL_GetTicks() + 1;	// Make sure this isn't 0.
-	if (BaseTime == 0)
-	{
-		BaseTime = tm;
-	}
+	DWORD tm = SDL_GetTicks();
 
 	if (saveMS)
 	{
@@ -230,7 +229,6 @@ void I_Quit (void)
 
     if (demorecording)
 		G_CheckDemoStatus();
-    G_ClearSnapshots ();
 }
 
 
@@ -257,7 +255,10 @@ void STACK_ARGS I_FatalError (const char *error, ...)
 
 		// Record error to log (if logging)
 		if (Logfile)
+		{
 			fprintf (Logfile, "\n**** DIED WITH FATAL ERROR:\n%s\n", errortext);
+			fflush (Logfile);
+		}
 //		throw CFatalError (errortext);
 		fprintf (stderr, "%s\n", errortext);
 		exit (-1);
@@ -509,11 +510,7 @@ bool I_WriteIniFailed ()
 
 static const char *pattern;
 
-#ifdef OSF1
-static int matchfile (struct dirent *ent)
-#else
 static int matchfile (const struct dirent *ent)
-#endif
 {
     return fnmatch (pattern, ent->d_name, FNM_NOESCAPE) == 0;
 }
@@ -568,21 +565,57 @@ int I_FindClose (void *handle)
 
 int I_FindAttr (findstate_t *fileinfo)
 {
-	struct dirent *ent = fileinfo->namelist[fileinfo->current];
+	dirent *ent = fileinfo->namelist[fileinfo->current];
+	struct stat buf;
 
-#ifdef OSF1
-	return 0;	// I don't know how to detect dirs under OSF/1
-#else
-    return (ent->d_type == DT_DIR) ? FA_DIREC : 0;
+	if (stat(ent->d_name, &buf) == 0)
+	{
+		return S_ISDIR(buf.st_mode) ? FA_DIREC : 0;
+	}
+	return 0;
+}
+
+// Clipboard support requires GTK+
+// TODO: GTK+ uses UTF-8. We don't, so some conversions would be appropriate.
+void I_PutInClipboard (const char *str)
+{
+#ifndef NO_GTK
+	if (GtkAvailable)
+	{
+		GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+		if (clipboard != NULL)
+		{
+			gtk_clipboard_set_text(clipboard, str, -1);
+		}
+		/* Should I? I don't know. It's not actually a selection.
+		clipboard = gtk_clipboard_get(GDK_SELECTION_PRIMARY);
+		if (clipboard != NULL)
+		{
+			gtk_clipboard_set_text(clipboard, str, -1);
+		}
+		*/
+	}
 #endif
 }
 
-// No clipboard support for Linux
-void I_PutInClipboard (const char *str)
+FString I_GetFromClipboard (bool use_primary_selection)
 {
-}
-
-char *I_GetFromClipboard ()
-{
-	return NULL;
+#ifndef NO_GTK
+	if (GtkAvailable)
+	{
+		GtkClipboard *clipboard = gtk_clipboard_get(use_primary_selection ?
+			GDK_SELECTION_PRIMARY : GDK_SELECTION_CLIPBOARD);
+		if (clipboard != NULL)
+		{
+			gchar *text = gtk_clipboard_wait_for_text(clipboard);
+			if (text != NULL)
+			{
+				FString copy(text);
+				g_free(text);
+				return copy;
+			}
+		}
+	}
+#endif
+	return "";
 }

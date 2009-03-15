@@ -46,6 +46,7 @@ struct sfxinfo_t
 
 	BYTE		PitchMask;
 	SWORD		NearLimit;				// 0 means unlimited
+	float		LimitRange;				// Range for sound limiting (squared for faster computations)
 
 	WORD		bRandomHeader:1;
 	WORD		bPlayerReserve:1;
@@ -178,10 +179,10 @@ struct FSoundChan : public FISoundChannel
 	SBYTE		Priority;
 	SWORD		NearLimit;
 	BYTE		SourceType;
-	TObjPtr<AActor> Actor;
+	float		LimitRange;
 	union
 	{
-		//AActor	*Actor;				// Used for position and velocity.
+		AActor			*Actor;		// Used for position and velocity.
 		const sector_t	*Sector;	// Sector for area sounds.
 		const FPolyObj	*Poly;		// Polyobject sound source.
 		float			 Point[3];	// Sound is not attached to any source.
@@ -278,7 +279,6 @@ bool S_CheckSingular (int sound_id);
 void S_StopSound (AActor *ent, int channel);
 void S_StopSound (const sector_t *sec, int channel);
 void S_StopSound (const FPolyObj *poly, int channel);
-void S_MarkSoundChannels();
 
 // Stops an origin-less sound from playing from this channel.
 void S_StopSound (int channel);

@@ -100,6 +100,7 @@
 #include "d_netinf.h"
 #include "v_palette.h"
 #include "m_cheat.h"
+#include "compatibility.h"
 
 EXTERN_CVAR(Bool, hud_althud)
 void DrawHUD();
@@ -142,6 +143,7 @@ EXTERN_CVAR (Bool, invertmouse)
 EXTERN_CVAR (Bool, lookstrafe)
 EXTERN_CVAR (Int, screenblocks)
 EXTERN_CVAR (Bool, sv_cheats)
+EXTERN_CVAR (Bool, sv_unlimited_pickup)
 
 extern gameinfo_t SharewareGameInfo;
 extern gameinfo_t RegisteredGameInfo;
@@ -479,19 +481,6 @@ CUSTOM_CVAR (Int, dmflags2, 0, CVAR_SERVERINFO)
 			if (p->cheats & CF_CHASECAM)
 				cht_DoCheat (p, CHT_CHASECAM);
 		}
-
-		// Change our autoaim settings if need be.
-		if (dmflags2 & DF2_NOAUTOAIM)
-		{
-			// Save our aimdist and set aimdist to 0.
-			p->userinfo.savedaimdist = p->userinfo.aimdist;
-			p->userinfo.aimdist = 0;
-		}
-		else
-		{
-			// Restore our aimdist.
-			p->userinfo.aimdist = p->userinfo.savedaimdist;
-		}
 	}
 }
 
@@ -522,11 +511,52 @@ CVAR (Flag, sv_noautoaim,			dmflags2, DF2_NOAUTOAIM);
 //==========================================================================
 
 int i_compatflags;	// internal compatflags composed from the compatflags CVAR and MAPINFO settings
+int ii_compatflags, ib_compatflags;
+
+EXTERN_CVAR(Int, compatmode)
+
+static int GetCompatibility(int mask)
+{
+	if (level.info == NULL) return mask;
+	else return (mask & ~level.info->compatmask) | (level.info->compatflags & level.info->compatmask);
+}
 
 CUSTOM_CVAR (Int, compatflags, 0, CVAR_ARCHIVE|CVAR_SERVERINFO)
 {
-	if (level.info == NULL) i_compatflags = self;
-	else i_compatflags = (self & ~level.info->compatmask) | (level.info->compatflags & level.info->compatmask);
+	i_compatflags = GetCompatibility(self) | ii_compatflags;
+}
+
+CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_NOINITCALL)
+{
+	int v;
+
+	switch (self)
+	{
+	default:
+	case 0:
+		v = 0;
+		break;
+
+	case 1:	// Doom2.exe compatible with a few relaxed settings
+		v = COMPATF_SHORTTEX|COMPATF_STAIRINDEX|COMPATF_USEBLOCKING|COMPATF_NODOORLIGHT|
+			COMPATF_TRACE|COMPATF_MISSILECLIP|COMPATF_SOUNDTARGET|COMPATF_DEHHEALTH|COMPATF_CROSSDROPOFF;
+		break;
+
+	case 2:	// same as 1 but stricter (NO_PASSMOBJ and INVISIBILITY are also set)
+		v = COMPATF_SHORTTEX|COMPATF_STAIRINDEX|COMPATF_USEBLOCKING|COMPATF_NODOORLIGHT|
+			COMPATF_TRACE|COMPATF_MISSILECLIP|COMPATF_SOUNDTARGET|COMPATF_NO_PASSMOBJ|COMPATF_LIMITPAIN|
+			COMPATF_DEHHEALTH|COMPATF_INVISIBILITY|COMPATF_CROSSDROPOFF;
+		break;
+
+	case 3:
+		v = COMPATF_TRACE|COMPATF_SOUNDTARGET|COMPATF_BOOMSCROLL;
+		break;
+
+	case 4:
+		v = COMPATF_SOUNDTARGET;
+		break;
+	}
+	compatflags = v;
 }
 
 CVAR (Flag, compat_shortTex,	compatflags, COMPATF_SHORTTEX);
@@ -549,6 +579,7 @@ CVAR (Flag, compat_invisibility,compatflags, COMPATF_INVISIBILITY);
 CVAR (Flag, compat_silentinstantfloors,compatflags, COMPATF_SILENT_INSTANT_FLOORS);
 CVAR (Flag, compat_sectorsounds,compatflags, COMPATF_SECTORSOUNDS);
 CVAR (Flag, compat_missileclip,	compatflags, COMPATF_MISSILECLIP);
+CVAR (Flag, compat_crossdropoff,compatflags, COMPATF_CROSSDROPOFF);
 
 //==========================================================================
 //
@@ -1562,7 +1593,20 @@ static EIWADType ScanIWAD (const char *iwad)
 	}
 	else if (lumpsfound[Check_map01])
 	{
-		if (lumpsfound[Check_redtnt2])
+		if (lumpsfound[Check_FreeDoom])
+		{
+			// Is there a 100% reliable way to tell FreeDoom and FreeDM
+			// apart based solely on the lump names?
+			if (strstr(iwad, "freedm.wad") || strstr(iwad, "FREEDM.WAD"))
+			{
+				return IWAD_FreeDM;
+			}
+			else
+			{
+				return IWAD_FreeDoom;
+			}
+		}
+		else if (lumpsfound[Check_redtnt2])
 		{
 			return IWAD_Doom2TNT;
 		}
@@ -1581,19 +1625,6 @@ static EIWADType ScanIWAD (const char *iwad)
 				else
 				{
 					return IWAD_HexenDemo;
-				}
-			}
-			else if (lumpsfound[Check_FreeDoom])
-			{
-				// Is there a 100% reliable way to tell FreeDoom and FreeDM
-				// apart based solely on the lump names?
-				if (strstr(iwad, "freedm.wad") || strstr(iwad, "FREEDM.WAD"))
-				{
-					return IWAD_FreeDM;
-				}
-				else
-				{
-					return IWAD_FreeDoom;
 				}
 			}
 			else
@@ -1634,18 +1665,15 @@ static EIWADType ScanIWAD (const char *iwad)
 		}
 		else
 		{
+			if (lumpsfound[Check_FreeDoom])
+			{
+				return IWAD_FreeDoom1;
+			}
 			for (i = Check_e2m1; i < NUM_CHECKLUMPS; i++)
 			{
 				if (!lumpsfound[i])
 				{
-					if (lumpsfound[Check_FreeDoom])
-					{
-						return IWAD_FreeDoom1;
-					}
-					else
-					{
-						return IWAD_DoomShareware;
-					}
+					return IWAD_DoomShareware;
 				}
 			}
 			if (i == NUM_CHECKLUMPS)
@@ -2236,20 +2264,12 @@ void D_DoomMain (void)
 #endif
 		file += "skins";
 		D_AddDirectory (file);
-	
-		const char *home = getenv ("HOME");
-		if (home)
-		{
-			file = home;
-			if (home[strlen(home) - 1] != '/')
-			{
-				file += '/';
-			}
-			file += ".zdoom/skins";
-			D_AddDirectory (file);
-		}
-	
-	
+
+#ifdef unix
+		file = NicePath("~/" GAME_DIR "/skins");
+		D_AddDirectory (file);
+#endif	
+
 		// Add common (global) wads
 		D_AddConfigWads ("Global.Autoload");
 
@@ -2321,6 +2341,8 @@ void D_DoomMain (void)
 	// [RH] Initialize localizable strings.
 	GStrings.LoadStrings (false);
 
+	V_InitFontColors ();
+
 	// [RH] Moved these up here so that we can do most of our
 	//		startup output in a fullscreen console.
 
@@ -2341,11 +2363,14 @@ void D_DoomMain (void)
 	Printf ("ST_Init: Init startup screen.\n");
 	StartScreen = FStartupScreen::CreateInstance (R_GuesstimateNumTextures() + 5);
 
+	ParseCompatibility();
+
 	Printf ("P_Init: Checking cmd-line parameters...\n");
 	flags = dmflags;
 	if (Args->CheckParm ("-nomonsters"))	flags |= DF_NO_MONSTERS;
 	if (Args->CheckParm ("-respawn"))		flags |= DF_MONSTERS_RESPAWN;
 	if (Args->CheckParm ("-fast"))			flags |= DF_FAST_MONSTERS;
+	if (Args->CheckParm("-ulp"))	sv_unlimited_pickup = true;
 
 	devparm = !!Args->CheckParm ("-devparm");
 
@@ -2422,7 +2447,7 @@ void D_DoomMain (void)
 	}
 	if (devparm)
 	{
-		Printf (GStrings("D_DEVSTR"));
+		Printf ("%s", GStrings("D_DEVSTR"));
 	}
 
 #ifndef unix
@@ -2431,7 +2456,7 @@ void D_DoomMain (void)
 	// the user's home directory.
 	if (Args->CheckParm("-cdrom"))
 	{
-		Printf (GStrings("D_CDROM"));
+		Printf ("%s", GStrings("D_CDROM"));
 		mkdir (CDROM_DIR, 0);
 	}
 #endif
@@ -2496,14 +2521,11 @@ void D_DoomMain (void)
 	// Now that all textues have been loaded the crosshair can be initialized.
 	crosshair.Callback ();
 
-	// [CW] Parse any TEAMINFO lumps
-	Printf ("TEAMINFO_Init: Load team definitions.\n");
-	TEAMINFO_Init ();
+	// [CW] Parse any TEAMINFO lumps.
+	Printf ("ParseTeamInfo: Load team definitions.\n");
+	TeamLibrary.ParseTeamInfo ();
 
 	FActorInfo::StaticInit ();
-
-	// Now that all actors have been defined we can finally set up the weapon slots
-	GameConfig->DoWeaponSetup (GameNames[gameinfo.gametype]);
 
 	// [GRB] Initialize player class list
 	SetupPlayerClasses ();
@@ -2585,6 +2607,7 @@ void D_DoomMain (void)
 	StartScreen->LoadingStatus ("Init game engine", 0x3f);
 	P_Init ();
 
+	P_SetupWeapons_ntohton();
 
 	//SBarInfo support.
 	SBarInfo::Load();

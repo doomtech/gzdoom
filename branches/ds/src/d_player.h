@@ -27,6 +27,7 @@
 // is buffered within the player data struct,
 // as commands per game tick.
 #include "d_ticcmd.h"
+#include "doomstat.h"
 
 #include "a_artifacts.h"
 
@@ -60,6 +61,16 @@ enum
 	APMETA_Hexenarmor2,
 	APMETA_Hexenarmor3,
 	APMETA_Hexenarmor4,
+	APMETA_Slot0,
+	APMETA_Slot1,
+	APMETA_Slot2,
+	APMETA_Slot3,
+	APMETA_Slot4,
+	APMETA_Slot5,
+	APMETA_Slot6,
+	APMETA_Slot7,
+	APMETA_Slot8,
+	APMETA_Slot9,
 };
 
 class player_t;
@@ -71,6 +82,7 @@ class APlayerPawn : public AActor
 public:
 	virtual void Serialize (FArchive &arc);
 
+	virtual void PostBeginPlay();
 	virtual void Tick();
 	virtual void AddInventory (AInventory *item);
 	virtual void RemoveInventory (AInventory *item);
@@ -88,6 +100,7 @@ public:
 	virtual void GiveDeathmatchInventory ();
 	virtual void FilterCoopRespawnInventory (APlayerPawn *oldplayer);
 
+	void SetupWeaponSlots ();
 	void GiveDefaultInventory ();
 	void PlayAttacking ();
 	void PlayAttacking2 ();
@@ -197,7 +210,6 @@ struct userinfo_t
 {
 	char		netname[MAXPLAYERNAME+1];
 	BYTE		team;
-	int			savedaimdist;
 	int			aimdist;
 	int			color;
 	int			skin;
@@ -205,6 +217,8 @@ struct userinfo_t
 	bool		neverswitch;
 	fixed_t		MoveBob, StillBob;
 	int			PlayerClass;
+
+	int GetAimDist() const { return (dmflags2 & DF2_NOAUTOAIM)? 0 : aimdist; }
 };
 
 FArchive &operator<< (FArchive &arc, userinfo_t &info);
@@ -351,6 +365,8 @@ public:
 	fixed_t crouchfactor;
 	fixed_t crouchoffset;
 	fixed_t crouchviewdelta;
+
+	FWeaponSlots weapons;
 
 	// [CW] I moved these here for multiplayer conversation support.
 	TObjPtr<AActor> ConversationNPC, ConversationPC;

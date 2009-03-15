@@ -108,6 +108,7 @@ static int TopLine, InsertLine;
 static char *BufferRover = ConsoleBuffer;
 
 static void ClearConsole ();
+static void C_PasteText(FString clip, BYTE *buffer, int len);
 
 struct GameAtExit
 {
@@ -1317,7 +1318,7 @@ void C_FullConsole ()
 	if (gamestate != GS_STARTUP)
 	{
 		gamestate = GS_FULLCONSOLE;
-		level.music = NULL;
+		level.Music = "";
 		S_Start ();
 		P_FreeLevelData ();
 		V_SetBlend (0,0,0,0);
@@ -1735,47 +1736,57 @@ static bool C_HandleKey (event_t *ev, BYTE *buffer, int len)
 						buffer[2 + buffer[0]] = 0;
 						I_PutInClipboard ((char *)&buffer[2]);
 					}
-					break;
 				}
 				else
 				{ // paste from clipboard
-					char *clip = I_GetFromClipboard ();
-					if (clip != NULL)
-					{
-						strtok (clip, "\r\n\b");
-						int cliplen = (int)strlen (clip);
-
-						cliplen = MIN(len, cliplen);
-						if (buffer[0] + cliplen > len)
-						{
-							cliplen = len - buffer[0];
-						}
-
-						if (cliplen > 0)
-						{
-							if (buffer[1] < buffer[0])
-							{
-								memmove (&buffer[2 + buffer[1] + cliplen],
-										 &buffer[2 + buffer[1]], buffer[0] - buffer[1]);
-							}
-							memcpy (&buffer[2 + buffer[1]], clip, cliplen);
-							buffer[0] += cliplen;
-							buffer[1] += cliplen;
-							makestartposgood ();
-							HistPos = NULL;
-						}
-						delete[] clip;
-					}
-					break;
+					C_PasteText(I_GetFromClipboard(false), buffer, len);
 				}
+				break;
 			}
 			break;
 		}
+		break;
+
+#ifdef unix
+	case EV_GUI_MButtonDown:
+		C_PasteText(I_GetFromClipboard(true), buffer, len);
+		break;
+#endif
 	}
 	// Ensure that the cursor is always visible while typing
 	CursorTicker = C_BLINKRATE;
 	cursoron = 1;
 	return true;
+}
+
+static void C_PasteText(FString clip, BYTE *buffer, int len)
+{
+	if (clip.IsNotEmpty())
+	{
+		// Only paste the first line.
+		long brk = clip.IndexOfAny("\r\n\b");
+		int cliplen = brk >= 0 ? brk : clip.Len();
+
+		// Make sure there's room for the whole thing.
+		if (buffer[0] + cliplen > len)
+		{
+			cliplen = len - buffer[0];
+		}
+
+		if (cliplen > 0)
+		{
+			if (buffer[1] < buffer[0])
+			{
+				memmove (&buffer[2 + buffer[1] + cliplen],
+						 &buffer[2 + buffer[1]], buffer[0] - buffer[1]);
+			}
+			memcpy (&buffer[2 + buffer[1]], clip, cliplen);
+			buffer[0] += cliplen;
+			buffer[1] += cliplen;
+			makestartposgood ();
+			HistPos = NULL;
+		}
+	}
 }
 
 bool C_Responder (event_t *ev)

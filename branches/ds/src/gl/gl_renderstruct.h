@@ -104,13 +104,13 @@ struct GLSectorPlane
 		{
 			texture = sec->GetTexture(sector_t::ceiling);
 			plane = sec->ceilingplane;
-			texheight = sec->GetPlaneTexZ(sector_t::ceiling);
+			texheight = plane.d;
 		}
 		else
 		{
 			texture = sec->GetTexture(sector_t::floor);
 			plane = sec->floorplane;
-			texheight = sec->GetPlaneTexZ(sector_t::floor);
+			texheight = -plane.d;
 		}
 	}
 };
@@ -588,6 +588,14 @@ public:
 };
 
 extern GLDrawInfo * gl_drawinfo;
+
+extern int gl_anglecache;
+inline angle_t vertex_t::GetViewAngle()
+{
+	return angletime == gl_anglecache? viewangle : (angletime = gl_anglecache, viewangle = R_PointToAngle2(viewx, viewy, x,y));
+}
+
+
 
 
 #endif

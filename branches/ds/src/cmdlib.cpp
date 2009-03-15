@@ -2,10 +2,16 @@
 
 #ifdef _WIN32
 #include <direct.h>
+#else
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 #endif
 #include "doomtype.h"
 #include "cmdlib.h"
 #include "i_system.h"
+#include "v_text.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -345,25 +351,20 @@ const char *myasctime ()
 /* CreatePath: creates a directory including all levels necessary    	*/
 /*																		*/
 /************************************************************************/
+#ifdef _WIN32
 void DoCreatePath(const char * fn)
 {
-#ifdef _WIN32
-char drive[_MAX_DRIVE];
-#endif
-char path[PATH_MAX];
-char p[PATH_MAX];
-int i;
+	char drive[_MAX_DRIVE];
+	char path[PATH_MAX];
+	char p[PATH_MAX];
+	int i;
 
-#ifdef _WIN32
 	_splitpath(fn,drive,path,NULL,NULL);
 	_makepath(p,drive,path,NULL,NULL);
 	i=(int)strlen(p);
 	if (p[i-1]=='/' || p[i-1]=='\\') p[i-1]=0;
 	if (*path) DoCreatePath(p);
 	_mkdir(p);
-#else
-	// FIXME: write me
-#endif
 }
 
 void CreatePath(const char * fn)
@@ -378,6 +379,36 @@ void CreatePath(const char * fn)
 	}
 	else DoCreatePath(fn);
 }
+#else
+void CreatePath(const char *fn)
+{
+	char *copy, *p;
+ 
+	if (fn[0] == '/' && fn[1] == '\0')
+	{
+		return;
+	}
+	p = copy = strdup(fn);
+	do
+	{
+		p = strchr(p + 1, '/');
+		if (p != NULL)
+		{
+			*p = '\0';
+		}
+		printf("%s\n", copy);
+		if (mkdir(copy, 0755) == -1)
+		{ // failed
+			return;
+		}
+		if (p != NULL)
+		{
+			*p = '/';
+		}
+	} while (p);
+	free(copy);
+}
+#endif
 
 // [RH] Replaces the escape sequences in a string with actual escaped characters.
 // This operation is done in-place. The result is the new length of the string.
@@ -563,6 +594,35 @@ FString strbin1 (const char *start)
 
 //==========================================================================
 //
+// CleanseString
+//
+// Does some mild sanity checking on a string: If it ends with an incomplete
+// color escape, the escape is removed.
+//
+//==========================================================================
+
+void CleanseString(char *str)
+{
+	char *escape = strrchr(str, TEXTCOLOR_ESCAPE);
+	if (escape != NULL)
+	{
+		if (escape[1] == '\0')
+		{
+			*escape = '\0';
+		}
+		else if (escape[1] == '[')
+		{
+			char *close = strchr(escape + 2, ']');
+			if (close == NULL)
+			{
+				*escape = '\0';
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
 // ExpandEnvVars
 //
 // Expands environment variable references in a string. Intended primarily
@@ -626,3 +686,56 @@ FString ExpandEnvVars(const char *searchpathstring)
 	return out;
 }
 
+//==========================================================================
+//
+// NicePath
+//
+// Handles paths with leading ~ characters on Unix as well as environment
+// variable substitution. On Windows, this is identical to ExpandEnvVars.
+//
+//==========================================================================
+
+FString NicePath(const char *path)
+{
+#ifdef _WIN32
+	return ExpandEnvVars(path);
+#else
+	if (path == NULL || *path == '\0')
+	{
+		return FString("");
+	}
+	if (*path != '~')
+	{
+		return ExpandEnvVars(path);
+	}
+
+	passwd *pwstruct;
+	const char *slash;
+
+	if (path[1] == '/' || path[1] == '\0')
+	{ // Get my home directory
+		pwstruct = getpwuid(getuid());
+		slash = path + 1;
+	}
+	else
+	{ // Get somebody else's home directory
+		slash = strchr(path, '/');
+		if (slash == NULL)
+		{
+			slash = path + strlen(path);
+		}
+		FString who(path, slash - path);
+		pwstruct = getpwnam(who);
+	}
+	if (pwstruct == NULL)
+	{
+		return ExpandEnvVars(path);
+	}
+	FString where(pwstruct->pw_dir);
+	if (*slash != '\0')
+	{
+		where += ExpandEnvVars(slash);
+	}
+	return where;
+#endif
+}

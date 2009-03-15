@@ -41,43 +41,43 @@
 
 /** Lots of different version numbers **/
 
-#define DOTVERSIONSTR_NOREV "1.1.6"
-#define ZDVER_STRING "2.2.0"
+#define DOTVERSIONSTR_NOREV "1.2.1"
+#define ZDVER_STRING "2.3.0"
 
 // The version string the user actually sees.
 #define DOTVERSIONSTR DOTVERSIONSTR_NOREV " (r" SVN_REVISION_STRING ") / ZDoom" ZDVER_STRING " (r" ZD_SVN_REVISION_STRING ")"
 
 // The version as seen in the Windows resource
-#define RC_FILEVERSION 1,1,6,SVN_REVISION_NUMBER
-#define RC_PRODUCTVERSION 1,1,6,0
+#define RC_FILEVERSION 1,2,1,SVN_REVISION_NUMBER
+#define RC_PRODUCTVERSION 1,2,1,0
 #define RC_FILEVERSION2 DOTVERSIONSTR
-#define RC_PRODUCTVERSION2 "1.1"
+#define RC_PRODUCTVERSION2 "1.2"
 
 // Version identifier for network games.
 // Bump it every time you do a release unless you're certain you
 // didn't change anything that will affect sync.
-#define NETGAMEVERSION 218
+#define NETGAMEVERSION 221
 
 // Version stored in the ini's [LastRun] section.
 // Bump it if you made some configuration change that you want to
 // be able to migrate in FGameConfigFile::DoGlobalSetup().
-#define LASTRUNVERSION "207"
+#define LASTRUNVERSION "208"
 
 // Protocol version used in demos.
 // Bump it if you change existing DEM_ commands or add new ones.
 // Otherwise, it should be safe to leave it alone.
-#define DEMOGAMEVERSION 0x20E
+#define DEMOGAMEVERSION 0x210
 
 // Minimum demo version we can play.
 // Bump it whenever you change or remove existing DEM_ commands.
-#define MINDEMOVERSION 0x207
+#define MINDEMOVERSION 0x210
 
 // SAVEVER is the version of the information stored in level snapshots.
 // Note that SAVEVER is not directly comparable to VERSION.
 // SAVESIG should match SAVEVER.
 
 // MINSAVEVER is the minimum level snapshot version that can be loaded.
-#define MINSAVEVER 1304
+#define MINSAVEVER 1452
 
 #if ZD_SVN_REVISION_NUMBER < MINSAVEVER
 // Never write a savegame with a version lower than what we need

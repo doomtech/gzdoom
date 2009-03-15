@@ -17,7 +17,7 @@ ACTOR Coin : Inventory native
 		+FLOORCLIP
 		Inventory.MaxAmount (0x7fffffff)
 		+INVENTORY.INVBAR
-		Tag ("coin")
+		Tag ("Coin")
 		Inventory.Icon ("I_COIN")
 		Inventory.PickupMessage ("$TXT_COIN")
 	}
@@ -45,7 +45,7 @@ ACTOR Gold10 : Coin
 	Defaults
 	{
 		Inventory.Amount (10)
-		Tag ("10_gold")
+		Tag ("10 gold")
 		Inventory.PickupMessage ("$TXT_10GOLD")
 	}
 
@@ -71,7 +71,7 @@ ACTOR Gold25 : Coin
 	Defaults
 	{
 		Inventory.Amount (25)
-		Tag ("25_gold")
+		Tag ("25 gold")
 		Inventory.PickupMessage ("$TXT_25GOLD")
 	}
 
@@ -97,7 +97,7 @@ ACTOR Gold50 : Coin
 	Defaults
 	{
 		Inventory.Amount (50)
-		Tag ("50_gold")
+		Tag ("50 gold")
 		Inventory.PickupMessage ("$TXT_50GOLD")
 	}
 
@@ -121,7 +121,7 @@ ACTOR Gold300 : Coin
 	Defaults
 	{
 		Inventory.Amount (300)
-		Tag ("300_gold")
+		Tag ("300 gold")
 		Inventory.PickupMessage ("$TXT_300GOLD")
 		Inventory.GiveQuest (3)
 		+INVENTORY.ALWAYSPICKUP

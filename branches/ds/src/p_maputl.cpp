@@ -197,7 +197,7 @@ void P_LineOpening (FLineOpening &open, AActor *actor, const line_t *linedef,
 		open.lowfloor = ff;
 	}
 
-	// Check extrafloors
+	// Check 3D floors
 	if (actor != NULL)
 	{
 		P_LineOpening_XFloors(open, actor, linedef, x, y, refx, refy);
@@ -565,6 +565,7 @@ void AActor::SetOrigin (fixed_t ix, fixed_t iy, fixed_t iz)
 	LinkToWorld ();
 	floorz = Sector->floorplane.ZatPoint (ix, iy);
 	ceilingz = Sector->ceilingplane.ZatPoint (ix, iy);
+	P_FindFloorCeiling(this, true);
 }
 
 FBlockNode *FBlockNode::FreeBlocks = NULL;

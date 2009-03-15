@@ -78,8 +78,14 @@
 //==========================================================================
 static const PClass *FindClassTentative(const char *name, const char *ancestor)
 {
+	// "" and "none" mean 'no class'
+	if (name == NULL || *name == 0 || !stricmp(name, "none"))
+	{
+		return NULL;
+	}
+
 	const PClass *anc = PClass::FindClass(ancestor);
-	assert(anc != NULL);	// parent classes used here should always be natively defined
+	assert(anc != NULL);	// parent classes used here should always be natively defined	
 	const PClass *cls = const_cast<PClass*>(anc)->FindClassTentative(name);
 	assert (cls != NULL);	// cls can not ne NULL here
 	if (!cls->IsDescendantOf(anc))
@@ -1264,6 +1270,15 @@ DEFINE_CLASS_PROPERTY(lowmessage, IS, Health)
 //==========================================================================
 //
 //==========================================================================
+DEFINE_CLASS_PROPERTY(autouse, I, HealthPickup)
+{
+	PROP_INT_PARM(i, 0);
+	defaults->autousemode = i;
+}
+
+//==========================================================================
+//
+//==========================================================================
 DEFINE_CLASS_PROPERTY(number, I, PuzzleItem)
 {
 	PROP_INT_PARM(i, 0);
@@ -1425,6 +1440,24 @@ DEFINE_CLASS_PROPERTY(yadjust, F, Weapon)
 //==========================================================================
 //
 //==========================================================================
+DEFINE_CLASS_PROPERTY(slotnumber, I, Weapon)
+{
+	PROP_INT_PARM(i, 0);
+	info->Class->Meta.SetMetaInt(AWMETA_SlotNumber, i);
+}
+
+//==========================================================================
+//
+//==========================================================================
+DEFINE_CLASS_PROPERTY(slotpriority, F, Weapon)
+{
+	PROP_FIXED_PARM(i, 0);
+	info->Class->Meta.SetMetaFixed(AWMETA_SlotPriority, i);
+}
+
+//==========================================================================
+//
+//==========================================================================
 DEFINE_CLASS_PROPERTY(number, I, WeaponPiece)
 {
 	PROP_INT_PARM(i, 0);
@@ -1551,7 +1584,7 @@ DEFINE_CLASS_PROPERTY_PREFIX(powerup, type, S, PowerupGiver)
 	// Yuck! What was I thinking when I decided to prepend "Power" to the name? 
 	// Now it's too late to change it...
 	const PClass *cls = PClass::FindClass(str);
-	if (cls == NULL || !cls->IsDescendantOf(RUNTIME_CLASS(APowerupGiver)))
+	if (cls == NULL || !cls->IsDescendantOf(RUNTIME_CLASS(APowerup)))
 	{
 		FString st;
 		st.Format("%s%s", strnicmp(str, "power", 5)? "Power" : "", str);
@@ -1837,6 +1870,30 @@ DEFINE_CLASS_PROPERTY_PREFIX(player, hexenarmor, FFFFF, PlayerPawn)
 	{
 		PROP_FIXED_PARM(val, i);
 		info->Class->Meta.SetMetaFixed (APMETA_Hexenarmor0+i, val);
+	}
+}
+
+//==========================================================================
+//
+//==========================================================================
+DEFINE_CLASS_PROPERTY_PREFIX(player, weaponslot, ISsssssssssssssssssssssssssssssssssssssssssss, PlayerPawn)
+{
+	PROP_INT_PARM(slot, 0);
+
+	if (slot < 0 || slot > 9)
+	{
+		I_Error("Slot must be between 0 and 9.");
+	}
+	else
+	{
+		FString weapons;
+
+		for(int i = 1; i < PROP_PARM_COUNT; ++i)
+		{
+			PROP_STRING_PARM(str, i);
+			weapons << ' ' << str;
+		}
+		info->Class->Meta.SetMetaString(APMETA_Slot0 + slot, &weapons[1]);
 	}
 }
 

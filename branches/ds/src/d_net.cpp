@@ -67,35 +67,6 @@ EXTERN_CVAR (Int, autosavecount)
 //#define SIMULATEERRORS		(RAND_MAX/3)
 #define SIMULATEERRORS			0
 
-#define NCMD_EXIT				0x80
-#define NCMD_RETRANSMIT 		0x40
-#define NCMD_SETUP				0x20
-#define NCMD_MULTI				0x10		// multiple players in this packet
-#define NCMD_QUITTERS			0x08		// one or more players just quit (packet server only)
-
-#define NCMD_XTICS				0x03		// packet contains >2 tics
-#define NCMD_2TICS				0x02		// packet contains 2 tics
-#define NCMD_1TICS				0x01		// packet contains 1 tic
-#define NCMD_0TICS				0x00		// packet contains 0 tics
-
-// [RH]
-// New generic packet structure:
-//
-// Header:
-//  One byte with above flags.
-//  One byte with starttic
-//  One byte with master's maketic (master -> slave only!)
-//  If NCMD_RETRANSMIT set, one byte with retransmitfrom
-//  If NCMD_XTICS set, one byte with number of tics (minus 3, so theoretically up to 258 tics in one packet)
-//  If NCMD_QUITTERS, one byte with number of players followed by one byte with each player's consolenum
-//  If NCMD_MULTI, one byte with number of players followed by one byte with each player's consolenum
-//     - The first player's consolenum is not included in this list, because it always matches the sender
-//
-// For each tic:
-//  Two bytes with consistancy check, followed by tic data
-//
-// Setup packets are different, and are described just before D_ArbitrateNetStart().
-
 extern BYTE		*demo_p;		// [RH] Special "ticcmds" get recorded in demos
 extern char		savedescription[SAVESTRINGSIZE];
 extern FString	savegamefile;
@@ -1583,18 +1554,27 @@ void D_CheckNetGame (void)
 	}
 
 	// I_InitNetwork sets doomcom and netgame
-	I_InitNetwork ();
+	if (I_InitNetwork ())
+	{
+		NetMode = NET_PacketServer;
+	}
 	if (doomcom.id != DOOMCOM_ID)
+	{
 		I_FatalError ("Doomcom buffer invalid!");
-
+	}
 	players[0].settings_controller = true;
-	
+
 	consoleplayer = doomcom.consoleplayer;
 
 	v = Args->CheckValue ("-netmode");
 	if (v != NULL)
 	{
 		NetMode = atoi (v) != 0 ? NET_PacketServer : NET_PeerToPeer;
+	}
+	if (doomcom.numnodes > 1)
+	{
+		Printf ("Selected " TEXTCOLOR_BLUE "%s" TEXTCOLOR_NORMAL " networking mode. (%s)\n", NetMode == NET_PeerToPeer ? "peer to peer" : "packet server",
+			v != NULL ? "forced" : "auto");
 	}
 
 	// [RH] Setup user info
@@ -1954,15 +1934,16 @@ void Net_DoCommand (int type, BYTE **stream, int player)
 			BYTE who = ReadByte (stream);
 
 			s = ReadString (stream);
-			if (((who & 1) == 0) || players[player].userinfo.team == TEAM_None)
+			CleanseString (s);
+			if (((who & 1) == 0) || players[player].userinfo.team == TEAM_NONE)
 			{ // Said to everyone
 				if (who & 2)
 				{
-					Printf (PRINT_CHAT, TEXTCOLOR_BOLD "* %s%s\n", name, s);
+					Printf (PRINT_CHAT, TEXTCOLOR_BOLD "* %s" TEXTCOLOR_BOLD "%s" TEXTCOLOR_BOLD "\n", name, s);
 				}
 				else
 				{
-					Printf (PRINT_CHAT, "%s: %s\n", name, s);
+					Printf (PRINT_CHAT, "%s" TEXTCOLOR_CHAT ": %s" TEXTCOLOR_CHAT "\n", name, s);
 				}
 				S_Sound (CHAN_VOICE | CHAN_UI, gameinfo.chatSound, 1, ATTN_NONE);
 			}
@@ -1970,11 +1951,11 @@ void Net_DoCommand (int type, BYTE **stream, int player)
 			{ // Said only to members of the player's team
 				if (who & 2)
 				{
-					Printf (PRINT_TEAMCHAT, TEXTCOLOR_BOLD "* (%s)%s\n", name, s);
+					Printf (PRINT_TEAMCHAT, TEXTCOLOR_BOLD "* (%s" TEXTCOLOR_BOLD ")%s" TEXTCOLOR_BOLD "\n", name, s);
 				}
 				else
 				{
-					Printf (PRINT_TEAMCHAT, "(%s): %s\n", name, s);
+					Printf (PRINT_TEAMCHAT, "(%s" TEXTCOLOR_TEAMCHAT "): %s" TEXTCOLOR_TEAMCHAT "\n", name, s);
 				}
 				S_Sound (CHAN_VOICE | CHAN_UI, gameinfo.chatSound, 1, ATTN_NONE);
 			}
@@ -1988,7 +1969,7 @@ void Net_DoCommand (int type, BYTE **stream, int player)
 
 	case DEM_PRINT:
 		s = ReadString (stream);
-		Printf (s);
+		Printf ("%s", s);
 		break;
 
 	case DEM_CENTERPRINT:
@@ -2188,7 +2169,7 @@ void Net_DoCommand (int type, BYTE **stream, int player)
 				{
 					DImpactDecal::StaticCreate (s,
 						trace.X, trace.Y, trace.Z,
-						sides + trace.Line->sidenum[trace.Side]);
+						sides + trace.Line->sidenum[trace.Side], NULL);
 				}
 			}
 		}
@@ -2368,6 +2349,38 @@ void Net_DoCommand (int type, BYTE **stream, int player)
 		P_ConversationCommand (player, stream);
 		break;
 
+	case DEM_SETSLOT:
+		{
+			unsigned int slot = ReadByte(stream);
+			int count = ReadByte(stream);
+			if (slot < NUM_WEAPON_SLOTS)
+			{
+				players[player].weapons.Slots[slot].Clear();
+			}
+			for(int i = 0; i < count; ++i)
+			{
+				const PClass *wpn = Net_ReadWeapon(stream);
+				players[player].weapons.AddSlot(slot, wpn, player == consoleplayer);
+			}
+		}
+		break;
+
+	case DEM_ADDSLOT:
+		{
+			int slot = ReadByte(stream);
+			const PClass *wpn = Net_ReadWeapon(stream);
+			players[player].weapons.AddSlot(slot, wpn, player == consoleplayer);
+		}
+		break;
+
+	case DEM_ADDSLOTDEFAULT:
+		{
+			int slot = ReadByte(stream);
+			const PClass *wpn = Net_ReadWeapon(stream);
+			players[player].weapons.AddSlotDefault(slot, wpn, player == consoleplayer);
+		}
+		break;
+
 	default:
 		I_Error ("Unknown net command: %d", type);
 		break;
@@ -2485,6 +2498,22 @@ void Net_SkipCommand (int type, BYTE **stream)
 				}
 			}
 			break;
+
+		case DEM_SETSLOT:
+			{
+				skip = 2;
+				for(int numweapons = (*stream)[1]; numweapons > 0; numweapons--)
+				{
+					skip += 1 + ((*stream)[skip] >> 7);
+				}
+			}
+			break;
+
+		case DEM_ADDSLOT:
+		case DEM_ADDSLOTDEFAULT:
+			skip = 2 + ((*stream)[1] >> 7);
+			break;
+
 
 		default:
 			return;

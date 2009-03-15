@@ -493,50 +493,63 @@ static void AM_findMinMaxBoundaries ()
 
 static void AM_ClipRotatedExtents (fixed_t pivotx, fixed_t pivoty)
 {
-	fixed_t rmin_x, rmin_y, rmax_x, rmax_y;
-
 	if (am_rotate == 0 || (am_rotate == 2 && !viewactive))
 	{
-		rmin_x = min_x;
-		rmin_y = min_y;
-		rmax_x = max_x;
-		rmax_y = max_y;
+		if (m_x + m_w/2 > max_x)
+			m_x = max_x - m_w/2;
+		else if (m_x + m_w/2 < min_x)
+			m_x = min_x - m_w/2;
+	  
+		if (m_y + m_h/2 > max_y)
+			m_y = max_y - m_h/2;
+		else if (m_y + m_h/2 < min_y)
+			m_y = min_y - m_h/2;
 	}
 	else
 	{
-		fixed_t xs[4], ys[4];
+#if 0
+		fixed_t rmin_x, rmin_y, rmax_x, rmax_y;
+		fixed_t xs[5], ys[5];
 		int i;
 
 		xs[0] = min_x;	ys[0] = min_y;
 		xs[1] = max_x;	ys[1] = min_y;
 		xs[2] = max_x;	ys[2] = max_y;
 		xs[3] = min_x;	ys[3] = max_y;
+		xs[4] = m_x + m_w/2; ys[4] = m_y + m_h/2;
 		rmin_x = rmin_y = FIXED_MAX;
 		rmax_x = rmax_y = FIXED_MIN;
 
-		for (i = 0; i < 4; ++i)
+		for (i = 0; i < 5; ++i)
 		{
 			xs[i] -= pivotx;
 			ys[i] -= pivoty;
 			AM_rotate (&xs[i], &ys[i], ANG90 - players[consoleplayer].camera->angle);
-			xs[i] += pivotx;
-			ys[i] += pivoty;
+
+			if (i == 5)
+				break;
+//			xs[i] += pivotx;
+//			ys[i] += pivoty;
 
 			if (xs[i] < rmin_x)	rmin_x = xs[i];
 			if (xs[i] > rmax_x) rmax_x = xs[i];
 			if (ys[i] < rmin_y) rmin_y = ys[i];
 			if (ys[i] > rmax_y) rmax_y = ys[i];
 		}
+		if (rmax_x < 0)
+			xs[4] = -rmax_x;
+		else if (rmin_x > 0)
+			xs[4] = -rmin_x;
+	  
+//		if (ys[4] > rmax_y)
+//			ys[4] = rmax_y;
+//		else if (ys[4] < rmin_y)
+//			ys[4] = rmin_y;
+		AM_rotate (&xs[4], &ys[4], ANG270 - players[consoleplayer].camera->angle);
+		m_x = xs[4] + pivotx - m_w/2;
+		m_y = ys[4] + pivoty - m_h/2;
+#endif
 	}
-	if (m_x + m_w/2 > rmax_x)
-		m_x = rmax_x - m_w/2;
-	else if (m_x + m_w/2 < rmin_x)
-		m_x = rmin_x - m_w/2;
-  
-	if (m_y + m_h/2 > rmax_y)
-		m_y = rmax_y - m_h/2;
-	else if (m_y + m_h/2 < rmin_y)
-		m_y = rmin_y - m_h/2;
 
 	m_x2 = m_x + m_w;
 	m_y2 = m_y + m_h;
@@ -580,10 +593,13 @@ void AM_changeWindowLoc ()
 	}
 
 	int oldmx = m_x, oldmy = m_y;
-	fixed_t incx = m_paninc.x, incy = m_paninc.y;
+	fixed_t incx, incy, oincx, oincy;
+	
+	incx = m_paninc.x;
+	incy = m_paninc.y;
 
-	incx = Scale(m_paninc.x, SCREENWIDTH, 320);
-	incy = Scale(m_paninc.y, SCREENHEIGHT, 200);
+	oincx = incx = Scale(m_paninc.x, SCREENWIDTH, 320);
+	oincy = incy = Scale(m_paninc.y, SCREENHEIGHT, 200);
 	if (am_rotate == 1 || (am_rotate == 2 && viewactive))
 	{
 		AM_rotate(&incx, &incy, players[consoleplayer].camera->angle - ANG90);
@@ -593,7 +609,7 @@ void AM_changeWindowLoc ()
 	m_y += incy;
 
 	AM_ClipRotatedExtents (oldmx + m_w/2, oldmy + m_h/2);
-	AM_ScrollParchment (m_x - oldmx, oldmy - m_y);
+	AM_ScrollParchment (m_x != oldmx ? oincx : 0, m_y != oldmy ? -oincy : 0);
 }
 
 
@@ -782,7 +798,9 @@ void AM_loadPics ()
 		marknums[i] = TexMan.CheckForTexture (namebuf, FTexture::TEX_MiscPatch);
 	}
 
-	mapback = TexMan.CheckForTexture("AUTOPAGE", FTexture::TEX_MiscPatch);
+	const char *autopage = level.info->mapbg[0] == 0? "AUTOPAGE" : (const char*)level.info->mapbg[0];
+
+	mapback = TexMan.CheckForTexture(autopage, FTexture::TEX_MiscPatch);
 }
 
 bool AM_clearMarks ()
@@ -1784,7 +1802,7 @@ void AM_Drawer ()
 	if (!automapactive)
 		return;
 
-	bool allmap = (level.flags & LEVEL_ALLMAP) != 0;
+	bool allmap = (level.flags2 & LEVEL2_ALLMAP) != 0;
 	bool allthings = allmap && players[consoleplayer].mo->FindInventory<APowerScanner>() != NULL;
 
 	AM_initColors (viewactive);

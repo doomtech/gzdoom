@@ -379,6 +379,7 @@ xx(Monsterpush)
 
 xx(ZDoom)
 xx(ZDoomTranslated)
+xx(Vavoom)
 
 xx(Xpanningfloor)
 xx(Ypanningfloor)
@@ -413,6 +414,7 @@ xx(light)
 xx(lightabsolute)
 xx(nofakecontrast)
 xx(smoothlighting)
+xx(blockprojectiles)
 
 xx(Renderstyle)
 

@@ -17,7 +17,7 @@ ACTOR HEGrenadeRounds : Ammo
 		Ammo.BackpackAmount (6)
 		Ammo.BackpackMaxAmount (60)
 		Inventory.Icon ("I_GRN1")
-		Tag ("HE-Grenade_Rounds")
+		Tag ("HE-Grenade Rounds")
 		Inventory.PickupMessage ("$TXT_HEGRENADES")
 	}
 
@@ -48,7 +48,7 @@ ACTOR PhosphorusGrenadeRounds : Ammo
 		Ammo.BackpackAmount (4)
 		Ammo.BackpackMaxAmount (32)
 		Inventory.Icon ("I_GRN2")
-		Tag ("Phoshorus-Grenade_Rounds")	// "Fire-Grenade_Rounds" in the Teaser
+		Tag ("Phoshorus-Grenade Rounds")	// "Fire-Grenade_Rounds" in the Teaser
 		Inventory.PickupMessage ("$TXT_PHGRENADES")
 	}
 
@@ -80,7 +80,7 @@ ACTOR ClipOfBullets : Ammo
 		Ammo.BackpackAmount (10)
 		Ammo.BackpackMaxAmount (500)
 		Inventory.Icon ("I_BLIT")
-		Tag ("clip_of_bullets")	// "bullets" in the Teaser
+		Tag ("Clip of Bullets")	// "bullets" in the Teaser
 		Inventory.PickupMessage ("$TXT_CLIPOFBULLETS")
 	}
 
@@ -107,7 +107,7 @@ ACTOR BoxOfBullets : ClipOfBullets
 	Defaults
 	{
 		Inventory.Amount (50)
-		Tag ("ammo")
+		Tag ("Ammo")
 		Inventory.PickupMessage ("$TXT_BOXOFBULLETS")
 	}
 
@@ -139,7 +139,7 @@ ACTOR MiniMissiles : Ammo
 		Ammo.BackpackAmount (4)
 		Ammo.BackpackMaxAmount (200)
 		Inventory.Icon ("I_ROKT")
-		Tag ("mini_missiles")	//"rocket" in the Teaser
+		Tag ("Mini Missiles")	//"rocket" in the Teaser
 		Inventory.PickupMessage ("$TXT_MINIMISSILES")
 	}
 
@@ -166,7 +166,7 @@ ACTOR CrateOfMissiles : MiniMissiles
 	Defaults
 	{
 		Inventory.Amount (20)
-		Tag ("crate_of_missiles")	//"box_of_rockets" in the Teaser
+		Tag ("Crate of Missiles")	//"box_of_rockets" in the Teaser
 		Inventory.PickupMessage ("$TXT_CRATEOFMISSILES")
 	}
 
@@ -199,7 +199,7 @@ ACTOR EnergyPod : Ammo
 		Ammo.BackpackMaxAmount (800)
 		Ammo.DropAmount (20)
 		Inventory.Icon ("I_BRY1")
-		Tag ("energy_pod")
+		Tag ("Energy Pod")
 		Inventory.PickupMessage ("$TXT_ENERGYPOD")
 	}
 
@@ -226,7 +226,7 @@ ACTOR EnergyPack : EnergyPod
 	Defaults
 	{
 		Inventory.Amount (100)
-		Tag ("energy_pack")
+		Tag ("Energy Pack")
 		Inventory.PickupMessage ("$TXT_ENERGYPACK")
 	}
 
@@ -257,7 +257,7 @@ ACTOR PoisonBolts : Ammo
 		Ammo.BackpackAmount (2)
 		Ammo.BackpackMaxAmount (50)
 		Inventory.Icon ("I_PQRL")
-		Tag ("poison_bolts")	// "poison_arrows" in the Teaser
+		Tag ("Poison Bolts")	// "poison_arrows" in the Teaser
 		Inventory.PickupMessage ("$TXT_POISONBOLTS")
 	}
 
@@ -288,7 +288,7 @@ ACTOR ElectricBolts : Ammo
 		Ammo.BackpackAmount (4)
 		Ammo.BackpackMaxAmount (100)
 		Inventory.Icon ("I_XQRL")
-		Tag ("electric_bolts")	// "electric_arrows" in the Teaser
+		Tag ("Electric Bolts")	// "electric_arrows" in the Teaser
 		Inventory.PickupMessage ("$TXT_ELECTRICBOLTS")
 	}
 
@@ -316,7 +316,7 @@ ACTOR AmmoSatchel : BackpackItem
 	{
 		+FLOORCLIP
 		Inventory.Icon ("I_BKPK")
-		Tag ("Ammo_satchel")	// "Back_pack" in the Teaser
+		Tag ("Ammo Satchel")	// "Back_pack" in the Teaser
 		Inventory.PickupMessage ("$TXT_AMMOSATCHEL")
 	}
 

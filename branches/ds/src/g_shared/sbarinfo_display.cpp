@@ -56,6 +56,7 @@
 #include "a_strifeglobal.h"
 #include "g_level.h"
 #include "v_palette.h"
+#include "p_acs.h"
 
 static FRandom pr_chainwiggle; //use the same method of chain wiggling as heretic.
 
@@ -308,7 +309,7 @@ void DSBarInfo::Tick ()
 			oldHealth += clamp((health - oldHealth), 1, script->interpolationSpeed);
 		}
 	}
-	AInventory *armor = CPlayer->mo->FindInventory<ABasicArmor>();
+	AInventory *armor = CPlayer->mo != NULL? CPlayer->mo->FindInventory<ABasicArmor>() : NULL;
 	if(armor == NULL)
 	{
 		oldArmor = 0;
@@ -413,9 +414,9 @@ void DSBarInfo::doCommands(SBarInfoBlock &block, int xOffset, int yOffset, int a
 				if((cmd.flags & DRAWIMAGE_WEAPONSLOT)) //weaponslots
 				{
 					drawAlt = 1; //draw off state until we know we have something.
-					for (int i = 0; i < MAX_WEAPONS_PER_SLOT; i++)
+					for (int i = 0; i < CPlayer->weapons.Slots[cmd.value].Size(); i++)
 					{
-						const PClass *weap = LocalWeapons.Slots[cmd.value].GetWeapon(i);
+						const PClass *weap = CPlayer->weapons.Slots[cmd.value].GetWeapon(i);
 						if(weap == NULL)
 						{
 							continue;
@@ -913,14 +914,18 @@ void DSBarInfo::doCommands(SBarInfoBlock &block, int xOffset, int yOffset, int a
 				if(!block.fullScreenOffsets)
 				{
 					// Calc real screen coordinates for bar
-					x = cmd.x + ST_X + xOffset;
-					y = cmd.y + ST_Y + yOffset;
-					w = fg->GetScaledWidth();
-					h = fg->GetScaledHeight();
+					x = (cmd.x + ST_X + xOffset) << FRACBITS;
+					y = (cmd.y + ST_Y + yOffset) << FRACBITS;
+					w = fg->GetScaledWidth() << FRACBITS;
+					h = fg->GetScaledHeight() << FRACBITS;
 					if (Scaled)
 					{
-						screen->VirtualToRealCoordsInt(x, y, w, h, 320, 200, true);
+						screen->VirtualToRealCoords(x, y, w, h, 320, 200, true);
 					}
+					x >>= FRACBITS;
+					y >>= FRACBITS;
+					w = (w + FRACUNIT/2) >> FRACBITS;
+					h = (h + FRACUNIT/2) >> FRACBITS;
 				}
 				else
 				{
@@ -953,14 +958,18 @@ void DSBarInfo::doCommands(SBarInfoBlock &block, int xOffset, int yOffset, int a
 				if(!block.fullScreenOffsets)
 				{
 					// Calc clipping rect for background
-					cx = cmd.x + ST_X + cmd.special3 + xOffset;
-					cy = cmd.y + ST_Y + cmd.special3 + yOffset;
-					cw = fg->GetScaledWidth() - fg->GetScaledLeftOffset() - cmd.special3 * 2;
-					ch = fg->GetScaledHeight() - fg->GetScaledTopOffset() - cmd.special3 * 2;
+					cx = (cmd.x + ST_X + cmd.special3 + xOffset) << FRACBITS;
+					cy = (cmd.y + ST_Y + cmd.special3 + yOffset) << FRACBITS;
+					cw = (fg->GetScaledWidth() - fg->GetScaledLeftOffset() - cmd.special3 * 2) << FRACBITS;
+					ch = (fg->GetScaledHeight() - fg->GetScaledTopOffset() - cmd.special3 * 2) << FRACBITS;
 					if (Scaled)
 					{
-						screen->VirtualToRealCoordsInt(cx, cy, cw, ch, 320, 200, true);
+						screen->VirtualToRealCoords(cx, cy, cw, ch, 320, 200, true);
 					}
+					cx >>= FRACBITS;
+					cy >>= FRACBITS;
+					cw = (cw + FRACUNIT/2) >> FRACBITS;
+					ch = (ch + FRACUNIT/2) >> FRACBITS;
 				}
 				else
 				{
@@ -1256,23 +1265,30 @@ void DSBarInfo::doCommands(SBarInfoBlock &block, int xOffset, int yOffset, int a
 					const PClass *weapon2 = PClass::FindClass(cmd.string[1]);
 					if(weapon2 != NULL)
 					{
-						if((cmd.flags & SBARINFOEVENT_NOT) && (weapon1 != CPlayer->ReadyWeapon->GetSpecies() && weapon2 != CPlayer->ReadyWeapon->GetSpecies()))
+						if((cmd.flags & SBARINFOEVENT_NOT) && (weapon1 != CPlayer->ReadyWeapon->GetClass() && weapon2 != CPlayer->ReadyWeapon->GetClass()))
 							doCommands(cmd.subBlock, xOffset, yOffset, alpha);
-						else if(!(cmd.flags & SBARINFOEVENT_NOT) && (weapon1 == CPlayer->ReadyWeapon->GetSpecies() || weapon2 == CPlayer->ReadyWeapon->GetSpecies()))
+						else if(!(cmd.flags & SBARINFOEVENT_NOT) && (weapon1 == CPlayer->ReadyWeapon->GetClass() || weapon2 == CPlayer->ReadyWeapon->GetClass()))
 							doCommands(cmd.subBlock, xOffset, yOffset, alpha);
 					}
 					else
 					{
-						if(!(cmd.flags & SBARINFOEVENT_NOT) && weapon1 == CPlayer->ReadyWeapon->GetSpecies())
+						if(!(cmd.flags & SBARINFOEVENT_NOT) && weapon1 == CPlayer->ReadyWeapon->GetClass())
 							doCommands(cmd.subBlock, xOffset, yOffset, alpha);
-						else if((cmd.flags & SBARINFOEVENT_NOT) && weapon1 != CPlayer->ReadyWeapon->GetSpecies())
+						else if((cmd.flags & SBARINFOEVENT_NOT) && weapon1 != CPlayer->ReadyWeapon->GetClass())
 							doCommands(cmd.subBlock, xOffset, yOffset, alpha);
 					}
 				}
 				break;
+			case SBARINFO_USESAMMO:
+				if ((CPlayer->ReadyWeapon != NULL && (CPlayer->ReadyWeapon->AmmoType1 != NULL || CPlayer->ReadyWeapon->AmmoType2 != NULL)) ^ 
+					!!(cmd.flags & SBARINFOEVENT_NOT))
+				{
+					doCommands(cmd.subBlock, xOffset, yOffset, alpha);
+				}
+				break;
 			case SBARINFO_USESSECONDARYAMMO:
-				if((CPlayer->ReadyWeapon->AmmoType2 != NULL && CPlayer->ReadyWeapon->AmmoType2 != CPlayer->ReadyWeapon->AmmoType1 && !(cmd.flags & SBARINFOEVENT_NOT)) ||
-					(CPlayer->ReadyWeapon->AmmoType2 == NULL && cmd.flags & SBARINFOEVENT_NOT))
+				if((CPlayer->ReadyWeapon != NULL && CPlayer->ReadyWeapon->AmmoType2 != NULL && CPlayer->ReadyWeapon->AmmoType2 != CPlayer->ReadyWeapon->AmmoType1 && !(cmd.flags & SBARINFOEVENT_NOT)) ||
+					((CPlayer->ReadyWeapon == NULL || CPlayer->ReadyWeapon->AmmoType2 == NULL) && cmd.flags & SBARINFOEVENT_NOT))
 				{
 					doCommands(cmd.subBlock, xOffset, yOffset, alpha);
 				}
@@ -1349,6 +1365,8 @@ void DSBarInfo::doCommands(SBarInfoBlock &block, int xOffset, int yOffset, int a
 			{
 				AInventory *item1 = CPlayer->mo->FindInventory(PClass::FindClass(cmd.string[0]));
 				AInventory *item2 = CPlayer->mo->FindInventory(PClass::FindClass(cmd.string[1]));
+				if (item1 != NULL && cmd.special2 > 0 && item1->Amount < cmd.special2) item1 = NULL;
+				if (item2 != NULL && cmd.special3 > 0 && item2->Amount < cmd.special3) item2 = NULL;
 				if(cmd.flags & SBARINFOEVENT_AND)
 				{
 					if((item1 != NULL && item2 != NULL) && !(cmd.flags & SBARINFOEVENT_NOT))

@@ -1538,6 +1538,9 @@ DEFINE_ACTION_FUNCTION(AActor, A_Look)
 {
 	AActor *targ;
 
+	if (self->flags5 & MF5_INCONVERSATION)
+		return;
+
 	// [RH] Set goal now if appropriate
 	if (self->special == Thing_SetGoal && self->args[0] == 0) 
 	{
@@ -1545,7 +1548,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Look)
 		self->special = 0;
 		self->goal = iterator.Next ();
 		self->reactiontime = self->args[2] * TICRATE + level.maptime;
-		if (self->args[3] == 0) self->flags5 &=~ MF5_CHASEGOAL;
+		if (self->args[3] == 0) self->flags5 &= ~MF5_CHASEGOAL;
 		else self->flags5 |= MF5_CHASEGOAL;
 	}
 
@@ -1583,17 +1586,14 @@ DEFINE_ACTION_FUNCTION(AActor, A_Look)
 		if (self->IsFriend (targ))	// be a little more precise!
 		{
 			// If we find a valid target here, the wandering logic should *not*
-			// be activated! If would cause the seestate to be set twice.
+			// be activated! It would cause the seestate to be set twice.
 			if (P_LookForPlayers (self, self->flags4 & MF4_LOOKALLAROUND))
 				goto seeyou;
 
 			// Let the self wander around aimlessly looking for a fight
 			if (self->SeeState != NULL)
 			{
-				if (!(self->flags & MF_INCHASE))
-				{
-					self->SetState (self->SeeState);
-				}
+				self->SetState (self->SeeState);
 			}
 			else
 			{
@@ -1613,8 +1613,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Look)
 				goto seeyou;
 		}
 	}
-		
-		
+	
 	if (!P_LookForPlayers (self, self->flags4 & MF4_LOOKALLAROUND))
 		return;
 				
@@ -1638,7 +1637,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Look)
 		}
 	}
 
-	if (self->target && !(self->flags & MF_INCHASE))
+	if (self->target)
 	{
 		self->SetState (self->SeeState);
 	}
@@ -1655,6 +1654,9 @@ DEFINE_ACTION_FUNCTION(AActor, A_Wander)
 	// [RH] Strife probably clears this flag somewhere, but I couldn't find where.
 	// This seems as good a place as any.
 	self->flags4 &= ~MF4_INCOMBAT;
+
+	if (self->flags5 & MF5_INCONVERSATION)
+		return;
 
 	if (self->flags4 & MF4_STANDSTILL)
 		return;
@@ -1696,6 +1698,9 @@ DEFINE_ACTION_FUNCTION(AActor, A_Wander)
 DEFINE_ACTION_FUNCTION(AActor, A_Look2)
 {
 	AActor *targ;
+
+	if (self->flags5 & MF5_INCONVERSATION)
+		return;
 
 	self->threshold = 0;
 	targ = self->LastHeard;
@@ -1757,6 +1762,13 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 {
 	int delta;
 
+	if (actor->flags5 & MF5_INCONVERSATION)
+		return;
+
+	if (actor->flags & MF_INCHASE)
+	{
+		return;
+	}
 	actor->flags |= MF_INCHASE;
 
 	// [RH] Andy Baker's stealth monsters
@@ -1870,7 +1882,7 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 		{
 			if (actor->flags & MF_FRIENDLY)
 			{
-				CALL_ACTION(A_Look, actor);
+				//CALL_ACTION(A_Look, actor);
 				if (actor->target == NULL)
 				{
 					if (!dontmove) CALL_ACTION(A_Wander, actor);
@@ -2183,7 +2195,6 @@ static bool P_CheckForResurrection(AActor *self, bool usevilestates)
 			S_Sound (corpsehit, CHAN_BODY, "vile/raise", 1, ATTN_IDLE);
 			info = corpsehit->GetDefault ();
 			
-			corpsehit->SetState (raisestate);
 			corpsehit->height = info->height;	// [RH] Use real mobj height
 			corpsehit->radius = info->radius;	// [RH] Use real radius
 			/*
@@ -2207,6 +2218,7 @@ static bool P_CheckForResurrection(AActor *self, bool usevilestates)
 
 			// You are the Archvile's minion now, so hate what it hates
 			corpsehit->CopyFriendliness (self, false);
+			corpsehit->SetState (raisestate);
 
 			return true;
 		}
@@ -2652,9 +2664,10 @@ DEFINE_ACTION_FUNCTION(AActor, A_BossDeath)
 	
 	// Do generic special death actions first
 	bool checked = false;
-	FSpecialAction *sa = level.info->specialactions;
-	while (sa)
+	for(unsigned i=0; i<level.info->specialactions.Size(); i++)
 	{
+		FSpecialAction *sa = &level.info->specialactions[i];
+
 		if (type == sa->Type || mytype == sa->Type)
 		{
 			if (!checked && !CheckBossDeath(self))
@@ -2666,7 +2679,6 @@ DEFINE_ACTION_FUNCTION(AActor, A_BossDeath)
 			LineSpecials[sa->Action](NULL, self, false, 
 				sa->Args[0], sa->Args[1], sa->Args[2], sa->Args[3], sa->Args[4]);
 		}
-		sa = sa->Next;
 	}
 
 	// [RH] These all depend on the presence of level flags now

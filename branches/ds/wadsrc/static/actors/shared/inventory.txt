@@ -429,6 +429,11 @@ ACTOR Weapon : Inventory native
 
 ACTOR WeaponGiver : Weapon native
 {
+	Defaults
+	{
+		Weapon.AmmoGive1 (-1)
+		Weapon.AmmoGive2 (-1)
+	}
 }
 
 ACTOR WeaponHolder : Inventory native

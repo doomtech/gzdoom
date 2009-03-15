@@ -12,6 +12,11 @@ ACTOR HereticWeapon : Weapon
 
 ACTOR Staff : HereticWeapon
 {
+	Info
+	{
+		Game ("Heretic")
+	}
+	
 	Defaults
 	{
 		Weapon.SelectionOrder (3800)
@@ -44,6 +49,11 @@ ACTOR Staff : HereticWeapon
 
 ACTOR StaffPowered : Staff
 {
+	Info
+	{
+		Game ("Heretic")
+	}
+	
 	Defaults
 	{
 		Weapon.sisterweapon ("Staff")
@@ -124,6 +134,11 @@ ACTOR StaffPuff2
 
 ACTOR GoldWand : HereticWeapon
 {
+	Info
+	{
+		Game ("Heretic")
+	}
+	
 	Defaults
 	{
 		+BLOODSPLATTER
@@ -159,6 +174,11 @@ ACTOR GoldWand : HereticWeapon
 
 ACTOR GoldWandPowered : GoldWand
 {
+	Info
+	{
+		Game ("Heretic")
+	}
+	
 	Defaults
 	{
 		+WEAPON.POWERED_UP
@@ -326,6 +346,11 @@ ACTOR Crossbow : HereticWeapon
 
 ACTOR CrossbowPowered : Crossbow
 {
+	Info
+	{
+		Game ("Heretic")
+	}
+	
 	Defaults
 	{
 		+WEAPON.POWERED_UP
@@ -516,6 +541,11 @@ ACTOR Gauntlets : Weapon
 
 ACTOR GauntletsPowered : Gauntlets
 {
+	Info
+	{
+		Game ("Heretic")
+	}
+	
 	Defaults
 	{
 		+WEAPON.POWERED_UP
@@ -629,6 +659,11 @@ ACTOR Mace : HereticWeapon
 
 ACTOR MacePowered : Mace
 {
+	Info
+	{
+		Game ("Heretic")
+	}
+	
 	Defaults
 	{
 		+WEAPON.POWERED_UP
@@ -864,6 +899,11 @@ ACTOR Blaster : HereticWeapon
 
 ACTOR BlasterPowered : Blaster
 {
+	Info
+	{
+		Game ("Heretic")
+	}
+	
 	Defaults
 	{
 		+WEAPON.POWERED_UP
@@ -1041,6 +1081,11 @@ ACTOR SkullRod : HereticWeapon
 
 ACTOR SkullRodPowered : SkullRod
 {
+	Info
+	{
+		Game ("Heretic")
+	}
+	
 	Defaults
 	{
 		+WEAPON.POWERED_UP
@@ -1241,6 +1286,11 @@ ACTOR PhoenixRod : Weapon native
 
 ACTOR PhoenixRodPowered : PhoenixRod native
 {
+	Info
+	{
+		Game ("Heretic")
+	}
+	
 	Defaults
 	{
 		+WEAPON.POWERED_UP

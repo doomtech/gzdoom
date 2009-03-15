@@ -3,6 +3,11 @@
 
 ACTOR FWeapFist : FighterWeapon
 {
+	Info
+	{
+		Game ("Hexen")
+	}
+
 	Defaults
 	{
 		+BLOODSPLATTER

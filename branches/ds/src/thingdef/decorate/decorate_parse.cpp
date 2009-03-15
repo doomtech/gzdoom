@@ -604,13 +604,18 @@ static void ParseActorProperty(FScanner &sc, Baggage &bag)
 		}
 		else
 		{
-			sc.ScriptError("\"%s\" requires an actor of type \"%s\"\n", propname.GetChars(), prop->cls->TypeName.GetChars());
+			sc.ScriptMessage("\"%s\" requires an actor of type \"%s\"\n", propname.GetChars(), prop->cls->TypeName.GetChars());
+			FScriptPosition::ErrorCounter++;
 		}
 	}
 	else if (!propname.CompareNoCase("States"))
 	{
-		if (!bag.StateSet) ParseStates(sc, bag.Info, (AActor *)bag.Info->Class->Defaults, bag);
-		else sc.ScriptError("Multiple state declarations not allowed");
+		if (bag.StateSet) 
+		{
+			sc.ScriptMessage("'%s' contains multiple state declarations", bag.Info->Class->TypeName.GetChars());
+			FScriptPosition::ErrorCounter++;
+		}
+		ParseStates(sc, bag.Info, (AActor *)bag.Info->Class->Defaults, bag);
 		bag.StateSet=true;
 	}
 	else if (MatchString(propname, statenames) != -1)
@@ -688,7 +693,12 @@ static FActorInfo *ParseActorHeader(FScanner &sc, Baggage *bag)
 	if (sc.CheckNumber()) 
 	{
 		if (sc.Number>=-1 && sc.Number<32768) DoomEdNum = sc.Number;
-		else sc.ScriptError ("DoomEdNum must be in the range [-1,32767]");
+		else 
+		{
+			// does not need to be fatal.
+			sc.ScriptMessage ("DoomEdNum must be in the range [-1,32767]");
+			FScriptPosition::ErrorCounter++;
+		}
 	}
 
 	if (sc.CheckString("native"))
@@ -698,7 +708,7 @@ static FActorInfo *ParseActorHeader(FScanner &sc, Baggage *bag)
 
 	try
 	{
-		FActorInfo *info =  CreateNewActor(typeName, parentName, native);
+		FActorInfo *info =  CreateNewActor(sc, typeName, parentName, native);
 		info->DoomEdNum = DoomEdNum > 0? DoomEdNum : -1;
 		SetReplacement(info, replaceName);
 

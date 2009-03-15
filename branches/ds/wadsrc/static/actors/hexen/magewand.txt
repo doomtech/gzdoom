@@ -3,6 +3,11 @@
 
 ACTOR MWeapWand : MageWeapon
 {
+	Info
+	{
+		Game ("Hexen")
+	}
+
 	Defaults
 	{
 		Weapon.SelectionOrder (3600)
@@ -60,7 +65,8 @@ ACTOR MageWandMissile : FastProjectile native
 		Radius (12)
 		Height (8)
 		Damage (2)
-		+RIPPER +CANNOTPUSH +NODAMAGETHRUST
+		+RIPPER +CANNOTPUSH +NODAMAGETHRUST 
+		+SPAWNSOUNDSOURCE
 		SeeSound ("MageWandFire")
 	}
 

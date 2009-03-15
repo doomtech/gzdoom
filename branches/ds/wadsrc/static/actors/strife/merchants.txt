@@ -69,7 +69,7 @@ ACTOR WeaponSmith : Merchant
 	Defaults
 	{
 		PainSound ("smith/pain")
-		Tag ("Weapon_Smith")
+		Tag ("Weapon Smith")
 	}
 }
 
@@ -90,7 +90,7 @@ ACTOR BarKeep : Merchant
 		Translation (4)
 		PainSound ("barkeep/pain")
 		ActiveSound ("barkeep/active")
-		Tag ("Bar_Keep")
+		Tag ("Bar Keep")
 	}
 }
 

@@ -20,6 +20,7 @@ ACTOR ArtiHealth : HealthPickup
 		Inventory.Icon ("ARTIPTN2")
 		Inventory.PickupSound ("misc/p_pkup")
 		Inventory.PickupMessage ("$TXT_ARTIHEALTH")
+		HealthPickup.Autouse (1)
 	}
 
 	States
@@ -51,6 +52,7 @@ ACTOR ArtiSuperHealth : HealthPickup
 		Inventory.Icon ("ARTISPHL")
 		Inventory.PickupSound ("misc/p_pkup")
 		Inventory.PickupMessage ("$TXT_ARTISUPERHEALTH")
+		HealthPickup.Autouse (2)
 	}
 
 	States

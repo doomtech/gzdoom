@@ -83,38 +83,21 @@ struct FFsOptions : public FOptionalMapinfoData
 	bool nocheckposition;
 };
 
-static void ParseFunc(FScanner &sc, level_info_t *info)
+DEFINE_MAP_OPTION(fs_nocheckposition, false)
 {
-	FName id = "fragglescript";
-	FOptionalMapinfoData *dat = info->opdata;
+	FFsOptions *opt = info->GetOptData<FFsOptions>("fragglescript");
 
-	while (dat && dat->identifier != id) dat = dat->Next;
-	if (!dat) dat = new FFsOptions;
-	dat->Next = info->opdata;
-	info->opdata = dat;
-
-	FFsOptions *opt = static_cast<FFsOptions*>(dat);
-
-	while (!sc.CheckString("}"))
+	parse.ParseAssign();
+	if (parse.CheckAssign())
 	{
-		sc.MustGetString();
-		if (sc.Compare("nocheckposition"))
-		{
-			if (!sc.CheckNumber()) opt->nocheckposition = false;
-			else opt->nocheckposition = !!sc.Number;
-		}
-		else
-		{
-			sc.ScriptError(NULL);
-		}
+		parse.sc.MustGetNumber();
+		opt->nocheckposition = !!parse.sc.Number;
+	}
+	else
+	{
+		opt->nocheckposition = true;
 	}
 }
-
-void AddFsMapinfoParser() 
-{ 
-	AddOptionalMapinfoParser("fragglescript", ParseFunc);
-}
-
 
 //-----------------------------------------------------------------------------
 //
@@ -176,8 +159,7 @@ void FScriptLoader::ParseInfoCmd(char *line, FString &scriptsrc)
 			while (*beg<=' ') beg++;
 			char * comm = strstr(beg, "//");
 			if (comm) *comm=0;
-			strncpy(level.level_name, beg, 63);
-			level.level_name[63]=0;
+			level.LevelName = beg;
 		}
 		else if (sc.Compare("partime"))
 		{
@@ -193,7 +175,7 @@ void FScriptLoader::ParseInfoCmd(char *line, FString &scriptsrc)
 			sc.MustGetString();
 			if (!FS_ChangeMusic(sc.String))
 			{
-				S_ChangeMusic(level.music, level.musicorder);
+				S_ChangeMusic(level.Music, level.musicorder);
 			}
 		}
 		else if (sc.Compare("skyname"))
@@ -211,7 +193,7 @@ void FScriptLoader::ParseInfoCmd(char *line, FString &scriptsrc)
 		{
 			sc.MustGetStringName("=");
 			sc.MustGetString();
-			ReplaceString(&level.info->exitpic, sc.String);
+			level.info->ExitPic = sc.String;
 		}
 		else if (sc.Compare("gravity"))
 		{
@@ -319,13 +301,9 @@ bool FScriptLoader::ParseInfo(MapData * map)
 		if (drownflag==-1) drownflag = ((level.flags&LEVEL_HEXENFORMAT) || fsglobal);
 		if (!drownflag) level.airsupply=0;	// Legacy doesn't to water damage.
 
-		FName id = "fragglescript";
-		FOptionalMapinfoData *dat = level.info->opdata;
-
-		while (dat && dat->identifier != id) dat = dat->Next;
-		if (dat != NULL)
+		FFsOptions *opt = level.info->GetOptData<FFsOptions>("fragglescript", false);
+		if (opt != NULL)
 		{
-			FFsOptions *opt = static_cast<FFsOptions*>(dat);
 			DFraggleThinker::ActiveThinker->nocheckposition = opt->nocheckposition;
 		}
 	}
@@ -356,7 +334,7 @@ void T_LoadScripts(MapData *map)
 	// This code then then swaps 270 and 272 - but only if this is either Doom or Heretic and 
 	// the default translator is being used.
 	// Custom translators will not be patched.
-	if ((gameinfo.gametype == GAME_Doom || gameinfo.gametype == GAME_Heretic) && level.info->translator == NULL &&
+	if ((gameinfo.gametype == GAME_Doom || gameinfo.gametype == GAME_Heretic) && level.info->Translator.IsEmpty() &&
 		!((level.flags&LEVEL_HEXENFORMAT)) && SimpleLineTranslations[272 - 2*HasScripts].special == FS_Execute)
 	{
 		FLineTrans t = SimpleLineTranslations[270];

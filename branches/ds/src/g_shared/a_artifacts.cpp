@@ -544,17 +544,38 @@ IMPLEMENT_CLASS (APowerInvisibility)
 
 //===========================================================================
 //
+// APowerInvisibility :: CommonInit
+//
+// stuff that's done for all subclasses
+//
+//===========================================================================
+
+void APowerInvisibility::CommonInit()
+{
+	Owner->flags |= MF_SHADOW;
+	// transfer seeker missile blocking (but only if the owner does not already have this flag
+	if (!(Owner->flags5 & MF5_CANTSEEK) && (flags5 & MF5_CANTSEEK)) Owner->flags5 |= MF5_CANTSEEK;
+	else flags5 &= ~MF5_CANTSEEK;
+}
+
+//===========================================================================
+//
 // APowerInvisibility :: InitEffect
 //
 //===========================================================================
 
 void APowerInvisibility::InitEffect ()
 {
-	Owner->flags |= MF_SHADOW;
+	CommonInit();
 	Owner->alpha = FRACUNIT/5;
 	Owner->RenderStyle = STYLE_OptFuzzy;
 }
 
+//===========================================================================
+//
+// APowerInvisibility :: DoEffect
+//
+//===========================================================================
 void APowerInvisibility::DoEffect ()
 {
 	Super::DoEffect();
@@ -573,6 +594,7 @@ void APowerInvisibility::EndEffect ()
 {
 	if (Owner != NULL)
 	{
+		if (flags5 & MF5_CANTSEEK) Owner->flags5 &= ~MF5_CANTSEEK;
 		Owner->flags &= ~MF_SHADOW;
 		Owner->flags3 &= ~MF3_GHOST;
 		Owner->RenderStyle = STYLE_Normal;
@@ -630,7 +652,7 @@ IMPLEMENT_CLASS (APowerGhost)
 
 void APowerGhost::InitEffect ()
 {
-	Owner->flags |= MF_SHADOW;
+	CommonInit();
 	Owner->flags3 |= MF3_GHOST;
 	Owner->alpha = HR_SHADOW;
 	Owner->RenderStyle = STYLE_Translucent;
@@ -707,7 +729,7 @@ bool APowerShadow::HandlePickup (AInventory *item)
 
 void APowerShadow::InitEffect ()
 {
-	Owner->flags |= MF_SHADOW;
+	CommonInit();
 	Owner->alpha = special1 == 0 ? TRANSLUC25 : 0;
 	Owner->RenderStyle = STYLE_Translucent;
 }
@@ -953,7 +975,7 @@ void APowerFlight::InitEffect ()
 void APowerFlight::Tick ()
 {
 	// The Wings of Wrath only expire in multiplayer and non-hub games
-	if (!multiplayer && (level.flags & LEVEL_INFINITE_FLIGHT))
+	if (!multiplayer && (level.flags2 & LEVEL2_INFINITE_FLIGHT))
 	{
 		assert(EffectTics < INT_MAX); // I can't see a game lasting nearly two years, but...
 		EffectTics++;
@@ -1366,7 +1388,7 @@ void APowerTimeFreezer::InitEffect( )
 	// Make sure the effect starts and ends on an even tic.
 	if ((level.time & 1) == 0)
 	{
-		level.flags |= LEVEL_FROZEN;
+		level.flags2 |= LEVEL2_FROZEN;
 	}
 	else
 	{
@@ -1397,9 +1419,9 @@ void APowerTimeFreezer::DoEffect( )
 		|| (( EffectTics > 2*32 && EffectTics <= 3*32 ) && ((EffectTics + 1) & 7) != 0 )
 		|| (( EffectTics >   32 && EffectTics <= 2*32 ) && ((EffectTics + 1) & 3) != 0 )
 		|| (( EffectTics >    0 && EffectTics <= 1*32 ) && ((EffectTics + 1) & 1) != 0 ))
-		level.flags |= LEVEL_FROZEN;
+		level.flags2 |= LEVEL2_FROZEN;
 	else
-		level.flags &= ~LEVEL_FROZEN;
+		level.flags2 &= ~LEVEL2_FROZEN;
 }
 
 //===========================================================================
@@ -1413,7 +1435,7 @@ void APowerTimeFreezer::EndEffect( )
 	int	ulIdx;
 
 	// Allow other actors to move about freely once again.
-	level.flags &= ~LEVEL_FROZEN;
+	level.flags2 &= ~LEVEL2_FROZEN;
 
 	// Also, turn the music back on.
 	S_ResumeSound( );
