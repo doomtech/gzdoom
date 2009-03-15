@@ -60,7 +60,7 @@ Printf(PRINT_LOG, "defining actor %s : %s\n", clsname.GetChars(), parentname.Get
 	{
 		try
 		{
-			Info = CreateNewActor(clsname, parentname, native);
+			Info = CreateNewActor(pos, clsname, parentname, native);
 			Class = Info->Class;
 			ResetBaggage(bag, Class->ParentClass);
 			bag->Info = Info;

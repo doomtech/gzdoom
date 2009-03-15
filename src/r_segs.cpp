@@ -589,6 +589,9 @@ void wallscan_striped (int x1, int x2, short *uwal, short *dwal, fixed_t *swal, 
 	up = uwal;
 	down = most1;
 
+	assert(WallSX1 <= x1);
+	assert(WallSX2 > x2);
+
 	for (int i = 0; i < el->NumUsedLights; ++i)
 	{
 		if (flooding && !el->Lights[i].bFlooder)
@@ -605,7 +608,7 @@ void wallscan_striped (int x1, int x2, short *uwal, short *dwal, fixed_t *swal, 
 				//break;
 			}
 
-			if (j != 3 && (most3[x1] > up[x1] || most3[x2] > up[x2]))
+			if (j != 3 /*&& (most3[x1] > up[x1] || most3[x2] > up[x2])*/)
 			{
 				for (int j = x1; j <= x2; ++j)
 				{
@@ -1441,7 +1444,7 @@ int side_t::GetLightLevel (bool foggy, int baselight) const
 	{
 		if (!(Flags & WALLF_NOFAKECONTRAST))
 		{
-			if (((level.flags & LEVEL_SMOOTHLIGHTING) || (Flags & WALLF_SMOOTHLIGHTING) || r_smoothlighting) &&
+			if (((level.flags2 & LEVEL2_SMOOTHLIGHTING) || (Flags & WALLF_SMOOTHLIGHTING) || r_smoothlighting) &&
 				lines[linenum].dx != 0)
 			{
 				baselight += int // OMG LEE KILLOUGH LIVES! :/
@@ -1533,6 +1536,10 @@ void R_StoreWallRange (int start, int stop)
 	ds_p->sx2 = WallSX2;
 	ds_p->sz1 = WallSZ1;
 	ds_p->sz2 = WallSZ2;
+	ds_p->cx = WallTX1;
+	ds_p->cy = WallTY1;
+	ds_p->cdx = WallTX2 - WallTX1;
+	ds_p->cdy = WallTY2 - WallTY1;
 	ds_p->siz1 = (DWORD)DivScale32 (1, WallSZ1) >> 1;
 	ds_p->siz2 = (DWORD)DivScale32 (1, WallSZ2) >> 1;
 	ds_p->x1 = rw_x = start;

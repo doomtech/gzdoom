@@ -55,12 +55,6 @@
 
 static FRandom pr_skullpop ("SkullPop");
 
-CUSTOM_CVAR(Float, maxviewpitch, 90.f, CVAR_ARCHIVE|CVAR_SERVERINFO)
-{
-	if (self>90.f) self=90.f;
-	else if (self<-90.f) self=-90.f;
-}
-
 
 // [RH] # of ticks to complete a turn180
 #define TURN180_TICKS	((TICRATE / 4) + 1)
@@ -497,7 +491,40 @@ void APlayerPawn::Tick()
 	Super::Tick();
 }
 
+//===========================================================================
+//
+// APlayerPawn :: PostBeginPlay
+//
+//===========================================================================
 
+void APlayerPawn::PostBeginPlay()
+{
+	SetupWeaponSlots();
+}
+
+//===========================================================================
+//
+// APlayerPawn :: SetupWeaponSlots
+//
+// Sets up the default weapon slots for this player. If this is also the
+// local player, determines local modifications and sends those across the
+// network. Ignores voodoo dolls.
+//
+//===========================================================================
+
+void APlayerPawn::SetupWeaponSlots()
+{
+	if (player != NULL && player->mo == this)
+	{
+		player->weapons.StandardSetup(GetClass());
+		if (player - players == consoleplayer)
+		{ // If we're the local player, then there's a bit more work to do.
+			FWeaponSlots local_slots(player->weapons);
+			local_slots.LocalSetup(GetClass());
+			local_slots.SendDifferences(player->weapons);
+		}
+	}
+}
 
 //===========================================================================
 //
@@ -984,6 +1011,8 @@ void APlayerPawn::ThrowPoisonBag ()
 
 void APlayerPawn::GiveDefaultInventory ()
 {
+	if (player == NULL) return;
+
 	// [GRB] Give inventory specified in DECORATE
 	player->health = GetDefault ()->health;
 
@@ -1039,13 +1068,20 @@ void APlayerPawn::GiveDefaultInventory ()
 					static_cast<AWeapon*>(item)->AmmoGive1 =
 					static_cast<AWeapon*>(item)->AmmoGive2 = 0;
 				}
-				if (!item->CallTryPickup(this))
+				AActor *check;
+				if (!item->CallTryPickup(this, &check))
 				{
+					if (check != this)
+					{
+						// Player was morphed. This is illegal at game start.
+						// This problem is only detectable when it's too late to do something about it...
+						I_Error("Cannot give morph items when starting a game");
+					}
 					item->Destroy ();
 					item = NULL;
 				}
 			}
-			if (item != NULL && item->IsKindOf (RUNTIME_CLASS (AWeapon)) && 
+			if (item != NULL && item->IsKindOf (RUNTIME_CLASS (AWeapon)) &&
 				static_cast<AWeapon*>(item)->CheckAmmo(AWeapon::EitherFire, false))
 			{
 				player->ReadyWeapon = player->PendingWeapon = static_cast<AWeapon *> (item);
@@ -1154,7 +1190,7 @@ void APlayerPawn::Die (AActor *source, AActor *inflictor)
 				}
 			}
 		}
-		if (!multiplayer && (level.flags & LEVEL_DEATHSLIDESHOW))
+		if (!multiplayer && (level.flags2 & LEVEL2_DEATHSLIDESHOW))
 		{
 			F_StartSlideshow ();
 		}
@@ -1218,7 +1254,14 @@ DEFINE_ACTION_FUNCTION(AActor, A_PlayerScream)
 
 	if (self->player == NULL || self->DeathSound != 0)
 	{
-		S_Sound (self, CHAN_VOICE, self->DeathSound, 1, ATTN_NORM);
+		if (self->DeathSound != 0)
+		{
+			S_Sound (self, CHAN_VOICE, self->DeathSound, 1, ATTN_NORM);
+		}
+		else
+		{
+			S_Sound (self, CHAN_VOICE, "*death", 1, ATTN_NORM);
+		}
 		return;
 	}
 
@@ -1882,7 +1925,7 @@ void P_DeathThink (player_t *player)
 		if (level.time >= player->respawn_time || ((player->cmd.ucmd.buttons & BT_USE) && !player->isbot))
 		{
 			player->cls = NULL;		// Force a new class if the player is using a random class
-			player->playerstate = (multiplayer || (level.flags & LEVEL_ALLOWRESPAWN)) ? PST_REBORN : PST_ENTER;
+			player->playerstate = (multiplayer || (level.flags2 & LEVEL2_ALLOWRESPAWN)) ? PST_REBORN : PST_ENTER;
 			if (player->mo->special1 > 2)
 			{
 				player->mo->special1 = 0;
@@ -2303,9 +2346,6 @@ void P_PlayerThink (player_t *player)
 			}
 		}
 	}
-
-	// Save buttons
-	player->oldbuttons = cmd->ucmd.buttons;
 }
 
 void P_PredictPlayer (player_t *player)

@@ -53,9 +53,11 @@ const char *myasctime ();
 
 int strbin (char *str);
 FString strbin1 (const char *start);
+void CleanseString (char *str);
 
 void CreatePath(const char * fn);
 
 FString ExpandEnvVars(const char *searchpathstring);
+FString NicePath(const char *path);
 
 #endif

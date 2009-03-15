@@ -55,6 +55,11 @@ ACTOR StrifeSpark : StrifePuff
 
 ACTOR PunchDagger : StrifeWeapon
 {
+	Info
+	{
+		Game ("Strife")
+	}
+
 	Defaults
 	{
 		Weapon.SelectionOrder (3900)
@@ -197,7 +202,7 @@ ACTOR StrifeCrossbow : StrifeWeapon
 		Weapon.SisterWeapon ("StrifeCrossbow2")
 		Inventory.PickupMessage ("$TXT_STRIFECROSSBOW")
 		Inventory.Icon ("CBOWA0")
-		Tag ("crossbow")
+		Tag ("Crossbow")
 	}
 
 	native action A_ClearFlash ();
@@ -238,6 +243,11 @@ ACTOR StrifeCrossbow : StrifeWeapon
 
 ACTOR StrifeCrossbow2 : StrifeCrossbow
 {
+	Info
+	{
+		Game ("Strife")
+	}
+
 	Defaults
 	{
 		Weapon.SelectionOrder (2700)
@@ -291,7 +301,7 @@ ACTOR AssaultGun : StrifeWeapon
 		Weapon.AmmoGive1 (20)
 		Weapon.AmmoType1 ("ClipOfBullets")
 		Inventory.Icon ("RIFLA0")
-		Tag ("assault_gun")
+		Tag ("Assault Gun")
 		Inventory.PickupMessage ("$TXT_ASSAULTGUN")
 	}
 
@@ -365,7 +375,7 @@ ACTOR MiniMissileLauncher : StrifeWeapon
 		Weapon.AmmoGive1 (8)
 		Weapon.AmmoType1 ("MiniMissiles")
 		Inventory.Icon ("MMSLA0")
-		Tag ("mini_missile_launcher")
+		Tag ("Mini Missile Launcher")
 		Inventory.PickupMessage ("$TXT_MMLAUNCHER")
 	}
 
@@ -500,7 +510,7 @@ ACTOR FlameThrower : StrifeWeapon
 		Weapon.ReadySound ("weapons/flameidle")
 		Weapon.AmmoType1 ("EnergyPod")
 		Inventory.Icon ("FLAMA0")
-		Tag ("flame_thrower")
+		Tag ("Flame Thrower")
 		Inventory.PickupMessage ("$TXT_FLAMER")
 	}
 
@@ -586,7 +596,7 @@ ACTOR Mauler : StrifeWeapon
 		Weapon.AmmoType1 ("EnergyPod")
 		Weapon.SisterWeapon ("Mauler2")
 		Inventory.Icon ("TRPDA0")
-		Tag ("mauler")
+		Tag ("Mauler")
 		Inventory.PickupMessage ("$TXT_MAULER")
 	}
 
@@ -623,6 +633,11 @@ ACTOR Mauler : StrifeWeapon
 
 ACTOR Mauler2 : Mauler
 {
+	Info
+	{
+		Game ("Strife")
+	}
+
 	Defaults
 	{
 		Weapon.SelectionOrder (3300)
@@ -890,7 +905,7 @@ ACTOR StrifeGrenadeLauncher : StrifeWeapon
 		Weapon.AmmoType1 ("HEGrenadeRounds")
 		Weapon.SisterWeapon ("StrifeGrenadeLauncher2")
 		Inventory.Icon ("GRNDA0")
-		Tag ("Grenade_launcher")
+		Tag ("Grenade Launcher")
 		Inventory.PickupMessage ("$TXT_GLAUNCHER")
 	}
 
@@ -930,6 +945,11 @@ ACTOR StrifeGrenadeLauncher : StrifeWeapon
 
 ACTOR StrifeGrenadeLauncher2 : StrifeGrenadeLauncher
 {
+	Info
+	{
+		Game ("Strife")
+	}
+
 	Defaults
 	{
 		Weapon.SelectionOrder (3200)

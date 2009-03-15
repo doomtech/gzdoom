@@ -101,6 +101,11 @@ ACTOR QuietusDrop
 
 ACTOR FWeapQuietus : FighterWeapon
 {
+	Info
+	{
+		Game ("Hexen")
+	}
+
 	Defaults
 	{
 		Health (3)

@@ -97,6 +97,7 @@
 #include "templates.h"
 #include "cmdlib.h"
 #include "d_event.h"
+#include "v_text.h"
 
 #define DINPUT_BUFFERSIZE	32
 
@@ -697,6 +698,23 @@ LRESULT CALLBACK WndProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			event.type = ((message - WM_LBUTTONDOWN) % 3) ? EV_KeyUp : EV_KeyDown;
 			event.data1 = KEY_MOUSE1 + (message - WM_LBUTTONDOWN) / 3;
 			DIKState[ActiveDIKState][event.data1] = (event.type == EV_KeyDown);
+			D_PostEvent (&event);
+		}
+		else if (GUICapture)
+		{
+			event.type = EV_GUI_Event;
+			if (message >= WM_LBUTTONDOWN && message <= WM_LBUTTONDBLCLK)
+			{
+				event.subtype = message - WM_LBUTTONDOWN + EV_GUI_LButtonDown;
+			}
+			else if (message >= WM_RBUTTONDOWN && message <= WM_RBUTTONDBLCLK)
+			{
+				event.subtype = message - WM_RBUTTONDOWN + EV_GUI_RButtonDown;
+			}
+			else if (message >= WM_MBUTTONDOWN && message <= WM_MBUTTONDBLCLK)
+			{
+				event.subtype = message - WM_MBUTTONDOWN + EV_GUI_MButtonDown;
+			}
 			D_PostEvent (&event);
 		}
 		break;
@@ -1434,65 +1452,50 @@ bool I_InitInput (void *hwnd)
 
 	// Try for DirectInput 8 first, then DirectInput 3 for NT 4's benefit.
 
-	hr = CoCreateInstance (CLSID_DirectInput8, NULL, CLSCTX_INPROC_SERVER, IID_IDirectInput8A, (void**)&g_pdi);
-	if (FAILED(hr))
+	DInputDLL = LoadLibrary("dinput8.dll");
+	if (DInputDLL != NULL)
 	{
-		g_pdi = NULL;
-	}
-	else
-	{
-		hr = g_pdi->Initialize (g_hInst, 0x0800);
-		if (FAILED (hr))
+		typedef HRESULT (WINAPI *blah)(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN);
+		blah di8c = (blah)GetProcAddress(DInputDLL, "DirectInput8Create");
+		if (di8c != NULL)
 		{
-			g_pdi->Release ();
-			g_pdi = NULL;
+			hr = di8c(g_hInst, DIRECTINPUT_VERSION, IID_IDirectInput8A, (void **)&g_pdi, NULL);
+			if (FAILED(hr))
+			{
+				Printf(TEXTCOLOR_ORANGE "DirectInput8Create failed: %08lx", hr);
+				g_pdi = NULL;	// Just to be sure DirectInput8Create didn't change it
+			}
+		}
+		else
+		{
+			Printf(TEXTCOLOR_ORANGE "Could not find DirectInput8Create in dinput8.dll\n");
 		}
 	}
 
 	if (g_pdi == NULL)
 	{
-		hr = CoCreateInstance (CLSID_DirectInput, NULL, CLSCTX_INPROC_SERVER, IID_IDirectInputA, (void**)&g_pdi3);
-		if (hr == REGDB_E_CLASSNOTREG)
+		if (DInputDLL != NULL)
 		{
-			// NT 4 has the wrong GUID in the registry for CLSID_DirectInput unless somebody has already
-			// used "regsvr32 dinput.dll" to properly register the class. This means the only sure way to
-			// obtain an IDirectInputA interface under NT 4 is to actually load the DLL and use
-			// the function it provides. Grrr.
-			DInputDLL = LoadLibrary ("dinput.dll");
-			if (DInputDLL == NULL)
-			{
-				I_FatalError ("Could not load dinput.dll: %08lx", GetLastError());
-			}
-
-			typedef HRESULT (*blah)(HINSTANCE, DWORD, LPDIRECTINPUT*, LPUNKNOWN);
-			blah dic = (blah)GetProcAddress (DInputDLL, "DirectInputCreateA");
-
-			if (dic == NULL)
-			{
-				I_FatalError ("dinput.dll is corrupt");
-			}
-
-			hr = dic (g_hInst, 0x0300, &g_pdi3, NULL);
-			if (FAILED(hr))
-			{
-				I_FatalError ("DirectInputCreate failed: %08lx", hr);
-			}
-
-			Printf ("Tip for NT 4: \"regsvr32 dinput.dll\"\n");
+			FreeLibrary(DInputDLL);
 		}
-		else
+		DInputDLL = LoadLibrary ("dinput.dll");
+		if (DInputDLL == NULL)
 		{
-			if (FAILED(hr))
-			{
-				I_FatalError ("Could not create DirectInput interface: %08lx", hr);
-			}
-			hr = g_pdi3->Initialize (g_hInst, 0x0300);
-			if (FAILED(hr))
-			{
-				g_pdi3->Release ();
-				g_pdi3 = NULL;
-				I_FatalError ("Could not initialize DirectInput interface: %08lx", hr);
-			}
+			I_FatalError ("Could not load dinput.dll: %08lx", GetLastError());
+		}
+
+		typedef HRESULT (WINAPI *blah)(HINSTANCE, DWORD, LPDIRECTINPUT*, LPUNKNOWN);
+		blah dic = (blah)GetProcAddress (DInputDLL, "DirectInputCreateA");
+
+		if (dic == NULL)
+		{
+			I_FatalError ("dinput.dll is corrupt");
+		}
+
+		hr = dic (g_hInst, 0x0300, &g_pdi3, NULL);
+		if (FAILED(hr))
+		{
+			I_FatalError ("DirectInputCreate failed: %08lx", hr);
 		}
 	}
 
@@ -2024,15 +2027,15 @@ void I_PutInClipboard (const char *str)
 	CloseClipboard ();
 }
 
-char *I_GetFromClipboard ()
+FString I_GetFromClipboard (bool return_nothing)
 {
-	char *retstr = NULL;
+	FString retstr;
 	HGLOBAL cliphandle;
 	char *clipstr;
 	char *nlstr;
 
-	if (!IsClipboardFormatAvailable (CF_TEXT) || !OpenClipboard (Window))
-		return NULL;
+	if (return_nothing || !IsClipboardFormatAvailable (CF_TEXT) || !OpenClipboard (Window))
+		return retstr;
 
 	cliphandle = GetClipboardData (CF_TEXT);
 	if (cliphandle != NULL)
@@ -2040,15 +2043,16 @@ char *I_GetFromClipboard ()
 		clipstr = (char *)GlobalLock (cliphandle);
 		if (clipstr != NULL)
 		{
-			retstr = copystring (clipstr);
-			GlobalUnlock (clipstr);
-			nlstr = retstr;
-
-			// Convert CR-LF pairs to just LF
-			while ( (nlstr = strstr (retstr, "\r\n")) )
+			// Convert CR-LF pairs to just LF while copying to the FString
+			for (nlstr = clipstr; *nlstr != '\0'; ++nlstr)
 			{
-				memmove (nlstr, nlstr + 1, strlen (nlstr) - 1);
+				if (nlstr[0] == '\r' && nlstr[1] == '\n')
+				{
+					nlstr++;
+				}
+				retstr += *nlstr;
 			}
+			GlobalUnlock (clipstr);
 		}
 	}
 

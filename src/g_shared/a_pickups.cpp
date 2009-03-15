@@ -67,13 +67,14 @@ const PClass *AAmmo::GetParentAmmo () const
 // AAmmo :: HandlePickup
 //
 //===========================================================================
+EXTERN_CVAR(Bool, sv_unlimited_pickup)
 
 bool AAmmo::HandlePickup (AInventory *item)
 {
 	if (GetClass() == item->GetClass() ||
 		(item->IsKindOf (RUNTIME_CLASS(AAmmo)) && static_cast<AAmmo*>(item)->GetParentAmmo() == GetClass()))
 	{
-		if (Amount < MaxAmount)
+		if (Amount < MaxAmount || sv_unlimited_pickup)
 		{
 			int receiving = item->Amount;
 
@@ -84,7 +85,7 @@ bool AAmmo::HandlePickup (AInventory *item)
 			int oldamount = Amount;
 
 			Amount += receiving;
-			if (Amount > MaxAmount)
+			if (Amount > MaxAmount && !sv_unlimited_pickup)
 			{
 				Amount = MaxAmount;
 			}
@@ -96,18 +97,9 @@ bool AAmmo::HandlePickup (AInventory *item)
 
 			assert (Owner != NULL);
 
-			if (oldamount == 0 && Owner != NULL && Owner->player != NULL &&
-				!Owner->player->userinfo.neverswitch &&
-				Owner->player->PendingWeapon == WP_NOCHANGE && 
-				(Owner->player->ReadyWeapon == NULL ||
-				 (Owner->player->ReadyWeapon->WeaponFlags & WIF_WIMPY_WEAPON)))
+			if (oldamount == 0 && Owner != NULL && Owner->player != NULL)
 			{
-				AWeapon *best = barrier_cast<APlayerPawn *>(Owner)->BestWeapon (GetClass());
-				if (best != NULL && (Owner->player->ReadyWeapon == NULL ||
-					best->SelectionOrder < Owner->player->ReadyWeapon->SelectionOrder))
-				{
-					Owner->player->PendingWeapon = best;
-				}
+				barrier_cast<APlayerPawn *>(Owner)->CheckWeaponSwitch(GetClass());
 			}
 		}
 		return true;
@@ -885,9 +877,9 @@ void AInventory::Touch (AActor *toucher)
 		toucher = toucher->player->mo;
 	}
 
-	// This is the only situation when a pickup flash should ever play.
-	if (!CallTryPickup (toucher)) return;
+	if (!CallTryPickup (toucher, &toucher)) return;
 
+	// This is the only situation when a pickup flash should ever play.
 	if (PickupFlash != NULL && !ShouldStay())
 	{
 		Spawn(PickupFlash, x, y, z, ALLOW_REPLACE);
@@ -981,6 +973,7 @@ const char *AInventory::PickupMessage ()
 void AInventory::PlayPickupSound (AActor *toucher)
 {
 	float atten;
+	int chan;
 
 	if (ItemFlags & IF_NOATTENPICKUPSOUND)
 	{
@@ -997,7 +990,16 @@ void AInventory::PlayPickupSound (AActor *toucher)
 	{
 		atten = ATTN_NORM;
 	}
-	S_Sound (toucher, CHAN_PICKUP, PickupSound, 1, atten);
+
+	if (toucher != NULL && toucher->CheckLocalView(consoleplayer))
+	{
+		chan = CHAN_PICKUP|CHAN_NOPAUSE;
+	}
+	else
+	{
+		chan = CHAN_PICKUP;
+	}
+	S_Sound (toucher, chan, PickupSound, 1, atten);
 }
 
 //===========================================================================
@@ -1257,9 +1259,12 @@ bool AInventory::TryPickup (AActor *&toucher)
 //
 //===========================================================================
 
-bool AInventory::CallTryPickup (AActor *toucher)
+bool AInventory::CallTryPickup (AActor *toucher, AActor **toucher_return)
 {
 	bool res = TryPickup(toucher);
+
+	// Morph items can change the toucher so we need an option to return this info.
+	if (toucher_return != NULL) *toucher_return = toucher;
 
 	if (!res && (ItemFlags & IF_ALWAYSPICKUP) && !ShouldStay())
 	{
@@ -1526,6 +1531,18 @@ bool AHealthPickup::Use (bool pickup)
 	return P_GiveBody (Owner, health);
 }
 
+//===========================================================================
+//
+// AHealthPickup :: Serialize
+//
+//===========================================================================
+
+void AHealthPickup::Serialize (FArchive &arc)
+{
+	Super::Serialize(arc);
+	arc << autousemode;
+}
+
 // Backpack -----------------------------------------------------------------
 
 //===========================================================================
@@ -1706,7 +1723,7 @@ IMPLEMENT_CLASS (AMapRevealer)
 
 bool AMapRevealer::TryPickup (AActor *&toucher)
 {
-	level.flags |= LEVEL_ALLMAP;
+	level.flags2 |= LEVEL2_ALLMAP;
 	GoAwayAndDie ();
 	return true;
 }

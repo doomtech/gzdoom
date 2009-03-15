@@ -20,6 +20,11 @@ ACTOR DoomWeapon : Weapon
 
 ACTOR Fist : Weapon
 {
+	Info
+	{
+		Game ("Doom")
+	}
+
 	Defaults
 	{
 		Weapon.SelectionOrder (3700)
@@ -62,6 +67,7 @@ ACTOR Pistol : DoomWeapon
 	Info
 	{
 		DoomEdNum (5010)
+		Game ("Doom")
 	}
 
 	Defaults

@@ -86,8 +86,8 @@ void	F_AdvanceSlideshow ();
 //
 // F_StartFinale
 //
-void F_StartFinale (char *music, int musicorder, int cdtrack, unsigned int cdid, char *flat, char *text,
-					INTBOOL textInLump, INTBOOL finalePic, INTBOOL lookupText, bool ending)
+void F_StartFinale (const char *music, int musicorder, int cdtrack, unsigned int cdid, const char *flat, 
+					const char *text, INTBOOL textInLump, INTBOOL finalePic, INTBOOL lookupText, bool ending)
 {
 	bool loopmusic = ending ? !(gameinfo.flags & GI_NOLOOPFINALEMUSIC) : true;
 	gameaction = ga_nothing;
@@ -256,7 +256,7 @@ void F_Ticker ()
 							if (EndSequences[FinaleSequence].EndType == END_Bunny)
 							{
 								if (!EndSequences[FinaleSequence].Advanced)
-									S_StartMusic ("d_bunny");
+									S_StartMusic ("$music_bunny");
 							}
 						}
 						if (EndSequences[FinaleSequence].Advanced &&
@@ -600,7 +600,7 @@ void F_StartCast (void)
 	castonmelee = 0;
 	castattacking = false;
 	if (!EndSequences[FinaleSequence].Advanced)
-		S_ChangeMusic ("d_evil");
+		S_ChangeMusic ("$music_evil");
 }
 
 
@@ -1026,7 +1026,7 @@ void F_StartSlideshow ()
 	V_SetBlend (0,0,0,0);
 
 	// The slideshow is determined solely by the map you're on.
-	if (!multiplayer && level.flags & LEVEL_DEATHSLIDESHOW)
+	if (!multiplayer && level.flags2 & LEVEL2_DEATHSLIDESHOW)
 	{
 		FinalePart = 14;
 	}
@@ -1062,7 +1062,7 @@ void F_AdvanceSlideshow ()
 	{
 	case -99:
 		if (level.cdtrack == 0 || !S_ChangeCDMusic (level.cdtrack, level.cdid))
-			S_ChangeMusic (level.music, level.musicorder);
+			S_ChangeMusic (level.Music, level.musicorder);
 		gamestate = GS_LEVEL;
 		wipegamestate = GS_LEVEL;
 		P_ResumeConversation ();

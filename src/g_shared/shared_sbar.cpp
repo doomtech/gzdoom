@@ -1180,7 +1180,7 @@ void DBaseStatusBar::Draw (EHudState state)
 	}
 	else if (automapactive)
 	{
-		int y, i, time = level.time / TICRATE, height;
+		int y, time = level.time / TICRATE, height;
 		int totaltime = level.totaltime / TICRATE;
 		EColorRange highlight = (gameinfo.gametype & GAME_DoomChex) ?
 			CR_UNTRANSLATED : CR_YELLOW;
@@ -1237,16 +1237,19 @@ void DBaseStatusBar::Draw (EHudState state)
 			}
 		}
 		cluster_info_t *cluster = FindClusterInfo (level.cluster);
-		i = 0;
 		if (cluster == NULL || !(cluster->flags & CLUSTER_HUB))
 		{
-			i = mysnprintf (line, countof(line), "%s: ", level.mapname);
+			mysnprintf (line, countof(line), "%s: ", level.mapname);
 		}
-		line[i] = TEXTCOLOR_ESCAPE;
-		line[i+1] = CR_GREY + 'A';
-		strcpy (&line[i+2], level.level_name);
+		else
+		{
+			*line = 0;
+		}
+		FString mapname;
+
+		mapname.Format("%s%c%c%s", line, TEXTCOLOR_ESCAPE, CR_GREY + 'A', level.LevelName.GetChars());
 		screen->DrawText (SmallFont, highlight,
-			(SCREENWIDTH - SmallFont->StringWidth (line)*CleanXfac)/2, y, line,
+			(SCREENWIDTH - SmallFont->StringWidth (mapname)*CleanXfac)/2, y, mapname,
 			DTA_CleanNoMove, true, TAG_DONE);
 
 		if (!deathmatch)
@@ -1502,7 +1505,7 @@ void DBaseStatusBar::BlendView (float blend[4])
 
 	if (screen->Accel2D || (CPlayer->camera != NULL && menuactive == MENU_Off && ConsoleState == c_up))
 	{
-		player_t *player = (CPlayer->camera->player != NULL) ? CPlayer->camera->player : CPlayer;
+		player_t *player = (CPlayer->camera != NULL && CPlayer->camera->player != NULL) ? CPlayer->camera->player : CPlayer;
 		AddBlend (player->BlendR, player->BlendG, player->BlendB, player->BlendA, blend);
 	}
 

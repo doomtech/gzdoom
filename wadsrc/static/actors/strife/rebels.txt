@@ -163,7 +163,7 @@ ACTOR TeleporterBeacon : Inventory native
 		+DROPPED
 		+INVENTORY.INVBAR
 		Inventory.Icon ("I_BEAC")
-		Tag ("Teleporter_Beacon")
+		Tag ("Teleporter Beacon")
 		Inventory.PickupMessage ("$TXT_BEACON")
 	}
 

@@ -64,7 +64,9 @@
 
 #include "i_net.h"
 
-
+// As per http://support.microsoft.com/kb/q192599/ the standard
+// size for network buffers is 8k.
+#define TRANSMIT_SIZE		8000
 
 /* [Petteri] Get more portable: */
 #ifndef __WIN32__
@@ -133,6 +135,8 @@ struct PreGamePacket
 	} machines[MAXNETNODES];
 };
 
+BYTE TransmitBuffer[TRANSMIT_SIZE];
+
 //
 // UDPsocket
 //
@@ -191,11 +195,47 @@ void PacketSend (void)
 {
 	int c;
 
-	//printf ("sending %i\n",gametic);
-	c = sendto (mysocket , (const char*)doomcom.data, doomcom.datalength
-				,0,(sockaddr *)&sendaddress[doomcom.remotenode]
-				,sizeof(sendaddress[doomcom.remotenode]));
+	// FIXME: Catch this before we've overflown the buffer. With long chat
+	// text and lots of backup tics, it could conceivably happen. (Though
+	// apparently it hasn't yet, which is good.)
+	if (doomcom.datalength > MAX_MSGLEN)
+	{
+		I_FatalError("Netbuffer overflow!");
+	}
 
+	uLong size = TRANSMIT_SIZE - 1;
+	if (doomcom.datalength >= 10)
+	{
+		assert(!(doomcom.data[0] & NCMD_COMPRESSED));
+		TransmitBuffer[0] = doomcom.data[0] | NCMD_COMPRESSED;
+		c = compress2(TransmitBuffer + 1, &size, doomcom.data + 1, doomcom.datalength - 1, 9);
+		size += 1;
+	}
+	else
+	{
+		c = -1;	// Just some random error code to avoid sending the compressed buffer.
+	}
+	if (c == Z_OK && size < (uLong)doomcom.datalength)
+	{
+//		Printf("send %lu/%d\n", size, doomcom.datalength);
+		c = sendto(mysocket, (char *)TransmitBuffer, size,
+			0, (sockaddr *)&sendaddress[doomcom.remotenode],
+			sizeof(sendaddress[doomcom.remotenode]));
+	}
+	else
+	{
+		if (doomcom.datalength > TRANSMIT_SIZE)
+		{
+			I_Error("Net compression failed (zlib error %d)", c);
+		}
+		else
+		{
+//			Printf("send %d\n", doomcom.datalength);
+			c = sendto(mysocket, (char *)doomcom.data, doomcom.datalength,
+				0, (sockaddr *)&sendaddress[doomcom.remotenode],
+				sizeof(sendaddress[doomcom.remotenode]));
+		}
+	}
 	//	if (c == -1)
 	//			I_Error ("SendPacket error: %s",strerror(errno));
 }
@@ -212,8 +252,8 @@ void PacketGet (void)
 	int node;
 
 	fromlen = sizeof(fromaddress);
-	c = recvfrom (mysocket, (char*)doomcom.data, MAX_MSGLEN, 0
-				  , (sockaddr *)&fromaddress, &fromlen);
+	c = recvfrom (mysocket, (char*)TransmitBuffer, TRANSMIT_SIZE, 0,
+				  (sockaddr *)&fromaddress, &fromlen);
 	node = FindNode (&fromaddress);
 
 	if (node >= 0 && c == SOCKET_ERROR)
@@ -237,6 +277,26 @@ void PacketGet (void)
 		{
 			doomcom.remotenode = -1;		// no packet
 			return;
+		}
+	}
+	else if (c > 0)
+	{
+		doomcom.data[0] = TransmitBuffer[0] & ~NCMD_COMPRESSED;
+		if (TransmitBuffer[0] & NCMD_COMPRESSED)
+		{
+			uLongf msgsize = MAX_MSGLEN - 1;
+			int err = uncompress(doomcom.data + 1, &msgsize, TransmitBuffer + 1, c - 1);
+//			Printf("recv %d/%lu\n", c, msgsize + 1);
+			if (err != Z_OK)
+			{
+				I_Error("Net decompression failed (zlib error %d)\n", err);
+			}
+			c = msgsize + 1;
+		}
+		else
+		{
+//			Printf("recv %d\n", c);
+			memcpy(doomcom.data + 1, TransmitBuffer + 1, c - 1);
 		}
 	}
 
@@ -777,10 +837,64 @@ void JoinGame (int i)
 	doomcom.numplayers = doomcom.numnodes;
 }
 
+static int PrivateNetOf(in_addr in)
+{
+	int addr = ntohl(in.s_addr);
+		 if ((addr & 0xFFFF0000) == 0xC0A80000)		// 192.168.0.0
+	{
+		return 0xC0A80000;
+	}
+	else if ((addr & 0xFFF00000) == 0xAC100000)		// 172.16.0.0
+	{
+		return 0xAC100000;
+	}
+	else if ((addr & 0xFF000000) == 0x0A000000)		// 10.0.0.0
+	{
+		return 0x0A000000;
+	}
+	else if ((addr & 0xFF000000) == 0x7F000000)		// 127.0.0.0 (localhost)
+	{
+		return 0x7F000000;
+	}
+	// Not a private IP
+	return 0;
+}
+
+//
+// NodesOnSameNetwork
+//
+// The best I can really do here is check if the others are on the same
+// private network, since that means we (probably) are too.
+//
+
+static bool NodesOnSameNetwork()
+{
+	int net1;
+
+	net1 = PrivateNetOf(sendaddress[1].sin_addr);
+//	Printf("net1 = %08x\n", net1);
+	if (net1 == 0)
+	{
+		return false;
+	}
+	for (int i = 2; i < doomcom.numnodes; ++i)
+	{
+		int net = PrivateNetOf(sendaddress[i].sin_addr);
+//		Printf("Net[%d] = %08x\n", i, net);
+		if (net != net1)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 //
 // I_InitNetwork
 //
-void I_InitNetwork (void)
+// Returns true if packet server mode might be a good idea.
+//
+bool I_InitNetwork (void)
 {
 	int i;
 	char *v;
@@ -829,8 +943,14 @@ void I_InitNetwork (void)
 		doomcom.id = DOOMCOM_ID;
 		doomcom.numplayers = doomcom.numnodes = 1;
 		doomcom.consoleplayer = 0;
-		return;
+		return false;
 	}
+	if (doomcom.numnodes < 3)
+	{ // Packet server mode with only two players is effectively the same as
+	  // peer-to-peer but with some slightly larger packets.
+		return false;
+	}
+	return doomcom.numnodes > 3 || !NodesOnSameNetwork();
 }
 
 

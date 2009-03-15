@@ -101,6 +101,11 @@ ACTOR BloodscourgeDrop
 
 ACTOR MWeapBloodscourge : MageWeapon native
 {
+	Info
+	{
+		Game ("Hexen")
+	}
+
 	Defaults
 	{
 		Health (3)

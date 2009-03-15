@@ -73,6 +73,7 @@ extern FILE *Logfile;
 extern bool insave;
 
 CVAR (Bool, sv_cheats, false, CVAR_SERVERINFO | CVAR_LATCH)
+CVAR (Bool, sv_unlimited_pickup, false, CVAR_SERVERINFO)
 
 CCMD (toggleconsole)
 {
@@ -482,7 +483,7 @@ CCMD (error)
 	if (argv.argc() > 1)
 	{
 		char *textcopy = copystring (argv[1]);
-		I_Error (textcopy);
+		I_Error ("%s", textcopy);
 	}
 	else
 	{
@@ -495,7 +496,7 @@ CCMD (error_fatal)
 	if (argv.argc() > 1)
 	{
 		char *textcopy = copystring (argv[1]);
-		I_FatalError (textcopy);
+		I_FatalError ("%s", textcopy);
 	}
 	else
 	{
@@ -505,7 +506,7 @@ CCMD (error_fatal)
 
 CCMD (dir)
 {
-	FString dir;
+	FString dir, path;
 	char curdir[256];
 	const char *match;
 	findstate_t c_file;
@@ -517,38 +518,45 @@ CCMD (dir)
 		return;
 	}
 
-	if (argv.argc() == 1 || chdir (argv[1]))
+	if (argv.argc() > 1)
 	{
-		match = argv.argc() == 1 ? "./*" : argv[1];
-
-		dir = ExtractFilePath (match);
-		if (dir[0] != '\0')
+		path = NicePath(argv[1]);
+		if (chdir(path))
 		{
-			match += dir.Len();
+			match = path;
+			dir = ExtractFilePath(path);
+			if (dir[0] != '\0')
+			{
+				match += dir.Len();
+			}
+			else
+			{
+				dir = "./";
+			}
+			if (match[0] == '\0')
+			{
+				match = "*";
+			}
+			if (chdir (dir))
+			{
+				Printf ("%s not found\n", dir.GetChars());
+				return;
+			}
 		}
 		else
 		{
-			dir = "./";
-		}
-		if (match[0] == '\0')
-		{
 			match = "*";
-		}
-
-		if (chdir (dir))
-		{
-			Printf ("%s not found\n", dir.GetChars());
-			return;
+			dir = path;
 		}
 	}
 	else
 	{
 		match = "*";
-		dir = argv[1];
-		if (dir[dir.Len()-1] != '/')
-		{
-			dir += '/';
-		}
+		dir = curdir;
+	}
+	if (dir[dir.Len()-1] != '/')
+	{
+		dir += '/';
 	}
 
 	if ( (file = I_FindFirst (match, &c_file)) == ((void *)(-1)))
@@ -858,7 +866,7 @@ CCMD(nextmap)
 
 	if (next != NULL && strncmp(next, "enDSeQ", 6))
 	{
-		G_InitNew(next, false);
+		G_DeferedInitNew(next);
 	}
 	else
 	{
@@ -879,7 +887,7 @@ CCMD(nextsecret)
 
 	if (next != NULL && strncmp(next, "enDSeQ", 6))
 	{
-		G_InitNew(next, false);
+		G_DeferedInitNew(next);
 	}
 	else
 	{

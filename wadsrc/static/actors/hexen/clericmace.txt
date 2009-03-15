@@ -3,6 +3,11 @@
 
 ACTOR CWeapMace : ClericWeapon
 {
+	Info
+	{
+		Game ("Hexen")
+	}
+
 	Defaults
 	{
 		Weapon.SelectionOrder (3500)

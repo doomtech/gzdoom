@@ -63,7 +63,7 @@ bool ATeleporterBeacon::Use (bool pickup)
 	}
 	else
 	{
-		drop->SetState (drop->SeeState);
+		drop->SetState(drop->FindState(NAME_Drop));
 		drop->target = Owner;
 		return true;
 	}
@@ -75,7 +75,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Beacon)
 	AActor *rebel;
 	angle_t an;
 
-	rebel = Spawn("Rebel1", self->x, self->y, ONFLOORZ, ALLOW_REPLACE);
+	rebel = Spawn("Rebel1", self->x, self->y, self->floorz, ALLOW_REPLACE);
 	if (!P_TryMove (rebel, rebel->x, rebel->y, true))
 	{
 		rebel->Destroy ();
@@ -112,6 +112,6 @@ DEFINE_ACTION_FUNCTION(AActor, A_Beacon)
 	Spawn<ATeleportFog> (rebel->x + 20*finecosine[an], rebel->y + 20*finesine[an], rebel->z + TELEFOGHEIGHT, ALLOW_REPLACE);
 	if (--self->health < 0)
 	{
-		self->Destroy ();
+		self->SetState(self->FindState(NAME_Death));
 	}
 }

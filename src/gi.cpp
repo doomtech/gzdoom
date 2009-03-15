@@ -101,6 +101,7 @@ gameinfo_t HexenGameInfo =
 	MAKERGB(104,0,0),
 	MAKERGB(255,0,0),
 	"BagOfHolding",	// Hexen doesn't have a backpack so use Heretic's.
+	NULL,
 };
 
 gameinfo_t HexenDKGameInfo =
@@ -134,6 +135,7 @@ gameinfo_t HexenDKGameInfo =
 	MAKERGB(104,0,0),
 	MAKERGB(255,0,0),
 	"BagOfHolding",
+	NULL,
 };
 
 gameinfo_t HereticGameInfo =
@@ -167,6 +169,7 @@ gameinfo_t HereticGameInfo =
 	MAKERGB(104,0,0),
 	MAKERGB(255,0,0),
 	"BagOfHolding",
+	NULL,
 };
 
 gameinfo_t HereticSWGameInfo =
@@ -200,6 +203,7 @@ gameinfo_t HereticSWGameInfo =
 	MAKERGB(104,0,0),
 	MAKERGB(255,0,0),
 	"BagOfHolding",
+	NULL,
 };
 
 gameinfo_t SharewareGameInfo =
@@ -208,12 +212,12 @@ gameinfo_t SharewareGameInfo =
 	"TITLEPIC",
 	"CREDIT",
 	"HELP2",
-	"D_INTRO",
+	"$MUSIC_INTRO",
 	5,
 	0,
 	200/35,
 	"misc/chat2",
-	"D_VICTOR",
+	"$MUSIC_VICTOR",
 	"FLOOR4_8",
 	"HELP2",
 	"VICTORY2",
@@ -233,6 +237,7 @@ gameinfo_t SharewareGameInfo =
 	MAKERGB(104,0,0),
 	MAKERGB(255,0,0),
 	"Backpack",
+	"sbarinfo/doom.txt",
 };
 
 gameinfo_t RegisteredGameInfo =
@@ -241,12 +246,12 @@ gameinfo_t RegisteredGameInfo =
 	"TITLEPIC",
 	"CREDIT",
 	"HELP2",
-	"D_INTRO",
+	"$MUSIC_INTRO",
 	5,
 	0,
 	200/35,
 	"misc/chat2",
-	"D_VICTOR",
+	"$MUSIC_VICTOR",
 	"FLOOR4_8",
 	"HELP2",
 	"VICTORY2",
@@ -266,6 +271,7 @@ gameinfo_t RegisteredGameInfo =
 	MAKERGB(104,0,0),
 	MAKERGB(255,0,0),
 	"Backpack",
+	"sbarinfo/doom.txt",
 };
 
 gameinfo_t ChexGameInfo =
@@ -274,12 +280,12 @@ gameinfo_t ChexGameInfo =
 	"TITLEPIC",
 	"CREDIT",
 	"HELP1",
-	"D_INTRO",
+	"$MUSIC_INTRO",
 	5,
 	0,
 	200/35,
 	"misc/chat2",
-	"D_VICTOR",
+	"$MUSIC_VICTOR",
 	"FLOOR4_8",
 	"HELP2",
 	"VICTORY2",
@@ -299,6 +305,7 @@ gameinfo_t ChexGameInfo =
 	MAKERGB(63,125,57),
 	MAKERGB(95,175,87),
 	"ZorchPack",
+	"sbarinfo/doom.txt",
 };
 
 gameinfo_t Chex3GameInfo =
@@ -307,12 +314,12 @@ gameinfo_t Chex3GameInfo =
 	"TITLEPIC",
 	"ENDPIC",
 	"VICTORY2",
-	"D_INTRO",
+	"$MUSIC_INTRO",
 	5,
 	0,
 	200/35,
 	"misc/chat2",
-	"D_VICTOR",
+	"$MUSIC_VICTOR",
 	"ENDPIC01",
 	"CREDIT",
 	"CREDIT",
@@ -332,6 +339,7 @@ gameinfo_t Chex3GameInfo =
 	MAKERGB(63,125,57),
 	MAKERGB(95,175,87),
 	"ZorchPack",
+	"sbarinfo/doom.txt",
 };
 
 gameinfo_t RetailGameInfo =
@@ -340,12 +348,12 @@ gameinfo_t RetailGameInfo =
 	"TITLEPIC",
 	"CREDIT",
 	"CREDIT",
-	"D_INTRO",
+	"$MUSIC_INTRO",
 	5,
 	0,
 	200/35,
 	"misc/chat2",
-	"D_VICTOR",
+	"$MUSIC_VICTOR",
 	"FLOOR4_8",
 	"CREDIT",
 	"VICTORY2",
@@ -365,6 +373,7 @@ gameinfo_t RetailGameInfo =
 	MAKERGB(104,0,0),
 	MAKERGB(255,0,0),
 	"Backpack",
+	"sbarinfo/doom.txt",
 };
 
 gameinfo_t CommercialGameInfo =
@@ -373,12 +382,12 @@ gameinfo_t CommercialGameInfo =
 	"TITLEPIC",
 	"CREDIT",
 	"CREDIT",
-	"D_DM2TTL",
+	"$MUSIC_DM2TTL",
 	11,
 	0,
 	200/35,
 	"misc/chat",
-	"D_READ_M",
+	"$MUSIC_READ_M",
 	"SLIME16",
 	"CREDIT",
 	"CREDIT",
@@ -398,6 +407,7 @@ gameinfo_t CommercialGameInfo =
 	MAKERGB(104,0,0),
 	MAKERGB(255,0,0),
 	"Backpack",
+	"sbarinfo/doom.txt",
 };
 
 gameinfo_t PlutoniaGameInfo =
@@ -406,12 +416,12 @@ gameinfo_t PlutoniaGameInfo =
 	"TITLEPIC",
 	"CREDIT",
 	"CREDIT",
-	"D_DM2TTL",
+	"$MUSIC_DM2TTL",
 	11,
 	0,
 	200/35,
 	"misc/chat",
-	"D_READ_M",
+	"$MUSIC_READ_M",
 	"SLIME16",
 	"CREDIT",
 	"CREDIT",
@@ -431,6 +441,7 @@ gameinfo_t PlutoniaGameInfo =
 	MAKERGB(104,0,0),
 	MAKERGB(255,0,0),
 	"Backpack",
+	"sbarinfo/doom.txt",
 };
 
 gameinfo_t TNTGameInfo =
@@ -439,12 +450,12 @@ gameinfo_t TNTGameInfo =
 	"TITLEPIC",
 	"CREDIT",
 	"CREDIT",
-	"D_DM2TTL",
+	"$MUSIC_DM2TTL",
 	11,
 	0,
 	200/35,
 	"misc/chat",
-	"D_READ_M",
+	"$MUSIC_READ_M",
 	"SLIME16",
 	"CREDIT",
 	"CREDIT",
@@ -464,6 +475,7 @@ gameinfo_t TNTGameInfo =
 	MAKERGB(104,0,0),
 	MAKERGB(255,0,0),
 	"Backpack",
+	"sbarinfo/doom.txt",
 };
 
 gameinfo_t StrifeGameInfo =
@@ -497,6 +509,7 @@ gameinfo_t StrifeGameInfo =
 	MAKERGB(104,0,0),
 	MAKERGB(255,0,0),
 	"AmmoSatchel",
+	NULL,
 };
 
 gameinfo_t StrifeTeaserGameInfo =
@@ -530,6 +543,7 @@ gameinfo_t StrifeTeaserGameInfo =
 	MAKERGB(104,0,0),
 	MAKERGB(255,0,0),
 	"AmmoSatchel",
+	NULL,
 };
 
 gameinfo_t StrifeTeaser2GameInfo =
@@ -563,4 +577,5 @@ gameinfo_t StrifeTeaser2GameInfo =
 	MAKERGB(104,0,0),
 	MAKERGB(255,0,0),
 	"AmmoSatchel",
+	NULL,
 };

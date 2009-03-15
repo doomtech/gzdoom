@@ -63,6 +63,8 @@
 #include "r_sky.h"
 #include "cmdlib.h"
 #include "g_level.h"
+#include "md5.h"
+#include "compatibility.h"
 
 #include "gl/gl_functions.h"
 
@@ -257,7 +259,6 @@ MapData *P_OpenMapData(const char * mapname)
 	MapData * map = new MapData;
 	bool externalfile = !strnicmp(mapname, "file:", 5);
 	
-	
 	if (externalfile)
 	{
 		mapname += 5;
@@ -286,8 +287,12 @@ MapData *P_OpenMapData(const char * mapname)
 		
 		if (lump_name > lump_wad && lump_name > lump_map && lump_name != -1)
 		{
-			int lumpfile=Wads.GetLumpFile(lump_name);
-			int nextfile=Wads.GetLumpFile(lump_name+1);
+			int lumpfile = Wads.GetLumpFile(lump_name);
+			int nextfile = Wads.GetLumpFile(lump_name+1);
+
+			map->file = Wads.GetFileReader(lumpfile);
+			map->CloseOnDestruct = false;
+			map->lumpnum = lump_name;
 
 			if (lumpfile != nextfile)
 			{
@@ -305,10 +310,6 @@ MapData *P_OpenMapData(const char * mapname)
 
 			// This case can only happen if the lump is inside a real WAD file.
 			// As such any special handling for other types of lumps is skipped.
-			map->file = Wads.GetFileReader(lumpfile);
-			map->CloseOnDestruct = false;
-			map->lumpnum = lump_name;
-
 			map->MapLumps[0].FilePos = Wads.GetLumpOffset(lump_name);
 			map->MapLumps[0].Size = Wads.LumpLength(lump_name);
 			map->Encrypted = Wads.IsEncryptedFile(lump_name);
@@ -512,6 +513,51 @@ bool P_CheckMapData(const char *mapname)
 	if (mapd == NULL) return false;
 	delete mapd;
 	return true;
+}
+
+//===========================================================================
+//
+// MapData :: GetChecksum
+//
+// Hashes a map based on its header, THINGS, LINEDEFS, SIDEDEFS, SECTORS,
+// and BEHAVIOR lumps. Node-builder generated lumps are not included.
+//
+//===========================================================================
+
+void MapData::GetChecksum(BYTE cksum[16])
+{
+	MD5Context md5;
+
+	if (file != NULL)
+	{
+		if (isText)
+		{
+			file->Seek(MapLumps[ML_TEXTMAP].FilePos, SEEK_SET);
+			md5.Update(file, MapLumps[ML_TEXTMAP].Size);
+		}
+		else
+		{
+			if (MapLumps[ML_LABEL].Size != 0)
+			{
+				file->Seek(MapLumps[ML_LABEL].FilePos, SEEK_SET);
+				md5.Update(file, MapLumps[ML_LABEL].Size);
+			}
+			file->Seek(MapLumps[ML_THINGS].FilePos, SEEK_SET);
+			md5.Update(file, MapLumps[ML_THINGS].Size);
+			file->Seek(MapLumps[ML_LINEDEFS].FilePos, SEEK_SET);
+			md5.Update(file, MapLumps[ML_LINEDEFS].Size);
+			file->Seek(MapLumps[ML_SIDEDEFS].FilePos, SEEK_SET);
+			md5.Update(file, MapLumps[ML_SIDEDEFS].Size);
+			file->Seek(MapLumps[ML_SECTORS].FilePos, SEEK_SET);
+			md5.Update(file, MapLumps[ML_SECTORS].Size);
+		}
+		if (HasBehavior)
+		{
+			file->Seek(MapLumps[ML_BEHAVIOR].FilePos, SEEK_SET);
+			md5.Update(file, MapLumps[ML_BEHAVIOR].Size);
+		}
+	}
+	md5.Final(cksum);
 }
 
 //===========================================================================
@@ -1282,6 +1328,7 @@ void P_LoadSectors (MapData * map)
 		// killough 8/28/98: initialize all sectors to normal friction
 		ss->friction = ORIG_FRICTION;
 		ss->movefactor = ORIG_FRICTION_FACTOR;
+		ss->sectornum = i;
 	}
 	delete[] msp;
 }
@@ -1601,7 +1648,7 @@ void P_SetLineID (line_t *ld)
 		switch (ld->special)
 		{
 		case Line_SetIdentification:
-			if (!(level.flags & LEVEL_HEXENHACK))
+			if (!(level.flags2 & LEVEL2_HEXENHACK))
 			{
 				ld->id = ld->args[0] + 256 * ld->args[4];
 				ld->flags |= ld->args[1]<<16;
@@ -1812,9 +1859,9 @@ void P_LoadLineDefs (MapData * map)
 
 		P_AdjustLine (ld);
 		P_SaveLineSpecial (ld);
-		if (level.flags & LEVEL_CLIPMIDTEX) ld->flags |= ML_CLIP_MIDTEX;
-		if (level.flags & LEVEL_WRAPMIDTEX) ld->flags |= ML_WRAP_MIDTEX;
-		if (level.flags & LEVEL_CHECKSWITCHRANGE) ld->flags |= ML_CHECKSWITCHRANGE;
+		if (level.flags2 & LEVEL2_CLIPMIDTEX) ld->flags |= ML_CLIP_MIDTEX;
+		if (level.flags2 & LEVEL2_WRAPMIDTEX) ld->flags |= ML_WRAP_MIDTEX;
+		if (level.flags2 & LEVEL2_CHECKSWITCHRANGE) ld->flags |= ML_CHECKSWITCHRANGE;
 	}
 	delete[] mldf;
 }
@@ -1890,9 +1937,9 @@ void P_LoadLineDefs2 (MapData * map)
 		P_AdjustLine (ld);
 		P_SetLineID(ld);
 		P_SaveLineSpecial (ld);
-		if (level.flags & LEVEL_CLIPMIDTEX) ld->flags |= ML_CLIP_MIDTEX;
-		if (level.flags & LEVEL_WRAPMIDTEX) ld->flags |= ML_WRAP_MIDTEX;
-		if (level.flags & LEVEL_CHECKSWITCHRANGE) ld->flags |= ML_CHECKSWITCHRANGE;
+		if (level.flags2 & LEVEL2_CLIPMIDTEX) ld->flags |= ML_CLIP_MIDTEX;
+		if (level.flags2 & LEVEL2_WRAPMIDTEX) ld->flags |= ML_WRAP_MIDTEX;
+		if (level.flags2 & LEVEL2_CHECKSWITCHRANGE) ld->flags |= ML_CHECKSWITCHRANGE;
 
 		// convert the activation type
 		ld->activation = 1 << GET_SPAC(ld->flags);
@@ -2172,6 +2219,7 @@ void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, mapside
 		}
 		break;
 
+#ifdef _3DFLOORS
 	case Sector_Set3DFloor:
 		if (msd->toptexture[0]=='#')
 		{
@@ -2191,6 +2239,7 @@ void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, mapside
 		strncpy (name, msd->bottomtexture, 8);
 		sd->SetTexture(side_t::bottom, TexMan.GetTexture (name, FTexture::TEX_Wall, FTextureManager::TEXMAN_Overridable));
 		break;
+#endif
 
 	case TranslucentLine:	// killough 4/11/98: apply translucency to 2s normal texture
 		if (checktranmap)
@@ -3340,6 +3389,7 @@ void P_SetupLevel (char *lumpname, int position)
 	{
 		// note: most of this ordering is important 
 		ForceNodeBuild = gennodes;
+
 		// [RH] Load in the BEHAVIOR lump
 		FBehavior::StaticUnloadModules ();
 		if (map->HasBehavior)
@@ -3351,17 +3401,18 @@ void P_SetupLevel (char *lumpname, int position)
 		{
 			// We need translators only for Doom format maps.
 			// If none has been defined in a map use the game's default.
-			P_LoadTranslator(level.info->translator != NULL? (const char *)level.info->translator : gameinfo.translator);
+			P_LoadTranslator(!level.info->Translator.IsEmpty()? level.info->Translator.GetChars() : gameinfo.translator);
 		}
+		CheckCompatibility(map);
 		T_LoadScripts(map);
 
 		if (!map->HasBehavior || map->isText)
 		{
 			// Doom format and UDMF text maps get strict monster activation unless the mapinfo
 			// specifies differently.
-			if (!(level.flags & LEVEL_LAXACTIVATIONMAPINFO))
+			if (!(level.flags2 & LEVEL2_LAXACTIVATIONMAPINFO))
 			{
-				level.flags &= ~LEVEL_LAXMONSTERACTIVATION;
+				level.flags2 &= ~LEVEL2_LAXMONSTERACTIVATION;
 			}
 		}
 
@@ -3370,9 +3421,9 @@ void P_SetupLevel (char *lumpname, int position)
 			// set compatibility flags
 			if (gameinfo.gametype == GAME_Strife)
 			{
-				level.flags |= LEVEL_RAILINGHACK;
+				level.flags2 |= LEVEL2_RAILINGHACK;
 			}
-			level.flags |= LEVEL_DUMMYSWITCHES;
+			level.flags2 |= LEVEL2_DUMMYSWITCHES;
 		}
 
 		FBehavior::StaticLoadDefaultModules ();
@@ -3413,6 +3464,16 @@ void P_SetupLevel (char *lumpname, int position)
 				P_LoadThings (map);
 			else
 				P_LoadThings2 (map);	// [RH] Load Hexen-style things
+
+			if (ib_compatflags & BCOMPATF_SPECHITOVERFLOW)
+			{
+				// restoring the original behavior doesn't work so we have to patch the levels in other ways.
+				// Fortunately the only known level depending on this bug is Strain's MAP07 and that's easy to fix.
+				if (numlines == 1022)
+				{
+					lines[1021].flags &= ~ML_BLOCKING;
+				}
+			}
 		}
 		else
 		{
@@ -3555,6 +3616,9 @@ void P_SetupLevel (char *lumpname, int position)
 
 	deathmatchstarts.Clear ();
 
+	// Spawn 3d floors - must be done before spawning things so it can't be done in P_SpawnSpecials
+	P_Spawn3DFloors();
+
 	if (!buildmap)
 	{
 		times[14].Clock();
@@ -3585,10 +3649,6 @@ void P_SetupLevel (char *lumpname, int position)
 	// set up world state
 	P_SpawnSpecials ();
 
-	// Spawn extended specials
-	P_SpawnSpecials2();
-	P_InitTagLists();
-
 	// This must be done BEFORE the PolyObj Spawn!!!
 	gl_PreprocessLevel();
 
@@ -3605,6 +3665,26 @@ void P_SetupLevel (char *lumpname, int position)
 			{
 				players[i].mo = NULL;
 				G_DeathMatchSpawnPlayer (i);
+			}
+		}
+	}
+
+	// Don't count monsters in end-of-level sectors
+	// In 99.9% of all occurences they are part of a trap
+	// and not supposed to be killed.
+	{
+		TThinkerIterator<AActor> it;
+		AActor * mo;
+
+		while ((mo=it.Next()))
+		{
+			if (mo->flags & MF_COUNTKILL)
+			{
+				if (mo->Sector->special == dDamage_End)
+				{
+					level.total_monsters--;
+					mo->flags&=~(MF_COUNTKILL);
+				}
 			}
 		}
 	}

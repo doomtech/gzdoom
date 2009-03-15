@@ -262,6 +262,7 @@ enum
 	MF4_LOOKALLAROUND	= 0x00010000,	// Monster has eyes in the back of its head
 	MF4_STANDSTILL		= 0x00020000,	// Monster should not chase targets unless attacked?
 	MF4_SPECTRAL		= 0x00040000,
+	MF4_SCROLLMOVE		= 0x00080000,	// momentum has been applied by a scroller
 	MF4_NOSPLASHALERT	= 0x00100000,	// Splashes don't alert this monster
 	MF4_SYNCHRONIZED	= 0x00200000,	// For actors spawned at load-time only: Do not randomize tics
 	MF4_NOTARGETSWITCH	= 0x00400000,	// monster never switches target until current one is dead
@@ -304,6 +305,9 @@ enum
 	MF5_SUMMONEDMONSTER	= 0x02000000,	// To mark the friendly Minotaur. Hopefully to be generalized later.
 	MF5_NOVERTICALMELEERANGE=0x04000000,// Does not check vertical distance for melee range
 	MF5_BRIGHT			= 0x08000000,	// Actor is always rendered fullbright
+	MF5_CANTSEEK		= 0x10000000,	// seeker missiles cannot home in on this actor
+	MF5_INCONVERSATION	= 0x20000000,	// Actor is having a conversation
+	MF5_PAINLESS		= 0x40000000,	// Actor always inflicts painless damage.
 
 
 // --- mobj.renderflags ---
@@ -312,8 +316,6 @@ enum
 	RF_YFLIP			= 0x0002,	// Flip sprite vertically
 	RF_ONESIDED			= 0x0004,	// Wall/floor sprite is visible from front only
 	RF_FULLBRIGHT		= 0x0010,	// Sprite is drawn at full brightness
-	RF_NEVERFULLBRIGHT	= 0x0020,	// Used by the GL brightmap code to disable fullbright in case 
-									// brightmaps are to be used to do the effect.
 
 	RF_RELMASK			= 0x0300,	// ---Relative z-coord for bound actors (these obey texture pegging)
 	RF_RELABSOLUTE		= 0x0000,	// Actor z is absolute
@@ -682,7 +684,6 @@ public:
 	TObjPtr<AActor>	LastLookActor;	// Actor last looked for (if TIDtoHate != 0)
 	fixed_t			SpawnPoint[3]; 	// For nightmare respawn
 	WORD			SpawnAngle;
-	BYTE			SoundChans;		// Bitfield indicating which sound channels are playing.
 	int				skillrespawncount;
 	TObjPtr<AActor>	tracer;			// Thing being chased/attacked for tracers
 	TObjPtr<AActor>	master;			// Thing which spawned this one (prevents mutual attacks)

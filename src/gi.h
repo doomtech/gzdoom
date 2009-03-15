@@ -89,12 +89,12 @@ typedef struct
 	char titlePage[9];
 	char creditPage1[9];
 	char creditPage2[9];
-	char titleMusic[9];
+	char titleMusic[16];
 	float titleTime;
 	float advisoryTime;
 	float pageTime;
 	char chatSound[16];
-	char finaleMusic[9];
+	char finaleMusic[16];
 	char finaleFlat[9];
 	char finalePage1[9];
 	char finalePage2[9];
@@ -122,6 +122,7 @@ typedef struct
 	DWORD defaultbloodcolor;
 	DWORD defaultbloodparticlecolor;
 	const char *backpacktype;
+	const char *statusbar;
 } gameinfo_t;
 
 extern gameinfo_t gameinfo;
