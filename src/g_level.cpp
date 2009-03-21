@@ -1539,6 +1539,7 @@ void G_SerializeLevel (FArchive &arc, bool hubLoad)
 		}
 	}
 	gl_RecreateAllAttachedLights();
+	STAT_SAVE(arc, hubLoad);
 }
 
 //==========================================================================

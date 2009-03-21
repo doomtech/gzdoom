@@ -214,15 +214,27 @@ void P_FindFloorCeiling (AActor *actor, bool onlyspawnpos)
 	tmf.x = actor->x;
 	tmf.y = actor->y;
 	tmf.z = actor->z;
-	P_GetFloorCeilingZ(tmf);
 
-	actor->floorz = tmf.floorz;
-	actor->dropoffz = tmf.dropoffz;
-	actor->ceilingz = tmf.ceilingz;
-	actor->floorpic = tmf.floorpic;
-	actor->floorsector = tmf.floorsector;
-	actor->ceilingpic = tmf.ceilingpic;
-	actor->ceilingsector = tmf.ceilingsector;
+	if (!onlyspawnpos)
+	{
+		P_GetFloorCeilingZ(tmf);
+		actor->floorz = tmf.floorz;
+		actor->dropoffz = tmf.dropoffz;
+		actor->ceilingz = tmf.ceilingz;
+		actor->floorpic = tmf.floorpic;
+		actor->floorsector = tmf.floorsector;
+		actor->ceilingpic = tmf.ceilingpic;
+		actor->ceilingsector = tmf.ceilingsector;
+	}
+	else
+	{
+		tmf.ceilingsector = tmf.floorsector = actor->Sector;
+
+		tmf.floorz = tmf.dropoffz = actor->floorz;
+		tmf.ceilingz = actor->ceilingz;
+		tmf.floorpic = actor->floorpic;
+		tmf.ceilingpic = actor->ceilingpic;
+	}
 
 	FBoundingBox box(tmf.x, tmf.y, actor->radius);
 
@@ -248,6 +260,10 @@ void P_FindFloorCeiling (AActor *actor, bool onlyspawnpos)
 		actor->floorsector = tmf.floorsector;
 		actor->ceilingpic = tmf.ceilingpic;
 		actor->ceilingsector = tmf.ceilingsector;
+	}
+	else
+	{
+		actor->floorsector = actor->ceilingsector = actor->Sector;
 	}
 }
 
@@ -2613,8 +2629,7 @@ bool aim_t::AimTraverse3DFloors(const divline_t &trace, intercept_t * in)
 	nextsector=NULL;
 	nexttopplane=nextbottomplane=NULL;
 
-    if ((li->frontsector && li->frontsector->e->XFloor.ffloors.Size()) || 
-		(li->backsector && li->backsector->e->XFloor.ffloors.Size()))
+    if(li->frontsector->e->XFloor.ffloors.Size() || li->backsector->e->XFloor.ffloors.Size())
     {
 		int  frontflag;
 		F3DFloor* rover;
@@ -3451,6 +3466,33 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 		8192*FRACUNIT, MF_SHOOTABLE, ML_BLOCKEVERYTHING, source, trace,
 		TRACE_PCross|TRACE_Impact, ProcessRailHit);
 
+	// Hurt anything the trace hit
+	unsigned int i;
+	AActor *puffDefaults = puffclass == NULL? NULL : GetDefaultByType (puffclass);
+	FName damagetype = (puffDefaults == NULL || puffDefaults->DamageType == NAME_None) ? FName(NAME_Railgun) : puffDefaults->DamageType;
+
+	for (i = 0; i < RailHits.Size (); i++)
+	{
+		fixed_t x, y, z;
+
+		x = x1 + FixedMul (RailHits[i].Distance, vx);
+		y = y1 + FixedMul (RailHits[i].Distance, vy);
+		z = shootz + FixedMul (RailHits[i].Distance, vz);
+
+		if ((RailHits[i].HitActor->flags & MF_NOBLOOD) ||
+			(RailHits[i].HitActor->flags2 & (MF2_DORMANT|MF2_INVULNERABLE)))
+		{
+			if (puffclass != NULL) P_SpawnPuff (source, puffclass, x, y, z, source->angle - ANG90, 1, PF_HITTHING);
+		}
+		else
+		{
+			P_SpawnBlood (x, y, z, source->angle - ANG180, damage, RailHits[i].HitActor);
+			P_TraceBleed (damage, x, y, z, RailHits[i].HitActor, source->angle, pitch);
+		}
+		P_DamageMobj (RailHits[i].HitActor, source, source, damage, damagetype);
+	}
+
+	// Spawn a decal or puff at the point where the trace ended.
 	if (trace.HitType == TRACE_HitWall)
 	{
 		SpawnShootDecal (source, trace);
@@ -3476,32 +3518,7 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 		}
 	}
 
-	// Now hurt anything the trace hit
-	unsigned int i;
-	AActor *puffDefaults = puffclass == NULL? NULL : GetDefaultByType (puffclass);
-	FName damagetype = (puffDefaults == NULL || puffDefaults->DamageType == NAME_None) ? FName(NAME_Railgun) : puffDefaults->DamageType;
-
-	for (i = 0; i < RailHits.Size (); i++)
-	{
-		fixed_t x, y, z;
-
-		x = x1 + FixedMul (RailHits[i].Distance, vx);
-		y = y1 + FixedMul (RailHits[i].Distance, vy);
-		z = shootz + FixedMul (RailHits[i].Distance, vz);
-
-		if ((RailHits[i].HitActor->flags & MF_NOBLOOD) ||
-			(RailHits[i].HitActor->flags2 & (MF2_DORMANT|MF2_INVULNERABLE)))
-		{
-			if (puffclass != NULL) P_SpawnPuff (source, puffclass, x, y, z, source->angle - ANG180, 1, PF_HITTHING);
-		}
-		else
-		{
-			P_SpawnBlood (x, y, z, source->angle - ANG180, damage, RailHits[i].HitActor);
-		}
-		P_DamageMobj (RailHits[i].HitActor, source, source, damage, damagetype);
-		P_TraceBleed (damage, x, y, z, RailHits[i].HitActor, angle, pitch);
-	}
-
+	// Draw the slug's trail.
 	end.X = FIXED2FLOAT(trace.X);
 	end.Y = FIXED2FLOAT(trace.Y);
 	end.Z = FIXED2FLOAT(trace.Z);
