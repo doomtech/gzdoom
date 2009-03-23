@@ -378,7 +378,7 @@ add_custom_target( revision_check ALL
 # Libraries ZDoom needs
 
 set( ZDOOM_LIBS ${ZDOOM_LIBS} "${ZLIB_LIBRARIES}" "${JPEG_LIBRARIES}" "${FMOD_LIBRARY}" )
-include_directories( "${ZLIB_INCLUDE_DIR}" "${JPEG_INCLUDE_DIR}" "${FMOD_INCLUDE_DIR}" )
+include_directories( "${ZLIB_INCLUDE_DIR}" "${JPEG_INCLUDE_DIR}" "${FMOD_INCLUDE_DIR}" "${BZIP2_INCLUDE_DIR}" "${LZMA_INCLUDE_DIR}" )
 
 # Start defining source files for ZDoom
 
@@ -478,6 +478,7 @@ add_executable( zdoom WIN32
 	configfile.cpp
 	ct_chat.cpp
 	d_dehacked.cpp
+	d_iwad.cpp
 	d_main.cpp
 	d_net.cpp
 	d_netinfo.cpp
