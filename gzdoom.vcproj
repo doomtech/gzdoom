@@ -554,6 +554,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\d_iwad.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\D_main.cpp"
 				>
 			</File>
