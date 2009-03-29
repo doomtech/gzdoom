@@ -123,10 +123,10 @@ typedef enum
 		
 } animenum_t;
 
-typedef struct
+struct yahpt_t
 {
 	int x, y;
-} yahpt_t;
+};
 
 struct lnode_t
 {
@@ -146,7 +146,7 @@ struct lnode_t
 //
 
 #define MAX_ANIMATION_FRAMES 20
-typedef struct
+struct in_anim_t
 {
 	int			type;	// Made an int so I can use '|'
 	int 		period;	// period in tics between animations
@@ -162,7 +162,7 @@ typedef struct
 	
 	char		levelname[9];
 	char		levelname2[9];
-} in_anim_t;
+};
 
 static TArray<lnode_t> lnodes;
 static TArray<in_anim_t> anims;
@@ -312,7 +312,7 @@ void WI_LoadBackground(bool isenterpic)
 		{
 		case GAME_Chex:
 		case GAME_Doom:
-			if (gamemode != commercial)
+			if (!(gameinfo.flags & GI_MAPxx))
 			{
 				const char *level = isenterpic ? wbs->next : wbs->current;
 				if (IsExMy(level))
@@ -332,7 +332,7 @@ void WI_LoadBackground(bool isenterpic)
 					if (level.info->ExitPic.IsNotEmpty()) return;
 
 					// E1-E3 need special treatment when playing Doom 1.
-					if (gamemode!=commercial)
+					if (!(gameinfo.flags & GI_MAPxx))
 					{
 						// not if the last level is not from the first 3 episodes
 						if (!IsExMy(wbs->current)) return;
@@ -1881,16 +1881,8 @@ void WI_Ticker(void)
 		// intermission music - use the defaults if none specified
 		if (level.info->InterMusic.IsNotEmpty()) 
 			S_ChangeMusic(level.info->InterMusic, level.info->intermusicorder);
-		else if (gameinfo.gametype == GAME_Heretic)
-			S_ChangeMusic ("mus_intr");
-		else if (gameinfo.gametype == GAME_Hexen)
-			S_ChangeMusic ("hub");
-		else if (gameinfo.gametype == GAME_Strife)	// Strife also needs a default
-			S_ChangeMusic ("d_slide");
-		else if (gamemode == commercial)
-			S_ChangeMusic ("$MUSIC_DM2INT");
 		else
-			S_ChangeMusic ("$MUSIC_INTER"); 
+			S_ChangeMusic (gameinfo.intermissionMusic.GetChars()); 
 
 	}
 	

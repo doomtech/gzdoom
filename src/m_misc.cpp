@@ -401,7 +401,7 @@ void M_LoadDefaults ()
 //
 
 
-typedef struct
+struct pcx_t
 {
 	char				manufacturer;
 	char				version;
@@ -424,7 +424,7 @@ typedef struct
 	unsigned short		palette_type;
 	
 	char				filler[58];
-} pcx_t;
+};
 
 
 //
@@ -648,7 +648,7 @@ void M_ScreenShot (const char *filename)
 		{
 			size_t dirlen;
 			autoname = Args->CheckValue("-shotdir");
-			if (autoname == NULL)
+			if (autoname.IsEmpty())
 			{
 				autoname = screenshot_dir;
 			}
@@ -671,6 +671,7 @@ void M_ScreenShot (const char *filename)
 			}
 		}
 		autoname = NicePath(autoname);
+		CreatePath(autoname);
 		if (!FindFreeName (autoname, writepcx ? "pcx" : "png"))
 		{
 			Printf ("M_ScreenShot: Delete some screenshots\n");
@@ -682,7 +683,6 @@ void M_ScreenShot (const char *filename)
 		autoname = filename;
 		DefaultExtension (autoname, writepcx ? ".pcx" : ".png");
 	}
-	CreatePath(screenshot_dir);
 
 	// save the screenshot
 	const BYTE *buffer;
