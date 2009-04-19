@@ -4,6 +4,7 @@ if( COMMAND cmake_policy )
 	cmake_policy( SET CMP0003 NEW )
 endif( COMMAND cmake_policy )
 
+include( CheckCXXSourceCompiles )
 include( CheckFunctionExists )
 include( FindPkgConfig )
 include( FindOpenGL )
@@ -316,7 +317,10 @@ endif( NOT NO_ASM )
 # Set up flags for GCC
 
 if( CMAKE_COMPILER_IS_GNUCXX )
-	set( REL_CXX_FLAGS "-fno-rtti -fomit-frame-pointer" )
+	set( REL_CXX_FLAGS "-fno-rtti" )
+	if( NOT PROFILE )
+		set( REL_CXX_FLAGS "${REL_CXX_FLAGS} -fomit-frame-pointer" )
+	endif( NOT PROFILE )
 	set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${REL_CXX_FLAGS}" )
 	set( CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} ${REL_CXX_FLAGS}" )
 	set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${REL_CXX_FLAGS}" )
@@ -368,7 +372,23 @@ if( UNIX )
 	endif( NOT CLOCK_GETTIME_IN_RT )
 endif( UNIX )
 
-# Update svnrevision_gz.h
+CHECK_CXX_SOURCE_COMPILES(
+	"#include <stdarg.h>
+	int main() { va_list list1, list2; va_copy(list1, list2); return 0; }"
+	HAS_VA_COPY )
+if( NOT HAS_VA_COPY )
+	CHECK_CXX_SOURCE_COMPILES(
+		"#include <stdarg.h>
+		int main() { va_list list1, list2; __va_copy(list1, list2); return 0; }"
+		HAS___VA_COPY )
+	if( HAS___VA_COPY )
+		add_definitions( -Dva_copy=__va_copy )
+	else( HAS___VA_COPY )
+		add_definitions( -DNO_VA_COPY )
+	endif( HAS___VA_COPY )
+endif( NOT HAS_VA_COPY )
+
+# Update svnrevision.h
 
 add_custom_target( revision_check ALL
 	COMMAND ${CMAKE_BINARY_DIR}/tools/updaterevision/updaterevision . src/svnrevision_gz.h

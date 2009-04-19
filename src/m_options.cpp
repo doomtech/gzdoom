@@ -584,7 +584,8 @@ EXTERN_CVAR (Bool, am_drawmapback)
 static value_t MapColorTypes[] = {
 	{ 0, "Custom" },
 	{ 1, "Traditional Doom" },
-	{ 2, "Traditional Strife" }
+	{ 2, "Traditional Strife" },
+	{ 3, "Traditional Raven" }
 };
 
 static value_t SecretTypes[] = {
@@ -606,7 +607,7 @@ static value_t OverlayTypes[] = {
 };
 
 static menuitem_t AutomapItems[] = {
-	{ discrete, "Map color set",		{&am_colorset},			{3.0}, {0.0},	{0.0}, {MapColorTypes} },
+	{ discrete, "Map color set",		{&am_colorset},			{4.0}, {0.0},	{0.0}, {MapColorTypes} },
 	{ more,		"Set custom colors",	{NULL},					{0.0}, {0.0},	{0.0}, {(value_t*)StartMapColorsMenu} },
 	{ redtext,	" ",					{NULL},					{0.0}, {0.0},	{0.0}, {NULL} },
 	{ discrete, "Rotate automap",		{&am_rotate},		   	{3.0}, {0.0},	{0.0}, {RotateTypes} },

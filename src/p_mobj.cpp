@@ -1331,13 +1331,15 @@ bool P_SeekerMissile (AActor *actor, angle_t thresh, angle_t turnMax)
 }
 
 //
-// P_XYMovement  
+// P_XYMovement
+//
+// Returns the actor's old floorz.
 //
 #define STOPSPEED			0x1000
 #define FRICTION			0xe800
 #define CARRYSTOPSPEED		(STOPSPEED*32/3)
 
-void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly) 
+fixed_t P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly) 
 {
 	bool bForceSlide = scrollx || scrolly;
 	angle_t angle;
@@ -1348,6 +1350,7 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 	static const int windTab[3] = {2048*5, 2048*10, 2048*25};
 	int steps, step, totalsteps;
 	fixed_t startx, starty;
+	fixed_t oldfloorz = mo->floorz;
 
 	fixed_t maxmove = (mo->waterlevel < 1) || (mo->flags & MF_MISSILE) || 
 					  (mo->player && mo->player->crouchoffset<-10*FRACUNIT) ? MAXMOVE : MAXMOVE/4;
@@ -1433,7 +1436,7 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 				mo->tics = -1;
 			}
 		}
-		return;
+		return oldfloorz;
 	}
 
 	player = mo->player;
@@ -1616,12 +1619,12 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 							{
 								S_Sound (mo, CHAN_VOICE, mo->SeeSound, 1, ATTN_IDLE);
 							}
-							return;
+							return oldfloorz;
 						}
 						else
 						{ // Struck a player/creature
 							P_ExplodeMissile (mo, NULL, BlockingMobj);
-							return;
+							return oldfloorz;
 						}
 					}
 				}
@@ -1634,7 +1637,7 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 						{
 							S_Sound (mo, CHAN_VOICE, mo->SeeSound, 1, ATTN_IDLE);
 						}
-						return;
+						return oldfloorz;
 					}
 				}
 				if (BlockingMobj &&
@@ -1661,7 +1664,7 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 						mo->tracer = mo->target;
 					}
 					mo->target = BlockingMobj;
-					return;
+					return oldfloorz;
 				}
 explode:
 				// explode a missile
@@ -1674,16 +1677,16 @@ explode:
 					// Hack to prevent missiles exploding against the sky.
 					// Does not handle sky floors.
 					mo->Destroy ();
-					return;
+					return oldfloorz;
 				}
 				// [RH] Don't explode on horizon lines.
 				if (mo->BlockingLine != NULL && mo->BlockingLine->special == Line_Horizon)
 				{
 					mo->Destroy ();
-					return;
+					return oldfloorz;
 				}
 				P_ExplodeMissile (mo, mo->BlockingLine, BlockingMobj);
-				return;
+				return oldfloorz;
 			}
 			else
 			{
@@ -1718,12 +1721,12 @@ explode:
 	{ // debug option for no sliding at all
 		mo->momx = mo->momy = 0;
 		player->momx = player->momy = 0;
-		return;
+		return oldfloorz;
 	}
 
 	if (mo->flags & (MF_MISSILE | MF_SKULLFLY))
 	{ // no friction for missiles
-		return;
+		return oldfloorz;
 	}
 
 	if (mo->z > mo->floorz && !(mo->flags2 & MF2_ONMOBJ) &&
@@ -1740,7 +1743,7 @@ explode:
 				player->momy = FixedMul (player->momy, level.airfriction);
 			}
 		}
-		return;
+		return oldfloorz;
 	}
 
 	if (mo->flags & MF_CORPSE)
@@ -1764,7 +1767,7 @@ explode:
 					}
 					if (i==mo->Sector->e->XFloor.ffloors.Size()) 
 #endif
-						return;
+						return oldfloorz;
 				}
 			}
 		}
@@ -1823,6 +1826,7 @@ explode:
 			player->momy = FixedMul (player->momy, ORIG_FRICTION);
 		}
 	}
+	return oldfloorz;
 }
 
 // Move this to p_inter ***
@@ -1852,7 +1856,7 @@ void P_MonsterFallingDamage (AActor *mo)
 //
 // P_ZMovement
 //
-void P_ZMovement (AActor *mo)
+void P_ZMovement (AActor *mo, fixed_t oldfloorz)
 {
 	fixed_t dist;
 	fixed_t delta;
@@ -1867,7 +1871,10 @@ void P_ZMovement (AActor *mo)
 		mo->player->deltaviewheight = mo->player->GetDeltaViewHeight();
 	}
 
-	if (!(mo->flags2&MF2_FLOATBOB)) mo->z += mo->momz;
+	if (!(mo->flags2 & MF2_FLOATBOB))
+	{
+		mo->z += mo->momz;
+	}
 
 //
 // apply gravity
@@ -1882,8 +1889,16 @@ void P_ZMovement (AActor *mo)
 			fixed_t grav = (fixed_t)(level.gravity * mo->Sector->gravity *
 				FIXED2FLOAT(mo->gravity) * 81.92);
 
-			if (mo->momz == 0) mo->momz -= grav + grav;
-			else mo->momz -= grav;
+			// [RH] Double gravity only if running off a ledge. Coming down from
+			// an upward thrust (e.g. a jump) should not double it.
+			if (mo->momz == 0 && oldfloorz > mo->floorz && mo->z == oldfloorz)
+			{
+				mo->momz -= grav + grav;
+			}
+			else
+			{
+				mo->momz -= grav;
+			}
 		}
 		if (mo->waterlevel > 1)
 		{
@@ -1901,7 +1916,10 @@ void P_ZMovement (AActor *mo)
 		}
 	}
 
-	if (mo->flags2&MF2_FLOATBOB) mo->z += mo->momz;
+	if (mo->flags2 & MF2_FLOATBOB)
+	{
+		mo->z += mo->momz;
+	}
 
 //
 // adjust height
@@ -2933,7 +2951,7 @@ void AActor::Tick ()
 
 		// Handle X and Y momemtums
 		BlockingMobj = NULL;
-		P_XYMovement (this, cummx, cummy);
+		fixed_t oldfloorz = P_XYMovement (this, cummx, cummy);
 		if (ObjectFlags & OF_EuthanizeMe)
 		{ // actor was destroyed
 			return;
@@ -2956,7 +2974,7 @@ void AActor::Tick ()
 			{
 				if (!(onmo = P_CheckOnmobj (this)))
 				{
-					P_ZMovement (this);
+					P_ZMovement (this, oldfloorz);
 					flags2 &= ~MF2_ONMOBJ;
 				}
 				else
@@ -2989,7 +3007,7 @@ void AActor::Tick ()
 			}
 			else
 			{
-				P_ZMovement (this);
+				P_ZMovement (this, oldfloorz);
 			}
 
 			if (ObjectFlags & OF_EuthanizeMe)

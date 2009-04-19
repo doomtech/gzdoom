@@ -540,6 +540,7 @@ void D_Display ()
 			C_NewModeAdjust ();
 			// Reload crosshair if transitioned to a different size
 			crosshair.Callback ();
+			AM_NewResolution ();
 		}
 	}
 
@@ -1605,7 +1606,7 @@ void D_DoomMain (void)
 
 	GameConfig->DoGameSetup (GameNames[gameinfo.gametype]);
 
-	if (!(gameinfo.flags & GI_SHAREWARE))
+	if (!(gameinfo.flags & GI_SHAREWARE) && !Args->CheckParm("-noautoload"))
 	{
 		FString file;
 
