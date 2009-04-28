@@ -1,4 +1,31 @@
-﻿April 17, 2009
+﻿April 28, 2009  (Changes by Graf Zahl)
+- Added ML_BLOCKUSE line flag, accessible through UDMF and Line_SetBlocking.
+
+April 25, 2009  (Changes by Graf Zahl)
+- Fixed handling of embedded WADs.
+
+April 23, 2009  (Changes by Graf Zahl)
+- Added Gez's A_CheckCeiling submission.
+- Fixed: AM_NewResolution crashed when called from outside a level.
+- Added support for Quake PAK files.
+- Improved warning messages for WAD files with incorrect marker usage.
+- complete restructuring of resource file handling for more flexibility and future
+  extensions.
+- Removed merging of special namespaces. For the texture manager this has
+  become totally useless so there is no need to do this anymore. Not merging
+  the namespaces also allows a much more reliable detection of lumps belonging
+  to special namespaces so the ScanForFlatHack function is no longer needed.
+  Instead, any lump up to F_END with a length of 4096 will be marked for 
+  inclusion as a flat texture if no F_START marker is found.
+
+April 21, 2009  (Changes by Graf Zahl)
+- fixed MustConfirm parsing in MAPINFO
+
+April 19, 2009  (Changes by Graf Zahl)
+- Made the counting of intermission stats in Doom a GAMEINFO option so that
+  it can be activated in all games.
+
+April 17, 2009
 - Gave the intermission screen sounds their own SNDINFO entries.
 
 April 16, 2009
