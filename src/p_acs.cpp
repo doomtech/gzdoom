@@ -70,6 +70,7 @@
 #include "sbarinfo.h"
 #include "cmdlib.h"
 #include "m_png.h"
+#include "p_setup.h"
 
 extern FILE *Logfile;
 
@@ -1434,7 +1435,7 @@ void FBehavior::LoadScriptsDirectory ()
 				ScriptPtr  *ptr2 = &Scripts[i];
 
 				ptr2->Number = LittleShort(ptr1->Number);
-				ptr2->Type = LittleShort(ptr1->Type);
+				ptr2->Type = BYTE(LittleShort(ptr1->Type));
 				ptr2->ArgCount = LittleLong(ptr1->ArgCount);
 				ptr2->Address = LittleLong(ptr1->Address);
 			}
@@ -2405,6 +2406,7 @@ enum
 	APROP_Friendly		= 16,
 	APROP_SpawnHealth   = 17,
 	APROP_Dropped		= 18,
+	APROP_Notarget		= 19,
 };	
 
 // These are needed for ACS's APROP_RenderStyle
@@ -2490,6 +2492,10 @@ void DLevelScript::DoSetActorProperty (AActor *actor, int property, int value)
 
 	case APROP_Invulnerable:
 		if (value) actor->flags2 |= MF2_INVULNERABLE; else actor->flags2 &= ~MF2_INVULNERABLE;
+		break;
+
+	case APROP_Notarget:
+		if (value) actor->flags3 |= MF3_NOTARGET; else actor->flags3 &= ~MF3_NOTARGET;
 		break;
 
 	case APROP_JumpZ:
@@ -2595,6 +2601,7 @@ int DLevelScript::GetActorProperty (int tid, int property)
 	case APROP_ChaseGoal:	return !!(actor->flags5 & MF5_CHASEGOAL);
 	case APROP_Frightened:	return !!(actor->flags4 & MF4_FRIGHTENED);
 	case APROP_Friendly:	return !!(actor->flags & MF_FRIENDLY);
+	case APROP_Notarget:	return !!(actor->flags3 & MF3_NOTARGET);
 	case APROP_SpawnHealth: if (actor->IsKindOf (RUNTIME_CLASS (APlayerPawn)))
 							{
 								return static_cast<APlayerPawn *>(actor)->MaxHealth;
@@ -2772,8 +2779,146 @@ int DLevelScript::DoClassifyActor(int tid)
 	return classify;
 }
 
+enum EACSFunctions
+{
+	ACSF_GetLineUDMFInt=1,
+	ACSF_GetLineUDMFFixed,
+	ACSF_GetThingUDMFInt,
+	ACSF_GetThingUDMFFixed,
+	ACSF_GetSectorUDMFInt,
+	ACSF_GetSectorUDMFFixed,
+	ACSF_GetSideUDMFInt,
+	ACSF_GetSideUDMFFixed,
+	ACSF_GetActorMomX,
+	ACSF_GetActorMomY,
+	ACSF_GetActorMomZ,
+	ACSF_SetActivator,
+	ACSF_SetActivatorToTarget,
+	ACSF_GetActorViewHeight,
+	ACSF_GetChar,
+};
+
+int DLevelScript::SideFromID(int id, int side)
+{
+	if (side != 0 && side != 1) return -1;
+	
+	if (id == 0)
+	{
+		if (activationline == NULL) return -1;
+		if (activationline->sidenum[side] == NO_SIDE) return -1;
+		return sides[activationline->sidenum[side]].Index;
+	}
+	else
+	{
+		int line = P_FindLineFromID(id, -1);
+		if (line == -1) return -1;
+		if (lines[line].sidenum[side] == NO_SIDE) return -1;
+		return sides[lines[line].sidenum[side]].Index;
+	}
+}
+
+int DLevelScript::LineFromID(int id)
+{
+	if (id == 0)
+	{
+		if (activationline == NULL) return -1;
+		return int(activationline - lines);
+	}
+	else
+	{
+		return P_FindLineFromID(id, -1);
+	}
+}
+
+int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
+{
+	AActor *actor;
+	switch(funcIndex)
+	{
+		case ACSF_GetLineUDMFInt:
+			return GetUDMFInt(UDMF_Line, LineFromID(args[0]), FBehavior::StaticLookupString(args[1]));
+
+		case ACSF_GetLineUDMFFixed:
+			return GetUDMFFixed(UDMF_Line, LineFromID(args[0]), FBehavior::StaticLookupString(args[1]));
+
+		case ACSF_GetThingUDMFInt:
+		case ACSF_GetThingUDMFFixed:
+			return 0;	// Not implemented yet
+
+		case ACSF_GetSectorUDMFInt:
+			return GetUDMFInt(UDMF_Sector, P_FindSectorFromTag(args[0], -1), FBehavior::StaticLookupString(args[1]));
+
+		case ACSF_GetSectorUDMFFixed:
+			return GetUDMFFixed(UDMF_Sector, P_FindSectorFromTag(args[0], -1), FBehavior::StaticLookupString(args[1]));
+
+		case ACSF_GetSideUDMFInt:
+			return GetUDMFInt(UDMF_Side, SideFromID(args[0], args[1]), FBehavior::StaticLookupString(args[2]));
+
+		case ACSF_GetSideUDMFFixed:
+			return GetUDMFFixed(UDMF_Side, SideFromID(args[0], args[1]), FBehavior::StaticLookupString(args[2]));
+
+		case ACSF_GetActorMomX:
+			actor = SingleActorFromTID(args[0], activator);
+			return actor != NULL? actor->momx : 0;
+
+		case ACSF_GetActorMomY:
+			actor = SingleActorFromTID(args[0], activator);
+			return actor != NULL? actor->momy : 0;
+
+		case ACSF_GetActorMomZ:
+			actor = SingleActorFromTID(args[0], activator);
+			return actor != NULL? actor->momz : 0;
+
+		case ACSF_SetActivator:
+			activator = SingleActorFromTID(args[0], NULL);
+			return activator != NULL;
+		
+		case ACSF_SetActivatorToTarget:
+			actor = SingleActorFromTID(args[0], NULL);
+			if (actor != NULL) actor = actor->target;
+			if (actor != NULL) activator = actor;
+			return activator != NULL;
+
+		case ACSF_GetActorViewHeight:
+			actor = SingleActorFromTID(args[0], NULL);
+			if (actor != NULL)
+			{
+				if (actor->player != NULL)
+				{
+					return actor->player->mo->ViewHeight + actor->player->crouchviewdelta;
+				}
+				else
+				{
+					return actor->GetClass()->Meta.GetMetaFixed(AMETA_CameraHeight, actor->height/2);
+				}
+			}
+			else return 0;
+
+		case ACSF_GetChar:
+		{
+			const char *p = FBehavior::StaticLookupString(args[0]);
+			if (p != NULL && args[1] >= 0 && args[1] < int(strlen(p)))
+			{
+				return p[args[1]];
+			}
+			else 
+			{
+				return 0;
+			}
+		}
+
+
+		default:
+			break;
+	}
+
+	return 0;
+}
+
+
 #define NEXTWORD	(LittleLong(*pc++))
 #define NEXTBYTE	(fmt==ACS_LittleEnhanced?getbyte(pc):NEXTWORD)
+#define NEXTSHORT	(fmt==ACS_LittleEnhanced?getshort(pc):NEXTWORD)
 #define STACK(a)	(Stack[sp - (a)])
 #define PushToStack(a)	(Stack[sp++] = (a))
 
@@ -2781,6 +2926,13 @@ inline int getbyte (int *&pc)
 {
 	int res = *(BYTE *)pc;
 	pc = (int *)((BYTE *)pc+1);
+	return res;
+}
+
+inline int getshort (int *&pc)
+{
+	int res = LittleShort( *(SWORD *)pc);
+	pc = (int *)((BYTE *)pc+2);
 	return res;
 }
 
@@ -3064,6 +3216,17 @@ int DLevelScript::RunScript ()
 			pc = (int *)((BYTE *)pc + 6);
 			break;
 
+		case PCD_CALLFUNC:
+			{
+				int argCount = NEXTBYTE;
+				int funcIndex = NEXTSHORT;
+
+				int retval = CallFunction(argCount, funcIndex, &STACK(argCount));
+				sp -= argCount-1;
+				STACK(1) = retval;
+			}
+			break;
+
 		case PCD_CALL:
 		case PCD_CALLDISCARD:
 			{
@@ -3126,7 +3289,7 @@ int DLevelScript::RunScript ()
 				}
 				sp -= sizeof(CallReturn)/sizeof(int);
 				retsp = &Stack[sp];
-				sp = locals - Stack;
+				sp = int(locals - Stack);
 				pc = ret->ReturnModule->Ofs2PC(ret->ReturnAddress);
 				activeFunction = ret->ReturnFunction;
 				activeBehavior = ret->ReturnModule;
@@ -5344,7 +5507,7 @@ int DLevelScript::RunScript ()
 			}
 			else
 			{
-				PushToStack (activator->player - players);
+				PushToStack (int(activator->player - players));
 			}
 			break;
 
@@ -5955,6 +6118,11 @@ DLevelScript::DLevelScript (AActor *who, line_t *where, int num, const ScriptPtr
 
 	Link ();
 
+	if (level.flags2 & LEVEL2_HEXENHACK)
+	{
+		PutLast();
+	}
+
 	DPrintf ("Script %d started.\n", num);
 }
 
@@ -6027,7 +6195,7 @@ static void addDefered (level_info_t *i, acsdefered_t::EType type, int script, i
 		def->arg2 = arg2;
 		if (who != NULL && who->player != NULL)
 		{
-			def->playernum = who->player - players;
+			def->playernum = int(who->player - players);
 		}
 		else
 		{

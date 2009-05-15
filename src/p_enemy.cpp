@@ -833,7 +833,7 @@ void P_RandomChaseDir (AActor *actor)
 
 		if (actor->FriendPlayer != 0)
 		{
-			player = players[actor->FriendPlayer - 1].mo;
+			player = players[i = actor->FriendPlayer - 1].mo;
 		}
 		else
 		{
@@ -846,60 +846,62 @@ void P_RandomChaseDir (AActor *actor)
 			}
 			player = players[i].mo;
 		}
-
-		if (pr_newchasedir() & 1 || !P_CheckSight (actor, player))
+		if (player != NULL && playeringame[i])
 		{
-			deltax = player->x - actor->x;
-			deltay = player->y - actor->y;
-
-			if (deltax>128*FRACUNIT)
-				d[1]= DI_EAST;
-			else if (deltax<-128*FRACUNIT)
-				d[1]= DI_WEST;
-			else
-				d[1]=DI_NODIR;
-
-			if (deltay<-128*FRACUNIT)
-				d[2]= DI_SOUTH;
-			else if (deltay>128*FRACUNIT)
-				d[2]= DI_NORTH;
-			else
-				d[2]=DI_NODIR;
-
-			// try direct route
-			if (d[1] != DI_NODIR && d[2] != DI_NODIR)
+			if (pr_newchasedir() & 1 || !P_CheckSight (actor, player))
 			{
-				actor->movedir = diags[((deltay<0)<<1) + (deltax>0)];
-				if (actor->movedir != turnaround && P_TryWalk(actor))
-					return;
-			}
+				deltax = player->x - actor->x;
+				deltay = player->y - actor->y;
 
-			// try other directions
-			if (pr_newchasedir() > 200 || abs(deltay) > abs(deltax))
-			{
-				swap (d[1], d[2]);
-			}
+				if (deltax>128*FRACUNIT)
+					d[1]= DI_EAST;
+				else if (deltax<-128*FRACUNIT)
+					d[1]= DI_WEST;
+				else
+					d[1]=DI_NODIR;
 
-			if (d[1] == turnaround)
-				d[1] = DI_NODIR;
-			if (d[2] == turnaround)
-				d[2] = DI_NODIR;
-				
-			if (d[1] != DI_NODIR)
-			{
-				actor->movedir = d[1];
-				if (P_TryWalk (actor))
+				if (deltay<-128*FRACUNIT)
+					d[2]= DI_SOUTH;
+				else if (deltay>128*FRACUNIT)
+					d[2]= DI_NORTH;
+				else
+					d[2]=DI_NODIR;
+
+				// try direct route
+				if (d[1] != DI_NODIR && d[2] != DI_NODIR)
 				{
-					// either moved forward or attacked
-					return;
+					actor->movedir = diags[((deltay<0)<<1) + (deltax>0)];
+					if (actor->movedir != turnaround && P_TryWalk(actor))
+						return;
 				}
-			}
 
-			if (d[2] != DI_NODIR)
-			{
-				actor->movedir = d[2];
-				if (P_TryWalk (actor))
-					return;
+				// try other directions
+				if (pr_newchasedir() > 200 || abs(deltay) > abs(deltax))
+				{
+					swap (d[1], d[2]);
+				}
+
+				if (d[1] == turnaround)
+					d[1] = DI_NODIR;
+				if (d[2] == turnaround)
+					d[2] = DI_NODIR;
+					
+				if (d[1] != DI_NODIR)
+				{
+					actor->movedir = d[1];
+					if (P_TryWalk (actor))
+					{
+						// either moved forward or attacked
+						return;
+					}
+				}
+
+				if (d[2] != DI_NODIR)
+				{
+					actor->movedir = d[2];
+					if (P_TryWalk (actor))
+						return;
+				}
 			}
 		}
 	}
@@ -1407,8 +1409,11 @@ bool P_LookForPlayers (AActor *actor, INTBOOL allaround)
 	}
 	else if (actor->flags & MF_FRIENDLY)
 	{
-		return P_LookForEnemies (actor, allaround);
-	}
+		if (!deathmatch) // [SP] If you don't see any enemies in deathmatch, look for players.
+			return P_LookForEnemies (actor, allaround);
+		else if ( P_LookForEnemies (actor, allaround) )
+			return true;
+	}	// [SP] if false, and in deathmatch, intentional fall-through
 
 	if (!(gameinfo.gametype & (GAME_DoomStrifeChex)) &&
 		!multiplayer &&
@@ -1481,6 +1486,16 @@ bool P_LookForPlayers (AActor *actor, INTBOOL allaround)
 
 		if (!P_CheckSight (actor, player->mo, 2))
 			continue;			// out of sight
+
+		// [SP] Deathmatch fixes - if we have MF_FRIENDLY we're definitely in deathmatch
+		// We're going to ignore our master, but go after his enemies.
+		if ( actor->flags & MF_FRIENDLY )
+		{
+			if ( actor->FriendPlayer == 0 )
+				continue; // I have no friends, I will ignore players.
+			if ( actor->FriendPlayer == player->mo->FriendPlayer )
+				continue; // This is my master.
+		}
 
 		if (!allaround)
 		{
@@ -2696,7 +2711,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_BossDeath)
 						LEVEL_SORCERER2SPECIAL)) == 0)
 		return;
 
-	if (
+	if ((i_compatflags & COMPATF_ANYBOSSDEATH) || ( // [GZ] Added for UAC_DEAD
 		((level.flags & LEVEL_MAP07SPECIAL) && (type == NAME_Fatso || type == NAME_Arachnotron)) ||
 		((level.flags & LEVEL_BRUISERSPECIAL) && (type == NAME_BaronOfHell)) ||
 		((level.flags & LEVEL_CYBORGSPECIAL) && (type == NAME_Cyberdemon)) ||
@@ -2704,7 +2719,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_BossDeath)
 		((level.flags & LEVEL_HEADSPECIAL) && (type == NAME_Ironlich)) ||
 		((level.flags & LEVEL_MINOTAURSPECIAL) && (type == NAME_Minotaur)) ||
 		((level.flags & LEVEL_SORCERER2SPECIAL) && (type == NAME_Sorcerer2))
-	   )
+	   ))
 		;
 	else
 		return;

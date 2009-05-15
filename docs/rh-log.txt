@@ -1,4 +1,99 @@
-﻿April 28, 2009  (Changes by Graf Zahl)
+﻿May 15, 2009  (Changes by Graf Zahl)
+- Added ACS GetChar function.
+- Added Gez's submission for polyobjects being able to crush corpses but made
+  it an explicit MAPINFO option only.
+- Changed APlayerPawn::DamageFade to a PalEntry from 3 floats.
+- Removed #pragma warnings from cmdlib.h and fixed the places where they were 
+  still triggered.
+  These #pragmas were responsible for >90% of the GCC warnings that were not
+  listed in VC++.
+- Fixed one bug in the process: DSeqNode::m_Atten was never adjusted when the
+  parameter handling of the sound functions for attenuation was changed.
+  Changed m_Atten to a float and fixed the SNDSEQ parser to set proper values. 
+  Also added the option to specify attenuation with direct values in addition 
+  to the predefined names.
+
+May 14, 2009  (Changes by Graf Zahl)
+- fixed a few Heretic actors:
+  * The pod generator's attacksound was wrong
+  * The teleglitter generators need different flags if they are supposed to work 
+    with z-aware spawning of the glitter.
+  * The knight's axes need the THRUGHOST flag.
+
+May 14, 2009
+- Fixed non-POD passing in G_BuildSaveName() and other things GCC warned
+  about.
+- Added support for imploded zips.
+
+May 11, 2009  (Changes by Graf Zahl)
+- Fixed: Some missile spawning functions ignored the FastSpeed setting.
+- Fixed: P_CheckSwitchRange tried to access a line's backsector without
+  checking if it is valid.
+- Fixed: Fast projectile could not be frozen by the Time freezer.
+- Added several new ACS functions: GetActorMomX/Y/Z, GetActorViewHeight,
+  SetActivator, SetActivatorToTarget.
+
+May 11, 2009
+- Added Species property for actors and separated Hexen's Demon1 and Demon2
+  into different species.
+
+May 10, 2009  (Changes by Graf Zahl)
+- Added handling for UDMF user keys.
+- Added support for ACS functions that can be defined without recompiling ACC.
+- Fixed: The short lump name for embedded files must be cleared so that they
+  are not found by a normal lump search.
+
+May 9, 2009  (Changes by Graf Zahl)
+- Added AProp_Notarget actor property.
+- Fixed: TraceBleed was missing a NULL pointer check,
+- Fixed: P_RandomChaseDir could crash for friendly monsters that belong to
+  a player which left the game.
+- Changed A_PodGrow so that it plays the generator's attack sound instead of
+  "misc/podgrow".
+
+May 8, 2009
+- Added transference of a select few flags from PowerProtection to its owner.
+- Added actor type parameters to A_PodPain() and A_MakePod().
+- The savegame path is now passed through NicePath(), since it's user-
+  specifiable.
+- Added save_dir cvar. When non-empty, it controls where savegames go.
+- SBARINFO update:
+  * Added the ability to center things with fullscreenoffsets enabled.  Due
+    to some limitations the syntax is [-]<integer> [+ center].
+  * Fixed: the translucent flag on drawinventorybar didn't work quite right.
+  * Fixed: Extremely minor inaccuracy in the Doom SBarInfo code.  The
+    fullscreen inventory bar wasn't scaled correctly.
+
+May 3, 2009  (Changes by Graf Zahl)
+- fixed: The CHECKSWITCHRANGE line flag was ignored for one sided lines.
+- Added more compatibility settings, submitted by Gez.
+
+May 2, 2009  (Changes by Graf Zahl)
+- Fixed: Doom's fullscreen HUD was limited to 6 keys.
+- Made 'next endgame' work again for cases where it is supposed to be
+  the same as 'next endgame4'.
+- GCC nitpick fix: Classes being used as template parameters may not be
+  defined locally in a function. Fixed FWadFile::SetNamespace for that.
+- Improved error reporting for incorrect textures in maps.
+- Fixed: When music was stopped this was not set in the global music state.
+- Fixed: Friendly monsters did not target enemy players in deathmatch.
+
+April 30, 2009  (Changes by Graf Zahl)
+- Fixed: Completely empty patches (8 0-bytes) could not be handled by the
+  texture manager. They now get assigned a new FEmptyTexture object
+  that is just a 1x1 pixel transparent texture.
+- Fixed: Multiple namespace markers of the same type were no longer detected.
+- Fixed sprite renaming.
+
+April 29, 2009
+- Maps defined with Hexen-style MAPINFOs now run their scripts in the proper
+  order.
+- Fixed: FWadCollection::CheckNumForName() read the lump each iteration before
+  checking for the end marker. On 32-bit systems, this is -1, but on 64-bit
+  systems, it is a very large integer that is highly unlikely to be in mapped
+  memory.
+
+April 28, 2009  (Changes by Graf Zahl)
 - Added ML_BLOCKUSE line flag, accessible through UDMF and Line_SetBlocking.
 
 April 25, 2009  (Changes by Graf Zahl)

@@ -382,7 +382,8 @@ void P_SerializeWorld (FArchive &arc)
 				<< si->Light
 				<< si->Flags
 				<< si->LeftSide
-				<< si->RightSide;
+				<< si->RightSide
+				<< si->Index;
 			DBaseDecal::SerializeChain (arc, &si->AttachedDecals);
 		}
 	}

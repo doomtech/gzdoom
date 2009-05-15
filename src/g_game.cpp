@@ -104,6 +104,7 @@ CVAR (Int, deathmatch, 0, CVAR_SERVERINFO|CVAR_LATCH);
 CVAR (Bool, chasedemo, false, 0);
 CVAR (Bool, storesavepic, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (Bool, longsavemessages, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR (String, save_dir, "", CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 
 gameaction_t	gameaction;
 gamestate_t 	gamestate = GS_STARTUP;
@@ -747,7 +748,7 @@ static void ChangeSpy (bool forward)
 
 	// Otherwise, cycle to the next player.
 	bool checkTeam = !demoplayback && deathmatch;
-	int pnum = players[consoleplayer].camera->player - players;
+	int pnum = int(players[consoleplayer].camera->player - players);
 	int step = forward ? 1 : -1;
 
 	do
@@ -1760,47 +1761,40 @@ void G_SaveGame (const char *filename, const char *description)
 FString G_BuildSaveName (const char *prefix, int slot)
 {
 	FString name;
-	const char *leader;
+	FString leader;
 	const char *slash = "";
 
-	if (NULL != (leader = Args->CheckValue ("-savedir")))
+	leader = Args->CheckValue ("-savedir");
+	if (leader.IsEmpty())
 	{
-		size_t len = strlen (leader);
-		if (leader[len-1] != '\\' && leader[len-1] != '/')
+#ifndef unix
+		if (Args->CheckParm ("-cdrom"))
 		{
-			slash = "/";
+			leader = CDROM_DIR "/";
+		}
+		else
+#endif
+		{
+			leader = save_dir;
 		}
 	}
-#ifndef unix
-	else if (Args->CheckParm ("-cdrom"))
+	size_t len = leader.Len();
+	if (leader[0] != '\0' && leader[len-1] != '\\' && leader[len-1] != '/')
 	{
-		leader = CDROM_DIR "/";
+		slash = "/";
 	}
-	else
+	name.Format("%s%s%s", leader.GetChars(), slash, prefix);
+	if (slot >= 0)
 	{
-		leader = progdir;
-	}
-#else
-	else
-	{
-		leader = "";
-	}
-#endif
-	if (slot < 0)
-	{
-		name.Format ("%s%s%s", leader, slash, prefix);
-	}
-	else
-	{
-		name.Format ("%s%s%s%d.zds", leader, slash, prefix, slot);
+		name.AppendFormat("%d.zds", slot);
 	}
 #ifdef unix
 	if (leader[0] == 0)
 	{
-		name = GetUserFile (name);
+		return GetUserFile (name);
 	}
 #endif
-	return name;
+	return NicePath(name);
 }
 
 CVAR (Int, autosavenum, 0, CVAR_NOSET|CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
@@ -2354,7 +2348,7 @@ bool G_ProcessIFFDemo (char *mapname)
 	if (uncompSize > 0)
 	{
 		BYTE *uncompressed = new BYTE[uncompSize];
-		int r = uncompress (uncompressed, &uncompSize, demo_p, zdembodyend - demo_p);
+		int r = uncompress (uncompressed, &uncompSize, demo_p, uLong(zdembodyend - demo_p));
 		if (r != Z_OK)
 		{
 			Printf ("Could not decompress demo!\n");
@@ -2528,7 +2522,7 @@ bool G_CheckDemoStatus (void)
 			// a compressed version. If the BODY successfully compresses, the
 			// contents of the COMP chunk will be changed to indicate the
 			// uncompressed size of the BODY.
-			uLong len = demo_p - demobodyspot;
+			uLong len = uLong(demo_p - demobodyspot);
 			uLong outlen = (len + len/100 + 12);
 			Byte *compressed = new Byte[outlen];
 			int r = compress2 (compressed, &outlen, demobodyspot, len, 9);
@@ -2543,9 +2537,9 @@ bool G_CheckDemoStatus (void)
 		}
 		FinishChunk (&demo_p);
 		formlen = demobuffer + 4;
-		WriteLong (demo_p - demobuffer - 8, &formlen);
+		WriteLong (int(demo_p - demobuffer - 8), &formlen);
 
-		M_WriteFile (demoname, demobuffer, demo_p - demobuffer); 
+		M_WriteFile (demoname, demobuffer, int(demo_p - demobuffer)); 
 		M_Free (demobuffer); 
 		demorecording = false;
 		stoprecording = false;

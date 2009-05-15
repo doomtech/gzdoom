@@ -1299,6 +1299,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\gametype.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\gccinlines.h"
 				>
 			</File>
@@ -5215,6 +5219,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\textures\emptytexture.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\textures\flattexture.cpp"
 					>
 				</File>
@@ -6648,11 +6656,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\gl_include.h"
+					RelativePath=".\src\gl\gl_hqresize.h"
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\gl_hqresize.h"
+					RelativePath=".\src\gl\gl_include.h"
 					>
 				</File>
 				<File
@@ -6732,6 +6740,14 @@
 		<Filter
 			Name="Resource Files"
 			>
+			<File
+				RelativePath=".\src\resourcefiles\explode.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\resourcefiles\explode.h"
+				>
+			</File>
 			<File
 				RelativePath=".\src\resourcefiles\file_7z.cpp"
 				>

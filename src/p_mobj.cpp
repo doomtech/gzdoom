@@ -59,6 +59,7 @@
 #include "d_event.h"
 #include "colormatcher.h"
 #include "v_palette.h"
+#include "p_enemy.h"
 #include "gl/gl_functions.h"
 
 // MACROS ------------------------------------------------------------------
@@ -290,7 +291,8 @@ void AActor::Serialize (FArchive &arc)
 		<< master
 		<< smokecounter
 		<< BlockingMobj
-		<< BlockingLine;
+		<< BlockingLine
+		<< Species;
 
 	if (arc.IsStoring ())
 	{
@@ -963,6 +965,115 @@ void AActor::ConversationAnimation (int animnum)
 
 void AActor::Touch (AActor *toucher)
 {
+}
+
+//============================================================================
+//
+// AActor :: Grind
+//
+// Handles the an actor being crushed by a door, crusher or polyobject.
+// Originally part of P_DoCrunch(), it has been made into its own actor
+// function so that it could be called from a polyobject without hassle.
+// Bool items is true if it should destroy() dropped items, false otherwise.
+//============================================================================
+
+bool AActor::Grind(bool items)
+{
+	// crunch bodies to giblets
+	if ((this->flags & MF_CORPSE) &&
+		!(this->flags3 & MF3_DONTGIB) &&
+		(this->health <= 0))
+	{
+		FState * state = this->FindState(NAME_Crush);
+		if (state != NULL && !(this->flags & MF_ICECORPSE))
+		{
+			if (this->flags4 & MF4_BOSSDEATH) 
+			{
+				CALL_ACTION(A_BossDeath, this);
+			}
+			this->flags &= ~MF_SOLID;
+			this->flags3 |= MF3_DONTGIB;
+			this->height = this->radius = 0;
+			this->SetState (state);
+			return false;
+		}
+		if (!(this->flags & MF_NOBLOOD))
+		{
+			if (this->flags4 & MF4_BOSSDEATH) 
+			{
+				CALL_ACTION(A_BossDeath, this);
+			}
+
+			const PClass *i = PClass::FindClass("RealGibs");
+
+			if (i != NULL)
+			{
+				i = i->ActorInfo->GetReplacement()->Class;
+
+				const AActor *defaults = GetDefaultByType (i);
+				if (defaults->SpawnState == NULL ||
+					sprites[defaults->SpawnState->sprite].numframes == 0)
+				{ 
+					i = NULL;
+				}
+			}
+			if (i == NULL)
+			{
+				// if there's no gib sprite don't crunch it.
+				this->flags &= ~MF_SOLID;
+				this->flags3 |= MF3_DONTGIB;
+				this->height = this->radius = 0;
+				return false;
+			}
+
+			AActor *gib = Spawn (i, this->x, this->y, this->z, ALLOW_REPLACE);
+			if (gib != NULL)
+			{
+				gib->RenderStyle = this->RenderStyle;
+				gib->alpha = this->alpha;
+				gib->height = 0;
+				gib->radius = 0;
+			}
+			S_Sound (this, CHAN_BODY, "misc/fallingsplat", 1, ATTN_IDLE);
+
+			PalEntry bloodcolor = (PalEntry)this->GetClass()->Meta.GetMetaInt(AMETA_BloodColor);
+			if (bloodcolor!=0) gib->Translation = TRANSLATION(TRANSLATION_Blood, bloodcolor.a);
+		}
+		if (this->flags & MF_ICECORPSE)
+		{
+			this->tics = 1;
+			this->momx = this->momy = this->momz = 0;
+		}
+		else if (this->player)
+		{
+			this->flags |= MF_NOCLIP;
+			this->flags3 |= MF3_DONTGIB;
+			this->renderflags |= RF_INVISIBLE;
+		}
+		else
+		{
+			this->Destroy ();
+		}
+		return false;		// keep checking
+	}
+
+	// crunch dropped items
+	if (this->flags & MF_DROPPED)
+	{
+		if (items) this->Destroy (); // Only destroy dropped items if wanted
+		return false;		// keep checking
+	}
+
+	if (!(this->flags & MF_SOLID) || (this->flags & MF_NOCLIP))
+	{
+		return false;
+	}
+
+	if (!(this->flags & MF_SHOOTABLE))
+	{
+		return false;		// assume it is bloody gibs or something
+	}
+	return true;
 }
 
 //============================================================================
@@ -4647,6 +4758,15 @@ void P_PlaySpawnSound(AActor *missile, AActor *spawner)
 	}
 }
 
+static fixed_t GetDefaultSpeed(const PClass *type)
+{
+	if (type == NULL) return 0;
+	else if (G_SkillProperty(SKILLP_FastMonsters))
+		return type->Meta.GetMetaFixed(AMETA_FastSpeed, GetDefaultByType(type)->Speed);
+	else
+		return GetDefaultByType(type)->Speed;
+}
+
 static AActor * SpawnMissile (const PClass *type, fixed_t x, fixed_t y, fixed_t z)
 {
 	AActor *th = Spawn (type, x, y, z, ALLOW_REPLACE);
@@ -4761,14 +4881,14 @@ AActor *P_SpawnMissileAngle (AActor *source, const PClass *type,
 	angle_t angle, fixed_t momz)
 {
 	return P_SpawnMissileAngleZSpeed (source, source->z + 32*FRACUNIT,
-		type, angle, momz, GetDefaultByType (type)->Speed);
+		type, angle, momz, GetDefaultSpeed (type));
 }
 
 AActor *P_SpawnMissileAngleZ (AActor *source, fixed_t z,
 	const PClass *type, angle_t angle, fixed_t momz)
 {
 	return P_SpawnMissileAngleZSpeed (source, z, type, angle, momz,
-		GetDefaultByType (type)->Speed);
+		GetDefaultSpeed (type));
 }
 
 AActor *P_SpawnMissileZAimed (AActor *source, fixed_t z, AActor *dest, const PClass *type)
@@ -4785,7 +4905,7 @@ AActor *P_SpawnMissileZAimed (AActor *source, fixed_t z, AActor *dest, const PCl
 		an += pr_spawnmissile.Random2() << 20;
 	}
 	dist = P_AproxDistance (dest->x - source->x, dest->y - source->y);
-	speed = GetDefaultByType (type)->Speed;
+	speed = GetDefaultSpeed (type);
 	dist /= speed;
 	momz = dist != 0 ? (dest->z - source->z)/dist : speed;
 	return P_SpawnMissileAngleZSpeed (source, z, type, an, momz, speed);
@@ -4955,13 +5075,19 @@ bool AActor::IsTeammate (AActor *other)
 // AActor :: GetSpecies
 //
 // Species is defined as the lowest base class that is a monster
-// with no non-monster class in between. This is virtualized, so special
+// with no non-monster class in between. If the actor specifies an explicit
+// species (i.e. not 'None'), that is used. This is virtualized, so special
 // monsters can change this behavior if they like.
 //
 //==========================================================================
 
-const PClass *AActor::GetSpecies()
+FName AActor::GetSpecies()
 {
+	if (Species != NAME_None)
+	{
+		return Species;
+	}
+
 	const PClass *thistype = GetClass();
 
 	if (GetDefaultByType(thistype)->flags3 & MF3_ISMONSTER)
@@ -4974,7 +5100,7 @@ const PClass *AActor::GetSpecies()
 				break;
 		}
 	}
-	return thistype;
+	return thistype->TypeName;
 }
 
 //==========================================================================

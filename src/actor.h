@@ -599,6 +599,9 @@ public:
 	// Die. Now.
 	virtual bool Massacre ();
 
+	// Transforms the actor into a finely-ground paste
+	bool Grind(bool items);
+
 	// Is the other actor on my team?
 	bool IsTeammate (AActor *other);
 
@@ -609,7 +612,7 @@ public:
 	bool IsHostile (AActor *other);
 
 	// What species am I?
-	virtual const PClass *GetSpecies();
+	virtual FName GetSpecies();
 	
 	// Enter the crash state
 	void Crash();
@@ -640,7 +643,6 @@ public:
 	FRenderStyle	RenderStyle;		// Style to draw this actor with
 	DWORD			renderflags;		// Different rendering flags
 	FTextureID		picnum;				// Draw this instead of sprite if valid
-	int				TIDtoHate;			// TID of things to hate (0 if none)
 	DWORD			effects;			// [RH] see p_effect.h
 	fixed_t			alpha;
 	DWORD			fillcolor;			// Color to draw when STYLE_Shaded
@@ -686,6 +688,8 @@ public:
 	fixed_t			SpawnPoint[3]; 	// For nightmare respawn
 	WORD			SpawnAngle;
 	int				skillrespawncount;
+	int				TIDtoHate;			// TID of things to hate (0 if none)
+	FNameNoInit		Species;
 	TObjPtr<AActor>	tracer;			// Thing being chased/attacked for tracers
 	TObjPtr<AActor>	master;			// Thing which spawned this one (prevents mutual attacks)
 	fixed_t			floorclip;		// value to use for floor clipping

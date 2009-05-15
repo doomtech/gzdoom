@@ -189,6 +189,7 @@ void FWadCollection::InitMultipleFiles (wadlist_t **filenames)
 	{
 		I_FatalError ("W_InitMultipleFiles: no files found");
 	}
+	RenameSprites();
 
 	// [RH] Set up hash table
 	FirstLumpIndex = new DWORD[NumLumps];
@@ -196,6 +197,8 @@ void FWadCollection::InitMultipleFiles (wadlist_t **filenames)
 	FirstLumpIndex_FullName = new DWORD[NumLumps];
 	NextLumpIndex_FullName = new DWORD[NumLumps];
 	InitHashChains ();
+	LumpInfo.ShrinkToFit();
+	Files.ShrinkToFit();
 }
 
 //-----------------------------------------------------------------------
@@ -259,7 +262,7 @@ void FWadCollection::AddFile (const char *filename, FileReader *wadinfo)
 	Printf (" adding %s", filename);
 	startlump = NumLumps;
 
-	for(int i = 0; i < countof(funcs); i++)
+	for(size_t i = 0; i < countof(funcs); i++)
 	{
 		FResourceFile * resfile = funcs[i](filename, wadinfo);
 		if (resfile != NULL)
@@ -418,6 +421,7 @@ int FWadCollection::CheckNumForName (const char *name, int space)
 
 int FWadCollection::CheckNumForName (const char *name, int space, int wadnum, bool exact)
 {
+	FResourceLump *lump;
 	char uname[8];
 	DWORD i;
 
@@ -428,18 +432,16 @@ int FWadCollection::CheckNumForName (const char *name, int space, int wadnum, bo
 
 	uppercopy (uname, name);
 	i = FirstLumpIndex[LumpNameHash (uname) % NumLumps];
-	FResourceLump *lump = LumpInfo[i].lump;
 
 	// If exact is true if will only find lumps in the same WAD, otherwise
 	// also those in earlier WADs.
 
 	while (i != NULL_INDEX &&
-		(*(QWORD *)&lump->Name != *(QWORD *)&uname ||
+		(lump = LumpInfo[i].lump, *(QWORD *)&lump->Name != *(QWORD *)&uname ||
 		lump->Namespace != space ||
 		 (exact? (LumpInfo[i].wadnum != wadnum) : (LumpInfo[i].wadnum > wadnum)) ))
 	{
 		i = NextLumpIndex[i];
-		lump = LumpInfo[i].lump;
 	}
 
 	return i != NULL_INDEX ? i : -1;
@@ -668,7 +670,7 @@ void FWadCollection::InitHashChains (void)
 //
 //==========================================================================
 
-void FWadCollection::RenameSprites (int startlump)
+void FWadCollection::RenameSprites ()
 {
 	bool renameAll;
 	bool MNTRZfound = false;
@@ -740,64 +742,66 @@ void FWadCollection::RenameSprites (int startlump)
 		break;
 	}
 
-	renameAll = !!Args->CheckParm ("-oldsprites");
 
-	for (DWORD i = startlump + 1;
-		i < NumLumps && 
-		 *(DWORD *)LumpInfo[i].lump->Name != MAKE_ID('S','_','E','N') &&
-		 *(((DWORD *)LumpInfo[i].lump->Name) + 1) != MAKE_ID('D',0,0,0);
-		++i)
+	for (DWORD i=0; i< LumpInfo.Size(); i++)
 	{
-		if (!strncmp(LumpInfo[i].lump->Name, "MNTRZ", 5))
+		// check for full Minotaur animations. If this is not found
+		// some frames need to be renamed.
+		if (LumpInfo[i].lump->Namespace == ns_sprites)
 		{
-			MNTRZfound = true;
-			break;
+			if (*(DWORD *)LumpInfo[i].lump->Name == MAKE_ID('M', 'N', 'T', 'R') && LumpInfo[i].lump->Name[4] == 'Z' )
+			{
+				MNTRZfound = true;
+				break;
+			}
 		}
 	}
 
-	for (DWORD i = startlump + 1;
-		i < NumLumps && 
-		 *(DWORD *)LumpInfo[i].lump->Name != MAKE_ID('S','_','E','N') &&
-		 *(((DWORD *)LumpInfo[i].lump->Name) + 1) != MAKE_ID('D',0,0,0);
-		++i)
+	renameAll = !!Args->CheckParm ("-oldsprites");
+	
+	for (DWORD i = 0; i < LumpInfo.Size(); i++)
 	{
-		// Only sprites in the IWAD normally get renamed
-		if (renameAll || LumpInfo[i].wadnum == IWAD_FILENUM)
+		if (LumpInfo[i].lump->Namespace == ns_sprites)
 		{
-			for (int j = 0; j < numrenames; ++j)
+			// Only sprites in the IWAD normally get renamed
+			if (renameAll || LumpInfo[i].wadnum == IWAD_FILENUM)
 			{
-				if (*(DWORD *)LumpInfo[i].lump->Name == renames[j*2])
+				for (int j = 0; j < numrenames; ++j)
 				{
-					*(DWORD *)LumpInfo[i].lump->Name = renames[j*2+1];
+					if (*(DWORD *)LumpInfo[i].lump->Name == renames[j*2])
+					{
+						*(DWORD *)LumpInfo[i].lump->Name = renames[j*2+1];
+					}
+				}
+				if (gameinfo.gametype == GAME_Hexen)
+				{
+					if (CheckLumpName (i, "ARTIINVU"))
+					{
+						LumpInfo[i].lump->Name[4]='D'; LumpInfo[i].lump->Name[5]='E';
+						LumpInfo[i].lump->Name[6]='F'; LumpInfo[i].lump->Name[7]='N';
+					}
 				}
 			}
-			if (gameinfo.gametype == GAME_Hexen)
-			{
-				if (CheckLumpName (i, "ARTIINVU"))
-				{
-					LumpInfo[i].lump->Name[4]='D'; LumpInfo[i].lump->Name[5]='E';
-					LumpInfo[i].lump->Name[6]='F'; LumpInfo[i].lump->Name[7]='N';
-				}
-			}
-		}
-		if (!MNTRZfound) //gameinfo.gametype == GAME_Hexen && LumpInfo[i].wadnum == IWAD_FILENUM)
-		{
-			if (*(DWORD *)LumpInfo[i].lump->Name == MAKE_ID('M', 'N', 'T', 'R'))
-			{
-				if (LumpInfo[i].lump->Name[4] >= 'F' && LumpInfo[i].lump->Name[4] <= 'K')
-				{
-					LumpInfo[i].lump->Name[4] += 'U' - 'F';
-				}
-			}
-		}
 
-		// When not playing Doom rename all BLOD sprites to BLUD so that
-		// the same blood states can be used everywhere
-		if (!(gameinfo.gametype & GAME_DoomChex))
-		{
-			if (*(DWORD *)LumpInfo[i].lump->Name == MAKE_ID('B', 'L', 'O', 'D'))
+			if (!MNTRZfound)
 			{
-				*(DWORD *)LumpInfo[i].lump->Name = MAKE_ID('B', 'L', 'U', 'D');
+				if (*(DWORD *)LumpInfo[i].lump->Name == MAKE_ID('M', 'N', 'T', 'R'))
+				{
+					if (LumpInfo[i].lump->Name[4] >= 'F' && LumpInfo[i].lump->Name[4] <= 'K')
+					{
+						LumpInfo[i].lump->Name[4] += 'U' - 'F';
+					}
+				}
+			}
+			
+			// When not playing Doom rename all BLOD sprites to BLUD so that
+			// the same blood states can be used everywhere
+			if (!(gameinfo.gametype & GAME_DoomChex))
+			{
+				if (*(DWORD *)LumpInfo[i].lump->Name == MAKE_ID('B', 'L', 'O', 'D'))
+				{
+					*(DWORD *)LumpInfo[i].lump->Name = MAKE_ID('B', 'L', 'U', 'D');
+				}
 			}
 		}
 	}
@@ -827,7 +831,7 @@ int FWadCollection::FindLump (const char *name, int *lastlump, bool anyns)
 		if ((anyns || lump->Namespace == ns_global) &&
 			*(QWORD *)&lump->Name == *(QWORD *)&name8)
 		{
-			int lump = lump_p - &LumpInfo[0];
+			int lump = int(lump_p - &LumpInfo[0]);
 			*lastlump = lump + 1;
 			return lump;
 		}
