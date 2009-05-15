@@ -1542,7 +1542,7 @@ pointlight BLUESTATUE
 
 object KeyGizmoBlue
 {
-    frame KGZ { light BLUESTATUE }
+    frame KGZ1 { light BLUESTATUE }
 }
 
 // Yellow Key Statue
@@ -1555,7 +1555,7 @@ pointlight YELLOWSTATUE
 
 object KeyGizmoYellow
 {
-    frame KGZ { light YELLOWSTATUE }
+    frame KGZ1 { light YELLOWSTATUE }
 }
 
 // Green Key Statue
@@ -1568,7 +1568,7 @@ pointlight GREENSTATUE
 
 object KeyGizmoGreen
 {
-    frame KGZ { light GREENSTATUE }
+    frame KGZ1 { light GREENSTATUE }
 }
 
 // -------------------
