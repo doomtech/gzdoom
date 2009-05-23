@@ -1,4 +1,48 @@
-﻿May 15, 2009  (Changes by Graf Zahl)
+﻿May 23, 2009  (Changes by Graf Zahl)
+- Fixed: When setting up a deep water sector with Transfer_Heights the floorclip
+  information of all actors in the sector needs to be updated.
+
+May 22, 2009  (Changes by Graf Zahl)
+- Fixed: A_CountdownArg and A_Die must ensure a certain kill.
+
+May 22, 2009
+- Fixed: When using Win32 mouse, windowed mode, alt-tabbing away and then
+  clicking on the window's title bar moved it practically off the screen.
+- Beginnings of i_input.cpp rewrite: Win32 and DirectInput mouse handling has
+  been moved into classes.
+
+May 21, 2009  (Changes by Graf Zahl)
+- Changed bounce flags into a property and added real bouncing sound properties.
+  Compatibility modes to preserve use of the SeeSound are present and the old
+  flags map to these.
+
+May 20, 2009  (Changes by Graf Zahl)
+- Fixed: The SBARINFO parser compared an FString in the GAMEINFO with a NULL
+  pointer and tried to load a lump with an empty name as statusbar script
+  for non-Doom games.
+
+May 19, 2009
+- Fixed: SetSoundPaused() still needs to call S_PauseSound() to pause music
+  that isn't piped through the digital sound system. (Was removed in r1004.)
+
+May 16, 2009
+- Added input buffering to the Implode and Shrink routines for a marked
+  speedup.
+- Replaced the Shanno-Fano/Huffman reading routines from FZipExploder with
+  ones of my own devising, based solely on the specs in the APPNOTE.
+
+May 15, 2009
+- Found a copy of PKZIP 1.1 and verified that Implode support works with
+  files that use a literal table and 8k dictionary, and that the just-added
+  Shrink support works at all.
+- Replaced the bit-at-a-time Shannon-Fano decoder from GunZip.c64 with the
+  word-at-a-time one from 7-Zip for a slight speedup when working with
+  Imploded files.
+
+May 15, 2009  (Changes by Graf Zahl)
+- Fixed: Monsters should not check the inventory for damage absorbtion when
+  they have the MF5_NODAMAGE flag set.
+- Added patch for saving automap zoom.
 - Added ACS GetChar function.
 - Added Gez's submission for polyobjects being able to crush corpses but made
   it an explicit MAPINFO option only.

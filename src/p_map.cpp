@@ -490,8 +490,8 @@ int P_GetFriction (const AActor *mo, int *frictionfactor)
 			}
 			if ((secfriction(sec) < friction || friction == ORIG_FRICTION) &&
 				(mo->z <= sec->floorplane.ZatPoint (mo->x, mo->y) ||
-				(sec->heightsec && !(sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC) &&
-				mo->z <= sec->heightsec->floorplane.ZatPoint (mo->x, mo->y))))
+				(sec->GetHeightSec() != NULL &&
+				 mo->z <= sec->heightsec->floorplane.ZatPoint (mo->x, mo->y))))
 			{
 				friction = secfriction (sec);
 				movefactor = secmovefac (sec);
@@ -864,7 +864,8 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 			return true;
 		}
 
-		if (tm.thing->flags2 & MF2_BOUNCE2)
+		int bt = tm.thing->bouncetype & BOUNCE_TypeMask;
+		if (bt == BOUNCE_Doom || bt == BOUNCE_Hexen)
 		{
 			if (tm.thing->Damage == 0)
 			{
@@ -2494,7 +2495,8 @@ bool FSlide::BounceWall (AActor *mo)
 	fixed_t         movelen;
 	line_t			*line;
 
-	if (!(mo->flags2 & MF2_BOUNCE2))
+	int bt = mo->bouncetype & BOUNCE_TypeMask;
+	if (bt != BOUNCE_Doom && bt != BOUNCE_Hexen)
 	{
 		return false;
 	}

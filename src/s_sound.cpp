@@ -1634,15 +1634,18 @@ bool S_IsActorPlayingSomething (AActor *actor, int channel, int sound_id)
 // Stop music and sound effects, during game PAUSE.
 //==========================================================================
 
-void S_PauseSound (bool notmusic)
+void S_PauseSound (bool notmusic, bool notsfx)
 {
 	if (!notmusic && mus_playing.handle && !MusicPaused)
 	{
 		I_PauseSong (mus_playing.handle);
 		MusicPaused = true;
 	}
-	SoundPaused = true;
-	GSnd->SetSfxPaused (true, 0);
+	if (!notsfx)
+	{
+		SoundPaused = true;
+		GSnd->SetSfxPaused (true, 0);
+	}
 }
 
 //==========================================================================
@@ -1652,15 +1655,68 @@ void S_PauseSound (bool notmusic)
 // Resume music and sound effects, after game PAUSE.
 //==========================================================================
 
-void S_ResumeSound ()
+void S_ResumeSound (bool notsfx)
 {
 	if (mus_playing.handle && MusicPaused)
 	{
 		I_ResumeSong (mus_playing.handle);
 		MusicPaused = false;
 	}
-	SoundPaused = false;
-	GSnd->SetSfxPaused (false, 0);
+	if (!notsfx)
+	{
+		SoundPaused = false;
+		GSnd->SetSfxPaused (false, 0);
+	}
+}
+
+//==========================================================================
+//
+// S_SetSoundPaused
+//
+// Called with state non-zero when the app is active, zero when it isn't.
+//
+//==========================================================================
+
+void S_SetSoundPaused (int state)
+{
+	if (state)
+	{
+		if (paused <= 0)
+		{
+			S_ResumeSound(true);
+			if (GSnd != NULL)
+			{
+				GSnd->SetInactive(false);
+			}
+			if (!netgame
+#ifdef _DEBUG
+				&& !demoplayback
+#endif
+				)
+			{
+				paused = 0;
+			}
+		}
+	}
+	else
+	{
+		if (paused == 0)
+		{
+			S_PauseSound(false, true);
+			if (GSnd !=  NULL)
+			{
+				GSnd->SetInactive(true);
+			}
+			if (!netgame
+#ifdef _DEBUG
+				&& !demoplayback
+#endif
+				)
+			{
+				paused = -1;
+			}
+		}
+	}
 }
 
 //==========================================================================

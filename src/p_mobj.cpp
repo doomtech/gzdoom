@@ -269,6 +269,8 @@ void AActor::Serialize (FArchive &arc)
 		<< DeathSound
 		<< ActiveSound
 		<< UseSound
+		<< BounceSound
+		<< WallBounceSound
 		<< Speed
 		<< FloatSpeed
 		<< Mass
@@ -279,6 +281,7 @@ void AActor::Serialize (FArchive &arc)
 		<< MissileState
 		<< MaxDropOffHeight 
 		<< MaxStepHeight
+		<< bouncetype
 		<< bouncefactor
 		<< wallbouncefactor
 		<< bouncecount
@@ -1252,6 +1255,31 @@ void P_ExplodeMissile (AActor *mo, line_t *line, AActor *target)
 	}
 }
 
+
+void AActor::PlayBounceSound(bool onfloor)
+{
+	if (!onfloor && (flags3 & MF3_NOWALLBOUNCESND))
+	{
+		return;
+	}
+
+	if (!(flags4 & MF4_NOBOUNCESOUND))
+	{
+		if (bouncetype & BOUNCE_UseSeeSound)
+		{
+			S_Sound (this, CHAN_VOICE, SeeSound, 1, ATTN_IDLE);
+		}
+		else if (onfloor || WallBounceSound <= 0)
+		{
+			S_Sound (this, CHAN_VOICE, BounceSound, 1, ATTN_IDLE);
+		}
+		else
+		{
+			S_Sound (this, CHAN_VOICE, WallBounceSound, 1, ATTN_IDLE);
+		}
+	}
+}
+
 //----------------------------------------------------------------------------
 //
 // PROC P_FloorBounceMissile
@@ -1284,8 +1312,10 @@ bool AActor::FloorBounceMissile (secplane_t &plane)
 	}
 
 	fixed_t dot = TMulScale16 (momx, plane.a, momy, plane.b, momz, plane.c);
+	int bt = bouncetype & BOUNCE_TypeMask;
 
-	if ((flags2 & MF2_BOUNCETYPE) == MF2_HERETICBOUNCE)
+
+	if (bt == BOUNCE_Heretic)
 	{
 		momx -= MulScale15 (plane.a, dot);
 		momy -= MulScale15 (plane.b, dot);
@@ -1304,16 +1334,12 @@ bool AActor::FloorBounceMissile (secplane_t &plane)
 	momz = MulScale30 (momz - MulScale15 (plane.c, dot), bouncescale);
 	angle = R_PointToAngle2 (0, 0, momx, momy);
 
-	if (SeeSound && !(flags4 & MF4_NOBOUNCESOUND))
-	{
-		S_Sound (this, CHAN_VOICE, SeeSound, 1, ATTN_IDLE);
-	}
-
-	if ((flags2 & MF2_BOUNCETYPE) == MF2_DOOMBOUNCE)
+	PlayBounceSound(true);
+	if (bt == BOUNCE_Doom)
 	{
 		if (!(flags & MF_NOGRAVITY) && (momz < 3*FRACUNIT))
 		{
-			flags2 &= ~MF2_BOUNCETYPE;
+			bouncetype = BOUNCE_None;
 		}
 	}
 	return false;
@@ -1708,7 +1734,8 @@ fixed_t P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 				steps = 0;
 				if (BlockingMobj)
 				{
-					if (mo->flags2 & MF2_BOUNCE2)
+					int bt = mo->bouncetype & BOUNCE_TypeMask;
+					if (bt == BOUNCE_Doom || bt == BOUNCE_Hexen)
 					{
 						if (mo->flags5&MF5_BOUNCEONACTORS ||
 							(BlockingMobj->flags2 & MF2_REFLECTIVE) ||
@@ -1726,10 +1753,7 @@ fixed_t P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 							angle >>= ANGLETOFINESHIFT;
 							mo->momx = FixedMul (speed, finecosine[angle]);
 							mo->momy = FixedMul (speed, finesine[angle]);
-							if (mo->SeeSound && !(mo->flags4&MF4_NOBOUNCESOUND))
-							{
-								S_Sound (mo, CHAN_VOICE, mo->SeeSound, 1, ATTN_IDLE);
-							}
+							mo->PlayBounceSound(true);
 							return oldfloorz;
 						}
 						else
@@ -1744,10 +1768,7 @@ fixed_t P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 					// Struck a wall
 					if (P_BounceWall (mo))
 					{
-						if (mo->SeeSound && !(mo->flags3 & MF3_NOWALLBOUNCESND))
-						{
-							S_Sound (mo, CHAN_VOICE, mo->SeeSound, 1, ATTN_IDLE);
-						}
+						mo->PlayBounceSound(false);
 						return oldfloorz;
 					}
 				}
@@ -2077,7 +2098,7 @@ void P_ZMovement (AActor *mo, fixed_t oldfloorz)
 				(!(gameinfo.gametype & GAME_DoomChex) || !(mo->flags & MF_NOCLIP)))
 			{
 				mo->z = mo->floorz;
-				if (mo->flags2 & MF2_BOUNCETYPE)
+				if (mo->bouncetype != BOUNCE_None)
 				{
 					mo->FloorBounceMissile (mo->floorsector->floorplane);
 					return;
@@ -2170,7 +2191,7 @@ void P_ZMovement (AActor *mo, fixed_t oldfloorz)
 		if (mo->z + mo->height > mo->ceilingz)
 		{
 			mo->z = mo->ceilingz - mo->height;
-			if (mo->flags2 & MF2_BOUNCETYPE)
+			if (mo->bouncetype != BOUNCE_None)
 			{	// ceiling bounce
 				mo->FloorBounceMissile (mo->ceilingsector->ceilingplane);
 				return;
@@ -2953,20 +2974,20 @@ void AActor::Tick ()
 				{
 					continue;
 				}
-				if (flags & MF_NOGRAVITY &&
-					(sec->heightsec == NULL || (sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC)))
+				sector_t *heightsec = sec->GetHeightSec();
+				if (flags & MF_NOGRAVITY && heightsec == NULL)
 				{
 					continue;
 				}
 				height = sec->floorplane.ZatPoint (x, y);
 				if (z > height)
 				{
-					if (sec->heightsec == NULL || (sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC))
+					if (heightsec == NULL)
 					{
 						continue;
 					}
 
-					waterheight = sec->heightsec->floorplane.ZatPoint (x, y);
+					waterheight = heightsec->floorplane.ZatPoint (x, y);
 					if (waterheight > height && z >= waterheight)
 					{
 						continue;
@@ -3214,8 +3235,8 @@ bool AActor::UpdateWaterLevel (fixed_t oldz, bool dosplash)
 	}
 	else
 	{
-		const sector_t *hsec = Sector->heightsec;
-		if (hsec != NULL && !(hsec->MoreFlags & SECF_IGNOREHEIGHTSEC))
+		const sector_t *hsec = Sector->GetHeightSec();
+		if (hsec != NULL)
 		{
 			fh = hsec->floorplane.ZatPoint (x, y);
 			//if (hsec->MoreFlags & SECF_UNDERWATERMASK)	// also check Boom-style non-swimmable sectors
@@ -3643,9 +3664,8 @@ void AActor::AdjustFloorClip ()
 	// do the floorclipping instead of the terrain type.
 	for (m = touching_sectorlist; m; m = m->m_tnext)
 	{
-		if ((m->m_sector->heightsec == NULL ||
-			 m->m_sector->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC) &&
-			m->m_sector->floorplane.ZatPoint (x, y) == z)
+		sector_t *hsec = m->m_sector->GetHeightSec();
+		if (hsec == NULL && m->m_sector->floorplane.ZatPoint (x, y) == z)
 		{
 			fixed_t clip = Terrains[TerrainTypes[m->m_sector->GetTexture(sector_t::floor)]].FootClip;
 			if (clip < shallowestclip)
@@ -4512,16 +4532,14 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t x, fixed_t y, fixed_t z
 		if (planez < z) return false;
 	}
 #endif
-	if (sec->heightsec == NULL ||
-		//!sec->heightsec->waterzone ||
-		(sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC) ||
-		!(sec->heightsec->MoreFlags & SECF_CLIPFAKEPLANES))
+	sector_t *hsec = sec->GetHeightSec();
+	if (hsec == NULL || !(hsec->MoreFlags & SECF_CLIPFAKEPLANES))
 	{
 		terrainnum = TerrainTypes[sec->GetTexture(sector_t::floor)];
 	}
 	else
 	{
-		terrainnum = TerrainTypes[sec->heightsec->GetTexture(sector_t::floor)];
+		terrainnum = TerrainTypes[hsec->GetTexture(sector_t::floor)];
 	}
 #ifdef _3DFLOORS
 foundone:
@@ -4537,10 +4555,7 @@ foundone:
 	// don't splash when touching an underwater floor
 	if (thing->waterlevel>=1 && z<=thing->floorz) return Terrains[terrainnum].IsLiquid;
 
-	plane = (sec->heightsec != NULL &&
-		//sec->heightsec->waterzone &&
-		!(sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC))
-	  ? &sec->heightsec->floorplane : &sec->floorplane;
+	plane = hsec != NULL? &sec->heightsec->floorplane : &sec->floorplane;
 
 	// Don't splash for living things with small vertical velocities.
 	// There are levels where the constant splashing from the monsters gets extremely annoying
@@ -4637,9 +4652,7 @@ bool P_HitFloor (AActor *thing)
 		}
 #endif
 	}
-	if (m == NULL ||
-		(m->m_sector->heightsec != NULL &&
-		!(m->m_sector->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC)))
+	if (m == NULL || m->m_sector->GetHeightSec() != NULL)
 	{ 
 		return false;
 	}
