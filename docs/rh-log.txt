@@ -1,4 +1,61 @@
-﻿May 23, 2009  (Changes by Graf Zahl)
+﻿May 27, 2009
+- Fixed: The mouse wheel generated no events in GUI mode if you weren't
+  fullscreen. (e.g. You could no longer scroll the console with the mouse
+  buffer.)
+- Fixed: Wheeling down was seen as wheeling up with the Win32 mouse.
+- EV_GUI_Key(Down|Up|Repeat) events no longer provide shifted key codes
+  in data2. This was just unnecessary overhead that wasn't really needed
+  anywhere.
+- Moved GUI-mode input into a separate function to make the code easier to
+  read.
+- Removed HaveFocus variable in preference of using GetForegroundWindow().
+- Added Raw Input keyboard handling.
+
+May 26, 2009
+- Split DirectInput keyboard handling into a separate file and class. I also
+  switched it to buffered input, and the pause key seems to be properly
+  cooked, so I don't need to look for it with WM_KEYDOWN/UP. Tab doesn't
+  need to be special-cased either, because buffered input never passes on
+  the Tab key when you press Alt+Tab. I have no idea why I special-cased
+  Num Lock, but it seems to be working fine. By setting the exclusive mode
+  to background, I can also avoid special code for releasing all keys when
+  the window loses focus, because I'll still receive those events while the
+  window is in the background.
+- Fixed: The Heretic "take weapons" cheat did not remove all the weapons at
+  once. This is because destroying one weapon has a potential to destroy a
+  sister weapon as well. If the sister weapon is the next one in line (as it
+  typically is), it would process that one, not realizing it was no longer
+  part of the inventory, and stop because its Inventory link was NULL.
+
+May 25, 2009
+- Recoverable errors that are caught during the demo loop no longer shut off
+  the menu.
+- Specifying non-existent directories with -savedir or the save_dir cvar now
+  attempts to create them.
+- I_CheckNativeMouse() now checks the foreground window to determine if the
+  mouse should be grabbed. This fixes the case where you start the game in
+  the background and it grabs the mouse anyway.
+- Changed raw mouse grabbing to call ShowCursor() directly instead of through
+  SetCursorState(), since changing the pointer isn't working with it
+  (probably due to the lack of legacy mouse messages), and the others work
+  fine by setting an invisible cursor.
+- Fixed: Raw mouse input passes wheel movements in an unsigned field, but the
+  value is signed, so it requires a cast to use it.
+
+May 23, 2009
+- SetCursorState() now calls ShowCursor() again, because capturing the mouse
+  with RIDEV_NOLEGACY apparently prevents SetCursor() from doing anything.
+- Split mouse code off from i_input.cpp into i_mouse.cpp and added raw mouse
+  handling. (WM_INPUT obsoleted most of DirectInput for XP.)
+- Fixed: Similar to the Win32 mouse, using the DirectInput mouse in windowed
+  mode, if you alt-tabbed away and then clicked on the window's title bar,
+  mouse input would be frozen until the mouse was ungrabbed again.
+
+May 23, 2009  (Changes by Graf Zahl)
+- Fixed: Textures with dimensions <= 0 are invalid and should be treated as NULL 
+  textures. They also must be set to dimensions other than (0,0) to avoid division
+  by zero errors.
+- Fixed: Random spawners did not handle the MF_DROPPED flag.
 - Fixed: When setting up a deep water sector with Transfer_Heights the floorclip
   information of all actors in the sector needs to be updated.
 
@@ -6,6 +63,7 @@ May 22, 2009  (Changes by Graf Zahl)
 - Fixed: A_CountdownArg and A_Die must ensure a certain kill.
 
 May 22, 2009
+- Moved SetSoundPaused() out of i_input.cpp and into s_sound.cpp.
 - Fixed: When using Win32 mouse, windowed mode, alt-tabbing away and then
   clicking on the window's title bar moved it practically off the screen.
 - Beginnings of i_input.cpp rewrite: Win32 and DirectInput mouse handling has
