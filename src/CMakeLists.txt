@@ -397,7 +397,7 @@ add_custom_target( revision_check ALL
 
 # Libraries ZDoom needs
 
-set( ZDOOM_LIBS ${ZDOOM_LIBS} "${ZLIB_LIBRARIES}" "${JPEG_LIBRARIES}" "${FMOD_LIBRARY}" )
+set( ZDOOM_LIBS ${ZDOOM_LIBS} "${ZLIB_LIBRARIES}" "${JPEG_LIBRARIES}" "${BZIP2_LIBRARIES}" "${FMOD_LIBRARY}" )
 include_directories( "${ZLIB_INCLUDE_DIR}" "${JPEG_INCLUDE_DIR}" "${FMOD_INCLUDE_DIR}" "${BZIP2_INCLUDE_DIR}" "${LZMA_INCLUDE_DIR}" )
 
 # Start defining source files for ZDoom
@@ -725,6 +725,7 @@ add_executable( zdoom WIN32
 	resourcefiles/file_wad.cpp
 	resourcefiles/file_zip.cpp
 	resourcefiles/file_pak.cpp
+	resourcefiles/file_directory.cpp
 	resourcefiles/resourcefile.cpp
 	sfmt/SFMT.cpp
 	sound/fmodsound.cpp
@@ -732,13 +733,13 @@ add_executable( zdoom WIN32
 	sound/i_sound.cpp
 	sound/music_cd.cpp
 	sound/music_dumb.cpp
+	sound/music_gme.cpp
 	sound/music_midistream.cpp
 	sound/music_midi_base.cpp
 	sound/music_midi_midiout.cpp
 	sound/music_midi_timidity.cpp
 	sound/music_mus_midiout.cpp
 	sound/music_mus_opl.cpp
-	sound/music_spc.cpp
 	sound/music_stream.cpp
 	sound/music_timidity_mididevice.cpp
 	sound/music_win_mididevice.cpp
@@ -795,7 +796,7 @@ add_executable( zdoom WIN32
 set_source_files_properties( xlat/parse_xlat.cpp PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/xlat_parser.c" )
 set_source_files_properties( sc_man.cpp PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/sc_man_scanner.h" )
 
-target_link_libraries( zdoom ${ZDOOM_LIBS} snes_spc gdtoa dumb bzip2 lzma )
+target_link_libraries( zdoom ${ZDOOM_LIBS} gme gdtoa dumb lzma )
 include_directories( .
 	g_doom
 	g_heretic
@@ -811,7 +812,7 @@ include_directories( .
 	thingdef
 	timidity
 	xlat
-	../snes_spc/snes_spc
+	../game-music-emu/gme
 	../gdtoa
 	../dumb/include
 	${CMAKE_BINARY_DIR}/gdtoa

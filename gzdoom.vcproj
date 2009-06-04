@@ -55,7 +55,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="src\win32,src\sound,src,zlib,src\g_shared,src\g_doom,src\g_raven,src\g_heretic,src\g_hexen,src\g_strife;flac;jpeg-6b;snes_spc\snes_spc;gdtoa;bzip2;lzma\C"
+				AdditionalIncludeDirectories="src\win32,src\sound,src,zlib,src\g_shared,src\g_doom,src\g_raven,src\g_heretic,src\g_hexen,src\g_strife;flac;jpeg-6b;game-music-emu\gme;gdtoa;bzip2;lzma\C"
 				PreprocessorDefinitions="NDEBUG,WIN32,_WIN32,_WINDOWS,USEASM,NO_MANIFEST,NO_VA_COPY"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -172,7 +172,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				InlineFunctionExpansion="0"
-				AdditionalIncludeDirectories="src\win32;src\sound;src;zlib;src\g_shared;src\g_doom;src\g_raven;src\g_heretic;src\g_hexen;src\g_strife;flac;jpeg-6b;snes_spc\snes_spc;gdtoa;bzip2;lzma\C"
+				AdditionalIncludeDirectories="src\win32,src\sound,src,zlib,src\g_shared,src\g_doom,src\g_raven,src\g_heretic,src\g_hexen,src\g_strife;flac;jpeg-6b;game-music-emu\gme;gdtoa;bzip2;lzma\C"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WIN32,_WINDOWS,USEASM,_CRTDBG_MAP_ALLOC,NO_MANIFEST,NO_VA_COPY"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
@@ -5433,6 +5433,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\sound\music_gme.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\sound\music_midi_base.cpp"
 				>
 			</File>
@@ -5462,10 +5466,6 @@
 			</File>
 			<File
 				RelativePath=".\src\oplsynth\music_opldumper_mididevice.cpp"
-				>
-			</File>
-			<File
-				RelativePath="src\sound\music_spc.cpp"
 				>
 			</File>
 			<File
@@ -6762,6 +6762,10 @@
 			</File>
 			<File
 				RelativePath=".\src\resourcefiles\file_7z.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\resourcefiles\file_directory.cpp"
 				>
 			</File>
 			<File
