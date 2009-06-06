@@ -1,4 +1,69 @@
-﻿May 27, 2009
+﻿June 6, 2009  (Changes by Graf Zahl)
+- Added Hirogen2's unlimited pickup patch.
+- Added railgun performance customization CVARs by Spleen.
+- Added aspect ratio override submission by SoulPriestess.
+- Added a 'resetinventory' MAPINFO option.
+- Added MF6_NOFEAR flag.
+- Added A_MonsterRefire(probability, jumptarget).
+- Added A_JumpIfTargetInSight(state) action function.
+- Changed: Puffs set their angle to face the originator of the attack.
+- Strife's burning hands originally make the level view fullbright.
+  changed in ZDoom to do partial brightening.
+
+June 5, 2009
+- Added support for horizontal mouse wheels, and set invprev/invnext as
+  default bindings for it. This is Vista only. DirectInput mouse (in_mouse 2)
+  does not support it, because the DirectInput mouse device does not expose
+  this control.
+- Added a label for the F16 key and mapped the kp= key on a Mac keyboard to
+  the PC98 equivalent so it will be identified as kp=. (Interestingly, F13-
+  F16 and kp= only generate events when using Raw Input, not when using
+  DirectInput.
+
+June 5, 2009  (Changes by Graf Zahl)
+- Added MF6_FORCEPAIN flag that forces the target to go into the pain state
+  regardless of pain chance.
+- Changed screenblocks CVAR to be settable per game.
+- Added SpawnSpotForced and SpawnSpotFacingForced ACS functions.
+- Added pushfactor actor property.
+- Added Gez's GetArmorType submission
+
+June 2, 2009
+- Swapped snes_spc out for the full Game Music Emu library.
+
+June 2, 2009  (Changes by Graf Zahl)
+- Fixed: The Hexen status bar still uses MAX_MANA for some calculations instead
+  of MaxAmount.
+
+June 1, 2009  (Changes by Graf Zahl)
+- Added Blzut3's submission for displaying underwater stats in SBARINFO.
+
+May 31, 2009  (Changes by Graf Zahl)
+- Added Gez's AMMO_CHECKBOTH submission.
+- Added Gez's THRUSPECIES submission.
+- Added loading directories into the lump directory.
+- fixed: The Dehacked parser could not parse flag values with the highest bit
+  set because it used atoi to convert the string into a number.
+- fixed: bouncing sounds were limited to inventory items.
+
+May 30, 2009  (Changes by Graf Zahl)
+- Rewrote IWAD detection code to use the ResourceFile classes instead of
+  reading the WAD directory directly. As a side effect it should now be
+  possible to use Zip and 7z for IWADs, too.
+- Added 'EndTitle' nextmap option which goes to the regular title loop after
+  the game has finished.
+- Added NOBOSSRIP flag. Note: we are now at flags6!
+- Added SetSkyScrollSpeed(int skyplane, fixed speed) ACS function.
+- Added THRUACTORS flag that disables all actor<->actor collision detection.
+- Added DONTSEEKINVISIBLE flag for missiles that can't home in on invisible
+  targets.
+- Added SFX_TRANSFERPITCH flag to A_SpawnItemEx.
+- Added Ultimate Freedoom IWAD detection.
+- Added GetAirSupply and SetAirSupply functions to ACS.
+- Fixed: The *surface sound was not played when drowning was switched off
+  by setting the level's air supply to 0.
+
+May 27, 2009
 - Fixed: The mouse wheel generated no events in GUI mode if you weren't
   fullscreen. (e.g. You could no longer scroll the console with the mouse
   buffer.)

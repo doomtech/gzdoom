@@ -80,6 +80,8 @@
 #include "cmdlib.h"
 #include "d_event.h"
 
+#include "sbar.h"
+
 // Data.
 #include "m_menu.h"
 
@@ -117,6 +119,7 @@ EXTERN_CVAR (Int, crosshair)
 EXTERN_CVAR (Bool, freelook)
 EXTERN_CVAR (Int, sv_smartaim)
 EXTERN_CVAR (Int, am_colorset)
+EXTERN_CVAR (Int, vid_aspect)
 
 static void CalcIndent (menu_t *menu);
 
@@ -937,6 +940,14 @@ CUSTOM_CVAR (Int, menu_screenratios, 0, CVAR_ARCHIVE)
 	}
 }
 
+static value_t ForceRatios[] =
+{
+	{ 0.0, "Off" },
+	{ 3.0, "4:3" },
+	{ 1.0, "16:9" },
+	{ 2.0, "16:10" },
+	{ 4.0, "5:4" }
+};
 static value_t Ratios[] =
 {
 	{ 0.0, "4:3" },
@@ -958,6 +969,7 @@ static char VMTestText[] = "T to test mode for 5 seconds";
 
 static menuitem_t ModesItems[] = {
 //	{ discrete, "Screen mode",			{&DummyDepthCvar},		{0.0}, {0.0},	{0.0}, {Depths} },
+	{ discrete, "Force aspect ratio",	{&vid_aspect},			{5.0}, {0.0},	{0.0}, {ForceRatios} },
 	{ discrete, "Aspect ratio",			{&menu_screenratios},	{4.0}, {0.0},	{0.0}, {Ratios} },
 	{ discrete,	"Renderer",				{&vid_renderer},		{2.0}, {0.0},	{0.0}, {Renderers} }, // [ZDoomGL]
 	{ discrete, "Fullscreen",			{&fullscreen},			{2.0}, {0.0},	{0.0}, {YesNo} },
@@ -981,9 +993,9 @@ static menuitem_t ModesItems[] = {
 
 #define VM_DEPTHITEM	0
 #define VM_ASPECTITEM	0
-#define VM_RESSTART		5
-#define VM_ENTERLINE	15
-#define VM_TESTLINE		17
+#define VM_RESSTART		6
+#define VM_ENTERLINE	16
+#define VM_TESTLINE		18
 
 menu_t ModesMenu =
 {
@@ -1010,6 +1022,11 @@ CUSTOM_CVAR (Bool, vid_tft, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 			menu_screenratios = 0;
 		}
 	}
+	setsizeneeded = true;
+	if (StatusBar != NULL)
+	{
+		StatusBar->ScreenSizeChanged();
+	}	
 }
 
 /*=======================================
