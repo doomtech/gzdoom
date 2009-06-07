@@ -1,4 +1,23 @@
-﻿June 6, 2009  (Changes by Graf Zahl)
+﻿June 7, 2009  (Changes by Graf Zahl)
+- fixed FORCEPAIN logic.
+- added Gez's infinite ammo powerup and random spawner fix patches.
+- reduced size of Hexen's flames to fix bug in Deathkings MAP01.
+- added checks for sidedef scaling values 
+- Added Karate Chris's poison cloud fix.
+
+June 6, 2009
+- Added per-tier texture scaling with these new UDMF sidedef properties:
+  * scalex_top
+  * scaley_top
+  * scalex_mid
+  * scaley_mid
+  * scalex_bottom
+  * scalex_bottom
+- Added sidedef versions of the linedef flags wrapmidtex and clipmidtex (via
+  UDMF; names are the same). If the flag is set on the line, it applies to
+  both sides. Otherwise, each side can control them individually.
+
+June 6, 2009  (Changes by Graf Zahl)
 - Added Hirogen2's unlimited pickup patch.
 - Added railgun performance customization CVARs by Spleen.
 - Added aspect ratio override submission by SoulPriestess.
