@@ -152,7 +152,6 @@ public:
 	float alpha;
 	FGLTexture *gltexture;
 
-
 	FColormap Colormap;
 	ERenderStyle RenderStyle;
 	
