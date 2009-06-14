@@ -755,7 +755,7 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 	if ((thing->flags2 | tm.thing->flags2) & MF2_THRUACTORS) 
 		return true;
 
-	if ((tm.thing->flags6 & MF6_THRUSPECIES) && (tm.thing->Species == thing->Species))
+	if ((tm.thing->flags6 & MF6_THRUSPECIES) && (tm.thing->GetSpecies() == thing->GetSpecies()))
 		return true;
 
 	if (!(thing->flags & (MF_SOLID|MF_SPECIAL|MF_SHOOTABLE)) )
@@ -825,6 +825,13 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 			}
 			return false;
 		}
+	}
+	// Check for players touching a thing with MF6_BUMPSPECIAL
+	// A blind recreation of what the Skulltag code is probably like.
+	if (tm.thing->player && (thing->flags6 & MF6_BUMPSPECIAL) && thing->special)
+	{
+		LineSpecials[thing->special] (NULL, tm.thing, false, thing->args[0], 
+			thing->args[1], thing->args[2], thing->args[3], thing->args[4]);
 	}
 	// Check for missile
 	if (tm.thing->flags & MF_MISSILE)
@@ -1001,8 +1008,12 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 					if (thing->flags2 & MF2_PUSHABLE
 						&& !(tm.thing->flags2 & MF2_CANNOTPUSH))
 					{ // Push thing
-						thing->momx += tm.thing->momx>>2;
-						thing->momy += tm.thing->momy>>2;
+						if (thing->lastpush != tm.PushTime)
+						{
+							thing->momx += FixedMul(tm.thing->momx, thing->pushfactor);
+							thing->momy += FixedMul(tm.thing->momy, thing->pushfactor);
+							thing->lastpush = tm.PushTime;
+						}
 					}
 				}
 				spechit.Clear ();
@@ -1041,8 +1052,12 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 	if (thing->flags2 & MF2_PUSHABLE && !(tm.thing->flags2 & MF2_CANNOTPUSH) &&
 		(tm.thing->player == NULL || !(tm.thing->player->cheats & CF_PREDICTING)))
 	{ // Push thing
-		thing->momx += FixedMul(tm.thing->momx, thing->pushfactor);
-		thing->momy += FixedMul(tm.thing->momy, thing->pushfactor);
+		if (thing->lastpush != tm.PushTime)
+		{
+			thing->momx += FixedMul(tm.thing->momx, thing->pushfactor);
+			thing->momy += FixedMul(tm.thing->momy, thing->pushfactor);
+			thing->lastpush = tm.PushTime;
+		}
 	}
 	solid = (thing->flags & MF_SOLID) &&
 			!(thing->flags & MF_NOCLIP) &&
@@ -2926,7 +2941,7 @@ void aim_t::AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t e
 					pitch_friend=thingpitch;
 				}
 			}
-			else if (!(th->flags3&MF3_ISMONSTER) )
+			else if (!(th->flags3&MF3_ISMONSTER) && th->player == NULL)
 			{
 				if (sv_smartaim < 3)
 				{
@@ -3244,7 +3259,8 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 				}
 			}
 			// [GZ] If MF6_FORCEPAIN is set, we need to call P_DamageMobj even if damage is 0!
-			if (damage || puff->flags6 & MF6_FORCEPAIN) 
+			// Note: The puff may not yet be spawned here so we must check the class defaults, not the actor.
+			if (damage || (puffDefaults->flags6 & MF6_FORCEPAIN))
 			{
 				int flags = DMG_INFLICTOR_IS_PUFF;
 				// Allow MF5_PIERCEARMOR on a weapon as well.

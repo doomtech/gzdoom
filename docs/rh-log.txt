@@ -1,4 +1,61 @@
-﻿June 7, 2009  (Changes by Graf Zahl)
+﻿June 14, 2009  (Changes by Graf Zahl)
+- added a compatibility option to restore the original Heretic bug where
+  a Minotaur couldn't spawn floor flames when standing in water having its
+  feet clipped.
+- added vid_vsync to display options.
+- fixed: Animations of type 'Range' must be disabled if the textures don't
+  come from the same definition unit (i.e both containing file and use type
+  are identical.)
+- changed: Item pushing is now only done once per P_XYMovement call.
+- Increased the push factor of Heretic's pod to 0.5 so that its behavior
+  more closely matches the original which depended on several bugs in the engine.
+- Removed damage thrust clamping in P_DamageMobj and changed the thrust calculation
+  to use floats to prevent overflows. The prevention of the overflows was the
+  only reason the clamping was done.
+- Added Raven's dagger-like vector sprite for the player to the automap code.
+
+June 10, 2009
+- Changed wad namespacing so that wads with a missing end marker will be
+  loaded as if they had one more lump with that end marker. This matches the
+  behaviour of previously released ZDooms. (The warning is still present, so
+  there's no excuse to release more wads like this.)
+- Moved Raw Input processing into a seperate method of FInputDevice so that
+  all the devices can share the same setup code.
+
+June 9, 2009
+- Removed F16 mapping for SDL, because I guess it's not present in SDL 1.2.
+
+June 9, 2009  (Changes by Graf Zahl)
+- Added Gez's Skulltag feature patch, including:
+    * BUMPSPECIAL flag: actors with this flag will run their special if collided on by a player
+    * WEAPON.NOAUTOAIM flag, though it is restricted to attacks that spawn a missile (it will 
+	  not affect autoaim settings for a hitscan or railgun, and that's deliberate)
+    * A_FireSTGrenade codepointer, extended to be parameterizable
+    * The grenade (as the default actor for A_FireSTGrenade)
+    * Protective armors à la RedArmor: they work with a DamageFactor; for example to 
+	  recreate the RedArmor from Skulltag, copy its code from skulltag.pk3 but remove 
+	  the "native" keyword and add DamageFactor "Fire" 0.1 to its properties.
+- Fixed: I_ShutdownInput must NULL all pointers because it can be called twice
+  if an ENDOOM screen is displayed.
+- Fixed: R_DrawSkyStriped used frontyScale without initializing it first.
+- Fixed: P_LineAttack may not check the puff actor for MF6_FORCEPAIN because
+  it's not necessarily spawned yet. 
+- Fixed: FWeaponSlots::PickNext/PrevWeapon must be limited to one iteration
+  through the weapon slots. Otherwise they will hang if there's no weapons
+  in a player's inventory.
+- Added Line_SetTextureScale.
+- Fixed: sv_smartaim 3 treated the player like a shootable decoration.
+- Added A_CheckIfInTargetLOS
+- Removed redundant A_CheckIfTargetInSight.
+	
+June 8, 2009
+- Fixed: The initial play of a GME song always started track 0.
+- Fixed: The RAWINPUT buffer that GetRawInputData() fills in is 40 bytes on
+  Win32 but 48 bytes on Win64, so Raw Mouse on x64 builds was getting random
+  data off the stack because I also interpreted the error return incorrectly.
+
+June 7, 2009  (Changes by Graf Zahl)
+- added parameter to A_FadeOut so that removing the actor can be made an option.
 - added PERSISTENTPOWER and TRANSFERPOINTERS submissions by Gez.
 - fixed FORCEPAIN logic.
 - added Gez's infinite ammo powerup and random spawner fix patches.

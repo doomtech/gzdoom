@@ -824,6 +824,11 @@ struct side_t
 	{
 		return textures[which].xscale;
 	}
+	void MultiplyTextureXScale(int which, fixed_t delta)
+	{
+		textures[which].xscale = FixedMul(textures[which].xscale, delta);
+	}
+
 
 	void SetTextureYScale(int which, fixed_t scale)
 	{
@@ -836,6 +841,10 @@ struct side_t
 	fixed_t GetTextureYScale(int which) const
 	{
 		return textures[which].yscale;
+	}
+	void MultiplyTextureYScale(int which, fixed_t delta)
+	{
+		textures[which].yscale = FixedMul(textures[which].yscale, delta);
 	}
 
 	DInterpolation *SetInterpolation(int position);

@@ -310,6 +310,7 @@ enum
 	MF6_MTHRUSPECIES	= 0x00000004,	// Missile passes through actors of its shooter's species.
 	MF6_FORCEPAIN		= 0x00000008,	// forces target into painstate (unless it has the NOPAIN flag)
 	MF6_NOFEAR			= 0x00000010,	// Not scared of frightening players
+	MF6_BUMPSPECIAL		= 0x00000020,	// Actor executes its special when being collided (as the ST flag)
 
 
 // --- mobj.renderflags ---
@@ -740,6 +741,7 @@ public:
 	fixed_t			gravity;		// [GRB] Gravity factor
 	int 			FastChaseStrafeCount;
 	fixed_t			pushfactor;
+	int				lastpush;
 
 	AActor			*BlockingMobj;	// Actor that blocked the last move
 	line_t			*BlockingLine;	// Line that blocked the last move

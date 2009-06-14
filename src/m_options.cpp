@@ -91,6 +91,7 @@ EXTERN_CVAR(Bool, nomonsterinterpolation)
 EXTERN_CVAR(Int, showendoom)
 EXTERN_CVAR(Bool, hud_althud)
 EXTERN_CVAR(Int, compatmode)
+EXTERN_CVAR (Bool, vid_vsync)
 
 static value_t Renderers[] = {
 	{ 0.0, "Software" },
@@ -538,6 +539,7 @@ static menuitem_t VideoItems[] = {
 	{ slider,	"Gamma correction",		{&Gamma},			   	{0.1f}, {3.0},	{0.1f}, {NULL} },
 	{ slider,	"Brightness",			{&vid_brightness},		{-0.8f}, {0.8f},	{0.05f}, {NULL} },
 	{ slider,	"Contrast",				{&vid_contrast},	   	{0.1f}, {3.0},	{0.1f}, {NULL} },
+	{ discrete, "Vertical Sync",		{&vid_vsync},			{2.0}, {0.0},	{0.0}, {OnOff} },
 	{ discretes,"Crosshair",			{&crosshair},		   	{8.0}, {0.0},	{0.0}, {NULL} },
 	{ discrete, "Column render mode",	{&r_columnmethod},		{2.0}, {0.0},	{0.0}, {ColumnMethods} },
 	{ discrete, "Stretch short skies",	{&r_stretchsky},	   	{2.0}, {0.0},	{0.0}, {OnOff} },
@@ -556,7 +558,7 @@ static menuitem_t VideoItems[] = {
 	{ discrete, "Bullet Puff Type",		{&cl_pufftype},			{2.0}, {0.0},	{0.0}, {PuffTypes} },
 };
 
-#define CROSSHAIR_INDEX 9
+#define CROSSHAIR_INDEX 10
 
 menu_t VideoMenu =
 {
@@ -1159,7 +1161,8 @@ static menuitem_t CompatibilityItems[] = {
 	{ bitflag,	"Inst. moving floors are not silent",		{&compatflags}, {0}, {0}, {0}, {(value_t *)COMPATF_SILENT_INSTANT_FLOORS} },
 	{ bitflag,  "Sector sounds use center as source",		{&compatflags}, {0}, {0}, {0}, {(value_t *)COMPATF_SECTORSOUNDS} },
 	{ bitflag,  "Use Doom heights for missile clipping",	{&compatflags}, {0}, {0}, {0}, {(value_t *)COMPATF_MISSILECLIP} },
-	{ bitflag,  "Allow any bossdeath for level special",		{&compatflags}, {0}, {0}, {0}, {(value_t *)COMPATF_ANYBOSSDEATH} },
+	{ bitflag,  "Allow any bossdeath for level special",	{&compatflags}, {0}, {0}, {0}, {(value_t *)COMPATF_ANYBOSSDEATH} },
+	{ bitflag,  "No Minotaur floor flames in water",		{&compatflags}, {0}, {0}, {0}, {(value_t *)COMPATF_MINOTAUR} },
 	
 	{ discrete, "Interpolate monster movement",	{&nomonsterinterpolation},		{2.0}, {0.0},	{0.0}, {NoYes} },
 };
