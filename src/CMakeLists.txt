@@ -4,6 +4,7 @@ if( COMMAND cmake_policy )
 	cmake_policy( SET CMP0003 NEW )
 endif( COMMAND cmake_policy )
 
+include( CheckCXXSourceCompiles )
 include( CheckFunctionExists )
 include( FindPkgConfig )
 include( FindOpenGL )
@@ -32,7 +33,7 @@ set( MINOR_VERSIONS "50" "49" "48" "47" "46" "45" "44" "43" "42" "41"
 	"27" "26" "25" "24" "23" "22" "21" "20" "21" "19" "18" "17" "16"
 	"15" "14" "13" "12" "11" "10" "09" "08" "07" "06" "05" "04" "03"
 	"02" "01" "00" )
-set( MAJOR_VERSIONS "22" "20" )
+set( MAJOR_VERSIONS "24" "22" "20" )
 set( FMOD_DIR_VERSIONS ${FMOD_DIR_VERSIONS} "../fmod" )
 foreach( majver ${MAJOR_VERSIONS} )
 	foreach( minver ${MINOR_VERSIONS} )
@@ -43,7 +44,7 @@ foreach( majver ${MAJOR_VERSIONS} )
 		set( FMOD_LOCAL_INC_DIRS ${FMOD_LOCAL_INC_DIRS} "${dir}/api/inc" )
 		set( FMOD_LOCAL_LIB_DIRS ${FMOD_LOCAL_LIB_DIRS} "${dir}/api/lib" )
 	endforeach( dir ${FMOD_DIR_VERSIONS} )
-endforeach( majver ${MAJER_VERSIONS} )
+endforeach( majver ${MAJOR_VERSIONS} )
 
 if( WIN32 )
 	if( X64 )
@@ -316,7 +317,10 @@ endif( NOT NO_ASM )
 # Set up flags for GCC
 
 if( CMAKE_COMPILER_IS_GNUCXX )
-	set( REL_CXX_FLAGS "-fno-rtti -fomit-frame-pointer" )
+	set( REL_CXX_FLAGS "-fno-rtti" )
+	if( NOT PROFILE )
+		set( REL_CXX_FLAGS "${REL_CXX_FLAGS} -fomit-frame-pointer" )
+	endif( NOT PROFILE )
 	set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${REL_CXX_FLAGS}" )
 	set( CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} ${REL_CXX_FLAGS}" )
 	set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${REL_CXX_FLAGS}" )
@@ -368,7 +372,23 @@ if( UNIX )
 	endif( NOT CLOCK_GETTIME_IN_RT )
 endif( UNIX )
 
-# Update svnrevision_gz.h
+CHECK_CXX_SOURCE_COMPILES(
+	"#include <stdarg.h>
+	int main() { va_list list1, list2; va_copy(list1, list2); return 0; }"
+	HAS_VA_COPY )
+if( NOT HAS_VA_COPY )
+	CHECK_CXX_SOURCE_COMPILES(
+		"#include <stdarg.h>
+		int main() { va_list list1, list2; __va_copy(list1, list2); return 0; }"
+		HAS___VA_COPY )
+	if( HAS___VA_COPY )
+		add_definitions( -Dva_copy=__va_copy )
+	else( HAS___VA_COPY )
+		add_definitions( -DNO_VA_COPY )
+	endif( HAS___VA_COPY )
+endif( NOT HAS_VA_COPY )
+
+# Update svnrevision.h
 
 add_custom_target( revision_check ALL
 	COMMAND ${CMAKE_BINARY_DIR}/tools/updaterevision/updaterevision . src/svnrevision_gz.h
@@ -377,8 +397,8 @@ add_custom_target( revision_check ALL
 
 # Libraries ZDoom needs
 
-set( ZDOOM_LIBS ${ZDOOM_LIBS} "${ZLIB_LIBRARIES}" "${JPEG_LIBRARIES}" "${FMOD_LIBRARY}" )
-include_directories( "${ZLIB_INCLUDE_DIR}" "${JPEG_INCLUDE_DIR}" "${FMOD_INCLUDE_DIR}" )
+set( ZDOOM_LIBS ${ZDOOM_LIBS} "${ZLIB_LIBRARIES}" "${JPEG_LIBRARIES}" "${BZIP2_LIBRARIES}" "${FMOD_LIBRARY}" )
+include_directories( "${ZLIB_INCLUDE_DIR}" "${JPEG_INCLUDE_DIR}" "${FMOD_INCLUDE_DIR}" "${BZIP2_INCLUDE_DIR}" "${LZMA_INCLUDE_DIR}" )
 
 # Start defining source files for ZDoom
 
@@ -394,6 +414,8 @@ if( WIN32 )
 		win32/i_cd.cpp
 		win32/i_crash.cpp
 		win32/i_input.cpp
+		win32/i_keyboard.cpp
+		win32/i_mouse.cpp
 		win32/i_main.cpp
 		win32/i_movie.cpp
 		win32/i_system.cpp
@@ -478,6 +500,7 @@ add_executable( zdoom WIN32
 	configfile.cpp
 	ct_chat.cpp
 	d_dehacked.cpp
+	d_iwad.cpp
 	d_main.cpp
 	d_net.cpp
 	d_netinfo.cpp
@@ -694,18 +717,29 @@ add_executable( zdoom WIN32
 	oplsynth/music_opldumper_mididevice.cpp
 	oplsynth/music_opl_mididevice.cpp
 	oplsynth/opl_mus_player.cpp
+	resourcefiles/ancientzip.cpp
+	resourcefiles/file_7z.cpp
+	resourcefiles/file_grp.cpp
+	resourcefiles/file_lump.cpp
+	resourcefiles/file_rff.cpp
+	resourcefiles/file_wad.cpp
+	resourcefiles/file_zip.cpp
+	resourcefiles/file_pak.cpp
+	resourcefiles/file_directory.cpp
+	resourcefiles/resourcefile.cpp
+	sfmt/SFMT.cpp
 	sound/fmodsound.cpp
 	sound/i_music.cpp
 	sound/i_sound.cpp
 	sound/music_cd.cpp
 	sound/music_dumb.cpp
+	sound/music_gme.cpp
 	sound/music_midistream.cpp
 	sound/music_midi_base.cpp
 	sound/music_midi_midiout.cpp
 	sound/music_midi_timidity.cpp
 	sound/music_mus_midiout.cpp
 	sound/music_mus_opl.cpp
-	sound/music_spc.cpp
 	sound/music_stream.cpp
 	sound/music_timidity_mididevice.cpp
 	sound/music_win_mididevice.cpp
@@ -722,6 +756,7 @@ add_executable( zdoom WIN32
 	textures/pcxtexture.cpp
 	textures/pngtexture.cpp
 	textures/rawpagetexture.cpp
+	textures/emptytexture.cpp
 	textures/texture.cpp
 	textures/texturemanager.cpp
 	textures/tgatexture.cpp
@@ -761,7 +796,7 @@ add_executable( zdoom WIN32
 set_source_files_properties( xlat/parse_xlat.cpp PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/xlat_parser.c" )
 set_source_files_properties( sc_man.cpp PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/sc_man_scanner.h" )
 
-target_link_libraries( zdoom ${ZDOOM_LIBS} snes_spc gdtoa dumb bzip2 lzma )
+target_link_libraries( zdoom ${ZDOOM_LIBS} gme gdtoa dumb lzma )
 include_directories( .
 	g_doom
 	g_heretic
@@ -777,7 +812,7 @@ include_directories( .
 	thingdef
 	timidity
 	xlat
-	../snes_spc/snes_spc
+	../game-music-emu/gme
 	../gdtoa
 	../dumb/include
 	${CMAKE_BINARY_DIR}/gdtoa

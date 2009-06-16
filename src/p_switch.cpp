@@ -143,10 +143,9 @@ void P_InitSwitchList ()
 				Printf ("Switch %s in SWITCHES has the same 'on' state\n", list_p);
 				continue;
 			}
-			// [RH] Skip this switch if its texture can't be found.
-			if (((gameinfo.maxSwitch & 15) >= (list_p[18] & 15)) &&
-				((gameinfo.maxSwitch & ~15) == (list_p[18] & ~15)) &&
-				TexMan.CheckForTexture (list_p /* .name1 */, FTexture::TEX_Wall, texflags).Exists())
+			// [RH] Skip this switch if its textures can't be found.
+			if (TexMan.CheckForTexture (list_p /* .name1 */, FTexture::TEX_Wall, texflags).Exists() &&
+				TexMan.CheckForTexture (list_p + 9 /* .name2 */, FTexture::TEX_Wall, texflags).Exists())
 			{
 				def1 = (FSwitchDef *)M_Malloc (sizeof(FSwitchDef));
 				def2 = (FSwitchDef *)M_Malloc (sizeof(FSwitchDef));
@@ -204,42 +203,40 @@ void P_ProcessSwitchDef (FScanner &sc)
 	FString picname;
 	FSwitchDef *def1, *def2;
 	FTextureID picnum;
-	BYTE max;
+	int gametype;
 	bool quest = false;
 
 	def1 = def2 = NULL;
 	sc.MustGetString ();
 	if (sc.Compare ("doom"))
 	{
-		max = 0;
+		gametype = GAME_DoomChex;
+		sc.CheckNumber();	// skip the gamemission filter
 	}
 	else if (sc.Compare ("heretic"))
 	{
-		max = 17;
+		gametype = GAME_Heretic;
 	}
 	else if (sc.Compare ("hexen"))
 	{
-		max = 33;
+		gametype = GAME_Hexen;
 	}
 	else if (sc.Compare ("strife"))
 	{
-		max = 49;
+		gametype = GAME_Strife;
 	}
 	else if (sc.Compare ("any"))
 	{
-		max = 240;
+		gametype = GAME_Any;
 	}
 	else
 	{
 		// There is no game specified; just treat as any
-		max = 240;
+		//max = 240;
+		gametype = GAME_Any;
 		sc.UnGet ();
 	}
-	if (max == 0)
-	{
-		sc.MustGetNumber ();
-		max |= sc.Number & 15;
-	}
+
 	sc.MustGetString ();
 	picnum = TexMan.CheckForTexture (sc.String, FTexture::TEX_Wall, texflags);
 	picname = sc.String;
@@ -271,16 +268,9 @@ void P_ProcessSwitchDef (FScanner &sc)
 			break;
 		}
 	}
-/*
-	if (def1 == NULL)
-	{
-		sc.ScriptError ("Switch must have an on state");
-	}
-*/
+
 	if (def1 == NULL || !picnum.Exists() ||
-		((max & 240) != 240 &&
-		 ((gameinfo.maxSwitch & 240) != (max & 240) ||
-		  (gameinfo.maxSwitch & 15) < (max & 15))))
+		(gametype != GAME_Any && !(gametype & gameinfo.gametype)))
 	{
 		if (def2 != NULL)
 		{
@@ -474,14 +464,13 @@ static int TryFindSwitch (side_t *side, int Where)
 //
 bool P_CheckSwitchRange(AActor *user, line_t *line, int sideno)
 {
-	// if this line is one sided this function must always return success.
-	if (line->sidenum[0] == NO_SIDE || line->sidenum[1] == NO_SIDE) return true;
+	// Activated from an empty side -> always succeed
+	if (line->sidenum[sideno] == NO_SIDE) return true;
 
 	fixed_t checktop;
 	fixed_t checkbot;
 	side_t *side = &sides[line->sidenum[sideno]];
 	sector_t *front = sides[line->sidenum[sideno]].sector;
-	sector_t *back = sides[line->sidenum[1-sideno]].sector;
 	FLineOpening open;
 
 	// 3DMIDTEX forces CHECKSWITCHRANGE because otherwise it might cause problems.
@@ -502,9 +491,18 @@ bool P_CheckSwitchRange(AActor *user, line_t *line, int sideno)
 	checkx = dll.x + FixedMul(dll.dx, inter);
 	checky = dll.y + FixedMul(dll.dy, inter);
 
+	// one sided line
+	if (line->sidenum[1] == NO_SIDE) 
+	{
+	onesided:
+		fixed_t sectorc = front->ceilingplane.ZatPoint(checkx, checky);
+		fixed_t sectorf = front->floorplane.ZatPoint(checkx, checky);
+		return (user->z + user->height >= sectorf && user->z <= sectorc);
+	}
+
 	// Now get the information from the line.
 	P_LineOpening(open, NULL, line, checkx, checky, user->x, user->y);
-	if (open.range <= 0) return true;
+	if (open.range <= 0) goto onesided;
 
 	if ((TryFindSwitch (side, side_t::top)) != -1)
 	{
@@ -631,7 +629,7 @@ void DActiveButton::Serialize (FArchive &arc)
 	Super::Serialize (arc);
 	if (arc.IsStoring ())
 	{
-		sidenum = m_Side ? m_Side - sides : -1;
+		sidenum = m_Side ? SDWORD(m_Side - sides) : -1;
 	}
 	arc << sidenum << m_Part << m_SwitchDef << m_Frame << m_Timer << bFlippable << m_X << m_Y;
 	if (arc.IsLoading ())

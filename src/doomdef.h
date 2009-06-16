@@ -44,18 +44,6 @@ typedef enum
 } GameMode_t;
 
 
-// Mission packs - might be useful for TC stuff?
-typedef enum
-{
-  doom, 		// DOOM 1
-  doom2,		// DOOM 2
-  pack_tnt, 	// TNT mission pack
-  pack_plut,	// Plutonia pack
-  none
-
-} GameMission_t;
-
-
 // If rangecheck is undefined, most parameter validation debugging code
 // will not be compiled
 #ifndef NORANGECHECKING
@@ -116,6 +104,7 @@ enum ESkillLevels
 // DOOM keyboard definition. Everything below 0x100 matches
 // a DirectInput key code.
 //
+#define KEY_PAUSE				0xc5	// DIK_PAUSE
 #define KEY_RIGHTARROW			0xcd	// DIK_RIGHT
 #define KEY_LEFTARROW			0xcb	// DIK_LEFT
 #define KEY_UPARROW 			0xc8	// DIK_UP
@@ -138,7 +127,6 @@ enum ESkillLevels
 #define KEY_F12 				0x58	// DIK_F12
 
 #define KEY_BACKSPACE			0x0e	// DIK_BACK
-#define KEY_PAUSE				0xff
 
 #define KEY_EQUALS				0x0d	// DIK_EQUALS
 #define KEY_MINUS				0x0c	// DIK_MINUS
@@ -179,8 +167,10 @@ enum ESkillLevels
 
 #define KEY_MWHEELUP			0x198
 #define KEY_MWHEELDOWN			0x199
+#define KEY_MWHEELRIGHT			0x19A
+#define KEY_MWHEELLEFT			0x19B
 
-#define NUM_KEYS				0x19A
+#define NUM_KEYS				0x19C
 
 #define JOYAXIS_NONE			0
 #define JOYAXIS_YAW				1
@@ -280,6 +270,8 @@ enum
 	COMPATF_SECTORSOUNDS	= 1 << 18,	// Sector sounds use original method for sound origin.
 	COMPATF_MISSILECLIP		= 1 << 19,	// Use original Doom heights for clipping against projectiles
 	COMPATF_CROSSDROPOFF	= 1 << 20,	// monsters can't be pushed over dropoffs
+	COMPATF_ANYBOSSDEATH	= 1 << 21,	// [GZ] Any monster which calls BOSSDEATH counts for level specials
+	COMPATF_MINOTAUR		= 1 << 22,	// Minotaur's floor flame is exploded immediately when feet are clipped
 };
 
 // Emulate old bugs for select maps. These are not exposed by a cvar

@@ -107,6 +107,7 @@ ACTOR KnightAxe
 		-ACTIVATEIMPACT
 		-ACTIVATEPCROSS
 		+WINDTHRUST
+		+THRUGHOST
 		DeathSound ("hknight/hit")
 	}
 

@@ -382,7 +382,8 @@ void P_SerializeWorld (FArchive &arc)
 				<< si->Light
 				<< si->Flags
 				<< si->LeftSide
-				<< si->RightSide;
+				<< si->RightSide
+				<< si->Index;
 			DBaseDecal::SerializeChain (arc, &si->AttachedDecals);
 		}
 	}
@@ -419,6 +420,10 @@ void extsector_t::Serialize(FArchive &arc)
 FArchive &operator<< (FArchive &arc, side_t::part &p)
 {
 	arc << p.xoffset << p.yoffset << p.interpolation << p.texture;// << p.Light;
+	if (SaveVersion >= 1645)
+	{
+		arc << p.xscale << p.yscale;
+	}
 	return arc;
 }
 

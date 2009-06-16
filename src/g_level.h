@@ -82,9 +82,10 @@ struct FMapInfoParser
 	void ParseNextMap(char *mapname);
 	level_info_t *ParseMapHeader(level_info_t &defaultinfo);
 	void ParseMapDefinition(level_info_t &leveldef);
+	void ParseGameInfo();
 	void ParseEpisodeInfo ();
 	void ParseSkill ();
-	void ParseMapInfo (int lump, level_info_t &gamedefaults);
+	void ParseMapInfo (int lump, level_info_t &gamedefaults, level_info_t &defaultinfo);
 
 	void ParseOpenBrace();
 	bool ParseCloseBrace();
@@ -196,6 +197,8 @@ enum ELevelFlags
 	LEVEL2_HEXENHACK			= 0x00800000,	// Level was defined in a Hexen style MAPINFO
 
 	LEVEL2_SMOOTHLIGHTING		= 0x01000000,	// Level uses the smooth lighting feature.
+	LEVEL2_POLYGRIND			= 0x02000000,	// Polyobjects grind corpses to gibs.
+	LEVEL2_RESETINVENTORY		= 0x04000000,	// Resets player inventory when starting this level (unless in a hub)
 };
 
 
@@ -412,7 +415,8 @@ enum EndTypes
 	END_Underwater,
 	END_Chess,
 	END_Strife,
-	END_BuyStrife
+	END_BuyStrife,
+	END_TitleScreen
 };
 
 struct EndSequence
@@ -500,7 +504,7 @@ level_info_t *CheckLevelRedirect (level_info_t *info);
 
 FString CalcMapName (int episode, int level);
 
-void G_ParseMapInfo (void);
+void G_ParseMapInfo (const char *basemapinfo);
 
 void G_ClearSnapshots (void);
 void P_RemoveDefereds ();

@@ -274,9 +274,10 @@ int APoisonCloud::DoSpecialDamage (AActor *victim, int damage)
 			{
 				P_PoisonDamage (victim->player, this,
 					15+(pr_poisoncloudd()&15), false); // Don't play painsound
-				P_PoisonPlayer (victim->player, this, this->target, 50);
 
-				S_Sound (victim, CHAN_VOICE, "*poison", 1, ATTN_NORM);
+				// If successful, play the posion sound.
+				if (P_PoisonPlayer (victim->player, this, this->target, 50))
+					S_Sound (victim, CHAN_VOICE, "*poison", 1, ATTN_NORM);
 			}
 		}	
 		return -1;
@@ -371,7 +372,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_CheckThrowBomb2)
 		self->SetState (self->SpawnState + 6);
 		self->z = self->floorz;
 		self->momz = 0;
-		self->flags2 &= ~MF2_BOUNCETYPE;
+		self->bouncetype = BOUNCE_None;
 		self->flags &= ~MF_MISSILE;
 	}
 	CALL_ACTION(A_CheckThrowBomb, self);

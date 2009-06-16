@@ -22,7 +22,7 @@ IMPLEMENT_CLASS (AHexenArmor)
 void ABasicArmor::Serialize (FArchive &arc)
 {
 	Super::Serialize (arc);
-	arc << SavePercent << BonusCount << MaxAbsorb << MaxFullAbsorb << AbsorbCount;
+	arc << SavePercent << BonusCount << MaxAbsorb << MaxFullAbsorb << AbsorbCount << ArmorType;
 }
 
 //===========================================================================
@@ -77,6 +77,7 @@ AInventory *ABasicArmor::CreateCopy (AActor *other)
 	copy->MaxAmount = MaxAmount;
 	copy->Icon = Icon;
 	copy->BonusCount = BonusCount;
+	copy->ArmorType = ArmorType;
 	GoAwayAndDie ();
 	return copy;
 }
@@ -138,6 +139,7 @@ void ABasicArmor::AbsorbDamage (int damage, FName damageType, int &newdamage)
 		{
 			// The armor has become useless
 			SavePercent = 0;
+			ArmorType = NAME_None; // Not NAME_BasicArmor.
 			// Now see if the player has some more armor in their inventory
 			// and use it if so. As in Strife, the best armor is used up first.
 			ABasicArmorPickup *best = NULL;
@@ -160,6 +162,24 @@ void ABasicArmor::AbsorbDamage (int damage, FName damageType, int &newdamage)
 			}
 		}
 		damage = newdamage;
+	}
+
+	// Once the armor has absorbed its part of the damage, then apply its damage factor, if any, to the player
+	if ((damage > 0) && (ArmorType != NAME_None)) // BasicArmor is not going to have any damage factor, so skip it.
+	{
+		// This code is taken and adapted from APowerProtection::ModifyDamage().
+		// The differences include not checking for the NAME_None key (doesn't seem appropriate here), 
+		// not using a default value, and of course the way the damage factor info is obtained.
+		const fixed_t *pdf = NULL;
+		DmgFactors *df = PClass::FindClass(ArmorType)->ActorInfo->DamageFactors;
+		if (df != NULL && df->CountUsed() != 0)
+		{
+			pdf = df->CheckKey(damageType);
+			if (pdf != NULL)
+			{
+				damage = newdamage = FixedMul(damage, *pdf);
+			}
+		}
 	}
 	if (Inventory != NULL)
 	{
@@ -237,6 +257,7 @@ bool ABasicArmorPickup::Use (bool pickup)
 	armor->Icon = Icon;
 	armor->MaxAbsorb = MaxAbsorb;
 	armor->MaxFullAbsorb = MaxFullAbsorb;
+	armor->ArmorType = this->GetClass()->TypeName;
 	return true;
 }
 
@@ -320,6 +341,7 @@ bool ABasicArmorBonus::Use (bool pickup)
 		armor->Icon = Icon;
 		armor->SavePercent = SavePercent;
 		armor->MaxAbsorb = MaxAbsorb;
+		armor->ArmorType = this->GetClass()->TypeName;
 		armor->MaxFullAbsorb = MaxFullAbsorb;
 	}
 

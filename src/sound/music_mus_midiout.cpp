@@ -33,7 +33,11 @@
 
 // HEADER FILES ------------------------------------------------------------
 
+#ifndef __FreeBSD__
 #include <malloc.h>
+#else
+#include <stdlib.h>
+#endif
 #include "i_musicinterns.h"
 #include "templates.h"
 #include "doomdef.h"
@@ -85,7 +89,7 @@ static const BYTE CtrlTranslate[15] =
 //
 //==========================================================================
 
-MUSSong2::MUSSong2 (FILE *file, char *musiccache, int len, EMIDIDevice type)
+MUSSong2::MUSSong2 (FILE *file, BYTE *musiccache, int len, EMIDIDevice type)
 : MIDIStreamer(type), MusHeader(0), MusBuffer(0)
 {
 #ifdef _WIN32

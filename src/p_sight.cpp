@@ -643,15 +643,12 @@ bool P_CheckSight (const AActor *t1, const AActor *t2, int flags)
 
 	bool res;
 
-#ifdef _DEBUG
 	assert (t1 != NULL);
 	assert (t2 != NULL);
-#else
 	if (t1 == NULL || t2 == NULL)
 	{
 		return false;
 	}
-#endif
 
 	const sector_t *s1 = t1->Sector;
 	const sector_t *s2 = t2->Sector;
@@ -684,13 +681,13 @@ sightcounts[0]++;
 
 	// killough 4/19/98: make fake floors and ceilings block monster view
 
-	if ((s1->heightsec && !(s1->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC) &&
+	if ((s1->GetHeightSec() &&
 		((t1->z + t1->height <= s1->heightsec->floorplane.ZatPoint (t1->x, t1->y) &&
 		  t2->z >= s1->heightsec->floorplane.ZatPoint (t2->x, t2->y)) ||
 		 (t1->z >= s1->heightsec->ceilingplane.ZatPoint (t1->x, t1->y) &&
 		  t2->z + t1->height <= s1->heightsec->ceilingplane.ZatPoint (t2->x, t2->y))))
 		||
-		(s2->heightsec && !(s2->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC) &&
+		(s2->GetHeightSec() &&
 		 ((t2->z + t2->height <= s2->heightsec->floorplane.ZatPoint (t2->x, t2->y) &&
 		   t1->z >= s2->heightsec->floorplane.ZatPoint (t1->x, t1->y)) ||
 		  (t2->z >= s2->heightsec->ceilingplane.ZatPoint (t2->x, t2->y) &&

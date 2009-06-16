@@ -55,10 +55,11 @@
 #include <ctype.h>
 #include <string.h>
 
-// Compensate for w32api's lack
-#ifndef GET_XBUTTON_WPARAM
-#define GET_XBUTTON_WPARAM(wParam) (HIWORD(wParam))
+#ifdef _MSC_VER
+#pragma warning(disable:4244)
 #endif
+
+// Compensate for w32api's lack
 #ifndef WM_WTSSESSION_CHANGE
 #define WM_WTSSESSION_CHANGE 0x02B1
 #define WTS_CONSOLE_CONNECT 1
@@ -66,13 +67,14 @@
 #define WTS_SESSION_LOCK 7
 #define WTS_SESSION_UNLOCK 8
 #endif
-#ifndef SetClassLongPtr
-#define SetClassLongPtr SetClassLong
-#endif
 #ifndef PBT_APMSUSPEND
 // w32api does not #define the PBT_ macros in winuser.h like the PSDK does
 #include <pbt.h>
 #endif
+#ifndef GET_RAWINPUT_CODE_WPARAM
+#define GET_RAWINPUT_CODE_WPARAM(wParam)	((wParam) & 0xff)
+#endif
+
 
 #define USE_WINDOWS_DWORD
 #include "c_dispatch.h"
@@ -99,7 +101,14 @@
 #include "d_event.h"
 #include "v_text.h"
 
-#define DINPUT_BUFFERSIZE	32
+// Prototypes and declarations.
+#include "rawinput.h"
+// Definitions
+#define RIF(name, ret, args) \
+	name##Proto My##name;
+#include "rawinput.h"
+
+
 
 #ifdef _DEBUG
 #define INGAME_PRIORITY_CLASS	NORMAL_PRIORITY_CLASS
@@ -108,6 +117,7 @@
 #define INGAME_PRIORITY_CLASS	NORMAL_PRIORITY_CLASS
 #endif
 
+static void FindRawInputFunctions();
 BOOL DI_InitJoy (void);
 
 extern HINSTANCE g_hInst;
@@ -118,26 +128,11 @@ extern bool SpawnEAXWindow;
 
 static HMODULE DInputDLL;
 
-static void KeyRead ();
-static BOOL I_StartupKeyboard ();
-static void I_StartupMouse ();
-static void MouseRead_DI ();
-static void MouseRead_Win32 ();
-static void GrabMouse_Win32 ();
-static void UngrabMouse_Win32 ();
-static BOOL I_GetDIMouse ();
-static void I_GetWin32Mouse ();
-static void CenterMouse_Win32 (LONG curx, LONG cury);
-static void WheelMoved ();
-static void DI_Acquire (LPDIRECTINPUTDEVICE8 mouse);
-static void DI_Unacquire (LPDIRECTINPUTDEVICE8 mouse);
-static void SetCursorState (int visible);
 static HRESULT InitJoystick ();
 
-static bool GUICapture;
-static int NativeMouse;
-static bool MakeMouseEvents;
-static POINT UngrabbedPointerPos;
+bool GUICapture;
+extern FMouse *Mouse;
+extern FKeyboard *Keyboard;
 
 bool VidResizing;
 
@@ -152,29 +147,15 @@ extern menu_t JoystickMenu;
 EXTERN_CVAR (String, language)
 EXTERN_CVAR (Bool, lookstrafe)
 
-
-typedef enum { win32, dinput } mousemode_t;
-static mousemode_t mousemode;
+static int WheelDelta;
 
 extern BOOL paused;
-static bool HaveFocus = false;
 static bool noidle = false;
-static int WheelMove;
 
-static LPDIRECTINPUT8			g_pdi;
-static LPDIRECTINPUT			g_pdi3;
+LPDIRECTINPUT8			g_pdi;
+LPDIRECTINPUT			g_pdi3;
 
 static LPDIRECTINPUTDEVICE8		g_pJoy;
-
-// These can also be earlier IDirectInputDevice interfaces.
-// Since IDirectInputDevice8 just added new methods to it
-// without rearranging the old ones, I just maintain one
-// pointer for each device instead of two.
-
-static LPDIRECTINPUTDEVICE8		g_pKey;
-static LPDIRECTINPUTDEVICE8		g_pMouse;
-
-HCURSOR TheArrowCursor, TheInvisibleCursor;
 
 TArray<GUIDName> JoystickNames;
 
@@ -202,10 +183,6 @@ static const BYTE POVButtons[9] = { 0x01, 0x03, 0x02, 0x06, 0x04, 0x0C, 0x08, 0x
 
 BOOL AppActive = TRUE;
 int SessionState = 0;
-
-CVAR (Bool,  use_mouse,				true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-CVAR (Bool,  m_noprescale,			false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-CVAR (Bool,	 m_filter,				false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 CVAR (Bool,  use_joystick,			false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
@@ -313,8 +290,6 @@ CVAR (Float, joy_forwardspeed,	-1.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (Float, joy_sidespeed,		 1.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (Float, joy_upspeed,		-1.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
-// set this to false to make keypad-enter a usable separate key!
-CVAR (Bool, k_mergekeys, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR (Bool, k_allowfullscreentoggle, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 static FBaseCVar * const JoyConfigVars[] =
@@ -324,74 +299,6 @@ static FBaseCVar * const JoyConfigVars[] =
 	&joy_speedmultiplier, &joy_yawspeed, &joy_pitchspeed, &joy_forwardspeed, &joy_sidespeed,
 	&joy_upspeed
 };
-
-CUSTOM_CVAR (Int, in_mouse, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
-{
-	if (self < 0)
-	{
-		self = 0;
-	}
-	else if (self > 2)
-	{
-		self = 2;
-	}
-	else if (g_pdi == NULL && g_pdi3 == NULL)
-	{
-		return;
-	}
-	else
-	{
-		I_StartupMouse();
-	}
-}
-
-static BYTE KeyState[256];
-static BYTE DIKState[2][NUM_KEYS];
-static int KeysReadCount;
-static int ActiveDIKState;
-static void SetSoundPaused (int state);
-
-// Convert DIK_* code to ASCII using Qwerty keymap
-static const BYTE Convert [256] =
-{
-  //  0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
-	  0,  27, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=',   8,   9, // 0
-	'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']',  13,   0, 'a', 's', // 1
-	'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',  39, '`',   0,'\\', 'z', 'x', 'c', 'v', // 2
-	'b', 'n', 'm', ',', '.', '/',   0, '*',   0, ' ',   0,   0,   0,   0,   0,   0, // 3
-	  0,   0,   0,   0,   0,   0,   0, '7', '8', '9', '-', '4', '5', '6', '+', '1', // 4
-	'2', '3', '0', '.',   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // 5
-	  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // 6
-	  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // 7
-
-	  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, '=',   0,   0, // 8
-	  0, '@', ':', '_',   0,   0,   0,   0,   0,   0,   0,   0,  13,   0,   0,   0, // 9
-	  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // A
-	  0,   0,   0, ',',   0, '/',   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // B
-	  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, // C
-	  0,   0,   0,   0,   0,   0,   0,   0
-
-};
-
-static void FlushDIKState (int low=0, int high=NUM_KEYS-1)
-{
-	int i;
-	event_t event;
-	BYTE *state = DIKState[ActiveDIKState];
-
-	memset (&event, 0, sizeof(event));
-	event.type = EV_KeyUp;
-	for (i = low; i <= high; ++i)
-	{
-		if (state[i])
-		{
-			state[i] = 0;
-			event.data1 = i;
-			event.data2 = i < 256 ? Convert[i] : 0;
-			D_PostEvent (&event);
-		}
-	}
-}
 
 extern int chatmodeon;
 
@@ -411,77 +318,191 @@ static void I_CheckGUICapture ()
 	if (wantCapt != GUICapture)
 	{
 		GUICapture = wantCapt;
-		if (wantCapt)
+		if (wantCapt && Keyboard != NULL)
 		{
-			FlushDIKState ();
+			Keyboard->AllKeysUp();
 		}
 	}
 }
 
-CUSTOM_CVAR(Int, mouse_capturemode, 1, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
+bool GUIWndProcHook(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, LRESULT *result)
 {
-	if (self < 0) self = 0;
-	else if (self > 2) self = 2;
-}
+	event_t ev = { EV_GUI_Event };
 
-static bool inGame()
-{
-	switch (mouse_capturemode)
+	*result = 0;
+
+	switch (message)
 	{
-	default:
-	case 0:
-		return gamestate == GS_LEVEL;
-	case 1:
-		return gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_FINALE;
-	case 2:
-		return true;
-	}
-}
-
-void I_CheckNativeMouse (bool preferNative)
-{
-	bool wantNative = !HaveFocus ||
-		((!screen || !screen->IsFullscreen()) && 
-		(!inGame() || GUICapture || paused || preferNative || !use_mouse || demoplayback));
-
-	//Printf ("%d %d %d\n", wantNative, preferNative, NativeMouse);
-
-	if (int(wantNative) != NativeMouse)
-	{
-		if (wantNative)
+	case WM_KEYDOWN:
+	case WM_SYSKEYDOWN:
+	case WM_KEYUP:
+	case WM_SYSKEYUP:
+		if (message == WM_KEYUP || message == WM_SYSKEYUP)
 		{
-			if (mousemode == dinput)
-			{
-				DI_Unacquire (g_pMouse);
-			}
-			else
-			{
-				UngrabMouse_Win32 ();
-				SetCursorPos (UngrabbedPointerPos.x, UngrabbedPointerPos.y);
-			}
-			FlushDIKState (KEY_MOUSE1, KEY_MOUSE8);
+			ev.subtype = EV_GUI_KeyUp;
 		}
 		else
 		{
-			if (mousemode == win32)
+			ev.subtype = (lParam & 0x40000000) ? EV_GUI_KeyRepeat : EV_GUI_KeyDown;
+		}
+		if (GetKeyState(VK_SHIFT) & 0x8000)		ev.data3 |= GKM_SHIFT;
+		if (GetKeyState(VK_CONTROL) & 0x8000)	ev.data3 |= GKM_CTRL;
+		if (GetKeyState(VK_MENU) & 0x8000)		ev.data3 |= GKM_ALT;
+		if ( (ev.data1 = MapVirtualKey(wParam, 2)) )
+		{
+			D_PostEvent(&ev);
+		}
+		else
+		{
+			switch (wParam)
 			{
-				if (NativeMouse >= 0)
-				{
-					GetCursorPos (&UngrabbedPointerPos);
-				}
-				GrabMouse_Win32 ();
+			case VK_PRIOR:	ev.data1 = GK_PGUP;		break;
+			case VK_NEXT:	ev.data1 = GK_PGDN;		break;
+			case VK_END:	ev.data1 = GK_END;		break;
+			case VK_HOME:	ev.data1 = GK_HOME;		break;
+			case VK_LEFT:	ev.data1 = GK_LEFT;		break;
+			case VK_RIGHT:	ev.data1 = GK_RIGHT;	break;
+			case VK_UP:		ev.data1 = GK_UP;		break;
+			case VK_DOWN:	ev.data1 = GK_DOWN;		break;
+			case VK_DELETE:	ev.data1 = GK_DEL;		break;
+			case VK_ESCAPE:	ev.data1 = GK_ESCAPE;	break;
+			case VK_F1:		ev.data1 = GK_F1;		break;
+			case VK_F2:		ev.data1 = GK_F2;		break;
+			case VK_F3:		ev.data1 = GK_F3;		break;
+			case VK_F4:		ev.data1 = GK_F4;		break;
+			case VK_F5:		ev.data1 = GK_F5;		break;
+			case VK_F6:		ev.data1 = GK_F6;		break;
+			case VK_F7:		ev.data1 = GK_F7;		break;
+			case VK_F8:		ev.data1 = GK_F8;		break;
+			case VK_F9:		ev.data1 = GK_F9;		break;
+			case VK_F10:	ev.data1 = GK_F10;		break;
+			case VK_F11:	ev.data1 = GK_F11;		break;
+			case VK_F12:	ev.data1 = GK_F12;		break;
 			}
-			else
+			if (ev.data1 != 0)
 			{
-				DI_Acquire (g_pMouse);
+				D_PostEvent(&ev);
 			}
 		}
-		NativeMouse = wantNative;
+		// Return false for key downs so that we can handle special hotkeys
+		// in the main WndProc.
+		return ev.subtype == EV_GUI_KeyUp;
+
+	case WM_CHAR:
+	case WM_SYSCHAR:
+		if (wParam >= ' ')		// only send displayable characters
+		{
+			ev.subtype = EV_GUI_Char;
+			ev.data1 = wParam;
+			ev.data2 = (message == WM_SYSCHAR);
+			D_PostEvent(&ev);
+			return true;
+		}
+		break;
+
+	case WM_LBUTTONDOWN:
+	case WM_LBUTTONUP:
+	case WM_RBUTTONDOWN:
+	case WM_RBUTTONUP:
+	case WM_MBUTTONDOWN:
+	case WM_MBUTTONUP:
+		if (message >= WM_LBUTTONDOWN && message <= WM_LBUTTONDBLCLK)
+		{
+			ev.subtype = message - WM_LBUTTONDOWN + EV_GUI_LButtonDown;
+		}
+		else if (message >= WM_RBUTTONDOWN && message <= WM_RBUTTONDBLCLK)
+		{
+			ev.subtype = message - WM_RBUTTONDOWN + EV_GUI_RButtonDown;
+		}
+		else if (message >= WM_MBUTTONDOWN && message <= WM_MBUTTONDBLCLK)
+		{
+			ev.subtype = message - WM_MBUTTONDOWN + EV_GUI_MButtonDown;
+		}
+		D_PostEvent(&ev);
+		return true;
+
+	// Note: If the mouse is grabbed, it sends the mouse wheel events itself.
+	case WM_MOUSEWHEEL:
+		if (wParam & MK_SHIFT)				ev.data3 |= GKM_SHIFT;
+		if (wParam & MK_CONTROL)			ev.data3 |= GKM_CTRL;
+		if (GetKeyState(VK_MENU) & 0x8000)	ev.data3 |= GKM_ALT;
+		WheelDelta += (SHORT)HIWORD(wParam);
+		if (WheelDelta < 0)
+		{
+			ev.subtype = EV_GUI_WheelDown;
+			while (WheelDelta <= -WHEEL_DELTA)
+			{
+				D_PostEvent(&ev);
+				WheelDelta += WHEEL_DELTA;
+			}
+		}
+		else
+		{
+			ev.subtype = EV_GUI_WheelUp;
+			while (WheelDelta >= WHEEL_DELTA)
+			{
+				D_PostEvent(&ev);
+				WheelDelta -= WHEEL_DELTA;
+			}
+		}
+		return true;
 	}
+	return false;
+}
+
+bool CallHook(FInputDevice *device, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, LRESULT *result)
+{
+	if (device == NULL)
+	{
+		return false;
+	}
+	*result = 0;
+	return device->WndProcHook(hWnd, message, wParam, lParam, result);
 }
 
 LRESULT CALLBACK WndProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	LRESULT result;
+
+	if (message == WM_INPUT)
+	{
+		if (MyGetRawInputData != NULL)
+		{
+			UINT size;
+
+			if (!MyGetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &size, sizeof(RAWINPUTHEADER)) &&
+				size != 0)
+			{
+				BYTE *buffer = (BYTE *)alloca(size);
+				if (MyGetRawInputData((HRAWINPUT)lParam, RID_INPUT, buffer, &size, sizeof(RAWINPUTHEADER)) == size)
+				{
+					int code = GET_RAWINPUT_CODE_WPARAM(wParam);
+					if (Keyboard == NULL || !Keyboard->ProcessRawInput((RAWINPUT *)buffer, code))
+					{
+						if (Mouse != NULL)
+						{
+							Mouse->ProcessRawInput((RAWINPUT *)buffer, code);
+						}
+					}
+				}
+			}
+		}
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+
+	if (CallHook(Keyboard, hWnd, message, wParam, lParam, &result))
+	{
+		return result;
+	}
+	if (CallHook(Mouse, hWnd, message, wParam, lParam, &result))
+	{
+		return result;
+	}
+	if (GUICapture && GUIWndProcHook(hWnd, message, wParam, lParam, &result))
+	{
+		return result;
+	}
+
 	event_t event;
 
 	memset (&event, 0, sizeof(event));
@@ -513,244 +534,39 @@ LRESULT CALLBACK WndProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return 0;
 
 	case WM_KILLFOCUS:
-		if (g_pKey) g_pKey->Unacquire ();
-		
-		FlushDIKState ();
-		HaveFocus = false;
 		I_CheckNativeMouse (true);	// Make sure mouse gets released right away
 		break;
 
 	case WM_SETFOCUS:
-		if (g_pKey)
-		{
-			g_pKey->Acquire();
-		}
-		HaveFocus = true;
 		I_CheckNativeMouse (false);
 		break;
 
 	case WM_SIZE:
-		if (mousemode == win32 && !NativeMouse &&
-			(wParam == SIZE_MAXIMIZED || wParam == SIZE_RESTORED))
-		{
-			CenterMouse_Win32 (-1, -1);
-			return 0;
-		}
 		InvalidateRect (Window, NULL, FALSE);
 		break;
 
-	case WM_MOVE:
-		if (mousemode == win32 && !NativeMouse)
-		{
-			CenterMouse_Win32 (-1, -1);
-			return 0;
-		}
-		break;
-
-	// Being forced to separate my keyboard input handler into
-	// two pieces like this really stinks. (IMHO)
 	case WM_KEYDOWN:
 		// When the EAX editor is open, pressing Ctrl+Tab will switch to it
 		if (EAXEditWindow != 0 && wParam == VK_TAB && !(lParam & 0x40000000) &&
 			(GetKeyState (VK_CONTROL) & 0x8000))
 		{
 			SetForegroundWindow (EAXEditWindow);
-			return 0;
-		}
-		// Intentional fall-through
-	case WM_KEYUP:
-		GetKeyboardState (KeyState);
-		if (GUICapture)
-		{
-			event.type = EV_GUI_Event;
-			if (message == WM_KEYUP)
-			{
-				event.subtype = EV_GUI_KeyUp;
-			}
-			else
-			{
-				event.subtype = (lParam & 0x40000000) ? EV_GUI_KeyRepeat : EV_GUI_KeyDown;
-			}
-			event.data3 = ((KeyState[VK_SHIFT]&128) ? GKM_SHIFT : 0) |
-						  ((KeyState[VK_CONTROL]&128) ? GKM_CTRL : 0) |
-						  ((KeyState[VK_MENU]&128) ? GKM_ALT : 0);
-			if ( (event.data1 = MapVirtualKey (wParam, 2)) )
-			{
-				ToAscii (wParam, (lParam >> 16) & 255, KeyState, (LPWORD)&event.data2, 0);
-				D_PostEvent (&event);
-			}
-			else
-			{
-				switch (wParam)
-				{
-				case VK_PRIOR:	event.data1 = GK_PGUP;		break;
-				case VK_NEXT:	event.data1 = GK_PGDN;		break;
-				case VK_END:	event.data1 = GK_END;		break;
-				case VK_HOME:	event.data1 = GK_HOME;		break;
-				case VK_LEFT:	event.data1 = GK_LEFT;		break;
-				case VK_RIGHT:	event.data1 = GK_RIGHT;		break;
-				case VK_UP:		event.data1 = GK_UP;		break;
-				case VK_DOWN:	event.data1 = GK_DOWN;		break;
-				case VK_DELETE:	event.data1 = GK_DEL;		break;
-				case VK_ESCAPE:	event.data1 = GK_ESCAPE;	break;
-				case VK_F1:		event.data1 = GK_F1;		break;
-				case VK_F2:		event.data1 = GK_F2;		break;
-				case VK_F3:		event.data1 = GK_F3;		break;
-				case VK_F4:		event.data1 = GK_F4;		break;
-				case VK_F5:		event.data1 = GK_F5;		break;
-				case VK_F6:		event.data1 = GK_F6;		break;
-				case VK_F7:		event.data1 = GK_F7;		break;
-				case VK_F8:		event.data1 = GK_F8;		break;
-				case VK_F9:		event.data1 = GK_F9;		break;
-				case VK_F10:	event.data1 = GK_F10;		break;
-				case VK_F11:	event.data1 = GK_F11;		break;
-				case VK_F12:	event.data1 = GK_F12;		break;
-				}
-				if (event.data1 != 0)
-				{
-					event.data2 = event.data1;
-					D_PostEvent (&event);
-				}
-			}
-		}
-		else
-		{
-			if (message == WM_KEYUP)
-			{
-				event.type = EV_KeyUp;
-			}
-			else
-			{
-				if (lParam & 0x40000000)
-				{
-					return 0;
-				}
-				else
-				{
-					event.type = EV_KeyDown;
-				}
-			}
-
-			switch (wParam)
-			{
-				case VK_PAUSE:
-					event.data1 = KEY_PAUSE;
-					break;
-				case VK_TAB:
-					event.data1 = DIK_TAB;
-					event.data2 = '\t';
-					break;
-				case VK_NUMLOCK:
-					event.data1 = DIK_NUMLOCK;
-					break;
-			}
-			if (event.data1)
-			{
-				DIKState[ActiveDIKState][event.data1] = (event.type == EV_KeyDown);
-				D_PostEvent (&event);
-			}
 		}
 		break;
 
-	case WM_CHAR:
-		if (GUICapture && wParam >= ' ')	// only send displayable characters
-		{
-			event.type = EV_GUI_Event;
-			event.subtype = EV_GUI_Char;
-			event.data1 = wParam;
-			D_PostEvent (&event);
-		}
-		break;
-
-	case WM_SYSCHAR:
-		if (GUICapture && wParam >= '0' && wParam <= '9')	// make chat macros work
-		{
-			event.type = EV_GUI_Event;
-			event.subtype = EV_GUI_Char;
-			event.data1 = wParam;
-			event.data2 = 1;
-			D_PostEvent (&event);
-		}
-		if (wParam == '\r' && k_allowfullscreentoggle)
+	case WM_SYSKEYDOWN:
+		// Pressing Alt+Enter can toggle between fullscreen and windowed.
+		if (wParam == VK_RETURN && k_allowfullscreentoggle && !(lParam & 0x40000000))
 		{
 			ToggleFullscreen = !ToggleFullscreen;
 		}
 		break;
 
 	case WM_SYSCOMMAND:
+		// Prevent activation of the window menu with Alt+Space
+		if ((wParam & 0xFFF0) != SC_KEYMENU)
 		{
-			WPARAM cmdType = wParam & 0xfff0;
-
-			// Prevent activation of the window menu with Alt-Space
-			if (cmdType != SC_KEYMENU)
-				return DefWindowProc (hWnd, message, wParam, lParam);
-		}
-		break;
-
-	case WM_LBUTTONDOWN:
-	case WM_LBUTTONUP:
-	case WM_RBUTTONDOWN:
-	case WM_RBUTTONUP:
-	case WM_MBUTTONDOWN:
-	case WM_MBUTTONUP:
-		if (MakeMouseEvents && mousemode == win32)
-		{
-			event.type = ((message - WM_LBUTTONDOWN) % 3) ? EV_KeyUp : EV_KeyDown;
-			event.data1 = KEY_MOUSE1 + (message - WM_LBUTTONDOWN) / 3;
-			DIKState[ActiveDIKState][event.data1] = (event.type == EV_KeyDown);
-			D_PostEvent (&event);
-		}
-		else if (GUICapture)
-		{
-			event.type = EV_GUI_Event;
-			if (message >= WM_LBUTTONDOWN && message <= WM_LBUTTONDBLCLK)
-			{
-				event.subtype = message - WM_LBUTTONDOWN + EV_GUI_LButtonDown;
-			}
-			else if (message >= WM_RBUTTONDOWN && message <= WM_RBUTTONDBLCLK)
-			{
-				event.subtype = message - WM_RBUTTONDOWN + EV_GUI_RButtonDown;
-			}
-			else if (message >= WM_MBUTTONDOWN && message <= WM_MBUTTONDBLCLK)
-			{
-				event.subtype = message - WM_MBUTTONDOWN + EV_GUI_MButtonDown;
-			}
-			D_PostEvent (&event);
-		}
-		break;
-
-	case WM_XBUTTONDOWN:
-	case WM_XBUTTONUP:
-		// Microsoft's (lack of) documentation for the X buttons is unclear on whether
-		// or not simultaneous pressing of multiple X buttons will ever be merged into
-		// a single message. Winuser.h describes the button field as being filled with
-		// flags, which suggests that it could merge them. My testing
-		// indicates it does not, but I will assume it might in the future.
-		if (MakeMouseEvents && mousemode == win32)
-		{
-			WORD xbuttons = GET_XBUTTON_WPARAM (wParam);
-
-			event.type = (message == WM_XBUTTONDOWN) ? EV_KeyDown : EV_KeyUp;
-
-			// There are only two X buttons defined presently, so I extrapolate from
-			// the current winuser.h values to support up to 8 mouse buttons.
-			for (int i = 0; i < 5; ++i, xbuttons >>= 1)
-			{
-				if (xbuttons & 1)
-				{
-					event.data1 = KEY_MOUSE4 + i;
-					DIKState[ActiveDIKState][event.data1] = (event.type == EV_KeyDown);
-					D_PostEvent (&event);
-				}
-			}
-		}
-		return TRUE;
-
-	case WM_MOUSEWHEEL:
-		if ((MakeMouseEvents || NativeMouse) && mousemode == win32)
-		{
-			WheelMove += (short) HIWORD(wParam);
-			WheelMoved ();
+			return DefWindowProc (hWnd, message, wParam, lParam);
 		}
 		break;
 
@@ -783,7 +599,7 @@ LRESULT CALLBACK WndProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			SetPriorityClass (GetCurrentProcess (), IDLE_PRIORITY_CLASS);
 		}
-		SetSoundPaused (wParam);
+		S_SetSoundPaused (wParam);
 		break;
 
 	case WM_WTSSESSION_CHANGE:
@@ -1303,18 +1119,6 @@ static HRESULT InitJoystick ()
 	return S_OK;
 }
 
-static void DI_Acquire (LPDIRECTINPUTDEVICE8 mouse)
-{
-	if (mouse) mouse->Acquire ();
-	SetCursorState (NativeMouse);
-}
-
-static void DI_Unacquire (LPDIRECTINPUTDEVICE8 mouse)
-{
-	if (mouse) mouse->Unacquire ();
-	SetCursorState (TRUE);
-}
-
 /****** Stuff from Andy Bay's mymouse.c ******/
 
 /****************************************************************************
@@ -1325,116 +1129,9 @@ static void DI_Unacquire (LPDIRECTINPUTDEVICE8 mouse)
  *
  ****************************************************************************/
 
-// [RH] Obtain the mouse using standard Win32 calls. Should always work.
-static void I_GetWin32Mouse ()
-{
-	mousemode = win32;
-
-	if (g_pMouse)
-	{
-		DI_Unacquire (g_pMouse);
-		g_pMouse->Release ();
-		g_pMouse = NULL;
-	}
-	GrabMouse_Win32 ();
-}
 
 // [RH] Used to obtain DirectInput access to the mouse.
 //		(Preferred for Win95, but buggy under NT 4.)
-static BOOL I_GetDIMouse ()
-{
-	HRESULT hr;
-	DIPROPDWORD dipdw =
-		{
-			{
-				sizeof(DIPROPDWORD),		// diph.dwSize
-				sizeof(DIPROPHEADER),		// diph.dwHeaderSize
-				0,							// diph.dwObj
-				DIPH_DEVICE,				// diph.dwHow
-			},
-			DINPUT_BUFFERSIZE,				// dwData
-		};
-
-	if (mousemode == dinput)
-		return FALSE;
-
-	mousemode = win32;	// Assume failure
-	UngrabMouse_Win32 ();
-
-	if (in_mouse == 1 || (in_mouse == 0 && OSPlatform == os_WinNT4))
-		return FALSE;
-
-	// Obtain an interface to the system mouse device.
-	if (g_pdi3)
-	{
-		hr = g_pdi3->CreateDevice (GUID_SysMouse, (LPDIRECTINPUTDEVICE*)&g_pMouse, NULL);
-	}
-	else
-	{
-		hr = g_pdi->CreateDevice (GUID_SysMouse, &g_pMouse, NULL);
-	}
-
-	if (FAILED(hr))
-		return FALSE;
-
-	DIDEVCAPS_DX3 mouseCaps = { sizeof(mouseCaps), };
-	hr = g_pMouse->GetCapabilities ((DIDEVCAPS *)&mouseCaps);
-
-	// Set the data format to "mouse format".
-	if (SUCCEEDED(hr))
-	{
-		// Select the data format with enough buttons for this mouse
-		if (mouseCaps.dwButtons <= 4)
-		{
-			hr = g_pMouse->SetDataFormat (&c_dfDIMouse);
-		}
-		else
-		{
-			hr = g_pMouse->SetDataFormat (&c_dfDIMouse2);
-		}
-	}
-	else
-	{
-		// Assume the mouse has no more than 4 buttons if we can't check it
-		hr = g_pMouse->SetDataFormat (&c_dfDIMouse);
-	}
-
-	if (FAILED(hr))
-	{
-		g_pMouse->Release ();
-		g_pMouse = NULL;
-		return FALSE;
-	}
-
-	// Set the cooperative level.
-	hr = g_pMouse->SetCooperativeLevel ((HWND)Window,
-									   DISCL_EXCLUSIVE | DISCL_FOREGROUND);
-
-	if (FAILED(hr))
-	{
-		g_pMouse->Release ();
-		g_pMouse = NULL;
-		return FALSE;
-	}
-
-
-	// Set the buffer size to DINPUT_BUFFERSIZE elements.
-	// The buffer size is a DWORD property associated with the device.
-	hr = g_pMouse->SetProperty (DIPROP_BUFFERSIZE, &dipdw.diph);
-
-	if (FAILED(hr))
-	{
-		Printf ("Could not set mouse buffer size");
-		g_pMouse->Release ();
-		g_pMouse = NULL;
-		return FALSE;
-	}
-
-	DI_Acquire (g_pMouse);
-
-	mousemode = dinput;
-	return TRUE;
-}
 
 bool I_InitInput (void *hwnd)
 {
@@ -1443,15 +1140,13 @@ bool I_InitInput (void *hwnd)
 	Printf ("I_InitInput\n");
 	atterm (I_ShutdownInput);
 
-	NativeMouse = -1;
-	GetCursorPos (&UngrabbedPointerPos);
-
 	noidle = !!Args->CheckParm ("-noidle");
 	g_pdi = NULL;
 	g_pdi3 = NULL;
 
-	// Try for DirectInput 8 first, then DirectInput 3 for NT 4's benefit.
+	FindRawInputFunctions();
 
+	// Try for DirectInput 8 first, then DirectInput 3 for NT 4's benefit.
 	DInputDLL = LoadLibrary("dinput8.dll");
 	if (DInputDLL != NULL)
 	{
@@ -1516,17 +1211,15 @@ bool I_InitInput (void *hwnd)
 // Free all input resources
 void I_ShutdownInput ()
 {
-	if (g_pKey)
+	if (Keyboard != NULL)
 	{
-		g_pKey->Unacquire ();
-		g_pKey->Release ();
-		g_pKey = NULL;
+		delete Keyboard;
+		Keyboard = NULL;
 	}
-	if (g_pMouse)
+	if (Mouse != NULL)
 	{
-		DI_Unacquire (g_pMouse);
-		g_pMouse->Release ();
-		g_pMouse = NULL;
+		delete Mouse;
+		Mouse = NULL;
 	}
 	if (g_pJoy)
 	{
@@ -1534,7 +1227,6 @@ void I_ShutdownInput ()
 		g_pJoy->Release ();
 		g_pJoy = NULL;
 	}
-	UngrabMouse_Win32 ();
 	if (g_pdi)
 	{
 		g_pdi->Release ();
@@ -1544,416 +1236,11 @@ void I_ShutdownInput ()
 	{
 		g_pdi3->Release ();
 		g_pdi3 = NULL;
-		if (DInputDLL != NULL)
-		{
-			FreeLibrary (DInputDLL);
-			DInputDLL = NULL;
-		}
 	}
-}
-
-static void SetSoundPaused (int state)
-{
-	if (state)
+	if (DInputDLL != NULL)
 	{
-		if (paused <= 0)
-		{
-			if (GSnd != NULL)
-			{
-				GSnd->SetInactive(false);
-			}
-			if (!netgame
-#ifdef _DEBUG
-				&& !demoplayback
-#endif
-				)
-			{
-				paused = 0;
-			}
-		}
-	}
-	else
-	{
-		if (paused == 0)
-		{
-			if (GSnd !=  NULL)
-			{
-				GSnd->SetInactive(true);
-			}
-			if (!netgame
-#ifdef _DEBUG
-				&& !demoplayback
-#endif
-				)
-			{
-				paused = -1;
-			}
-		}
-	}
-}
-
-static LONG PrevX, PrevY;
-
-static void I_StartupMouse ()
-{
-	int new_mousemode;
-
-	if (in_mouse == 1 || (in_mouse == 0 && OSPlatform == os_WinNT4))
-		new_mousemode = win32;
-	else
-		new_mousemode = dinput;
-
-	if (new_mousemode != mousemode)
-	{
-		if (new_mousemode == win32 || !I_GetDIMouse())
-			I_GetWin32Mouse ();
-		NativeMouse = false;
-	}
-	HaveFocus = GetFocus() == Window;
-}
-
-static void CenterMouse_Win32 (LONG curx, LONG cury)
-{
-	RECT rect;
-
-	GetWindowRect (Window, &rect);
-
-	const LONG centx = (rect.left + rect.right) >> 1;
-	const LONG centy = (rect.top + rect.bottom) >> 1;
-
-	// Reduce the number of WM_MOUSEMOVE messages that get sent
-	// by only calling SetCursorPos when we really need to.
-	if (centx != curx || centy != cury)
-	{
-		PrevX = centx;
-		PrevY = centy;
-		SetCursorPos (centx, centy);
-	}
-}
-
-static void SetCursorState (int visible)
-{
-	HCURSOR usingCursor = visible ? TheArrowCursor : TheInvisibleCursor;
-	SetClassLongPtr (Window, GCLP_HCURSOR, (LONG_PTR)usingCursor);
-	if (HaveFocus)
-	{
-		SetCursor (usingCursor);
-	}
-}
-
-static void GrabMouse_Win32 ()
-{
-	RECT rect;
-
-	ClipCursor (NULL);		// helps with Win95?
-	GetClientRect (Window, &rect);
-
-	// Reposition the rect so that it only covers the client area.
-	ClientToScreen (Window, (LPPOINT)&rect.left);
-	ClientToScreen (Window, (LPPOINT)&rect.right);
-
-	ClipCursor (&rect);
-	SetCursorState (FALSE);
-	CenterMouse_Win32 (-1, -1);
-	MakeMouseEvents = true;
-}
-
-static void UngrabMouse_Win32 ()
-{
-	ClipCursor (NULL);
-	SetCursorState (TRUE);
-	MakeMouseEvents = false;
-}
-
-static void WheelMoved ()
-{
-	event_t event;
-	int dir;
-
-	memset (&event, 0, sizeof(event));
-	if (GUICapture)
-	{
-		event.type = EV_GUI_Event;
-		if (WheelMove < 0)
-		{
-			dir = WHEEL_DELTA;
-			event.subtype = EV_GUI_WheelDown;
-		}
-		else
-		{
-			dir = -WHEEL_DELTA;
-			event.subtype = EV_GUI_WheelUp;
-		}
-		event.data3 = ((KeyState[VK_SHIFT]&128) ? GKM_SHIFT : 0) |
-					  ((KeyState[VK_CONTROL]&128) ? GKM_CTRL : 0) |
-					  ((KeyState[VK_MENU]&128) ? GKM_ALT : 0);
-		while (abs (WheelMove) >= WHEEL_DELTA)
-		{
-			D_PostEvent (&event);
-			WheelMove += dir;
-		}
-	}
-	else
-	{
-		if (WheelMove < 0)
-		{
-			dir = WHEEL_DELTA;
-			event.data1 = KEY_MWHEELDOWN;
-		}
-		else
-		{
-			dir = -WHEEL_DELTA;
-			event.data1 = KEY_MWHEELUP;
-		}
-		while (abs (WheelMove) >= WHEEL_DELTA)
-		{
-			event.type = EV_KeyDown;
-			D_PostEvent (&event);
-			event.type = EV_KeyUp;
-			D_PostEvent (&event);
-			WheelMove += dir;
-		}
-	}
-}
-
-static void PostMouseMove (int x, int y)
-{
-	static int lastx = 0, lasty = 0;
-	event_t ev = { 0 };
-
-	if (m_filter)
-	{
-		ev.x = (x + lastx) / 2;
-		ev.y = (y + lasty) / 2;
-	}
-	else
-	{
-		ev.x = x;
-		ev.y = y;
-	}
-	lastx = x;
-	lasty = y;
-	if (ev.x | ev.y)
-	{
-		ev.type = EV_Mouse;
-		D_PostEvent (&ev);
-	}
-}
-
-static void MouseRead_Win32 ()
-{
-	POINT pt;
-	int x, y;
-
-	if (KeysReadCount == 0)
-	{
-		UngrabMouse_Win32();
-	}
-	else if (KeysReadCount == 1 && HaveFocus && !MakeMouseEvents)
-	{
-		GrabMouse_Win32();
-	}
-	if (!HaveFocus || !MakeMouseEvents || !GetCursorPos (&pt))
-	{
-		return;
-	}
-
-	x = pt.x - PrevX;
-	y = PrevY - pt.y;
-
-	if (!m_noprescale)
-	{
-		x *= 3;
-		y *= 2;
-	}
-
-	if (x | y)
-	{
-		CenterMouse_Win32 (pt.x, pt.y);
-	}
-
-	PostMouseMove (x, y);
-}
-
-static void MouseRead_DI ()
-{
-	DIDEVICEOBJECTDATA od;
-	DWORD dwElements;
-	HRESULT hr;
-	int count = 0;
-	int dx, dy;
-	event_t event;
-
-	dx = 0;
-	dy = 0;
-
-	if (!HaveFocus || NativeMouse || !g_pMouse)
-		return;
-
-	memset (&event, 0, sizeof(event));
-	for (;;)
-	{
-		dwElements = 1;
-		hr = g_pMouse->GetDeviceData (
-			g_pdi3 ? sizeof(DIDEVICEOBJECTDATA_DX3) : sizeof(DIDEVICEOBJECTDATA),
-			&od, &dwElements, 0);
-		if (hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED)
-		{
-			DI_Acquire (g_pMouse);
-			hr = g_pMouse->GetDeviceData (
-				g_pdi3 ? sizeof(DIDEVICEOBJECTDATA_DX3) : sizeof(DIDEVICEOBJECTDATA),
-				(LPDIDEVICEOBJECTDATA)&od, &dwElements, 0);
-		}
-
-		/* Unable to read data or no data available */
-		if (FAILED(hr) || !dwElements)
-			break;
-
-		count++;
-
-		/* Look at the element to see what happened */
-		// GCC does not like putting the DIMOFS_ macros in case statements,
-		// so use ifs instead.
-		if (od.dwOfs == (DWORD)DIMOFS_X)
-		{
-			dx += od.dwData;
-		}
-		else if (od.dwOfs == (DWORD)DIMOFS_Y)
-		{
-			dy += od.dwData;
-		}
-		else if (od.dwOfs == (DWORD)DIMOFS_Z)
-		{
-			WheelMove += od.dwData;
-			WheelMoved ();
-		}
-		else if (od.dwOfs >= (DWORD)DIMOFS_BUTTON0 && od.dwOfs <= (DWORD)DIMOFS_BUTTON7)
-		{
-			/* [RH] Mouse button events mimic keydown/up events */
-			if (!GUICapture)
-			{
-				event.type = (od.dwData & 0x80) ? EV_KeyDown : EV_KeyUp;
-				event.data1 = KEY_MOUSE1 + (od.dwOfs - DIMOFS_BUTTON0);
-				DIKState[ActiveDIKState][event.data1] = (event.type == EV_KeyDown);
-				D_PostEvent (&event);
-			}
-		}
-	}
-
-	PostMouseMove (m_noprescale ? dx : dx<<2, -dy);
-}
-
-// Initialize the keyboard
-static BOOL I_StartupKeyboard (void)
-{
-	HRESULT hr;
-
-	// Obtain an interface to the system key device.
-	if (g_pdi3)
-	{
-		hr = g_pdi3->CreateDevice (GUID_SysKeyboard, (LPDIRECTINPUTDEVICE*)&g_pKey, NULL);
-	}
-	else
-	{
-		hr = g_pdi->CreateDevice (GUID_SysKeyboard, &g_pKey, NULL);
-	}
-
-	if (FAILED(hr))
-	{
-		I_FatalError ("Could not create keyboard device");
-	}
-
-	// Set the data format to "keyboard format".
-	hr = g_pKey->SetDataFormat (&c_dfDIKeyboard);
-
-	if (FAILED(hr))
-	{
-		I_FatalError ("Could not set keyboard data format");
-	}
-
-	// Set the cooperative level.
-	hr = g_pKey->SetCooperativeLevel (Window, DISCL_FOREGROUND|DISCL_NONEXCLUSIVE);
-
-	if (FAILED(hr))
-	{
-		I_FatalError("Could not set keyboard cooperative level");
-	}
-
-	g_pKey->Acquire ();
-	return TRUE;
-}
-
-static void KeyRead ()
-{
-	HRESULT hr;
-	event_t event;
-	BYTE *fromState, *toState;
-	int i;
-
-	if (g_pKey == NULL)
-	{
-		return;
-	}
-
-	memset (&event, 0, sizeof(event));
-	fromState = DIKState[ActiveDIKState];
-	toState = DIKState[ActiveDIKState ^ 1];
-
-	hr = g_pKey->GetDeviceState (256, toState);
-	if (hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED)
-	{
-		hr = g_pKey->Acquire ();
-		if (hr != DI_OK)
-		{
-			return;
-		}
-		hr = g_pKey->GetDeviceState (256, toState);
-	}
-	if (hr != DI_OK)
-	{
-		return;
-	}
-
-	// Successfully got the buffer
-	KeysReadCount++;
-	ActiveDIKState ^= 1;
-
-	// Copy key states not handled here from the old to the new buffer
-	memcpy (toState + 256, fromState + 256, NUM_KEYS - 256);
-	toState[DIK_TAB] = fromState[DIK_TAB];
-	toState[DIK_NUMLOCK] = fromState[DIK_NUMLOCK];
-
-	if (k_mergekeys)
-	{
-		// "Merge" multiple keys that are considered to be the same.
-		// Also clear out the alternate versions after merging.
-		toState[DIK_RETURN]		|= toState[DIK_NUMPADENTER];
-		toState[DIK_LMENU]		|= toState[DIK_RMENU];
-		toState[DIK_LCONTROL]	|= toState[DIK_RCONTROL];
-		toState[DIK_LSHIFT]		|= toState[DIK_RSHIFT];
-
-		toState[DIK_NUMPADENTER] = 0;
-		toState[DIK_RMENU]		 = 0;
-		toState[DIK_RCONTROL]	 = 0;
-		toState[DIK_RSHIFT]		 = 0;
-	}
-
-	// Now generate events for any keys that differ between the states
-	if (!GUICapture)
-	{
-		for (i = 1; i < 256; i++)
-		{
-			if (toState[i] != fromState[i])
-			{
-				event.type = toState[i] ? EV_KeyDown : EV_KeyUp;
-				event.data1 = i;
-				event.data2 = Convert[i];
-				event.data3 = (toState[DIK_LSHIFT] ? GKM_SHIFT : 0) |
-							  (toState[DIK_LCONTROL] ? GKM_CTRL : 0) |
-							  (toState[DIK_LMENU] ? GKM_ALT : 0);
-				D_PostEvent (&event);
-			}
-		}
+		FreeLibrary (DInputDLL);
+		DInputDLL = NULL;
 	}
 }
 
@@ -1976,14 +1263,13 @@ void I_GetEvent ()
 		}
 	}
 
-	KeyRead ();
-
-	if (use_mouse)
+	if (Keyboard != NULL)
 	{
-		if (mousemode == dinput)
-			MouseRead_DI ();
-		else
-			MouseRead_Win32 ();
+		Keyboard->ProcessInput();
+	}
+	if (Mouse != NULL)
+	{
+		Mouse->ProcessInput();
 	}
 }
 
@@ -2070,4 +1356,76 @@ CCMD (playmovie)
 		return;
 	}
 	I_PlayMovie (argv[1]);
+}
+
+//==========================================================================
+//
+// FInputDevice - Destructor
+//
+//==========================================================================
+
+FInputDevice::~FInputDevice()
+{
+}
+
+//==========================================================================
+//
+// FInputDevice :: ProcessInput
+//
+// Gives subclasses an opportunity to do input handling that doesn't involve
+// window messages.
+//
+//==========================================================================
+
+void FInputDevice::ProcessInput()
+{
+}
+
+//==========================================================================
+//
+// FInputDevice :: ProcessRawInput
+//
+// Gives subclasses a chance to handle WM_INPUT messages. This is not part
+// of WndProcHook so that we only need to fill the RAWINPUT buffer once
+// per message and be sure it gets cleaned up properly.
+//
+//==========================================================================
+
+bool FInputDevice::ProcessRawInput(RAWINPUT *raw, int code)
+{
+	return false;
+}
+
+//==========================================================================
+//
+// FInputDevice :: WndProcHook
+//
+// Gives subclasses a chance to intercept window messages. 
+//
+//==========================================================================
+
+bool FInputDevice::WndProcHook(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, LRESULT *result)
+{
+	return false;
+}
+
+//==========================================================================
+//
+// FindRawInputFunctions
+//
+// Finds functions for raw input, if available.
+//
+//==========================================================================
+
+static void FindRawInputFunctions()
+{
+	HMODULE user32 = GetModuleHandle("user32.dll");
+
+	if (user32 == NULL)
+	{
+		return;		// WTF kind of broken system are we running on?
+	}
+#define RIF(name,ret,args) \
+	My##name = (name##Proto)GetProcAddress(user32, #name);
+#include "rawinput.h"
 }

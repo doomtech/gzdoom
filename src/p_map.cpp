@@ -38,7 +38,6 @@
 #include "p_effect.h"
 #include "p_terrain.h"
 #include "p_trace.h"
-#include "p_enemy.h"
 
 #include "s_sound.h"
 #include "decallib.h"
@@ -162,16 +161,21 @@ static bool PIT_FindFloorCeiling (line_t *ld, const FBoundingBox &box, FCheckPos
 }
 
 
-void P_GetFloorCeilingZ(FCheckPosition &tmf)
+void P_GetFloorCeilingZ(FCheckPosition &tmf, bool get)
 {
-	sector_t *sec = P_PointInSector (tmf.x, tmf.y);
-	tmf.floorsector = sec;
-	tmf.ceilingsector = sec;
+	sector_t *sec;
+	if (get)
+	{
+		sec = P_PointInSector (tmf.x, tmf.y);
+		tmf.floorsector = sec;
+		tmf.ceilingsector = sec;
 
-	tmf.floorz = tmf.dropoffz = sec->floorplane.ZatPoint (tmf.x, tmf.y);
-	tmf.ceilingz = sec->ceilingplane.ZatPoint (tmf.x, tmf.y);
-	tmf.floorpic = sec->GetTexture(sector_t::floor);
-	tmf.ceilingpic = sec->GetTexture(sector_t::ceiling);
+		tmf.floorz = tmf.dropoffz = sec->floorplane.ZatPoint (tmf.x, tmf.y);
+		tmf.ceilingz = sec->ceilingplane.ZatPoint (tmf.x, tmf.y);
+		tmf.floorpic = sec->GetTexture(sector_t::floor);
+		tmf.ceilingpic = sec->GetTexture(sector_t::ceiling);
+	}
+	else sec = tmf.thing->Sector;
 
 #ifdef _3DFLOORS
 	for(unsigned int i=0;i<sec->e->XFloor.ffloors.Size();i++)
@@ -214,8 +218,21 @@ void P_FindFloorCeiling (AActor *actor, bool onlyspawnpos)
 	tmf.x = actor->x;
 	tmf.y = actor->y;
 	tmf.z = actor->z;
-	P_GetFloorCeilingZ(tmf);
 
+	if (!onlyspawnpos)
+	{
+		P_GetFloorCeilingZ(tmf, true);
+	}
+	else
+	{
+		tmf.ceilingsector = tmf.floorsector = actor->Sector;
+
+		tmf.floorz = tmf.dropoffz = actor->floorz;
+		tmf.ceilingz = actor->ceilingz;
+		tmf.floorpic = actor->floorpic;
+		tmf.ceilingpic = actor->ceilingpic;
+		P_GetFloorCeilingZ(tmf, false);
+	}
 	actor->floorz = tmf.floorz;
 	actor->dropoffz = tmf.dropoffz;
 	actor->ceilingz = tmf.ceilingz;
@@ -249,6 +266,10 @@ void P_FindFloorCeiling (AActor *actor, bool onlyspawnpos)
 		actor->ceilingpic = tmf.ceilingpic;
 		actor->ceilingsector = tmf.ceilingsector;
 	}
+	else
+	{
+		actor->floorsector = actor->ceilingsector = actor->Sector;
+	}
 }
 
 //
@@ -277,7 +298,7 @@ bool P_TeleportMove (AActor *thing, fixed_t x, fixed_t y, fixed_t z, bool telefr
 	tmf.x = x;
 	tmf.y = y;
 	tmf.z = z;
-	P_GetFloorCeilingZ(tmf);
+	P_GetFloorCeilingZ(tmf, true);
 					
 	spechit.Clear ();
 
@@ -469,8 +490,8 @@ int P_GetFriction (const AActor *mo, int *frictionfactor)
 			}
 			if ((secfriction(sec) < friction || friction == ORIG_FRICTION) &&
 				(mo->z <= sec->floorplane.ZatPoint (mo->x, mo->y) ||
-				(sec->heightsec && !(sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC) &&
-				mo->z <= sec->heightsec->floorplane.ZatPoint (mo->x, mo->y))))
+				(sec->GetHeightSec() != NULL &&
+				 mo->z <= sec->heightsec->floorplane.ZatPoint (mo->x, mo->y))))
 			{
 				friction = secfriction (sec);
 				movefactor = secmovefac (sec);
@@ -731,6 +752,12 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 	if (thing == tm.thing)
 		return true;
 
+	if ((thing->flags2 | tm.thing->flags2) & MF2_THRUACTORS) 
+		return true;
+
+	if ((tm.thing->flags6 & MF6_THRUSPECIES) && (tm.thing->GetSpecies() == thing->GetSpecies()))
+		return true;
+
 	if (!(thing->flags & (MF_SOLID|MF_SPECIAL|MF_SHOOTABLE)) )
 		return true;	// can't hit thing
 
@@ -799,6 +826,13 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 			return false;
 		}
 	}
+	// Check for players touching a thing with MF6_BUMPSPECIAL
+	// A blind recreation of what the Skulltag code is probably like.
+	if (tm.thing->player && (thing->flags6 & MF6_BUMPSPECIAL) && thing->special)
+	{
+		LineSpecials[thing->special] (NULL, tm.thing, false, thing->args[0], 
+			thing->args[1], thing->args[2], thing->args[3], thing->args[4]);
+	}
 	// Check for missile
 	if (tm.thing->flags & MF_MISSILE)
 	{
@@ -809,6 +843,17 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 		}
 		// Check for passing through a ghost
 		if ((thing->flags3 & MF3_GHOST) && (tm.thing->flags2 & MF2_THRUGHOST))
+		{
+			return true;
+		}
+
+		if ((tm.thing->flags6 & MF6_MTHRUSPECIES) 
+			&& tm.thing->target // NULL pointer check
+			&& (tm.thing->target->GetSpecies() == thing->GetSpecies()))
+			return true;
+
+		// Check for rippers passing through corpses
+		if ((thing->flags & MF_CORPSE) && (tm.thing->flags2 & MF2_RIP) && !(thing->flags & MF_SHOOTABLE))
 		{
 			return true;
 		}
@@ -838,7 +883,8 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 			return true;
 		}
 
-		if (tm.thing->flags2 & MF2_BOUNCE2)
+		int bt = tm.thing->bouncetype & BOUNCE_TypeMask;
+		if (bt == BOUNCE_Doom || bt == BOUNCE_Hexen)
 		{
 			if (tm.thing->Damage == 0)
 			{
@@ -940,50 +986,61 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 		}
 		if (tm.DoRipping && !(thing->flags5 & MF5_DONTRIP))
 		{
-			if (tm.LastRipped != thing)
+			if (!(tm.thing->flags6 & MF6_NOBOSSRIP) || !(thing->flags2 & MF2_BOSS))
 			{
-				tm.LastRipped = thing;
-				if (!(thing->flags & MF_NOBLOOD) &&
-					!(thing->flags2 & MF2_REFLECTIVE) &&
-					!(tm.thing->flags3 & MF3_BLOODLESSIMPACT) &&
-					!(thing->flags2 & (MF2_INVULNERABLE|MF2_DORMANT)))
-				{ // Ok to spawn blood
-					P_RipperBlood (tm.thing, thing);
+				if (tm.LastRipped != thing)
+				{
+					tm.LastRipped = thing;
+					if (!(thing->flags & MF_NOBLOOD) &&
+						!(thing->flags2 & MF2_REFLECTIVE) &&
+						!(tm.thing->flags3 & MF3_BLOODLESSIMPACT) &&
+						!(thing->flags2 & (MF2_INVULNERABLE|MF2_DORMANT)))
+					{ // Ok to spawn blood
+						P_RipperBlood (tm.thing, thing);
+					}
+					S_Sound (tm.thing, CHAN_BODY, "misc/ripslop", 1, ATTN_IDLE);
+					damage = tm.thing->GetMissileDamage (3, 2);
+					P_DamageMobj (thing, tm.thing, tm.thing->target, damage, tm.thing->DamageType);
+					if (!(tm.thing->flags3 & MF3_BLOODLESSIMPACT))
+					{
+						P_TraceBleed (damage, thing, tm.thing);
+					}
+					if (thing->flags2 & MF2_PUSHABLE
+						&& !(tm.thing->flags2 & MF2_CANNOTPUSH))
+					{ // Push thing
+						if (thing->lastpush != tm.PushTime)
+						{
+							thing->momx += FixedMul(tm.thing->momx, thing->pushfactor);
+							thing->momy += FixedMul(tm.thing->momy, thing->pushfactor);
+							thing->lastpush = tm.PushTime;
+						}
+					}
 				}
-				S_Sound (tm.thing, CHAN_BODY, "misc/ripslop", 1, ATTN_IDLE);
-				damage = tm.thing->GetMissileDamage (3, 2);
-				P_DamageMobj (thing, tm.thing, tm.thing->target, damage, tm.thing->DamageType);
+				spechit.Clear ();
+				return true;
+			}
+		}
+		// Do damage
+		damage = tm.thing->GetMissileDamage ((tm.thing->flags4 & MF4_STRIFEDAMAGE) ? 3 : 7, 1);
+		// [GZ] If MF6_FORCEPAIN is set, we need to call P_DamageMobj even if damage is 0!
+		if ((damage > 0) || (tm.thing->flags6 & MF6_FORCEPAIN)) 
+		{
+			P_DamageMobj (thing, tm.thing, tm.thing->target, damage, tm.thing->DamageType);
+			if (damage > 0)
+			{
+				if ((tm.thing->flags5 & MF5_BLOODSPLATTER) &&
+					!(thing->flags & MF_NOBLOOD) &&
+					!(thing->flags2 & MF2_REFLECTIVE) &&
+					!(thing->flags2 & (MF2_INVULNERABLE|MF2_DORMANT)) &&
+					!(tm.thing->flags3 & MF3_BLOODLESSIMPACT) &&
+					(pr_checkthing() < 192))
+				{
+					P_BloodSplatter (tm.thing->x, tm.thing->y, tm.thing->z, thing);
+				}
 				if (!(tm.thing->flags3 & MF3_BLOODLESSIMPACT))
 				{
 					P_TraceBleed (damage, thing, tm.thing);
 				}
-				if (thing->flags2 & MF2_PUSHABLE
-					&& !(tm.thing->flags2 & MF2_CANNOTPUSH))
-				{ // Push thing
-					thing->momx += tm.thing->momx>>2;
-					thing->momy += tm.thing->momy>>2;
-				}
-			}
-			spechit.Clear ();
-			return true;
-		}
-		// Do damage
-		damage = tm.thing->GetMissileDamage ((tm.thing->flags4 & MF4_STRIFEDAMAGE) ? 3 : 7, 1);
-		if (damage > 0)
-		{
-			P_DamageMobj (thing, tm.thing, tm.thing->target, damage, tm.thing->DamageType);
-			if ((tm.thing->flags5 & MF5_BLOODSPLATTER) &&
-				!(thing->flags & MF_NOBLOOD) &&
-				!(thing->flags2 & MF2_REFLECTIVE) &&
-				!(thing->flags2 & (MF2_INVULNERABLE|MF2_DORMANT)) &&
-				!(tm.thing->flags3 & MF3_BLOODLESSIMPACT) &&
-				(pr_checkthing() < 192))
-			{
-				P_BloodSplatter (tm.thing->x, tm.thing->y, tm.thing->z, thing);
-			}
-			if (!(tm.thing->flags3 & MF3_BLOODLESSIMPACT))
-			{
-				P_TraceBleed (damage, thing, tm.thing);
 			}
 		}
 		else if (damage < 0)
@@ -995,8 +1052,12 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 	if (thing->flags2 & MF2_PUSHABLE && !(tm.thing->flags2 & MF2_CANNOTPUSH) &&
 		(tm.thing->player == NULL || !(tm.thing->player->cheats & CF_PREDICTING)))
 	{ // Push thing
-		thing->momx += tm.thing->momx >> 2;
-		thing->momy += tm.thing->momy >> 2;
+		if (thing->lastpush != tm.PushTime)
+		{
+			thing->momx += FixedMul(tm.thing->momx, thing->pushfactor);
+			thing->momy += FixedMul(tm.thing->momy, thing->pushfactor);
+			thing->lastpush = tm.PushTime;
+		}
 	}
 	solid = (thing->flags & MF_SOLID) &&
 			!(thing->flags & MF_NOCLIP) &&
@@ -2468,7 +2529,8 @@ bool FSlide::BounceWall (AActor *mo)
 	fixed_t         movelen;
 	line_t			*line;
 
-	if (!(mo->flags2 & MF2_BOUNCE2))
+	int bt = mo->bouncetype & BOUNCE_TypeMask;
+	if (bt != BOUNCE_Doom && bt != BOUNCE_Hexen)
 	{
 		return false;
 	}
@@ -2613,8 +2675,7 @@ bool aim_t::AimTraverse3DFloors(const divline_t &trace, intercept_t * in)
 	nextsector=NULL;
 	nexttopplane=nextbottomplane=NULL;
 
-    if ((li->frontsector && li->frontsector->e->XFloor.ffloors.Size()) || 
-		(li->backsector && li->backsector->e->XFloor.ffloors.Size()))
+    if(li->frontsector->e->XFloor.ffloors.Size() || li->backsector->e->XFloor.ffloors.Size())
     {
 		int  frontflag;
 		F3DFloor* rover;
@@ -2880,7 +2941,7 @@ void aim_t::AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t e
 					pitch_friend=thingpitch;
 				}
 			}
-			else if (!(th->flags3&MF3_ISMONSTER) )
+			else if (!(th->flags3&MF3_ISMONSTER) && th->player == NULL)
 			{
 				if (sv_smartaim < 3)
 				{
@@ -3197,7 +3258,9 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 						trace.Actor, srcangle, srcpitch);
 				}
 			}
-			if (damage) 
+			// [GZ] If MF6_FORCEPAIN is set, we need to call P_DamageMobj even if damage is 0!
+			// Note: The puff may not yet be spawned here so we must check the class defaults, not the actor.
+			if (damage || (puffDefaults->flags6 & MF6_FORCEPAIN))
 			{
 				int flags = DMG_INFLICTOR_IS_PUFF;
 				// Allow MF5_PIERCEARMOR on a weapon as well.
@@ -3367,11 +3430,14 @@ void P_TraceBleed (int damage, AActor *target, AActor *missile)
 
 void P_TraceBleed (int damage, AActor *target)
 {
-	fixed_t one = pr_tracebleed() << 24;
-	fixed_t two = (pr_tracebleed()-128) << 16;
+	if (target != NULL)
+	{
+		fixed_t one = pr_tracebleed() << 24;
+		fixed_t two = (pr_tracebleed()-128) << 16;
 
-	P_TraceBleed (damage, target->x, target->y, target->z + target->height/2,
-		target, one, two);
+		P_TraceBleed (damage, target->x, target->y, target->z + target->height/2,
+			target, one, two);
+	}
 }
 
 //
@@ -3451,6 +3517,33 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 		8192*FRACUNIT, MF_SHOOTABLE, ML_BLOCKEVERYTHING, source, trace,
 		TRACE_PCross|TRACE_Impact, ProcessRailHit);
 
+	// Hurt anything the trace hit
+	unsigned int i;
+	AActor *puffDefaults = puffclass == NULL? NULL : GetDefaultByType (puffclass);
+	FName damagetype = (puffDefaults == NULL || puffDefaults->DamageType == NAME_None) ? FName(NAME_Railgun) : puffDefaults->DamageType;
+
+	for (i = 0; i < RailHits.Size (); i++)
+	{
+		fixed_t x, y, z;
+
+		x = x1 + FixedMul (RailHits[i].Distance, vx);
+		y = y1 + FixedMul (RailHits[i].Distance, vy);
+		z = shootz + FixedMul (RailHits[i].Distance, vz);
+
+		if ((RailHits[i].HitActor->flags & MF_NOBLOOD) ||
+			(RailHits[i].HitActor->flags2 & (MF2_DORMANT|MF2_INVULNERABLE)))
+		{
+			if (puffclass != NULL) P_SpawnPuff (source, puffclass, x, y, z, source->angle - ANG90, 1, PF_HITTHING);
+		}
+		else
+		{
+			P_SpawnBlood (x, y, z, source->angle - ANG180, damage, RailHits[i].HitActor);
+			P_TraceBleed (damage, x, y, z, RailHits[i].HitActor, source->angle, pitch);
+		}
+		P_DamageMobj (RailHits[i].HitActor, source, source, damage, damagetype);
+	}
+
+	// Spawn a decal or puff at the point where the trace ended.
 	if (trace.HitType == TRACE_HitWall)
 	{
 		SpawnShootDecal (source, trace);
@@ -3476,32 +3569,7 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 		}
 	}
 
-	// Now hurt anything the trace hit
-	unsigned int i;
-	AActor *puffDefaults = puffclass == NULL? NULL : GetDefaultByType (puffclass);
-	FName damagetype = (puffDefaults == NULL || puffDefaults->DamageType == NAME_None) ? FName(NAME_Railgun) : puffDefaults->DamageType;
-
-	for (i = 0; i < RailHits.Size (); i++)
-	{
-		fixed_t x, y, z;
-
-		x = x1 + FixedMul (RailHits[i].Distance, vx);
-		y = y1 + FixedMul (RailHits[i].Distance, vy);
-		z = shootz + FixedMul (RailHits[i].Distance, vz);
-
-		if ((RailHits[i].HitActor->flags & MF_NOBLOOD) ||
-			(RailHits[i].HitActor->flags2 & (MF2_DORMANT|MF2_INVULNERABLE)))
-		{
-			if (puffclass != NULL) P_SpawnPuff (source, puffclass, x, y, z, source->angle - ANG180, 1, PF_HITTHING);
-		}
-		else
-		{
-			P_SpawnBlood (x, y, z, source->angle - ANG180, damage, RailHits[i].HitActor);
-		}
-		P_DamageMobj (RailHits[i].HitActor, source, source, damage, damagetype);
-		P_TraceBleed (damage, x, y, z, RailHits[i].HitActor, angle, pitch);
-	}
-
+	// Draw the slug's trail.
 	end.X = FIXED2FLOAT(trace.X);
 	end.Y = FIXED2FLOAT(trace.Y);
 	end.Z = FIXED2FLOAT(trace.Z);
@@ -3608,7 +3676,7 @@ bool P_UseTraverse(AActor *usething, fixed_t endx, fixed_t endy, bool &foundline
 		if (in->d.line->special == 0 || !(in->d.line->activation & (SPAC_Use|SPAC_UseThrough)))
 		{
 	blocked:
-			if (in->d.line->flags & ML_BLOCKEVERYTHING)
+			if (in->d.line->flags & (ML_BLOCKEVERYTHING|ML_BLOCKUSE))
 			{
 				open.range = 0;
 			}
@@ -4161,101 +4229,7 @@ void P_FindBelowIntersectors (AActor *actor)
 
 void P_DoCrunch (AActor *thing, FChangePosition *cpos)
 {
-	// crunch bodies to giblets
-	if ((thing->flags & MF_CORPSE) &&
-		!(thing->flags3 & MF3_DONTGIB) &&
-		(thing->health <= 0))
-	{
-		FState * state = thing->FindState(NAME_Crush);
-		if (state != NULL && !(thing->flags & MF_ICECORPSE))
-		{
-			if (thing->flags4 & MF4_BOSSDEATH) 
-			{
-				CALL_ACTION(A_BossDeath, thing);
-			}
-			thing->flags &= ~MF_SOLID;
-			thing->flags3 |= MF3_DONTGIB;
-			thing->height = thing->radius = 0;
-			thing->SetState (state);
-			return;
-		}
-		if (!(thing->flags & MF_NOBLOOD))
-		{
-			if (thing->flags4 & MF4_BOSSDEATH) 
-			{
-				CALL_ACTION(A_BossDeath, thing);
-			}
-
-			const PClass *i = PClass::FindClass("RealGibs");
-
-			if (i != NULL)
-			{
-				i = i->ActorInfo->GetReplacement()->Class;
-
-				const AActor *defaults = GetDefaultByType (i);
-				if (defaults->SpawnState == NULL ||
-					sprites[defaults->SpawnState->sprite].numframes == 0)
-				{ 
-					i = NULL;
-				}
-			}
-			if (i == NULL)
-			{
-				// if there's no gib sprite don't crunch it.
-				thing->flags &= ~MF_SOLID;
-				thing->flags3 |= MF3_DONTGIB;
-				thing->height = thing->radius = 0;
-				return;
-			}
-
-			AActor *gib = Spawn (i, thing->x, thing->y, thing->z, ALLOW_REPLACE);
-			if (gib != NULL)
-			{
-				gib->RenderStyle = thing->RenderStyle;
-				gib->alpha = thing->alpha;
-				gib->height = 0;
-				gib->radius = 0;
-			}
-			S_Sound (thing, CHAN_BODY, "misc/fallingsplat", 1, ATTN_IDLE);
-
-			PalEntry bloodcolor = (PalEntry)thing->GetClass()->Meta.GetMetaInt(AMETA_BloodColor);
-			if (bloodcolor!=0) gib->Translation = TRANSLATION(TRANSLATION_Blood, bloodcolor.a);
-		}
-		if (thing->flags & MF_ICECORPSE)
-		{
-			thing->tics = 1;
-			thing->momx = thing->momy = thing->momz = 0;
-		}
-		else if (thing->player)
-		{
-			thing->flags |= MF_NOCLIP;
-			thing->flags3 |= MF3_DONTGIB;
-			thing->renderflags |= RF_INVISIBLE;
-		}
-		else
-		{
-			thing->Destroy ();
-		}
-		return;		// keep checking
-	}
-
-	// crunch dropped items
-	if (thing->flags & MF_DROPPED)
-	{
-		thing->Destroy ();
-		return;		// keep checking
-	}
-
-	if (!(thing->flags & MF_SOLID) || (thing->flags & MF_NOCLIP))
-	{
-		return;
-	}
-
-	if (!(thing->flags & MF_SHOOTABLE))
-	{
-		return;		// assume it is bloody gibs or something
-	}
-
+	if (!(thing && thing->Grind(true) && cpos)) return;
 	cpos->nofit = true;
 
 	if ((cpos->crushchange > 0) && !(level.maptime & 3))
@@ -4414,7 +4388,7 @@ void PIT_FloorDrop (AActor *thing, FChangePosition *cpos)
 			thing->z = thing->z - oldfloorz + thing->floorz;
 			P_CheckFakeFloorTriggers (thing, oldz);
 		}
-		else if ((thing->flags & MF_NOGRAVITY) ||
+		else if ((thing->flags & MF_NOGRAVITY) || (thing->flags5 & MF5_MOVEWITHSECTOR) ||
 			(((cpos->sector->Flags & SECF_FLOORDROP) || cpos->moveamt < 9*FRACUNIT)
 			 && thing->z - thing->floorz <= cpos->moveamt))
 		{
@@ -4606,7 +4580,11 @@ bool P_ChangeSector (sector_t *sector, int crunch, int amt, int floorOrCeil, boo
 					if (!n->visited)
 					{
 						n->visited  = true;
-						if (!(n->m_thing->flags&MF_NOBLOCKMAP)) iterator(n->m_thing, &cpos);
+						if (!(n->m_thing->flags & MF_NOBLOCKMAP) ||	//jff 4/7/98 don't do these
+							(n->m_thing->flags5 & MF5_MOVEWITHSECTOR))
+						{
+							iterator(n->m_thing, &cpos);
+						}
 						break;
 					}
 				}
@@ -4619,7 +4597,7 @@ bool P_ChangeSector (sector_t *sector, int crunch, int amt, int floorOrCeil, boo
 
 
 	// [RH] Use different functions for the four different types of sector
-	// movement. Also update the soundorg's z-coordinate for 3D sound.
+	// movement.
 	switch (floorOrCeil)
 	{
 	case 0:
@@ -4666,7 +4644,8 @@ bool P_ChangeSector (sector_t *sector, int crunch, int amt, int floorOrCeil, boo
 			if (!n->visited)								// unprocessed thing found
 			{
 				n->visited = true; 							// mark thing as processed
-				if (!(n->m_thing->flags & MF_NOBLOCKMAP))	//jff 4/7/98 don't do these
+				if (!(n->m_thing->flags & MF_NOBLOCKMAP) ||	//jff 4/7/98 don't do these
+					(n->m_thing->flags5 & MF5_MOVEWITHSECTOR))
 				{
 					iterator (n->m_thing, &cpos);		 			// process it
 					if (iterator2 != NULL) iterator2 (n->m_thing, &cpos);

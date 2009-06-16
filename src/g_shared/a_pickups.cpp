@@ -513,10 +513,10 @@ bool AInventory::HandlePickup (AInventory *item)
 {
 	if (item->GetClass() == GetClass())
 	{
-		if (Amount < MaxAmount)
+		if (Amount < MaxAmount || sv_unlimited_pickup)
 		{
 			Amount += item->Amount;
-			if (Amount > MaxAmount)
+			if (Amount > MaxAmount && !sv_unlimited_pickup)
 			{
 				Amount = MaxAmount;
 			}
@@ -1387,7 +1387,7 @@ IMPLEMENT_CLASS (AHealth)
 
 //===========================================================================
 //
-// AHealth :: TryPickup
+// AHealth :: PickupMessage
 //
 //===========================================================================
 const char *AHealth::PickupMessage ()

@@ -744,11 +744,11 @@ static int UseHealthItems(TArray<AInventory *> &Items, int &saveHealth)
 			if (Items[i]->health > maxhealth)
 			{
 				index = i;
-				maxhealth = Items[i]->Amount;
+				maxhealth = Items[i]->health;
 			}
 		}
 
-		// Now apply the health items, using the same logic as Heretic anf Hexen.
+		// Now apply the health items, using the same logic as Heretic and Hexen.
 		int count = (saveHealth + maxhealth-1) / maxhealth;
 		for(int i = 0; i < count; i++)
 		{
@@ -779,8 +779,8 @@ void P_AutoUseHealth(player_t *player, int saveHealth)
 		{
 			int mode = static_cast<AHealthPickup*>(inv)->autousemode;
 
-			if (mode == 0) NormalHealthItems.Push(inv);
-			else if (mode == 1) LargeHealthItems.Push(inv);
+			if (mode == 1) NormalHealthItems.Push(inv);
+			else if (mode == 2) LargeHealthItems.Push(inv);
 		}
 	}
 
@@ -875,9 +875,12 @@ void P_AutoUseStrifeHealth (player_t *player)
 void P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage, FName mod, int flags)
 {
 	unsigned ang;
-	player_t *player;
+	player_t *player = NULL;
 	fixed_t thrust;
 	int temp;
+	int painchance = 0;
+	FState * woundstate = NULL;
+	PainChanceList * pc = NULL;
 
 	if (target == NULL || !(target->flags & MF_SHOOTABLE))
 	{ // Shouldn't happen
@@ -911,7 +914,7 @@ void P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage
 		}
 		return;
 	}
-	if ((target->flags2 & MF2_INVULNERABLE) && damage < 1000000)
+	if ((target->flags2 & MF2_INVULNERABLE) && damage < 1000000 && !(flags & DMG_FORCED))
 	{ // actor is invulnerable
 		if (!target->player)
 		{
@@ -945,69 +948,72 @@ void P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage
 	{
 		target->momx = target->momy = target->momz = 0;
 	}
-	if (target->flags2 & MF2_DORMANT)
+	if (!(flags & DMG_FORCED))	// DMG_FORCED skips all special damage checks
 	{
-		// Invulnerable, and won't wake up
-		return;
-	}
-	player = target->player;
-	if (player && damage > 1)
-	{
-		// Take half damage in trainer mode
-		damage = FixedMul(damage, G_SkillProperty(SKILLP_DamageFactor));
-	}
-	// Special damage types
-	if (inflictor)
-	{
-		if (inflictor->flags4 & MF4_SPECTRAL)
+		if (target->flags2 & MF2_DORMANT)
 		{
-			if (player != NULL)
-			{
-				if (!deathmatch && inflictor->health == -1)
-					return;
-			}
-			else if (target->flags4 & MF4_SPECTRAL)
-			{
-				if (inflictor->health == -2 && !target->IsHostile(inflictor))
-					return;
-			}
-		}
-
-		damage = inflictor->DoSpecialDamage (target, damage);
-		if (damage == -1)
-		{
+			// Invulnerable, and won't wake up
 			return;
 		}
-
-	}
-	// Handle active damage modifiers (e.g. PowerDamage)
-	if (source != NULL && source->Inventory != NULL)
-	{
-		int olddam = damage;
-		source->Inventory->ModifyDamage(olddam, mod, damage, false);
-		if (olddam != damage && damage <= 0) return;
-	}
-	// Handle passive damage modifiers (e.g. PowerProtection)
-	if (target->Inventory != NULL)
-	{
- 		int olddam = damage;
-		target->Inventory->ModifyDamage(olddam, mod, damage, true);
-		if (olddam != damage && damage <= 0) return;
-	}
-
-	DmgFactors * df = target->GetClass()->ActorInfo->DamageFactors;
-	if (df != NULL)
-	{
-		fixed_t * pdf = df->CheckKey(mod);
-		if (pdf== NULL && mod != NAME_None) pdf = df->CheckKey(NAME_None);
-		if (pdf != NULL)
+		player = target->player;
+		if (player && damage > 1)
 		{
-			damage = FixedMul(damage, *pdf);
-			if (damage <= 0) return;
+			// Take half damage in trainer mode
+			damage = FixedMul(damage, G_SkillProperty(SKILLP_DamageFactor));
 		}
-	}
+		// Special damage types
+		if (inflictor)
+		{
+			if (inflictor->flags4 & MF4_SPECTRAL)
+			{
+				if (player != NULL)
+				{
+					if (!deathmatch && inflictor->health == -1)
+						return;
+				}
+				else if (target->flags4 & MF4_SPECTRAL)
+				{
+					if (inflictor->health == -2 && !target->IsHostile(inflictor))
+						return;
+				}
+			}
 
-	damage = target->TakeSpecialDamage (inflictor, source, damage, mod);
+			damage = inflictor->DoSpecialDamage (target, damage);
+			if (damage == -1)
+			{
+				return;
+			}
+
+		}
+		// Handle active damage modifiers (e.g. PowerDamage)
+		if (source != NULL && source->Inventory != NULL)
+		{
+			int olddam = damage;
+			source->Inventory->ModifyDamage(olddam, mod, damage, false);
+			if (olddam != damage && damage <= 0) return;
+		}
+		// Handle passive damage modifiers (e.g. PowerProtection)
+		if (target->Inventory != NULL)
+		{
+			int olddam = damage;
+			target->Inventory->ModifyDamage(olddam, mod, damage, true);
+			if (olddam != damage && damage <= 0) return;
+		}
+
+		DmgFactors * df = target->GetClass()->ActorInfo->DamageFactors;
+		if (df != NULL)
+		{
+			fixed_t * pdf = df->CheckKey(mod);
+			if (pdf== NULL && mod != NAME_None) pdf = df->CheckKey(NAME_None);
+			if (pdf != NULL)
+			{
+				damage = FixedMul(damage, *pdf);
+				if (damage <= 0) return;
+			}
+		}
+
+		damage = target->TakeSpecialDamage (inflictor, source, damage, mod);
+	}
 
 	if (damage == -1)
 	{
@@ -1033,12 +1039,14 @@ void P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage
 			
 			ang = R_PointToAngle2 (origin->x, origin->y,
 				target->x, target->y);
-			thrust = damage*(FRACUNIT>>3)*kickback / target->Mass;
-			// [RH] If thrust overflows, use a more reasonable amount
-			if (thrust < 0 || thrust > 10*FRACUNIT)
-			{
-				thrust = 10*FRACUNIT;
-			}
+
+
+			// Calculate this as float to avoid overflows so that the
+			// clamping that had to be done here can be removed.
+			double fltthrust = clamp((damage * 0.125 * kickback) / target->Mass, 0.,mod == NAME_MDK? 10. : 32.);
+
+			thrust = FLOAT2FIXED(fltthrust);
+
 			// make fall forwards sometimes
 			if ((damage < 40) && (damage > target->health)
 				 && (target->z - origin->z > 64*FRACUNIT)
@@ -1076,11 +1084,6 @@ void P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage
 	//
 	if (player)
 	{
-		if ((target->flags2 & MF2_INVULNERABLE) && damage < 1000000)
-		{ // player is invulnerable, so don't hurt him
-			return;
-		}
-
         //Added by MC: Lets bots look allround for enemies if they survive an ambush.
         if (player->isbot)
 		{
@@ -1094,44 +1097,55 @@ void P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage
 			damage = target->health - 1;
 		}
 
-		if (damage < 1000 && ((target->player->cheats & CF_GODMODE)
-			|| (target->player->mo->flags2 & MF2_INVULNERABLE)))
+		if (!(flags & DMG_FORCED))
 		{
-			return;
-		}
-
-		// [RH] Avoid friendly fire if enabled
-		if (source != NULL && player != source->player && target->IsTeammate (source))
-		{
-			FriendlyFire = true;
-			if (damage < 1000000)
-			{ // Still allow telefragging :-(
-				damage = (int)((float)damage * level.teamdamage);
-				if (damage <= 0)
-					return;
+			if ((target->flags2 & MF2_INVULNERABLE) && damage < 1000000)
+			{ // player is invulnerable, so don't hurt him
+				return;
 			}
-		}
-		if (!(flags & DMG_NO_ARMOR) && player->mo->Inventory != NULL)
-		{
-			int newdam = damage;
-			player->mo->Inventory->AbsorbDamage (damage, mod, newdam);
-			damage = newdam;
-			if (damage <= 0)
+
+			if (damage < 1000 && ((target->player->cheats & CF_GODMODE)
+				|| (target->player->mo->flags2 & MF2_INVULNERABLE)))
 			{
 				return;
 			}
+
+			// [RH] Avoid friendly fire if enabled
+			if (source != NULL && player != source->player && target->IsTeammate (source))
+			{
+				FriendlyFire = true;
+				if (damage < 1000000)
+				{ // Still allow telefragging :-(
+					damage = (int)((float)damage * level.teamdamage);
+					if (damage <= 0)
+						return;
+				}
+			}
+			if (!(flags & DMG_NO_ARMOR) && player->mo->Inventory != NULL)
+			{
+				int newdam = damage;
+				player->mo->Inventory->AbsorbDamage (damage, mod, newdam);
+				damage = newdam;
+				if (damage <= 0)
+				{
+					// If MF&_FORCEPAIN is set make the player enter the pain state.
+					if (inflictor != NULL && (inflictor->flags6 & MF6_FORCEPAIN)) goto dopain;
+					return;
+				}
+			}
+			
+			if (damage >= player->health
+				&& (G_SkillProperty(SKILLP_AutoUseHealth) || deathmatch)
+				&& !player->morphTics)
+			{ // Try to use some inventory health
+				P_AutoUseHealth (player, damage - player->health + 1);
+			}
 		}
 
-		if (damage >= player->health
-			&& (G_SkillProperty(SKILLP_AutoUseHealth) || deathmatch)
-			&& !player->morphTics)
-		{ // Try to use some inventory health
-			P_AutoUseHealth (player, damage - player->health + 1);
-		}
 		player->health -= damage;		// mirror mobj health here for Dave
 		// [RH] Make voodoo dolls and real players record the same health
 		target->health = player->mo->health -= damage;
-		if (player->health < 50 && !deathmatch)
+		if (player->health < 50 && !deathmatch && !(flags & DMG_FORCED))
 		{
 			P_AutoUseStrifeHealth (player);
 			player->mo->health = player->health;
@@ -1155,6 +1169,18 @@ void P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage
 	}
 	else
 	{
+		// Armor for monsters.
+		if (!(flags & (DMG_NO_ARMOR|DMG_FORCED)) && target->Inventory != NULL && damage > 0)
+		{
+			int newdam = damage;
+			target->Inventory->AbsorbDamage (damage, mod, newdam);
+			damage = newdam;
+			if (damage <= 0)
+			{
+				return;
+			}
+		}
+	
 		target->health -= damage;	
 	}
 
@@ -1212,7 +1238,7 @@ void P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage
 		return;
 	}
 
-	FState * woundstate = target->FindState(NAME_Wound, mod);
+	woundstate = target->FindState(NAME_Wound, mod);
 	if (woundstate != NULL)
 	{
 		int woundhealth = RUNTIME_TYPE(target)->Meta.GetMetaInt (AMETA_WoundHealth, 6);
@@ -1223,9 +1249,9 @@ void P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage
 			return;
 		}
 	}
-	
-	PainChanceList * pc = target->GetClass()->ActorInfo->PainChances;
-	int painchance = target->PainChance;
+
+	pc = target->GetClass()->ActorInfo->PainChances;
+	painchance = target->PainChance;
 	if (pc != NULL)
 	{
 		BYTE * ppc = pc->CheckKey(mod);
@@ -1235,8 +1261,10 @@ void P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage
 		}
 	}
 	
+dopain:
 	if (!(target->flags5 & MF5_NOPAIN) && (inflictor == NULL || !(inflictor->flags5 & MF5_PAINLESS)) && 
-		(pr_damagemobj() < painchance) && !(target->flags & MF_SKULLFLY))
+		(pr_damagemobj() < painchance || (inflictor != NULL && (inflictor->flags6 & MF6_FORCEPAIN))) && 
+		!(target->flags & MF_SKULLFLY))
 	{
 		if (mod == NAME_Electric)
 		{
@@ -1365,11 +1393,11 @@ bool AActor::OkayToSwitchTarget (AActor *other)
 //
 //==========================================================================
 
-void P_PoisonPlayer (player_t *player, AActor *poisoner, AActor *source, int poison)
+bool P_PoisonPlayer (player_t *player, AActor *poisoner, AActor *source, int poison)
 {
 	if((player->cheats&CF_GODMODE) || (player->mo->flags2 & MF2_INVULNERABLE))
 	{
-		return;
+		return false;
 	}
 	if (source != NULL && source->player != player && player->mo->IsTeammate (source))
 	{
@@ -1384,6 +1412,7 @@ void P_PoisonPlayer (player_t *player, AActor *poisoner, AActor *source, int poi
 			player->poisoncount = 100;
 		}
 	}
+	return true;
 }
 
 //==========================================================================
@@ -1467,6 +1496,7 @@ void P_PoisonDamage (player_t *player, AActor *source, int damage,
 		P_SetMobjState(target, target->info->painstate);
 	}
 */
+	return;
 }
 
 bool CheckCheatmode ();

@@ -139,9 +139,10 @@ void R_ClearDrawSegs (void)
 // should use it, since smaller arrays fit better in cache.
 //
 
-typedef struct {
+struct cliprange_t
+{
 	short first, last;		// killough
-} cliprange_t;
+};
 
 
 // newend is one past the last valid seg
@@ -351,9 +352,9 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec,
 
 	FakeSide = FAKED_Center;
 
-	if (sec->heightsec && !(sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC))
+	const sector_t *s = sec->GetHeightSec();
+	if (s != NULL)
 	{
-		const sector_t *s = sec->heightsec;
 		sector_t *heightsec = viewsector->heightsec;
 		bool underwater = r_fakingunderwater ||
 			(heightsec && viewz <= heightsec->floorplane.ZatPoint (viewx, viewy));

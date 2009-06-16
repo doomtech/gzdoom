@@ -330,16 +330,18 @@ public:
 
 	void AddTexturesLump (const void *lumpdata, int lumpsize, int deflumpnum, int patcheslump, int firstdup=0, bool texture1=false);
 	void AddTexturesLumps (int lump1, int lump2, int patcheslump);
-	void AddGroup(int wadnum, const char * startlump, const char * endlump, int ns, int usetype);
+	void AddGroup(int wadnum, int ns, int usetype);
 	void AddPatches (int lumpnum);
 	void AddTiles (void *tileFile);
 	void AddHiresTextures (int wadnum);
 	void LoadTextureDefs(int wadnum, const char *lumpname);
 	void ParseXTexture(FScanner &sc, int usetype);
 	void SortTexturesByType(int start, int end);
+	bool AreTexturesCompatible (FTextureID picnum1, FTextureID picnum2);
 
 	FTextureID CreateTexture (int lumpnum, int usetype=FTexture::TEX_Any);	// Also calls AddTexture
 	FTextureID AddTexture (FTexture *texture);
+	FTextureID GetDefaultTexture() const { return DefaultTexture; }
 
 	void LoadTextureX(int wadnum);
 	void AddTexturesForWad(int wadnum);
@@ -373,6 +375,7 @@ private:
 	TArray<int> Translation;
 	int HashFirst[HASH_SIZE];
 	FTextureID DefaultTexture;
+	TArray<int> FirstTextureForFile;
 };
 
 extern FTextureManager TexMan;

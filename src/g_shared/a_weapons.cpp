@@ -404,7 +404,7 @@ bool AWeapon::CheckAmmo (int fireMode, bool autoSwitch, bool requireAmmo)
 	int count1, count2;
 	int enough, enoughmask;
 
-	if (dmflags & DF_INFINITE_AMMO)
+	if ((dmflags & DF_INFINITE_AMMO) || (Owner->player->cheats & CF_INFINITEAMMO))
 	{
 		return true;
 	}
@@ -438,7 +438,7 @@ bool AWeapon::CheckAmmo (int fireMode, bool autoSwitch, bool requireAmmo)
 	{ // If this weapon has no alternate fire, then there is never enough ammo for it
 		enough &= 1;
 	}
-	if ((enough & enoughmask) == enoughmask)
+	if (((enough & enoughmask) == enoughmask) || (enough && (WeaponFlags & WIF_AMMO_CHECKBOTH)))
 	{
 		return true;
 	}
@@ -462,7 +462,7 @@ bool AWeapon::CheckAmmo (int fireMode, bool autoSwitch, bool requireAmmo)
 
 bool AWeapon::DepleteAmmo (bool altFire, bool checkEnough)
 {
-	if (!(dmflags & DF_INFINITE_AMMO))
+	if (!((dmflags & DF_INFINITE_AMMO) || (Owner->player->cheats & CF_INFINITEAMMO)))
 	{
 		if (checkEnough && !CheckAmmo (altFire ? AltFire : PrimaryFire, false))
 		{
@@ -763,7 +763,7 @@ AWeapon *FWeaponSlot::PickWeapon(player_t *player)
 			{
 				for (j = (unsigned)(i - 1) % Weapons.Size();
 					j != i;
-					j = (unsigned)(j - 1) % Weapons.Size())
+					j = (unsigned)(j + Weapons.Size() - 1) % Weapons.Size())	// + Weapons.Size is to avoid underflows
 				{
 					AWeapon *weap = static_cast<AWeapon *> (player->mo->FindInventory(Weapons[j].Type));
 
@@ -974,6 +974,7 @@ static bool FindMostRecentWeapon(player_t *player, int *slot, int *index)
 AWeapon *FWeaponSlots::PickNextWeapon(player_t *player)
 {
 	int startslot, startindex;
+	int slotschecked = 0;
 
 	if (player->mo == NULL)
 	{
@@ -997,6 +998,7 @@ AWeapon *FWeaponSlots::PickNextWeapon(player_t *player)
 			if (++index >= Slots[slot].Size())
 			{
 				index = 0;
+				slotschecked++;
 				if (++slot >= NUM_WEAPON_SLOTS)
 				{
 					slot = 0;
@@ -1009,7 +1011,7 @@ AWeapon *FWeaponSlots::PickNextWeapon(player_t *player)
 				return weap;
 			}
 		}
-		while (slot != startslot || index != startindex);
+		while ((slot != startslot || index != startindex) && slotschecked < NUM_WEAPON_SLOTS);
 	}
 	return player->ReadyWeapon;
 }
@@ -1027,6 +1029,7 @@ AWeapon *FWeaponSlots::PickNextWeapon(player_t *player)
 AWeapon *FWeaponSlots::PickPrevWeapon (player_t *player)
 {
 	int startslot, startindex;
+	int slotschecked = 0;
 
 	if (player->mo == NULL)
 	{
@@ -1049,6 +1052,7 @@ AWeapon *FWeaponSlots::PickPrevWeapon (player_t *player)
 		{
 			if (--index < 0)
 			{
+				slotschecked++;
 				if (--slot < 0)
 				{
 					slot = NUM_WEAPON_SLOTS - 1;
@@ -1062,7 +1066,7 @@ AWeapon *FWeaponSlots::PickPrevWeapon (player_t *player)
 				return weap;
 			}
 		}
-		while (slot != startslot || index != startindex);
+		while ((slot != startslot || index != startindex) && slotschecked < NUM_WEAPON_SLOTS);
 	}
 	return player->ReadyWeapon;
 }
@@ -1117,11 +1121,50 @@ void FWeaponSlots::AddExtraWeapons()
 
 //===========================================================================
 //
+// FWeaponSlots :: SetFromGameInfo
+//
+// If neither the player class nor any defined weapon contain a
+// slot assignment, use the game's defaults
+//
+//===========================================================================
+
+void FWeaponSlots::SetFromGameInfo()
+{
+	unsigned int i;
+
+	// Only if all slots are empty
+	for (i = 0; i < NUM_WEAPON_SLOTS; ++i)
+	{
+		if (Slots[i].Size() > 0) return;
+	}
+
+	// Append extra weapons to the slots.
+	for (i = 0; i < NUM_WEAPON_SLOTS; ++i)
+	{
+		for (unsigned j = 0; j < gameinfo.DefaultWeaponSlots[i].Size(); i++)
+		{
+			const PClass *cls = PClass::FindClass(gameinfo.DefaultWeaponSlots[i][j]);
+			if (cls == NULL)
+			{
+				Printf("Unknown weapon class '%s' found in default weapon slot assignments\n",
+					gameinfo.DefaultWeaponSlots[i][j].GetChars());
+			}
+			else
+			{
+				Slots[i].AddWeapon(cls);
+			}
+		}
+	}
+}
+
+//===========================================================================
+//
 // FWeaponSlots :: StandardSetup
 //
 // Setup weapons in this order:
 // 1. Use slots from player class.
 // 2. Add extra weapons that specify their own slots.
+// 3. If all slots are empty, use the settings from the gameinfo (compatibility fallback)
 //
 //===========================================================================
 
@@ -1129,6 +1172,7 @@ void FWeaponSlots::StandardSetup(const PClass *type)
 {
 	SetFromPlayer(type);
 	AddExtraWeapons();
+	SetFromGameInfo();
 }
 
 //===========================================================================

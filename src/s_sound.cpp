@@ -131,7 +131,6 @@ FRolloffInfo S_Rolloff;
 BYTE *S_SoundCurve;
 int S_SoundCurveSize;
 
-CVAR (Bool, snd_surround, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)	// [RH] Use surround sounds?
 FBoolCVar noisedebug ("noise", false, 0);	// [RH] Print sound debugging info?
 CVAR (Int, snd_channels, 32, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)	// number of channels available
 CVAR (Bool, snd_flipstereo, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
@@ -1369,13 +1368,16 @@ bool S_CheckSoundLimit(sfxinfo_t *sfx, const FVector3 &pos, int near_limit, floa
 
 void S_StopSound (int channel)
 {
-	for (FSoundChan *chan = Channels; chan != NULL; chan = chan->NextChan)
+	FSoundChan *chan = Channels;
+	while (chan != NULL)
 	{
+		FSoundChan *next = chan->NextChan;
 		if (chan->SourceType == SOURCE_None &&
 			(chan->EntChannel == channel || (i_compatflags & COMPATF_MAGICSILENCE)))
 		{
 			S_StopChannel(chan);
 		}
+		chan = next;
 	}
 }
 
@@ -1389,14 +1391,17 @@ void S_StopSound (int channel)
 
 void S_StopSound (AActor *actor, int channel)
 {
-	for (FSoundChan *chan = Channels; chan != NULL; chan = chan->NextChan)
+	FSoundChan *chan = Channels;
+	while (chan != NULL)
 	{
+		FSoundChan *next = chan->NextChan;
 		if (chan->SourceType == SOURCE_Actor &&
 			chan->Actor == actor &&
 			(chan->EntChannel == channel || (i_compatflags & COMPATF_MAGICSILENCE)))
 		{
 			S_StopChannel(chan);
 		}
+		chan = next;
 	}
 }
 
@@ -1410,14 +1415,17 @@ void S_StopSound (AActor *actor, int channel)
 
 void S_StopSound (const sector_t *sec, int channel)
 {
-	for (FSoundChan *chan = Channels; chan != NULL; chan = chan->NextChan)
+	FSoundChan *chan = Channels;
+	while (chan != NULL)
 	{
+		FSoundChan *next = chan->NextChan;
 		if (chan->SourceType == SOURCE_Sector &&
 			chan->Sector == sec &&
 			(chan->EntChannel == channel || (i_compatflags & COMPATF_MAGICSILENCE)))
 		{
 			S_StopChannel(chan);
 		}
+		chan = next;
 	}
 }
 
@@ -1431,14 +1439,17 @@ void S_StopSound (const sector_t *sec, int channel)
 
 void S_StopSound (const FPolyObj *poly, int channel)
 {
-	for (FSoundChan *chan = Channels; chan != NULL; chan = chan->NextChan)
+	FSoundChan *chan = Channels;
+	while (chan != NULL)
 	{
+		FSoundChan *next = chan->NextChan;
 		if (chan->SourceType == SOURCE_Polyobj &&
 			chan->Poly == poly &&
 			(chan->EntChannel == channel || (i_compatflags & COMPATF_MAGICSILENCE)))
 		{
 			S_StopChannel(chan);
 		}
+		chan = next;
 	}
 }
 
@@ -1475,8 +1486,10 @@ void S_RelinkSound (AActor *from, AActor *to)
 	if (from == NULL)
 		return;
 
-	for (FSoundChan *chan = Channels; chan != NULL; chan = chan->NextChan)
+	FSoundChan *chan = Channels;
+	while (chan != NULL)
 	{
+		FSoundChan *next = chan->NextChan;
 		if (chan->SourceType == SOURCE_Actor && chan->Actor == from)
 		{
 			if (to != NULL)
@@ -1496,6 +1509,7 @@ void S_RelinkSound (AActor *from, AActor *to)
 				S_StopChannel(chan);
 			}
 		}
+		chan = next;
 	}
 }
 
@@ -1620,15 +1634,18 @@ bool S_IsActorPlayingSomething (AActor *actor, int channel, int sound_id)
 // Stop music and sound effects, during game PAUSE.
 //==========================================================================
 
-void S_PauseSound (bool notmusic)
+void S_PauseSound (bool notmusic, bool notsfx)
 {
 	if (!notmusic && mus_playing.handle && !MusicPaused)
 	{
 		I_PauseSong (mus_playing.handle);
 		MusicPaused = true;
 	}
-	SoundPaused = true;
-	GSnd->SetSfxPaused (true, 0);
+	if (!notsfx)
+	{
+		SoundPaused = true;
+		GSnd->SetSfxPaused (true, 0);
+	}
 }
 
 //==========================================================================
@@ -1638,15 +1655,68 @@ void S_PauseSound (bool notmusic)
 // Resume music and sound effects, after game PAUSE.
 //==========================================================================
 
-void S_ResumeSound ()
+void S_ResumeSound (bool notsfx)
 {
 	if (mus_playing.handle && MusicPaused)
 	{
 		I_ResumeSong (mus_playing.handle);
 		MusicPaused = false;
 	}
-	SoundPaused = false;
-	GSnd->SetSfxPaused (false, 0);
+	if (!notsfx)
+	{
+		SoundPaused = false;
+		GSnd->SetSfxPaused (false, 0);
+	}
+}
+
+//==========================================================================
+//
+// S_SetSoundPaused
+//
+// Called with state non-zero when the app is active, zero when it isn't.
+//
+//==========================================================================
+
+void S_SetSoundPaused (int state)
+{
+	if (state)
+	{
+		if (paused <= 0)
+		{
+			S_ResumeSound(true);
+			if (GSnd != NULL)
+			{
+				GSnd->SetInactive(false);
+			}
+			if (!netgame
+#ifdef _DEBUG
+				&& !demoplayback
+#endif
+				)
+			{
+				paused = 0;
+			}
+		}
+	}
+	else
+	{
+		if (paused == 0)
+		{
+			S_PauseSound(false, true);
+			if (GSnd !=  NULL)
+			{
+				GSnd->SetInactive(true);
+			}
+			if (!netgame
+#ifdef _DEBUG
+				&& !demoplayback
+#endif
+				)
+			{
+				paused = -1;
+			}
+		}
+	}
 }
 
 //==========================================================================
@@ -2161,7 +2231,7 @@ bool S_StartMusic (const char *m_id)
 // specified, it will only be played if the specified CD is in a drive.
 //==========================================================================
 
-TArray<char> musiccache;
+TArray<BYTE> musiccache;
 
 bool S_ChangeMusic (const char *musicname, int order, bool looping, bool force)
 {
@@ -2188,6 +2258,7 @@ bool S_ChangeMusic (const char *musicname, int order, bool looping, bool force)
 	{
 		// Don't choke if the map doesn't have a song attached
 		S_StopMusic (true);
+		mus_playing.name = "";
 		return false;
 	}
 

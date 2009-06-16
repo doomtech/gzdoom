@@ -134,9 +134,7 @@ public:
 	fixed_t		AttackZOffset;			// attack height, relative to player center
 
 	// [CW] Fades for when you are being damaged.
-	float		RedDamageFade;
-	float		GreenDamageFade;
-	float		BlueDamageFade;
+	PalEntry DamageFade;
 
 	bool UpdateWaterLevel (fixed_t oldz, bool splash);
 	bool ResetAirSupply (bool playgasp = true);
@@ -183,11 +181,12 @@ typedef enum
 	CF_TIMEFREEZE		= 1 << 15,		// Player has an active time freezer
 	CF_DRAIN			= 1 << 16,		// Player owns a drain powerup
 	CF_REGENERATION		= 1 << 17,		// Player owns a regeneration artifact
-	CF_HIGHJUMP			= 1 << 18,		// more Skulltag flags. Implemetation not guaranteed though. ;)
+	CF_HIGHJUMP			= 1 << 18,		// more Skulltag flags. Implementation not guaranteed though. ;)
 	CF_REFLECTION		= 1 << 19,
 	CF_PROSPERITY		= 1 << 20,
-	CF_DOUBLEFIRINGSPEED= 1 << 21,
+	CF_DOUBLEFIRINGSPEED= 1 << 21,		// Player owns a double firing speed artifact
 	CF_EXTREMELYDEAD	= 1 << 22,		// [RH] Reliably let the status bar know about extreme deaths.
+	CF_INFINITEAMMO		= 1 << 23,		// Player owns an infinite ammo artifact
 } cheat_t;
 
 #define WPIECE1		1

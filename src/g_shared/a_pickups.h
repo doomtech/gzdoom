@@ -5,8 +5,6 @@
 #include "info.h"
 #include "s_sound.h"
 
-#define MAX_MANA				200
-
 #define NUM_WEAPON_SLOTS		10
 
 class player_t;
@@ -73,6 +71,7 @@ struct FWeaponSlots
 	bool LocateWeapon (const PClass *type, int *const slot, int *const index);
 	ESlotDef AddDefaultWeapon (int slot, const PClass *type);
 	void AddExtraWeapons();
+	void SetFromGameInfo();
 	void SetFromPlayer(const PClass *type);
 	void StandardSetup(const PClass *type);
 	void LocalSetup(const PClass *type);
@@ -130,6 +129,7 @@ enum
 	IF_CREATECOPYMOVED	= 1<<15,	// CreateCopy changed the owner (copy's Owner field holds new owner).
 	IF_INITEFFECTFAILED	= 1<<16,	// CreateCopy tried to activate a powerup and activation failed (can happen with PowerMorph)
 	IF_NOATTENPICKUPSOUND = 1<<17,	// Play pickup sound with ATTN_NONE
+	IF_PERSISTENTPOWER	= 1<<18,	// Powerup is kept when travelling between levels
 };
 
 struct vissprite_t;
@@ -315,11 +315,12 @@ enum
 	WIF_ALT_USES_BOTH =		0x00000100, // alternate fire uses both ammo
 	WIF_WIMPY_WEAPON =		0x00000200, // change away when ammo for another weapon is replenished
 	WIF_POWERED_UP =		0x00000400, // this is a tome-of-power'ed version of its sister
-
+	WIF_AMMO_CHECKBOTH =	0x00000800, // check for both primary and secondary fire before switching it off
 	WIF_NO_AUTO_SWITCH =	0x00001000,	// never switch to this weapon when it's picked up
-	WIF_STAFF2_KICKBACK =	0x00002000, // the powered-up Heretic staff has special kickba
+	WIF_STAFF2_KICKBACK =	0x00002000, // the powered-up Heretic staff has special kickback
+	WIF_NOAUTOAIM =			0x00004000, // this weapon never uses autoaim (useful for ballistic projectiles)
 
-	WIF_CHEATNOTWEAPON	=	1<<27,		// Give cheat considers this not a weapon (used by Sigil)
+	WIF_CHEATNOTWEAPON	=	0x08000000,	// Give cheat considers this not a weapon (used by Sigil)
 
 	// Flags used only by bot AI:
 
@@ -380,6 +381,7 @@ public:
 	int MaxAbsorb;
 	int MaxFullAbsorb;
 	int BonusCount;
+	FNameNoInit ArmorType;
 };
 
 // BasicArmorPickup replaces the armor you have.

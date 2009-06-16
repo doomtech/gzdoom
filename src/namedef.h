@@ -1,5 +1,6 @@
 // 'None' must always be the first name.
 xx(None)
+xx(Null)
 
 xx(Super)
 xx(Object)
@@ -99,6 +100,9 @@ xx(ArtiHealth)
 xx(ArtiSuperHealth)
 xx(MedicalKit)
 xx(MedPatch)
+
+// Armor
+xx(BasicArmor)
 
 // The Wings of Wrath
 xx(ArtiFly)
@@ -231,6 +235,7 @@ xx(PoisonCloud)	// makes monsters howl.
 // Special death name for getting killed excessively. Could be used as
 // a damage type if you wanted to force an extreme death.
 xx(Extreme)
+xx(MDK)
 
 xx(Color)
 xx(State)
@@ -410,11 +415,18 @@ xx(offsetx_mid)
 xx(offsety_mid)
 xx(offsetx_bottom)
 xx(offsety_bottom)
+xx(scalex_top)
+xx(scaley_top)
+xx(scalex_mid)
+xx(scaley_mid)
+xx(scalex_bottom)
+xx(scaley_bottom)
 xx(light)
 xx(lightabsolute)
 xx(nofakecontrast)
 xx(smoothlighting)
 xx(blockprojectiles)
+xx(blockuse)
 
 xx(Renderstyle)
 

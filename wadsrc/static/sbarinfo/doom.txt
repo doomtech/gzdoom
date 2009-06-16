@@ -16,15 +16,15 @@ statusbar fullscreen, fullscreenoffsets // ZDoom HUD
 {
 	//health
 	drawimage "MEDIA0", 20, -2, centerbottom;
-	drawnumber 3, HUDFONT_DOOM, untranslated, health, drawshadow, 82, -20;
+	drawnumber 2147483647, HUDFONT_DOOM, untranslated, health, drawshadow, 82, -20;
 
 	//armor
 	drawimage armoricon, 20, -24, centerbottom;
-	drawnumber 3, HUDFONT_DOOM, untranslated, armor, drawshadow, whennotzero, 82, -39;
+	drawnumber 2147483647, HUDFONT_DOOM, untranslated, armor, drawshadow, whennotzero, 82, -39;
 
 	//ammo
 	drawimage ammoicon1, -14, -4, centerbottom;
-	drawnumber 3, HUDFONT_DOOM, untranslated, ammo1, drawshadow, -25, -20;
+	drawnumber 2147483647, HUDFONT_DOOM, untranslated, ammo1, drawshadow, -25, -20;
 
 	usesammo
 	{
@@ -32,7 +32,7 @@ statusbar fullscreen, fullscreenoffsets // ZDoom HUD
 		usessecondaryammo
 		{
 			drawimage ammoicon2, -14, -22, centerbottom;
-			drawnumber 3, HUDFONT_DOOM, untranslated, ammo2, drawshadow, -25, -38;
+			drawnumber 2147483647, HUDFONT_DOOM, untranslated, ammo2, drawshadow, -25, -38;
 			inventorybarnotvisible
 			{
 				drawselectedinventory centerbottom, drawshadow, alwaysshowcounter, HUDFONT_DOOM, -14, -39, -26, -56, untranslated;
@@ -59,11 +59,12 @@ statusbar fullscreen, fullscreenoffsets // ZDoom HUD
 
 	gamemode deathmatch
 	{
-		drawnumber 2, HUDFONT_DOOM, untranslated, frags, drawshadow, -3, 1;
+		drawnumber 2147483647, HUDFONT_DOOM, untranslated, frags, drawshadow, -3, 1;
 	}
 	gamemode singleplayer, cooperative, teamgame
 	{
-		drawkeybar 6, vertical, reverserows, auto, -10, 2, 0, 3, auto;
+		// let's hope no mod ever uses 100 keys...
+		drawkeybar 100, vertical, reverserows, auto, -10, 2, 0, 3, auto;
 	}
 }
 
@@ -110,7 +111,7 @@ statusbar normal // Standard Doom Status bar
 	}
 	drawselectedinventory alternateonempty, INDEXFONT, 143, 168
 	{
-		drawmugshot 5, 143, 168;
+		drawmugshot "STF", 5, 143, 168;
 	}
 }
 
@@ -119,7 +120,7 @@ statusbar inventory // Standard bar overlay (ZDoom Addition)
 	drawinventorybar Doom, 7, INDEXFONT, 50, 170;
 }
 
-statusbar inventoryfullscreen // ZDoom HUD overlay.
+statusbar inventoryfullscreen, fullscreenoffsets // ZDoom HUD overlay.
 {
-	drawinventorybar Doom, translucent, 7, INDEXFONT, 50, 170;
+	drawinventorybar Doom, translucent, 7, INDEXFONT, -106+center, -31;
 }

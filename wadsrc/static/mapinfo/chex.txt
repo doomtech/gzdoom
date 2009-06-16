@@ -1,5 +1,40 @@
 // MAPINFO for Chex Quest
 
+gameinfo
+{
+	titlepage = "TITLEPIC"
+	creditpage = "CREDIT", "HELP1"
+	titlemusic = "$MUSIC_INTRO"
+	titletime = 5
+	advisorytime = 0
+	pagetime = 5
+	chatsound = "misc/chat2"
+	finalemusic = "$MUSIC_VICTOR"
+	finaleflat = "FLOOR4_8"
+	finalepage = "HELP2", "VICTORY2", "ENDPIC"
+	infopage = "HELP1", "CREDIT"
+	quitsound = "menu/quit1"
+	borderflat = "FLOOR7_2"
+	border = DoomBorder
+	telefogheight = 0
+	defkickback = 100
+	skyflatname = "F_SKY1"
+	translator = "xlat/doom.txt"
+	defaultbloodcolor = "3f 7d 39"
+	defaultbloodparticlecolor = "5f af 57"
+	backpacktype = "ZorchPack"
+	statusbar = "sbarinfo/doom.txt"
+	intermissionmusic = "$MUSIC_INTER"
+	intermissioncounter = true
+	weaponslot = 1, "Bootspoon", "SuperBootspork"
+	weaponslot = 2, "MiniZorcher"
+	weaponslot = 3, "LargeZorcher", "SuperLargeZorcher"
+	weaponslot = 4, "RapidZorcher"
+	weaponslot = 5, "ZorchPropulsor"
+	weaponslot = 6, "PhasingZorcher"
+	weaponslot = 7, "LAZDevice"
+}
+
 skill baby
 {
 	AutoUseHealth
@@ -53,16 +88,20 @@ episode e1m1
 	key = "k"
 }
 
+defaultmap
+{
+	sucktime = 1
+}
+
 map E1M1 lookup "CHUSTR_E1M1"
 {
 	levelnum = 1
 	titlepatch = "WILV00"
 	next = "E1M2"
 	secretnext = "E1M9"
-	sky1 = "SKY1", 0
+	sky1 = "SKY1"
 	cluster = 1
 	par = 30
-	sucktime = 1
 	music = "$MUSIC_E1M1"
 }
 
@@ -72,10 +111,9 @@ map E1M2 lookup "CHUSTR_E1M2"
 	titlepatch = "WILV01"
 	next = "E1M3"
 	secretnext = "E1M9"
-	sky1 = "SKY1", 0
+	sky1 = "SKY1"
 	cluster = 1
 	par = 75
-	sucktime = 1
 	music = "$MUSIC_E1M2"
 }
 
@@ -85,10 +123,9 @@ map E1M3 lookup "CHUSTR_E1M3"
 	titlepatch = "WILV02"
 	next = "E1M4"
 	secretnext = "E1M9"
-	sky1 = "SKY1", 0
+	sky1 = "SKY1"
 	cluster = 1
 	par = 120
-	sucktime = 1
 	music = "$MUSIC_E1M3"
 }
 
@@ -98,10 +135,9 @@ map E1M4 lookup "CHUSTR_E1M4"
 	titlepatch = "WILV03"
 	next = "E1M5"
 	secretnext = "E1M9"
-	sky1 = "SKY1", 0
+	sky1 = "SKY1"
 	cluster = 1
 	par = 90
-	sucktime = 1
 	music = "$MUSIC_E1M4"
 }
 
@@ -111,12 +147,10 @@ map E1M5 lookup "CHUSTR_E1M5"
 	titlepatch = "WILV04"
 	next = "EndGame1"
 	secretnext = "E1M9"
-	sky1 = "SKY1", 0
+	sky1 = "SKY1"
 	cluster = 1
 	par = 165
-	sucktime = 1
 	music = "$MUSIC_E1M5"
-
 }
 
 // Clusters (correspond with same-numbered episode)

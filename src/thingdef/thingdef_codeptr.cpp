@@ -80,6 +80,7 @@ static FRandom pr_crailgun ("CustomRailgun");
 static FRandom pr_spawndebris ("SpawnDebris");
 static FRandom pr_spawnitemex ("SpawnItemEx");
 static FRandom pr_burst ("Burst");
+static FRandom pr_monsterrefire ("MonsterRefire");
 
 
 //==========================================================================
@@ -238,19 +239,48 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_BasicAttack)
 
 //==========================================================================
 //
-// Custom sound functions. These use misc1 and misc2 in the state structure
-// This has been changed to use the parameter array instead of using the
-// misc field directly so they can be used in weapon states
+// Custom sound functions. 
 //
 //==========================================================================
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_PlaySound)
 {
-	ACTION_PARAM_START(1);
+	ACTION_PARAM_START(5);
 	ACTION_PARAM_SOUND(soundid, 0);
+	ACTION_PARAM_INT(channel, 1);
+	ACTION_PARAM_FLOAT(volume, 2);
+	ACTION_PARAM_BOOL(looping, 3);
+	ACTION_PARAM_FLOAT(attenuation, 4);
 
-	S_Sound (self, CHAN_BODY, soundid, 1, ATTN_NORM);
+	if (!looping)
+	{
+		S_Sound (self, channel, soundid, volume, attenuation);
+	}
+	else
+	{
+		if (!S_IsActorPlayingSomething (self, channel&7, soundid))
+		{
+			S_Sound (self, channel | CHAN_LOOP, soundid, volume, attenuation);
+		}
+	}
 }
+
+DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_StopSound)
+{
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_INT(slot, 0);
+
+	S_StopSound(self, slot);
+}
+
+//==========================================================================
+//
+// These come from a time when DECORATE constants did not exist yet and
+// the sound interface was less flexible. As a result the parameters are
+// not optimal and these functions have been deprecated in favor of extending
+// A_PlaySound and A_StopSound.
+//
+//==========================================================================
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_PlayWeaponSound)
 {
@@ -258,11 +288,6 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_PlayWeaponSound)
 	ACTION_PARAM_SOUND(soundid, 0);
 
 	S_Sound (self, CHAN_WEAPON, soundid, 1, ATTN_NORM);
-}
-
-DEFINE_ACTION_FUNCTION(AActor, A_StopSound)
-{
-	S_StopSound(self, CHAN_VOICE);
 }
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_PlaySoundEx)
@@ -273,7 +298,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_PlaySoundEx)
 	ACTION_PARAM_BOOL(looping, 2);
 	ACTION_PARAM_INT(attenuation_raw, 3);
 
-	int attenuation;
+	float attenuation;
 	switch (attenuation_raw)
 	{
 		case -1: attenuation = ATTN_STATIC;	break; // drop off rapidly
@@ -498,6 +523,26 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfInventory)
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfInTargetInventory)
 {
 	DoJumpIfInventory(self->target, PUSH_PARAMINFO);
+}
+
+//==========================================================================
+//
+// State jump function
+//
+//==========================================================================
+DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfArmorType)
+{
+	ACTION_PARAM_START(3);
+	ACTION_PARAM_NAME(Type, 0);
+	ACTION_PARAM_STATE(JumpOffset, 1);
+	ACTION_PARAM_INT(amount, 2);
+
+	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
+
+	ABasicArmor * armor = (ABasicArmor *) self->FindInventory(NAME_BasicArmor);
+
+	if (armor && armor->ArmorType == Type && armor->Amount >= amount)
+		ACTION_JUMP(JumpOffset);
 }
 
 //==========================================================================
@@ -1272,6 +1317,8 @@ enum SIX_Flags
 	SIXF_TELEFRAG=64,
 	// 128 is used by Skulltag!
 	SIXF_TRANSFERAMBUSHFLAG=256,
+	SIXF_TRANSFERPITCH=512,
+	SIXF_TRANSFERPOINTERS=1024,
 };
 
 
@@ -1285,8 +1332,15 @@ static bool InitSpawnedItem(AActor *self, AActor *mo, int flags)
 		{
 			mo->Translation = self->Translation;
 		}
+		if (flags & SIXF_TRANSFERPOINTERS)
+		{
+			mo->target = self->target;
+			mo->master = self->master; // This will be overridden later if SIXF_SETMASTER is set
+			mo->tracer = self->tracer;
+		}
 
 		mo->angle=self->angle;
+		if (flags & SIXF_TRANSFERPITCH) mo->pitch = self->pitch;
 		while (originator && isMissile(originator)) originator = originator->target;
 
 		if (flags & SIXF_TELEFRAG) 
@@ -1317,7 +1371,7 @@ static bool InitSpawnedItem(AActor *self, AActor *mo, int flags)
 				{
 					// A player always spawns a monster friendly to him
 					mo->flags|=MF_FRIENDLY;
-					mo->FriendPlayer = originator->player-players+1;
+					mo->FriendPlayer = int(originator->player-players+1);
 
 					AActor * attacker=originator->player->attacker;
 					if (attacker)
@@ -1332,7 +1386,7 @@ static bool InitSpawnedItem(AActor *self, AActor *mo, int flags)
 				}
 			}
 		}
-		else 
+		else if (!(flags & SIXF_TRANSFERPOINTERS))
 		{
 			// If this is a missile or something else set the target to the originator
 			mo->target=originator? originator : self;
@@ -1652,14 +1706,15 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FadeIn)
 //===========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FadeOut)
 {
-	ACTION_PARAM_START(1);
+	ACTION_PARAM_START(2);
 	ACTION_PARAM_FIXED(reduce, 0);
-	
+	ACTION_PARAM_BOOL(remove, 1);
+
 	if (reduce == 0) reduce = FRACUNIT/10;
 
 	self->RenderStyle.Flags &= ~STYLEF_Alpha1;
 	self->alpha -= reduce;
-	if (self->alpha<=0) self->Destroy();
+	if (self->alpha<=0 && remove) self->Destroy();
 }
 
 //===========================================================================
@@ -1858,7 +1913,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CountdownArg)
 		}
 		else if (self->flags&MF_SHOOTABLE)
 		{
-			P_DamageMobj (self, NULL, NULL, self->health, NAME_None);
+			P_DamageMobj (self, NULL, NULL, self->health, NAME_None, DMG_FORCED);
 		}
 		else
 		{
@@ -1935,6 +1990,25 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CheckFloor)
 
 	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
 	if (self->z <= self->floorz)
+	{
+		ACTION_JUMP(jump);
+	}
+
+}
+
+//===========================================================================
+//
+// A_CheckCeiling
+// [GZ] Totally copied on A_CheckFloor, jumps if actor touches ceiling
+//
+//===========================================================================
+DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CheckCeiling)
+{
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_STATE(jump, 0);
+
+	ACTION_SET_RESULT(false);
+	if (self->z+self->height >= self->ceilingz) // Height needs to be counted
 	{
 		ACTION_JUMP(jump);
 	}
@@ -2120,6 +2194,62 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfTargetInLOS)
 	ACTION_JUMP(jump);
 }
 
+
+//==========================================================================
+//
+// A_JumpIfInTargetLOS (state label, optional fixed fov, optional bool
+// projectiletarget)
+//
+//==========================================================================
+
+DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfInTargetLOS)
+{
+	ACTION_PARAM_START(3);
+	ACTION_PARAM_STATE(jump, 0);
+	ACTION_PARAM_ANGLE(fov, 1);
+	ACTION_PARAM_BOOL(projtarg, 2);
+
+	angle_t an;
+	AActor *target;
+
+	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
+
+	if (self->flags & MF_MISSILE && projtarg)
+	{
+		if (self->flags2 & MF2_SEEKERMISSILE)
+			target = self->tracer;
+		else
+			target = NULL;
+	}
+	else
+	{
+		target = self->target;
+	}
+
+	if (!target) return; // [KS] Let's not call P_CheckSight unnecessarily in this case.
+
+	if (!P_CheckSight (target, self, 1))
+		return;
+
+	if (fov && (fov < ANGLE_MAX))
+	{
+		an = R_PointToAngle2 (self->x,
+							  self->y,
+							  target->x,
+							  target->y)
+			- self->angle;
+
+		if (an > (fov / 2) && an < (ANGLE_MAX - (fov / 2)))
+		{
+			return; // [KS] Outside of FOV - return
+		}
+
+	}
+
+	ACTION_JUMP(jump);
+}
+
+
 //===========================================================================
 //
 // A_DamageMaster (int amount)
@@ -2298,16 +2428,23 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ChangeFlag)
 	if (fd != NULL)
 	{
 		bool kill_before, kill_after;
+		INTBOOL item_before, item_after;
 
 		kill_before = self->CountsAsKill();
+		item_before = self->flags & MF_COUNTITEM;
+
 		if (fd->structoffset == -1)
 		{
 			HandleDeprecatedFlags(self, cls->ActorInfo, expression, fd->flagbit);
 		}
 		else
 		{
-			int *flagp = (int*) (((char*)self) + fd->structoffset);
+			DWORD *flagp = (DWORD*) (((char*)self) + fd->structoffset);
 
+			// If these 2 flags get changed we need to update the blockmap and sector links.
+			bool linkchange = flagp == &self->flags && (fd->flagbit == MF_NOBLOCKMAP || fd->flagbit == MF_NOSECTOR);
+
+			if (linkchange) self->UnlinkFromWorld();
 			if (expression)
 			{
 				*flagp |= fd->flagbit;
@@ -2316,8 +2453,10 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ChangeFlag)
 			{
 				*flagp &= ~fd->flagbit;
 			}
+			if (linkchange) self->LinkToWorld();
 		}
 		kill_after = self->CountsAsKill();
+		item_after = self->flags & MF_COUNTITEM;
 		// Was this monster previously worth a kill but no longer is?
 		// Or vice versa?
 		if (kill_before != kill_after)
@@ -2329,6 +2468,18 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ChangeFlag)
 			else
 			{ // It no longer counts as a kill.
 				level.total_monsters--;
+			}
+		}
+		// same for items
+		if (item_before != item_after)
+		{
+			if (item_after)
+			{ // It counts as an item now.
+				level.total_items++;
+			}
+			else
+			{ // It no longer counts as an item
+				level.total_items--;
 			}
 		}
 	}
@@ -2371,3 +2522,30 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_RemoveChildren)
       }
    }
 }
+
+//===========================================================================
+//
+// keep firing unless target got out of sight
+//
+//===========================================================================
+DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_MonsterRefire)
+{
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_INT(prob, 0);
+	ACTION_PARAM_STATE(jump, 1);
+
+	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
+	A_FaceTarget (self);
+
+	if (pr_monsterrefire() < prob)
+		return;
+
+	if (!self->target
+		|| P_HitFriend (self)
+		|| self->target->health <= 0
+		|| !P_CheckSight (self, self->target, 0) )
+	{
+		ACTION_JUMP(jump);
+	}
+}
+

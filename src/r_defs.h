@@ -91,6 +91,70 @@ class FBitmap;
 struct FCopyInfo;
 class DInterpolation;
 
+enum
+{
+	UDMF_Line,
+	UDMF_Side,
+	UDMF_Sector,
+	UDMF_Thing
+};
+
+
+struct FUDMFKey
+{
+	enum
+	{
+		UDMF_Int,
+		UDMF_Float,
+		UDMF_String
+	};
+
+	FName Key;
+	int Type;
+	int IntVal;
+	double FloatVal;
+	FString StringVal;
+
+	FUDMFKey()
+	{
+	}
+
+	FUDMFKey& operator =(int val)
+	{
+		Type = UDMF_Int;
+		IntVal = val;
+		FloatVal = val;
+		StringVal = "";
+		return *this;
+	}
+
+	FUDMFKey& operator =(double val)
+	{
+		Type = UDMF_Float;
+		IntVal = int(val);
+		FloatVal = val;
+		StringVal = "";
+		return *this;
+	}
+
+	FUDMFKey& operator =(const FString &val)
+	{
+		Type = UDMF_String;
+		IntVal = strtol(val, NULL, 0);
+		FloatVal = strtod(val, NULL);
+		StringVal = val;
+		return *this;
+	}
+
+};
+
+class FUDMFKeys : public TArray<FUDMFKey>
+{
+public:
+	void Sort();
+	FUDMFKey *Find(FName key);
+};
+
 //
 // The SECTORS record, at runtime.
 // Stores things/mobjs.
@@ -530,6 +594,11 @@ struct sector_t
 		planes[pos].TexZ += val;
 	}
 
+	sector_t *GetHeightSec() const 
+	{
+		return (MoreFlags & SECF_IGNOREHEIGHTSEC)? NULL : heightsec;
+	}
+
 
 	// Member variables
 	fixed_t		CenterFloor () const { return floorplane.ZatPoint (soundorg[0], soundorg[1]); }
@@ -652,10 +721,12 @@ class DBaseDecal;
 
 enum
 {
-	WALLF_ABSLIGHTING	= 1,	// Light is absolute instead of relative
-	WALLF_NOAUTODECALS	= 2,	// Do not attach impact decals to this wall
+	WALLF_ABSLIGHTING	 = 1,	// Light is absolute instead of relative
+	WALLF_NOAUTODECALS	 = 2,	// Do not attach impact decals to this wall
 	WALLF_NOFAKECONTRAST = 4,	// Don't do fake contrast for this wall in side_t::GetLightLevel
 	WALLF_SMOOTHLIGHTING = 8,   // Similar to autocontrast but applies to all angles.
+	WALLF_CLIP_MIDTEX	 = 16,	// Like the line counterpart, but only for this side.
+	WALLF_WRAP_MIDTEX	 = 32,	// Like the line counterpart, but only for this side.
 };
 
 struct side_t
@@ -670,6 +741,8 @@ struct side_t
 	{
 		fixed_t xoffset;
 		fixed_t yoffset;
+		fixed_t xscale;
+		fixed_t yscale;
 		FTextureID texture;
 		TObjPtr<DInterpolation> interpolation;
 		//int Light;
@@ -683,6 +756,7 @@ struct side_t
 	WORD		TexelLength;
 	SWORD		Light;
 	BYTE		Flags;
+	int			Index;		// needed to access custom UDMF fields which are stored in loading order.
 
 	int GetLightLevel (bool foggy, int baselight) const;
 
@@ -736,6 +810,41 @@ struct side_t
 	void AddTextureYOffset(int which, fixed_t delta)
 	{
 		textures[which].yoffset += delta;
+	}
+
+	void SetTextureXScale(int which, fixed_t scale)
+	{
+		textures[which].xscale = scale <= 0? FRACUNIT : scale;
+	}
+	void SetTextureXScale(fixed_t scale)
+	{
+		textures[top].xscale = textures[mid].xscale = textures[bottom].xscale = scale <= 0? FRACUNIT : scale;
+	}
+	fixed_t GetTextureXScale(int which) const
+	{
+		return textures[which].xscale;
+	}
+	void MultiplyTextureXScale(int which, fixed_t delta)
+	{
+		textures[which].xscale = FixedMul(textures[which].xscale, delta);
+	}
+
+
+	void SetTextureYScale(int which, fixed_t scale)
+	{
+		textures[which].yscale = scale <= 0? FRACUNIT : scale;
+	}
+	void SetTextureYScale(fixed_t scale)
+	{
+		textures[top].yscale = textures[mid].yscale = textures[bottom].yscale = scale <= 0? FRACUNIT : scale;
+	}
+	fixed_t GetTextureYScale(int which) const
+	{
+		return textures[which].yscale;
+	}
+	void MultiplyTextureYScale(int which, fixed_t delta)
+	{
+		textures[which].yscale = FixedMul(textures[which].yscale, delta);
 	}
 
 	DInterpolation *SetInterpolation(int position);

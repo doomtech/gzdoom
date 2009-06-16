@@ -1,4 +1,565 @@
-﻿March 15, 2009  (Changes by Graf Zahl)
+﻿June 14, 2009  (Changes by Graf Zahl)
+- added a compatibility option to restore the original Heretic bug where
+  a Minotaur couldn't spawn floor flames when standing in water having its
+  feet clipped.
+- added vid_vsync to display options.
+- fixed: Animations of type 'Range' must be disabled if the textures don't
+  come from the same definition unit (i.e both containing file and use type
+  are identical.)
+- changed: Item pushing is now only done once per P_XYMovement call.
+- Increased the push factor of Heretic's pod to 0.5 so that its behavior
+  more closely matches the original which depended on several bugs in the engine.
+- Removed damage thrust clamping in P_DamageMobj and changed the thrust calculation
+  to use floats to prevent overflows. The prevention of the overflows was the
+  only reason the clamping was done.
+- Added Raven's dagger-like vector sprite for the player to the automap code.
+
+June 10, 2009
+- Changed wad namespacing so that wads with a missing end marker will be
+  loaded as if they had one more lump with that end marker. This matches the
+  behaviour of previously released ZDooms. (The warning is still present, so
+  there's no excuse to release more wads like this.)
+- Moved Raw Input processing into a seperate method of FInputDevice so that
+  all the devices can share the same setup code.
+
+June 9, 2009
+- Removed F16 mapping for SDL, because I guess it's not present in SDL 1.2.
+
+June 9, 2009  (Changes by Graf Zahl)
+- Added Gez's Skulltag feature patch, including:
+    * BUMPSPECIAL flag: actors with this flag will run their special if collided on by a player
+    * WEAPON.NOAUTOAIM flag, though it is restricted to attacks that spawn a missile (it will 
+	  not affect autoaim settings for a hitscan or railgun, and that's deliberate)
+    * A_FireSTGrenade codepointer, extended to be parameterizable
+    * The grenade (as the default actor for A_FireSTGrenade)
+    * Protective armors à la RedArmor: they work with a DamageFactor; for example to 
+	  recreate the RedArmor from Skulltag, copy its code from skulltag.pk3 but remove 
+	  the "native" keyword and add DamageFactor "Fire" 0.1 to its properties.
+- Fixed: I_ShutdownInput must NULL all pointers because it can be called twice
+  if an ENDOOM screen is displayed.
+- Fixed: R_DrawSkyStriped used frontyScale without initializing it first.
+- Fixed: P_LineAttack may not check the puff actor for MF6_FORCEPAIN because
+  it's not necessarily spawned yet. 
+- Fixed: FWeaponSlots::PickNext/PrevWeapon must be limited to one iteration
+  through the weapon slots. Otherwise they will hang if there's no weapons
+  in a player's inventory.
+- Added Line_SetTextureScale.
+- Fixed: sv_smartaim 3 treated the player like a shootable decoration.
+- Added A_CheckIfInTargetLOS
+- Removed redundant A_CheckIfTargetInSight.
+	
+June 8, 2009
+- Fixed: The initial play of a GME song always started track 0.
+- Fixed: The RAWINPUT buffer that GetRawInputData() fills in is 40 bytes on
+  Win32 but 48 bytes on Win64, so Raw Mouse on x64 builds was getting random
+  data off the stack because I also interpreted the error return incorrectly.
+
+June 7, 2009  (Changes by Graf Zahl)
+- added parameter to A_FadeOut so that removing the actor can be made an option.
+- added PERSISTENTPOWER and TRANSFERPOINTERS submissions by Gez.
+- fixed FORCEPAIN logic.
+- added Gez's infinite ammo powerup and random spawner fix patches.
+- reduced size of Hexen's flames to fix bug in Deathkings MAP01.
+- added checks for sidedef scaling values 
+- Added Karate Chris's poison cloud fix.
+
+June 6, 2009
+- Added per-tier texture scaling with these new UDMF sidedef properties:
+  * scalex_top
+  * scaley_top
+  * scalex_mid
+  * scaley_mid
+  * scalex_bottom
+  * scalex_bottom
+- Added sidedef versions of the linedef flags wrapmidtex and clipmidtex (via
+  UDMF; names are the same). If the flag is set on the line, it applies to
+  both sides. Otherwise, each side can control them individually.
+
+June 6, 2009  (Changes by Graf Zahl)
+- Added Hirogen2's unlimited pickup patch.
+- Added railgun performance customization CVARs by Spleen.
+- Added aspect ratio override submission by SoulPriestess.
+- Added a 'resetinventory' MAPINFO option.
+- Added MF6_NOFEAR flag.
+- Added A_MonsterRefire(probability, jumptarget).
+- Added A_JumpIfTargetInSight(state) action function.
+- Changed: Puffs set their angle to face the originator of the attack.
+- Strife's burning hands originally make the level view fullbright.
+  changed in ZDoom to do partial brightening.
+
+June 5, 2009
+- Added support for horizontal mouse wheels, and set invprev/invnext as
+  default bindings for it. This is Vista only. DirectInput mouse (in_mouse 2)
+  does not support it, because the DirectInput mouse device does not expose
+  this control.
+- Added a label for the F16 key and mapped the kp= key on a Mac keyboard to
+  the PC98 equivalent so it will be identified as kp=. (Interestingly, F13-
+  F16 and kp= only generate events when using Raw Input, not when using
+  DirectInput.
+
+June 5, 2009  (Changes by Graf Zahl)
+- Added MF6_FORCEPAIN flag that forces the target to go into the pain state
+  regardless of pain chance.
+- Changed screenblocks CVAR to be settable per game.
+- Added SpawnSpotForced and SpawnSpotFacingForced ACS functions.
+- Added pushfactor actor property.
+- Added Gez's GetArmorType submission
+
+June 2, 2009
+- Swapped snes_spc out for the full Game Music Emu library.
+
+June 2, 2009  (Changes by Graf Zahl)
+- Fixed: The Hexen status bar still uses MAX_MANA for some calculations instead
+  of MaxAmount.
+
+June 1, 2009  (Changes by Graf Zahl)
+- Added Blzut3's submission for displaying underwater stats in SBARINFO.
+
+May 31, 2009  (Changes by Graf Zahl)
+- Added Gez's AMMO_CHECKBOTH submission.
+- Added Gez's THRUSPECIES submission.
+- Added loading directories into the lump directory.
+- fixed: The Dehacked parser could not parse flag values with the highest bit
+  set because it used atoi to convert the string into a number.
+- fixed: bouncing sounds were limited to inventory items.
+
+May 30, 2009  (Changes by Graf Zahl)
+- Rewrote IWAD detection code to use the ResourceFile classes instead of
+  reading the WAD directory directly. As a side effect it should now be
+  possible to use Zip and 7z for IWADs, too.
+- Added 'EndTitle' nextmap option which goes to the regular title loop after
+  the game has finished.
+- Added NOBOSSRIP flag. Note: we are now at flags6!
+- Added SetSkyScrollSpeed(int skyplane, fixed speed) ACS function.
+- Added THRUACTORS flag that disables all actor<->actor collision detection.
+- Added DONTSEEKINVISIBLE flag for missiles that can't home in on invisible
+  targets.
+- Added SFX_TRANSFERPITCH flag to A_SpawnItemEx.
+- Added Ultimate Freedoom IWAD detection.
+- Added GetAirSupply and SetAirSupply functions to ACS.
+- Fixed: The *surface sound was not played when drowning was switched off
+  by setting the level's air supply to 0.
+
+May 27, 2009
+- Fixed: The mouse wheel generated no events in GUI mode if you weren't
+  fullscreen. (e.g. You could no longer scroll the console with the mouse
+  buffer.)
+- Fixed: Wheeling down was seen as wheeling up with the Win32 mouse.
+- EV_GUI_Key(Down|Up|Repeat) events no longer provide shifted key codes
+  in data2. This was just unnecessary overhead that wasn't really needed
+  anywhere.
+- Moved GUI-mode input into a separate function to make the code easier to
+  read.
+- Removed HaveFocus variable in preference of using GetForegroundWindow().
+- Added Raw Input keyboard handling.
+
+May 26, 2009
+- Split DirectInput keyboard handling into a separate file and class. I also
+  switched it to buffered input, and the pause key seems to be properly
+  cooked, so I don't need to look for it with WM_KEYDOWN/UP. Tab doesn't
+  need to be special-cased either, because buffered input never passes on
+  the Tab key when you press Alt+Tab. I have no idea why I special-cased
+  Num Lock, but it seems to be working fine. By setting the exclusive mode
+  to background, I can also avoid special code for releasing all keys when
+  the window loses focus, because I'll still receive those events while the
+  window is in the background.
+- Fixed: The Heretic "take weapons" cheat did not remove all the weapons at
+  once. This is because destroying one weapon has a potential to destroy a
+  sister weapon as well. If the sister weapon is the next one in line (as it
+  typically is), it would process that one, not realizing it was no longer
+  part of the inventory, and stop because its Inventory link was NULL.
+
+May 25, 2009
+- Recoverable errors that are caught during the demo loop no longer shut off
+  the menu.
+- Specifying non-existent directories with -savedir or the save_dir cvar now
+  attempts to create them.
+- I_CheckNativeMouse() now checks the foreground window to determine if the
+  mouse should be grabbed. This fixes the case where you start the game in
+  the background and it grabs the mouse anyway.
+- Changed raw mouse grabbing to call ShowCursor() directly instead of through
+  SetCursorState(), since changing the pointer isn't working with it
+  (probably due to the lack of legacy mouse messages), and the others work
+  fine by setting an invisible cursor.
+- Fixed: Raw mouse input passes wheel movements in an unsigned field, but the
+  value is signed, so it requires a cast to use it.
+
+May 23, 2009
+- SetCursorState() now calls ShowCursor() again, because capturing the mouse
+  with RIDEV_NOLEGACY apparently prevents SetCursor() from doing anything.
+- Split mouse code off from i_input.cpp into i_mouse.cpp and added raw mouse
+  handling. (WM_INPUT obsoleted most of DirectInput for XP.)
+- Fixed: Similar to the Win32 mouse, using the DirectInput mouse in windowed
+  mode, if you alt-tabbed away and then clicked on the window's title bar,
+  mouse input would be frozen until the mouse was ungrabbed again.
+
+May 23, 2009  (Changes by Graf Zahl)
+- Fixed: Textures with dimensions <= 0 are invalid and should be treated as NULL 
+  textures. They also must be set to dimensions other than (0,0) to avoid division
+  by zero errors.
+- Fixed: Random spawners did not handle the MF_DROPPED flag.
+- Fixed: When setting up a deep water sector with Transfer_Heights the floorclip
+  information of all actors in the sector needs to be updated.
+
+May 22, 2009  (Changes by Graf Zahl)
+- Fixed: A_CountdownArg and A_Die must ensure a certain kill.
+
+May 22, 2009
+- Moved SetSoundPaused() out of i_input.cpp and into s_sound.cpp.
+- Fixed: When using Win32 mouse, windowed mode, alt-tabbing away and then
+  clicking on the window's title bar moved it practically off the screen.
+- Beginnings of i_input.cpp rewrite: Win32 and DirectInput mouse handling has
+  been moved into classes.
+
+May 21, 2009  (Changes by Graf Zahl)
+- Changed bounce flags into a property and added real bouncing sound properties.
+  Compatibility modes to preserve use of the SeeSound are present and the old
+  flags map to these.
+
+May 20, 2009  (Changes by Graf Zahl)
+- Fixed: The SBARINFO parser compared an FString in the GAMEINFO with a NULL
+  pointer and tried to load a lump with an empty name as statusbar script
+  for non-Doom games.
+
+May 19, 2009
+- Fixed: SetSoundPaused() still needs to call S_PauseSound() to pause music
+  that isn't piped through the digital sound system. (Was removed in r1004.)
+
+May 16, 2009
+- Added input buffering to the Implode and Shrink routines for a marked
+  speedup.
+- Replaced the Shanno-Fano/Huffman reading routines from FZipExploder with
+  ones of my own devising, based solely on the specs in the APPNOTE.
+
+May 15, 2009
+- Found a copy of PKZIP 1.1 and verified that Implode support works with
+  files that use a literal table and 8k dictionary, and that the just-added
+  Shrink support works at all.
+- Replaced the bit-at-a-time Shannon-Fano decoder from GunZip.c64 with the
+  word-at-a-time one from 7-Zip for a slight speedup when working with
+  Imploded files.
+
+May 15, 2009  (Changes by Graf Zahl)
+- Fixed: Monsters should not check the inventory for damage absorbtion when
+  they have the MF5_NODAMAGE flag set.
+- Added patch for saving automap zoom.
+- Added ACS GetChar function.
+- Added Gez's submission for polyobjects being able to crush corpses but made
+  it an explicit MAPINFO option only.
+- Changed APlayerPawn::DamageFade to a PalEntry from 3 floats.
+- Removed #pragma warnings from cmdlib.h and fixed the places where they were 
+  still triggered.
+  These #pragmas were responsible for >90% of the GCC warnings that were not
+  listed in VC++.
+- Fixed one bug in the process: DSeqNode::m_Atten was never adjusted when the
+  parameter handling of the sound functions for attenuation was changed.
+  Changed m_Atten to a float and fixed the SNDSEQ parser to set proper values. 
+  Also added the option to specify attenuation with direct values in addition 
+  to the predefined names.
+
+May 14, 2009  (Changes by Graf Zahl)
+- fixed a few Heretic actors:
+  * The pod generator's attacksound was wrong
+  * The teleglitter generators need different flags if they are supposed to work 
+    with z-aware spawning of the glitter.
+  * The knight's axes need the THRUGHOST flag.
+
+May 14, 2009
+- Fixed non-POD passing in G_BuildSaveName() and other things GCC warned
+  about.
+- Added support for imploded zips.
+
+May 11, 2009  (Changes by Graf Zahl)
+- Fixed: Some missile spawning functions ignored the FastSpeed setting.
+- Fixed: P_CheckSwitchRange tried to access a line's backsector without
+  checking if it is valid.
+- Fixed: Fast projectile could not be frozen by the Time freezer.
+- Added several new ACS functions: GetActorMomX/Y/Z, GetActorViewHeight,
+  SetActivator, SetActivatorToTarget.
+
+May 11, 2009
+- Added Species property for actors and separated Hexen's Demon1 and Demon2
+  into different species.
+
+May 10, 2009  (Changes by Graf Zahl)
+- Added handling for UDMF user keys.
+- Added support for ACS functions that can be defined without recompiling ACC.
+- Fixed: The short lump name for embedded files must be cleared so that they
+  are not found by a normal lump search.
+
+May 9, 2009  (Changes by Graf Zahl)
+- Added AProp_Notarget actor property.
+- Fixed: TraceBleed was missing a NULL pointer check,
+- Fixed: P_RandomChaseDir could crash for friendly monsters that belong to
+  a player which left the game.
+- Changed A_PodGrow so that it plays the generator's attack sound instead of
+  "misc/podgrow".
+
+May 8, 2009
+- Added transference of a select few flags from PowerProtection to its owner.
+- Added actor type parameters to A_PodPain() and A_MakePod().
+- The savegame path is now passed through NicePath(), since it's user-
+  specifiable.
+- Added save_dir cvar. When non-empty, it controls where savegames go.
+- SBARINFO update:
+  * Added the ability to center things with fullscreenoffsets enabled.  Due
+    to some limitations the syntax is [-]<integer> [+ center].
+  * Fixed: the translucent flag on drawinventorybar didn't work quite right.
+  * Fixed: Extremely minor inaccuracy in the Doom SBarInfo code.  The
+    fullscreen inventory bar wasn't scaled correctly.
+
+May 3, 2009  (Changes by Graf Zahl)
+- fixed: The CHECKSWITCHRANGE line flag was ignored for one sided lines.
+- Added more compatibility settings, submitted by Gez.
+
+May 2, 2009  (Changes by Graf Zahl)
+- Fixed: Doom's fullscreen HUD was limited to 6 keys.
+- Made 'next endgame' work again for cases where it is supposed to be
+  the same as 'next endgame4'.
+- GCC nitpick fix: Classes being used as template parameters may not be
+  defined locally in a function. Fixed FWadFile::SetNamespace for that.
+- Improved error reporting for incorrect textures in maps.
+- Fixed: When music was stopped this was not set in the global music state.
+- Fixed: Friendly monsters did not target enemy players in deathmatch.
+
+April 30, 2009  (Changes by Graf Zahl)
+- Fixed: Completely empty patches (8 0-bytes) could not be handled by the
+  texture manager. They now get assigned a new FEmptyTexture object
+  that is just a 1x1 pixel transparent texture.
+- Fixed: Multiple namespace markers of the same type were no longer detected.
+- Fixed sprite renaming.
+
+April 29, 2009
+- Maps defined with Hexen-style MAPINFOs now run their scripts in the proper
+  order.
+- Fixed: FWadCollection::CheckNumForName() read the lump each iteration before
+  checking for the end marker. On 32-bit systems, this is -1, but on 64-bit
+  systems, it is a very large integer that is highly unlikely to be in mapped
+  memory.
+
+April 28, 2009  (Changes by Graf Zahl)
+- Added ML_BLOCKUSE line flag, accessible through UDMF and Line_SetBlocking.
+
+April 25, 2009  (Changes by Graf Zahl)
+- Fixed handling of embedded WADs.
+
+April 23, 2009  (Changes by Graf Zahl)
+- Added Gez's A_CheckCeiling submission.
+- Fixed: AM_NewResolution crashed when called from outside a level.
+- Added support for Quake PAK files.
+- Improved warning messages for WAD files with incorrect marker usage.
+- complete restructuring of resource file handling for more flexibility and future
+  extensions.
+- Removed merging of special namespaces. For the texture manager this has
+  become totally useless so there is no need to do this anymore. Not merging
+  the namespaces also allows a much more reliable detection of lumps belonging
+  to special namespaces so the ScanForFlatHack function is no longer needed.
+  Instead, any lump up to F_END with a length of 4096 will be marked for 
+  inclusion as a flat texture if no F_START marker is found.
+
+April 21, 2009  (Changes by Graf Zahl)
+- fixed MustConfirm parsing in MAPINFO
+
+April 19, 2009  (Changes by Graf Zahl)
+- Made the counting of intermission stats in Doom a GAMEINFO option so that
+  it can be activated in all games.
+
+April 17, 2009
+- Gave the intermission screen sounds their own SNDINFO entries.
+
+April 16, 2009
+- Removed obsolete snd_surround cvar.
+
+April 15, 2009
+- Changing screen resolution now adjusts the automap scale to be constant
+  relative to screen resolution.
+- Fixed: When FMultiPatchTexture::MakeTexture() needed to work in RGB
+  colorspace, it didn't zero out the temporary buffer.
+- Fixed memory leak from leftover code for 7z loading and added the
+  LUMPF_ZIPFILE flag to their contents so they have the same semantics
+  as zips.
+
+April 14, 2009
+- Added support for 7z archives.
+
+April 13, 2009  (Changes by Graf Zahl)
+- Added -noautoload option.
+- Added default Raven automap colors set. Needs to be tested because I can't
+  compare against the DOS version myself.
+- Extened A_PlaySound and A_StopSound to be able to set all parameters of the
+  internal sound code.
+
+April 13, 2009
+- Changed gravity doubling so that it only happens when you run off a ledge.
+
+April 10, 2009
+- Fixed: World panning was ignored for the X offset of masked midtextures.
+
+April 10, 2009  (Changes by Graf Zahl)
+- Extended MF5_MOVEWITHSECTOR so that it always keeps the actor on the ground
+  of a moving floor, regardless of movement speed. For NOBLOCKMAP items this
+  is necessary because otherwise they can be left in the air and it also adds 
+  some options for other things.
+
+April 9, 2009
+- Changed A_FreezeDeathChunks() so that instead of directly destroying an
+  actor, it sets it to the "Null" state, which will make it invisible and
+  destroy it one tic later.
+- Added a NULL pointer check to A_Fire() and copied the target to a local
+  variable inside A_VileAttack() so that if P_DamageMobj() destroys the
+  target, the function will still have a valid pointer to it (since reading
+  it from the actor's instance data invokes the read barrier, which would
+  return NULL).
+
+April 9, 2009  (Changes by Graf Zahl)
+- Added NOBLOCKMAP/MOVEWITHSECTOR combination to a few items that had their
+  NOBLOCKMAP flag taken away previously to make them move with a sector.
+  This should fix the performance problem Claustrophobia had with recent
+  ZDoom versions.
+
+April 8, 2009
+- Added MF5_MOVEWITHSECTOR flag, so you can have the benefits of MF_NOBLOCKMAP
+  but still have actors that will move up and down with the floor. IceChunk
+  now uses both of these flags.
+- Performance optimization for FBlockThingsIterator::Next(): Actors that
+  exist in only one block don't need to be added to the CheckArray or
+  scanned for in it. Also changed the array used to keep track of visited
+  actors into a hash table.
+
+April 7, 2009  (Changes by Graf Zahl)
+- added some default definitions for constants that may miss in some headers.
+- replaced __va_copy with va_copy per Chris's suggestion.
+- replaced #include <malloc.h> with #include <stdlib.h> where possible.
+
+April 6, 2009  (Changes by Graf Zahl)
+- Fixed: The UDMF textmap readbuffer was never freed.
+
+April 4, 2009
+- Fixed: GetPlayerInput() died if you tried to get the input of the activator
+  and the activator was the world.
+
+April 4, 2009  (Changes by Graf Zahl)
+- fixed: Any player class inheriting directly from PlayerPawn was left with
+  empty weapon slots due to the recent rewrite of the weapon slot assignment
+  code. To handle such classes each game now defines a default weapon slot
+  setting in its gameinfo. This will be used when a player class without any
+  weapon slot settings is used.
+- added 'damage' to the actor variables exported to DECORATE's expression
+  evaluator.
+- fixed: solid corpses could block ripper missile that originally killed them.
+
+April 2, 2009
+- Fixed: Doom's status bar was lacking its default face.
+- Fixed: Custom skin face graphics were not added to the texture manager.
+- Fixed: UseHealthItems() gave you health equal to the number of items in
+  the stack of health items, rather than the item's proper amount.
+
+April 1, 2008
+- Fixed: SBARINFO's "usessecondaryammo" considered a weapon to not use
+  secondaryammo if ammo2's type was the same as ammo1's, but only if you
+  didn't use the "not" keyword with it.
+
+March 29, 2009  (Changes by Graf Zahl)
+- Fixed: Altering a link type with Sector_SetLink did not work.
+- Fixed: player.crouchsprite had no proper means of unsetting the crouch
+  sprite which is needed by the ChexPlayer.
+- Fixed: A_ChangeFlags must unlink the actor from the world before changing
+  the NOBLOCKMAP and NOSECTOR flags.
+
+March 28, 2009  (Changes by Graf Zahl)
+- Fixed: Dehacked string replacement did not check the clusters' finaleflats.
+- Changed the definition of several typedef'd structs so that they are
+  properly named.
+- Limited DEHSUPP lump lookup to search zdoom.pk3 only. It will no longer
+  be possible to load DEHSUPP lumps from user WADs.
+- Brought back the text-based DEHSUPP parser and changed it to be able to 
+  reference states by label. Also changed label names of 
+  DoomUnusedStates and added proper labels to all states that were
+  previously forced to be the first state of an actor so that the old
+  (limited) method could access them. This was done to address the following
+  bug:
+- Fixed: The player's death states calling A_PlayerSkinCheck should not be
+  part of the state set that is accessible by Dehacked. These will produce
+  error messages when mapped to non-players.
+
+March 27, 2009  (Changes by Graf Zahl)
+- Fixed: Reading the RNG states from a savegame calculated the amounts of
+  RNGs in the savegame wrong.
+
+March 26, 2009
+- Changed random seed initialization so that it uses the system's
+  cryptographically secure random number generator, if available, instead
+  of the current time.
+- Changed the random number generator from Lee Killough's algorithm to the
+  SFMT607 variant of the Mersenne Twister.
+  <http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/index.html>
+
+March 25, 2009
+- Made fmodex.dll delay-loaded so the game should be runnable on Windows 95
+  again, though without sound.
+- Changed gameinfo_t and gameborder_t to be named structs instead of
+  typedef'ed anonymous structs.
+- Fixed: P_AutoUseHealth() used autousemodes 0 and 1 instead of 1 and 2.
+- Fixed: SBARINFO did not recognize 5:4 aspect ratio.
+- Fixed: screenshot_dir was ignored.
+
+March 25, 2009  (Changes by Graf Zahl)
+- Removed some obsolete code from G_InitLevelLocals that was causing problems
+  with maps that have no name.
+- Fixed: The inner loop in AWeaponSlot::PickWeapon could endlessly loop when
+  the counter variable became negative.
+- Fixed: Implicitly defined clusters were not initialized when being created.
+
+March 24, 2009  (Changes by Graf Zahl)
+- Fixed: Item tossing did not work anymore.
+
+March 23, 2009  (Changes by Graf Zahl)
+- Changed: Making the gameinfo customizable by MAPINFO requires different
+  checks for map specific border flats.
+
+March 22, 2009  (Changes by Graf Zahl)
+- removed gamemission variable because it wasn't used anywhere.
+- removed gamemode variable. All it was used for were some checks that
+  really should depend on GI_MAPxx.
+- Externalized all internal gameinfo definitions.
+- added include to MAPINFO parser.
+- split IWAD detection code off from d_main.cpp into its own file.
+- disabled gamemission based switch filtering because it is not useful.
+- added GAMEINFO submission by Blzut3 with significant modifications. There
+  is no GAMEINFO lump. Instead all information is placed in MAPINFO, except
+  the data that is needed to decide which WADs to autoload.
+
+March 19, 2009
+- Added the current value of the string buffer to the state saved when
+  making a function call in ACS. Now you can print inside functions and
+  also return values from them for the caller to plug directly into
+  another string without having to save it to a temporary variable.
+- Added an OutputVolume() call after the MusicVolumeChanged() call in
+  MIDIStreamer::Play(). Since the state isn't playing yet when
+  MusicVolumeChanged() is called, it doesn't do this itself.
+- Fixed: P_RailAttack() passed the wrong angle variable to P_TraceBleed().
+
+March 18, 2009  (Changes by Graf Zahl)
+- Fixed: S_StopSound may not assume that after stopping a sound channel
+  its link to the next item in the list is still valid.
+- Fixed typo in src/CMakeLists.txt.
+- Fixed: Armor only worked for players.
+- Fixed: P_FindFloorCeiling may not call P_PointInSector if called from
+  P_SpawnMapThing. It must use the values the actor has been initialized to
+  by LinkToWorldForMapThing.
+
+March 17, 2009
+- Added the -norun parameter to quit the game just before video
+  initialization. To be used to check for errors in scripts without actually
+  running the game.
+- Added the -stdout parameter to the Windows version to send all output to
+  a console, like the Linux version has done all along.
+
+March 16, 2009
+- Added support for loading ZGL2 nodes. (Only useful with UDMF and maps with
+  more than 65534 lines.)
+
+March 15, 2009  (Changes by Graf Zahl)
 - Fixed: AWeapon::PickupForAmmo accessed ammo type 1 when checking ammo type2.
 
 March 14, 2009

@@ -59,6 +59,7 @@
 #include "d_event.h"
 #include "colormatcher.h"
 #include "v_palette.h"
+#include "p_enemy.h"
 #include "gl/gl_functions.h"
 
 // MACROS ------------------------------------------------------------------
@@ -233,6 +234,7 @@ void AActor::Serialize (FArchive &arc)
 		<< flags3
 		<< flags4
 		<< flags5
+		<< flags6
 		<< special1
 		<< special2
 		<< health
@@ -268,6 +270,8 @@ void AActor::Serialize (FArchive &arc)
 		<< DeathSound
 		<< ActiveSound
 		<< UseSound
+		<< BounceSound
+		<< WallBounceSound
 		<< Speed
 		<< FloatSpeed
 		<< Mass
@@ -278,6 +282,7 @@ void AActor::Serialize (FArchive &arc)
 		<< MissileState
 		<< MaxDropOffHeight 
 		<< MaxStepHeight
+		<< bouncetype
 		<< bouncefactor
 		<< wallbouncefactor
 		<< bouncecount
@@ -290,7 +295,9 @@ void AActor::Serialize (FArchive &arc)
 		<< master
 		<< smokecounter
 		<< BlockingMobj
-		<< BlockingLine;
+		<< BlockingLine
+		<< pushfactor
+		<< Species;
 
 	if (arc.IsStoring ())
 	{
@@ -967,6 +974,115 @@ void AActor::Touch (AActor *toucher)
 
 //============================================================================
 //
+// AActor :: Grind
+//
+// Handles the an actor being crushed by a door, crusher or polyobject.
+// Originally part of P_DoCrunch(), it has been made into its own actor
+// function so that it could be called from a polyobject without hassle.
+// Bool items is true if it should destroy() dropped items, false otherwise.
+//============================================================================
+
+bool AActor::Grind(bool items)
+{
+	// crunch bodies to giblets
+	if ((this->flags & MF_CORPSE) &&
+		!(this->flags3 & MF3_DONTGIB) &&
+		(this->health <= 0))
+	{
+		FState * state = this->FindState(NAME_Crush);
+		if (state != NULL && !(this->flags & MF_ICECORPSE))
+		{
+			if (this->flags4 & MF4_BOSSDEATH) 
+			{
+				CALL_ACTION(A_BossDeath, this);
+			}
+			this->flags &= ~MF_SOLID;
+			this->flags3 |= MF3_DONTGIB;
+			this->height = this->radius = 0;
+			this->SetState (state);
+			return false;
+		}
+		if (!(this->flags & MF_NOBLOOD))
+		{
+			if (this->flags4 & MF4_BOSSDEATH) 
+			{
+				CALL_ACTION(A_BossDeath, this);
+			}
+
+			const PClass *i = PClass::FindClass("RealGibs");
+
+			if (i != NULL)
+			{
+				i = i->ActorInfo->GetReplacement()->Class;
+
+				const AActor *defaults = GetDefaultByType (i);
+				if (defaults->SpawnState == NULL ||
+					sprites[defaults->SpawnState->sprite].numframes == 0)
+				{ 
+					i = NULL;
+				}
+			}
+			if (i == NULL)
+			{
+				// if there's no gib sprite don't crunch it.
+				this->flags &= ~MF_SOLID;
+				this->flags3 |= MF3_DONTGIB;
+				this->height = this->radius = 0;
+				return false;
+			}
+
+			AActor *gib = Spawn (i, this->x, this->y, this->z, ALLOW_REPLACE);
+			if (gib != NULL)
+			{
+				gib->RenderStyle = this->RenderStyle;
+				gib->alpha = this->alpha;
+				gib->height = 0;
+				gib->radius = 0;
+			}
+			S_Sound (this, CHAN_BODY, "misc/fallingsplat", 1, ATTN_IDLE);
+
+			PalEntry bloodcolor = (PalEntry)this->GetClass()->Meta.GetMetaInt(AMETA_BloodColor);
+			if (bloodcolor!=0) gib->Translation = TRANSLATION(TRANSLATION_Blood, bloodcolor.a);
+		}
+		if (this->flags & MF_ICECORPSE)
+		{
+			this->tics = 1;
+			this->momx = this->momy = this->momz = 0;
+		}
+		else if (this->player)
+		{
+			this->flags |= MF_NOCLIP;
+			this->flags3 |= MF3_DONTGIB;
+			this->renderflags |= RF_INVISIBLE;
+		}
+		else
+		{
+			this->Destroy ();
+		}
+		return false;		// keep checking
+	}
+
+	// crunch dropped items
+	if (this->flags & MF_DROPPED)
+	{
+		if (items) this->Destroy (); // Only destroy dropped items if wanted
+		return false;		// keep checking
+	}
+
+	if (!(this->flags & MF_SOLID) || (this->flags & MF_NOCLIP))
+	{
+		return false;
+	}
+
+	if (!(this->flags & MF_SHOOTABLE))
+	{
+		return false;		// assume it is bloody gibs or something
+	}
+	return true;
+}
+
+//============================================================================
+//
 // AActor :: Massacre
 //
 // Called by the massacre cheat to kill monsters. Returns true if the monster
@@ -1141,6 +1257,31 @@ void P_ExplodeMissile (AActor *mo, line_t *line, AActor *target)
 	}
 }
 
+
+void AActor::PlayBounceSound(bool onfloor)
+{
+	if (!onfloor && (flags3 & MF3_NOWALLBOUNCESND))
+	{
+		return;
+	}
+
+	if (!(flags4 & MF4_NOBOUNCESOUND))
+	{
+		if (bouncetype & BOUNCE_UseSeeSound)
+		{
+			S_Sound (this, CHAN_VOICE, SeeSound, 1, ATTN_IDLE);
+		}
+		else if (onfloor || WallBounceSound <= 0)
+		{
+			S_Sound (this, CHAN_VOICE, BounceSound, 1, ATTN_IDLE);
+		}
+		else
+		{
+			S_Sound (this, CHAN_VOICE, WallBounceSound, 1, ATTN_IDLE);
+		}
+	}
+}
+
 //----------------------------------------------------------------------------
 //
 // PROC P_FloorBounceMissile
@@ -1173,8 +1314,10 @@ bool AActor::FloorBounceMissile (secplane_t &plane)
 	}
 
 	fixed_t dot = TMulScale16 (momx, plane.a, momy, plane.b, momz, plane.c);
+	int bt = bouncetype & BOUNCE_TypeMask;
 
-	if ((flags2 & MF2_BOUNCETYPE) == MF2_HERETICBOUNCE)
+
+	if (bt == BOUNCE_Heretic)
 	{
 		momx -= MulScale15 (plane.a, dot);
 		momy -= MulScale15 (plane.b, dot);
@@ -1193,16 +1336,12 @@ bool AActor::FloorBounceMissile (secplane_t &plane)
 	momz = MulScale30 (momz - MulScale15 (plane.c, dot), bouncescale);
 	angle = R_PointToAngle2 (0, 0, momx, momy);
 
-	if (SeeSound && !(flags4 & MF4_NOBOUNCESOUND))
-	{
-		S_Sound (this, CHAN_VOICE, SeeSound, 1, ATTN_IDLE);
-	}
-
-	if ((flags2 & MF2_BOUNCETYPE) == MF2_DOOMBOUNCE)
+	PlayBounceSound(true);
+	if (bt == BOUNCE_Doom)
 	{
 		if (!(flags & MF_NOGRAVITY) && (momz < 3*FRACUNIT))
 		{
-			flags2 &= ~MF2_BOUNCETYPE;
+			bouncetype = BOUNCE_None;
 		}
 	}
 	return false;
@@ -1271,6 +1410,26 @@ int P_FaceMobj (AActor *source, AActor *target, angle_t *delta)
 
 //----------------------------------------------------------------------------
 //
+// CanSeek
+//
+// Checks if a seeker missile can home in on its target
+//
+//----------------------------------------------------------------------------
+
+bool AActor::CanSeek(AActor *target) const
+{
+	if (target->flags5 & MF5_CANTSEEK) return false;
+	if ((flags2 & MF2_DONTSEEKINVISIBLE) && 
+		((target->flags & MF_SHADOW) || 
+		 target->renderflags & RF_INVISIBLE || 
+		 target->RenderStyle.IsVisible(target->alpha)
+		)
+	   ) return false;
+	return true;
+}
+
+//----------------------------------------------------------------------------
+//
 // FUNC P_SeekerMissile
 //
 // The missile's tracer field must be the target.  Returns true if
@@ -1287,7 +1446,7 @@ bool P_SeekerMissile (AActor *actor, angle_t thresh, angle_t turnMax)
 	AActor *target;
 
 	target = actor->tracer;
-	if (target == NULL || actor->Speed == 0 || (target->flags5 & MF5_CANTSEEK))
+	if (target == NULL || actor->Speed == 0 || !actor->CanSeek(target))
 	{
 		return false;
 	}
@@ -1331,14 +1490,17 @@ bool P_SeekerMissile (AActor *actor, angle_t thresh, angle_t turnMax)
 }
 
 //
-// P_XYMovement  
+// P_XYMovement
+//
+// Returns the actor's old floorz.
 //
 #define STOPSPEED			0x1000
 #define FRICTION			0xe800
 #define CARRYSTOPSPEED		(STOPSPEED*32/3)
 
-void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly) 
+fixed_t P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly) 
 {
+	static int pushtime = 0;
 	bool bForceSlide = scrollx || scrolly;
 	angle_t angle;
 	fixed_t ptryx, ptryy;
@@ -1348,6 +1510,7 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 	static const int windTab[3] = {2048*5, 2048*10, 2048*25};
 	int steps, step, totalsteps;
 	fixed_t startx, starty;
+	fixed_t oldfloorz = mo->floorz;
 
 	fixed_t maxmove = (mo->waterlevel < 1) || (mo->flags & MF_MISSILE) || 
 					  (mo->player && mo->player->crouchoffset<-10*FRACUNIT) ? MAXMOVE : MAXMOVE/4;
@@ -1433,7 +1596,7 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 				mo->tics = -1;
 			}
 		}
-		return;
+		return oldfloorz;
 	}
 
 	player = mo->player;
@@ -1497,11 +1660,16 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 	// last actor ripped through is recorded so that if the projectile
 	// passes through more than one actor this tic, each one takes damage
 	// and not just the first one.
+	pushtime++;
 
 	FCheckPosition tm(!!(mo->flags2 & MF2_RIP));
 
+
 	do
 	{
+		if (i_compatflags & COMPATF_WALLRUN) pushtime++;
+		tm.PushTime = pushtime;
+
 		ptryx = startx + Scale (xmove, step, steps);
 		ptryy = starty + Scale (ymove, step, steps);
 
@@ -1561,7 +1729,7 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 					fixed_t tx, ty;
 					tx = 0, ty = onestepy;
 					walkplane = P_CheckSlopeWalk (mo, tx, ty);
-					if (P_TryMove (mo, mo->x + tx, mo->y + ty, true, walkplane))
+					if (P_TryMove (mo, mo->x + tx, mo->y + ty, true, walkplane, tm))
 					{
 						mo->momx = 0;
 					}
@@ -1569,7 +1737,7 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 					{
 						tx = onestepx, ty = 0;
 						walkplane = P_CheckSlopeWalk (mo, tx, ty);
-						if (P_TryMove (mo, mo->x + tx, mo->y + ty, true, walkplane))
+						if (P_TryMove (mo, mo->x + tx, mo->y + ty, true, walkplane, tm))
 						{
 							mo->momy = 0;
 						}
@@ -1594,7 +1762,8 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 				steps = 0;
 				if (BlockingMobj)
 				{
-					if (mo->flags2 & MF2_BOUNCE2)
+					int bt = mo->bouncetype & BOUNCE_TypeMask;
+					if (bt == BOUNCE_Doom || bt == BOUNCE_Hexen)
 					{
 						if (mo->flags5&MF5_BOUNCEONACTORS ||
 							(BlockingMobj->flags2 & MF2_REFLECTIVE) ||
@@ -1612,16 +1781,13 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 							angle >>= ANGLETOFINESHIFT;
 							mo->momx = FixedMul (speed, finecosine[angle]);
 							mo->momy = FixedMul (speed, finesine[angle]);
-							if (mo->SeeSound && !(mo->flags4&MF4_NOBOUNCESOUND))
-							{
-								S_Sound (mo, CHAN_VOICE, mo->SeeSound, 1, ATTN_IDLE);
-							}
-							return;
+							mo->PlayBounceSound(true);
+							return oldfloorz;
 						}
 						else
 						{ // Struck a player/creature
 							P_ExplodeMissile (mo, NULL, BlockingMobj);
-							return;
+							return oldfloorz;
 						}
 					}
 				}
@@ -1630,11 +1796,8 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 					// Struck a wall
 					if (P_BounceWall (mo))
 					{
-						if (mo->SeeSound && !(mo->flags3 & MF3_NOWALLBOUNCESND))
-						{
-							S_Sound (mo, CHAN_VOICE, mo->SeeSound, 1, ATTN_IDLE);
-						}
-						return;
+						mo->PlayBounceSound(false);
+						return oldfloorz;
 					}
 				}
 				if (BlockingMobj &&
@@ -1661,7 +1824,7 @@ void P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 						mo->tracer = mo->target;
 					}
 					mo->target = BlockingMobj;
-					return;
+					return oldfloorz;
 				}
 explode:
 				// explode a missile
@@ -1674,16 +1837,16 @@ explode:
 					// Hack to prevent missiles exploding against the sky.
 					// Does not handle sky floors.
 					mo->Destroy ();
-					return;
+					return oldfloorz;
 				}
 				// [RH] Don't explode on horizon lines.
 				if (mo->BlockingLine != NULL && mo->BlockingLine->special == Line_Horizon)
 				{
 					mo->Destroy ();
-					return;
+					return oldfloorz;
 				}
 				P_ExplodeMissile (mo, mo->BlockingLine, BlockingMobj);
-				return;
+				return oldfloorz;
 			}
 			else
 			{
@@ -1718,12 +1881,12 @@ explode:
 	{ // debug option for no sliding at all
 		mo->momx = mo->momy = 0;
 		player->momx = player->momy = 0;
-		return;
+		return oldfloorz;
 	}
 
 	if (mo->flags & (MF_MISSILE | MF_SKULLFLY))
 	{ // no friction for missiles
-		return;
+		return oldfloorz;
 	}
 
 	if (mo->z > mo->floorz && !(mo->flags2 & MF2_ONMOBJ) &&
@@ -1740,7 +1903,7 @@ explode:
 				player->momy = FixedMul (player->momy, level.airfriction);
 			}
 		}
-		return;
+		return oldfloorz;
 	}
 
 	if (mo->flags & MF_CORPSE)
@@ -1764,7 +1927,7 @@ explode:
 					}
 					if (i==mo->Sector->e->XFloor.ffloors.Size()) 
 #endif
-						return;
+						return oldfloorz;
 				}
 			}
 		}
@@ -1823,6 +1986,7 @@ explode:
 			player->momy = FixedMul (player->momy, ORIG_FRICTION);
 		}
 	}
+	return oldfloorz;
 }
 
 // Move this to p_inter ***
@@ -1852,7 +2016,7 @@ void P_MonsterFallingDamage (AActor *mo)
 //
 // P_ZMovement
 //
-void P_ZMovement (AActor *mo)
+void P_ZMovement (AActor *mo, fixed_t oldfloorz)
 {
 	fixed_t dist;
 	fixed_t delta;
@@ -1867,7 +2031,10 @@ void P_ZMovement (AActor *mo)
 		mo->player->deltaviewheight = mo->player->GetDeltaViewHeight();
 	}
 
-	if (!(mo->flags2&MF2_FLOATBOB)) mo->z += mo->momz;
+	if (!(mo->flags2 & MF2_FLOATBOB))
+	{
+		mo->z += mo->momz;
+	}
 
 //
 // apply gravity
@@ -1882,8 +2049,16 @@ void P_ZMovement (AActor *mo)
 			fixed_t grav = (fixed_t)(level.gravity * mo->Sector->gravity *
 				FIXED2FLOAT(mo->gravity) * 81.92);
 
-			if (mo->momz == 0) mo->momz -= grav + grav;
-			else mo->momz -= grav;
+			// [RH] Double gravity only if running off a ledge. Coming down from
+			// an upward thrust (e.g. a jump) should not double it.
+			if (mo->momz == 0 && oldfloorz > mo->floorz && mo->z == oldfloorz)
+			{
+				mo->momz -= grav + grav;
+			}
+			else
+			{
+				mo->momz -= grav;
+			}
 		}
 		if (mo->waterlevel > 1)
 		{
@@ -1901,7 +2076,10 @@ void P_ZMovement (AActor *mo)
 		}
 	}
 
-	if (mo->flags2&MF2_FLOATBOB) mo->z += mo->momz;
+	if (mo->flags2 & MF2_FLOATBOB)
+	{
+		mo->z += mo->momz;
+	}
 
 //
 // adjust height
@@ -1948,7 +2126,7 @@ void P_ZMovement (AActor *mo)
 				(!(gameinfo.gametype & GAME_DoomChex) || !(mo->flags & MF_NOCLIP)))
 			{
 				mo->z = mo->floorz;
-				if (mo->flags2 & MF2_BOUNCETYPE)
+				if (mo->bouncetype != BOUNCE_None)
 				{
 					mo->FloorBounceMissile (mo->floorsector->floorplane);
 					return;
@@ -2041,7 +2219,7 @@ void P_ZMovement (AActor *mo)
 		if (mo->z + mo->height > mo->ceilingz)
 		{
 			mo->z = mo->ceilingz - mo->height;
-			if (mo->flags2 & MF2_BOUNCETYPE)
+			if (mo->bouncetype != BOUNCE_None)
 			{	// ceiling bounce
 				mo->FloorBounceMissile (mo->ceilingsector->ceilingplane);
 				return;
@@ -2824,20 +3002,20 @@ void AActor::Tick ()
 				{
 					continue;
 				}
-				if (flags & MF_NOGRAVITY &&
-					(sec->heightsec == NULL || (sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC)))
+				sector_t *heightsec = sec->GetHeightSec();
+				if (flags & MF_NOGRAVITY && heightsec == NULL)
 				{
 					continue;
 				}
 				height = sec->floorplane.ZatPoint (x, y);
 				if (z > height)
 				{
-					if (sec->heightsec == NULL || (sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC))
+					if (heightsec == NULL)
 					{
 						continue;
 					}
 
-					waterheight = sec->heightsec->floorplane.ZatPoint (x, y);
+					waterheight = heightsec->floorplane.ZatPoint (x, y);
 					if (waterheight > height && z >= waterheight)
 					{
 						continue;
@@ -2933,7 +3111,7 @@ void AActor::Tick ()
 
 		// Handle X and Y momemtums
 		BlockingMobj = NULL;
-		P_XYMovement (this, cummx, cummy);
+		fixed_t oldfloorz = P_XYMovement (this, cummx, cummy);
 		if (ObjectFlags & OF_EuthanizeMe)
 		{ // actor was destroyed
 			return;
@@ -2956,7 +3134,7 @@ void AActor::Tick ()
 			{
 				if (!(onmo = P_CheckOnmobj (this)))
 				{
-					P_ZMovement (this);
+					P_ZMovement (this, oldfloorz);
 					flags2 &= ~MF2_ONMOBJ;
 				}
 				else
@@ -2989,7 +3167,7 @@ void AActor::Tick ()
 			}
 			else
 			{
-				P_ZMovement (this);
+				P_ZMovement (this, oldfloorz);
 			}
 
 			if (ObjectFlags & OF_EuthanizeMe)
@@ -3085,8 +3263,8 @@ bool AActor::UpdateWaterLevel (fixed_t oldz, bool dosplash)
 	}
 	else
 	{
-		const sector_t *hsec = Sector->heightsec;
-		if (hsec != NULL && !(hsec->MoreFlags & SECF_IGNOREHEIGHTSEC))
+		const sector_t *hsec = Sector->GetHeightSec();
+		if (hsec != NULL)
 		{
 			fh = hsec->floorplane.ZatPoint (x, y);
 			//if (hsec->MoreFlags & SECF_UNDERWATERMASK)	// also check Boom-style non-swimmable sectors
@@ -3514,9 +3692,8 @@ void AActor::AdjustFloorClip ()
 	// do the floorclipping instead of the terrain type.
 	for (m = touching_sectorlist; m; m = m->m_tnext)
 	{
-		if ((m->m_sector->heightsec == NULL ||
-			 m->m_sector->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC) &&
-			m->m_sector->floorplane.ZatPoint (x, y) == z)
+		sector_t *hsec = m->m_sector->GetHeightSec();
+		if (hsec == NULL && m->m_sector->floorplane.ZatPoint (x, y) == z)
 		{
 			fixed_t clip = Terrains[TerrainTypes[m->m_sector->GetTexture(sector_t::floor)]].FootClip;
 			if (clip < shallowestclip)
@@ -4118,6 +4295,7 @@ AActor *P_SpawnPuff (AActor *source, const PClass *pufftype, fixed_t x, fixed_t 
 
 	puff = Spawn (pufftype, x, y, z, ALLOW_REPLACE);
 	if (puff == NULL) return NULL;
+	if (source != NULL) puff->angle = R_PointToAngle2(x, y, source->x, source->y);
 
 	// If a puff has a crash state and an actor was not hit,
 	// it will enter the crash state. This is used by the StrifeSpark
@@ -4358,6 +4536,7 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t x, fixed_t y, fixed_t z
 	AActor *mo = NULL;
 	FSplashDef *splash;
 	int terrainnum;
+	sector_t *hsec = NULL;
 	
 	if (x == FIXED_MIN) x = thing->x;
 	if (y == FIXED_MIN) y = thing->y;
@@ -4383,16 +4562,14 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t x, fixed_t y, fixed_t z
 		if (planez < z) return false;
 	}
 #endif
-	if (sec->heightsec == NULL ||
-		//!sec->heightsec->waterzone ||
-		(sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC) ||
-		!(sec->heightsec->MoreFlags & SECF_CLIPFAKEPLANES))
+	hsec = sec->GetHeightSec();
+	if (hsec == NULL || !(hsec->MoreFlags & SECF_CLIPFAKEPLANES))
 	{
 		terrainnum = TerrainTypes[sec->GetTexture(sector_t::floor)];
 	}
 	else
 	{
-		terrainnum = TerrainTypes[sec->heightsec->GetTexture(sector_t::floor)];
+		terrainnum = TerrainTypes[hsec->GetTexture(sector_t::floor)];
 	}
 #ifdef _3DFLOORS
 foundone:
@@ -4408,10 +4585,7 @@ foundone:
 	// don't splash when touching an underwater floor
 	if (thing->waterlevel>=1 && z<=thing->floorz) return Terrains[terrainnum].IsLiquid;
 
-	plane = (sec->heightsec != NULL &&
-		//sec->heightsec->waterzone &&
-		!(sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC))
-	  ? &sec->heightsec->floorplane : &sec->floorplane;
+	plane = hsec != NULL? &sec->heightsec->floorplane : &sec->floorplane;
 
 	// Don't splash for living things with small vertical velocities.
 	// There are levels where the constant splashing from the monsters gets extremely annoying
@@ -4508,9 +4682,7 @@ bool P_HitFloor (AActor *thing)
 		}
 #endif
 	}
-	if (m == NULL ||
-		(m->m_sector->heightsec != NULL &&
-		!(m->m_sector->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC)))
+	if (m == NULL || m->m_sector->GetHeightSec() != NULL)
 	{ 
 		return false;
 	}
@@ -4629,6 +4801,15 @@ void P_PlaySpawnSound(AActor *missile, AActor *spawner)
 	}
 }
 
+static fixed_t GetDefaultSpeed(const PClass *type)
+{
+	if (type == NULL) return 0;
+	else if (G_SkillProperty(SKILLP_FastMonsters))
+		return type->Meta.GetMetaFixed(AMETA_FastSpeed, GetDefaultByType(type)->Speed);
+	else
+		return GetDefaultByType(type)->Speed;
+}
+
 static AActor * SpawnMissile (const PClass *type, fixed_t x, fixed_t y, fixed_t z)
 {
 	AActor *th = Spawn (type, x, y, z, ALLOW_REPLACE);
@@ -4743,14 +4924,14 @@ AActor *P_SpawnMissileAngle (AActor *source, const PClass *type,
 	angle_t angle, fixed_t momz)
 {
 	return P_SpawnMissileAngleZSpeed (source, source->z + 32*FRACUNIT,
-		type, angle, momz, GetDefaultByType (type)->Speed);
+		type, angle, momz, GetDefaultSpeed (type));
 }
 
 AActor *P_SpawnMissileAngleZ (AActor *source, fixed_t z,
 	const PClass *type, angle_t angle, fixed_t momz)
 {
 	return P_SpawnMissileAngleZSpeed (source, z, type, angle, momz,
-		GetDefaultByType (type)->Speed);
+		GetDefaultSpeed (type));
 }
 
 AActor *P_SpawnMissileZAimed (AActor *source, fixed_t z, AActor *dest, const PClass *type)
@@ -4767,7 +4948,7 @@ AActor *P_SpawnMissileZAimed (AActor *source, fixed_t z, AActor *dest, const PCl
 		an += pr_spawnmissile.Random2() << 20;
 	}
 	dist = P_AproxDistance (dest->x - source->x, dest->y - source->y);
-	speed = GetDefaultByType (type)->Speed;
+	speed = GetDefaultSpeed (type);
 	dist /= speed;
 	momz = dist != 0 ? (dest->z - source->z)/dist : speed;
 	return P_SpawnMissileAngleZSpeed (source, z, type, an, momz, speed);
@@ -4841,21 +5022,30 @@ AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 	AActor *linetarget;
 	int vrange = nofreeaim? ANGLE_1*35 : 0;
 
-	// see which target is to be aimed at
-	i = 2;
-	do
+	// Note: NOAUTOAIM is implemented only here, and not in the hitscan or rail attack functions.
+	// That is because it is only justified for projectiles affected by gravity, not for other attacks.
+	if (source && source->player && source->player->ReadyWeapon && (source->player->ReadyWeapon->WeaponFlags & WIF_NOAUTOAIM))
 	{
-		an = angle + angdiff[i];
-		pitch = P_AimLineAttack (source, an, 16*64*FRACUNIT, &linetarget, vrange);
-
-		if (source->player != NULL &&
-			!nofreeaim &&
-			level.IsFreelookAllowed() &&
-			source->player->userinfo.GetAimDist() <= ANGLE_1/2)
+		// Keep exactly the same angle and pitch as the player's own aim
+		pitch = source->pitch; linetarget = NULL;
+	}
+	else // see which target is to be aimed at
+	{
+		i = 2;
+		do
 		{
-			break;
-		}
-	} while (linetarget == NULL && --i >= 0);
+			an = angle + angdiff[i];
+			pitch = P_AimLineAttack (source, an, 16*64*FRACUNIT, &linetarget, vrange);
+	
+			if (source->player != NULL &&
+				!nofreeaim &&
+				level.IsFreelookAllowed() &&
+				source->player->userinfo.GetAimDist() <= ANGLE_1/2)
+			{
+				break;
+			}
+		} while (linetarget == NULL && --i >= 0);
+	}
 
 	if (linetarget == NULL)
 	{
@@ -4937,13 +5127,19 @@ bool AActor::IsTeammate (AActor *other)
 // AActor :: GetSpecies
 //
 // Species is defined as the lowest base class that is a monster
-// with no non-monster class in between. This is virtualized, so special
+// with no non-monster class in between. If the actor specifies an explicit
+// species (i.e. not 'None'), that is used. This is virtualized, so special
 // monsters can change this behavior if they like.
 //
 //==========================================================================
 
-const PClass *AActor::GetSpecies()
+FName AActor::GetSpecies()
 {
+	if (Species != NAME_None)
+	{
+		return Species;
+	}
+
 	const PClass *thistype = GetClass();
 
 	if (GetDefaultByType(thistype)->flags3 & MF3_ISMONSTER)
@@ -4956,7 +5152,7 @@ const PClass *AActor::GetSpecies()
 				break;
 		}
 	}
-	return thistype;
+	return Species = thistype->TypeName; // [GZ] Speeds up future calls.
 }
 
 //==========================================================================

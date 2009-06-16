@@ -21,6 +21,7 @@ ACTOR Pod
 		+CANPASS +TELESTOMP +DONTMORPH
 		+NOBLOCKMONST +DONTGIB +OLDRADIUSDMG
 		DeathSound ("world/podexplode")
+		PushFactor(0.5)
 	}
 
 	native action A_PodPain ();
@@ -81,6 +82,7 @@ ACTOR PodGenerator
 		Game ("Heretic")
 		SpawnID (126)
 	}
+	AttackSound "world/podgrow"
 
 	Defaults
 	{
@@ -89,7 +91,7 @@ ACTOR PodGenerator
 		+DONTSPLASH
 	}
 
-	native action A_MakePod ();
+	native action A_MakePod (class<Actor> podtype = "Pod");
 
 	States
 	{
@@ -117,8 +119,10 @@ ACTOR TeleGlitterGenerator1
 		+NOSECTOR 
 		+NOGRAVITY
 		+DONTSPLASH
+		+MOVEWITHSECTOR
 	}
 
+	
 	States
 	{
 	Spawn:
@@ -144,6 +148,7 @@ ACTOR TeleGlitterGenerator2
 		+NOSECTOR 
 		+NOGRAVITY
 		+DONTSPLASH
+		+MOVEWITHSECTOR
 	}
 
 	States

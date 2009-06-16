@@ -55,8 +55,8 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="src\win32,src\sound,src,zlib,src\g_shared,src\g_doom,src\g_raven,src\g_heretic,src\g_hexen,src\g_strife;flac;jpeg-6b;snes_spc\snes_spc;gdtoa;bzip2;lzma\C"
-				PreprocessorDefinitions="NDEBUG,WIN32,_WIN32,_WINDOWS,USEASM,NO_MANIFEST"
+				AdditionalIncludeDirectories="src\win32,src\sound,src,zlib,src\g_shared,src\g_doom,src\g_raven,src\g_heretic,src\g_hexen,src\g_strife;flac;jpeg-6b;game-music-emu\gme;gdtoa;bzip2;lzma\C"
+				PreprocessorDefinitions="NDEBUG,WIN32,_WIN32,_WINDOWS,USEASM,NO_MANIFEST,NO_VA_COPY"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -172,8 +172,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				InlineFunctionExpansion="0"
-				AdditionalIncludeDirectories="src\win32;src\sound;src;zlib;src\g_shared;src\g_doom;src\g_raven;src\g_heretic;src\g_hexen;src\g_strife;flac;jpeg-6b;snes_spc\snes_spc;gdtoa;bzip2;lzma\C"
-				PreprocessorDefinitions="WIN32,_DEBUG,_WIN32,_WINDOWS,USEASM,_CRTDBG_MAP_ALLOC,NO_MANIFEST"
+				AdditionalIncludeDirectories="src\win32,src\sound,src,zlib,src\g_shared,src\g_doom,src\g_raven,src\g_heretic,src\g_hexen,src\g_strife;flac;jpeg-6b;game-music-emu\gme;gdtoa;bzip2;lzma\C"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WIN32,_WINDOWS,USEASM,_CRTDBG_MAP_ALLOC,NO_MANIFEST,NO_VA_COPY"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
 				EnableFunctionLevelLinking="true"
@@ -281,7 +281,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				AdditionalIncludeDirectories="src\win32;src\sound;src;zlib;src\g_shared;src\g_doom;src\g_raven;src\g_heretic;src\g_hexen;src\g_strife;jpeg-6b;snes_spc\snes_spc;bzip2;lzma\C"
-				PreprocessorDefinitions="NDEBUG,WIN32,_WIN32,_WINDOWS,USEASM,HAVE_STRUPR,HAVE_FILELENGTH,NOASM"
+				PreprocessorDefinitions="NDEBUG,WIN32,_WIN32,_WINDOWS,USEASM,HAVE_STRUPR,HAVE_FILELENGTH,NOASM,NO_VA_COPY"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="false"
@@ -391,7 +391,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="src\win32;src\sound;src;zlib;src\g_shared;src\g_doom;src\g_raven;src\g_heretic;src\g_hexen;src\g_strife;flac;bzip2;lzma\C"
-				PreprocessorDefinitions="WIN32,_DEBUG,_WIN32,_WINDOWS,USEASM,_CRTDBG_MAP_ALLOC,HAVE_STRUPR,HAVE_FILELENGTH,NOASM"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WIN32,_WINDOWS,USEASM,_CRTDBG_MAP_ALLOC,HAVE_STRUPR,HAVE_FILELENGTH,NOASM,NO_VA_COPY"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
 				EnableFunctionLevelLinking="true"
@@ -551,6 +551,10 @@
 			</File>
 			<File
 				RelativePath=".\src\d_dehacked.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\d_iwad.cpp"
 				>
 			</File>
 			<File
@@ -1355,6 +1359,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\gametype.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\gccinlines.h"
 				>
 			</File>
@@ -2026,7 +2034,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\win32\i_keyboard.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\win32\i_main.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\win32\i_mouse.cpp"
 				>
 			</File>
 			<File
@@ -2047,6 +2063,10 @@
 			</File>
 			<File
 				RelativePath=".\src\win32\icon2.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\src\win32\rawinput.h"
 				>
 			</File>
 			<File
@@ -5271,6 +5291,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\textures\emptytexture.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\textures\flattexture.cpp"
 					>
 				</File>
@@ -5469,6 +5493,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\sound\music_gme.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\sound\music_midi_base.cpp"
 				>
 			</File>
@@ -5498,10 +5526,6 @@
 			</File>
 			<File
 				RelativePath=".\src\oplsynth\music_opldumper_mididevice.cpp"
-				>
-			</File>
-			<File
-				RelativePath="src\sound\music_spc.cpp"
 				>
 			</File>
 			<File
@@ -6390,6 +6414,70 @@
 			</File>
 		</Filter>
 		<Filter
+			Name="SFMT"
+			>
+			<File
+				RelativePath=".\src\sfmt\SFMT-alti.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sfmt\SFMT-params.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sfmt\SFMT-params11213.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sfmt\SFMT-params1279.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sfmt\SFMT-params132049.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sfmt\SFMT-params19937.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sfmt\SFMT-params216091.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sfmt\SFMT-params2281.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sfmt\SFMT-params4253.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sfmt\SFMT-params44497.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sfmt\SFMT-params607.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sfmt\SFMT-params86243.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sfmt\SFMT-sse2.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sfmt\SFMT.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\sfmt\SFMT.h"
+				>
+			</File>
+		</Filter>
+		<Filter
 			Name="FraggleScript"
 			>
 			<File
@@ -6640,11 +6728,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\gl_include.h"
+					RelativePath=".\src\gl\gl_hqresize.h"
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\gl_hqresize.h"
+					RelativePath=".\src\gl\gl_include.h"
 					>
 				</File>
 				<File
@@ -6720,6 +6808,58 @@
 					>
 				</File>
 			</Filter>
+		</Filter>
+		<Filter
+			Name="Resource Files"
+			>
+			<File
+				RelativePath=".\src\resourcefiles\ancientzip.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\resourcefiles\ancientzip.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\resourcefiles\file_7z.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\resourcefiles\file_directory.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\resourcefiles\file_grp.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\resourcefiles\file_lump.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\resourcefiles\file_pak.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\resourcefiles\file_rff.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\resourcefiles\file_wad.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\resourcefiles\file_zip.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\resourcefiles\resourcefile.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\resourcefiles\resourcefile.h"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

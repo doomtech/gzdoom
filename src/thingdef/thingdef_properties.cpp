@@ -130,6 +130,16 @@ void HandleDeprecatedFlags(AActor *defaults, FActorInfo *info, bool set, int ind
 	case DEPF_FIRERESIST:
 		info->SetDamageFactor(NAME_Fire, set? FRACUNIT/2 : FRACUNIT);
 		break;
+	// the bounce flags will set the compatibility bounce modes to remain compatible
+	case DEPF_HERETICBOUNCE:	
+		defaults->bouncetype = set? BOUNCE_HereticCompat : 0;
+		break;
+	case DEPF_HEXENBOUNCE:
+		defaults->bouncetype = set? BOUNCE_HexenCompat : 0;
+		break;
+	case DEPF_DOOMBOUNCE:
+		defaults->bouncetype = set? BOUNCE_DoomCompat : 0;
+		break;
 	case DEPF_PICKUPFLASH:
 		if (set)
 		{
@@ -503,6 +513,24 @@ DEFINE_PROPERTY(attacksound, S, Actor)
 //==========================================================================
 //
 //==========================================================================
+DEFINE_PROPERTY(bouncesound, S, Actor)
+{
+	PROP_STRING_PARM(str, 0);
+	defaults->BounceSound = str;
+}
+
+//==========================================================================
+//
+//==========================================================================
+DEFINE_PROPERTY(wallbouncesound, S, Actor)
+{
+	PROP_STRING_PARM(str, 0);
+	defaults->WallBounceSound = str;
+}
+
+//==========================================================================
+//
+//==========================================================================
 DEFINE_PROPERTY(painsound, S, Actor)
 {
 	PROP_STRING_PARM(str, 0);
@@ -739,6 +767,15 @@ DEFINE_PROPERTY(missileheight, F, Actor)
 //==========================================================================
 //
 //==========================================================================
+DEFINE_PROPERTY(pushfactor, F, Actor)
+{
+	PROP_FIXED_PARM(id, 0);
+	defaults->pushfactor = id;
+}
+
+//==========================================================================
+//
+//==========================================================================
 DEFINE_PROPERTY(translation, L, Actor)
 {
 	PROP_INT_PARM(type, 0);
@@ -824,6 +861,16 @@ DEFINE_PROPERTY(bloodtype, Sss, Actor)
 	}
 	// axe blood
 	info->Class->Meta.SetMetaInt (AMETA_BloodType3, blood);
+}
+
+//==========================================================================
+//
+//==========================================================================
+DEFINE_PROPERTY(bouncetype, S, Actor)
+{
+	const char *names[] = { "None", "Doom", "Heretic", "Hexen", "*", "DoomCompat", "HereticCompat", "HexenCompat", NULL };
+	PROP_STRING_PARM(id, 0);
+	defaults->bouncetype = MatchString(id, names);
 }
 
 //==========================================================================
@@ -971,6 +1018,15 @@ DEFINE_PROPERTY(gravity, F, Actor)
 	if (i < 0) I_Error ("Gravity must not be negative.");
 	defaults->gravity = i;
 	if (i == 0) defaults->flags |= MF_NOGRAVITY;
+}
+
+//==========================================================================
+//
+//==========================================================================
+DEFINE_PROPERTY(species, S, Actor)
+{
+	PROP_STRING_PARM(n, 0);
+	defaults->Species = n;
 }
 
 //==========================================================================
@@ -1227,6 +1283,14 @@ DEFINE_CLASS_PROPERTY(pickupsound, S, Inventory)
 {
 	PROP_STRING_PARM(str, 0);
 	defaults->PickupSound = str;
+}
+
+//==========================================================================
+// Dummy for Skulltag compatibility...
+//==========================================================================
+DEFINE_CLASS_PROPERTY(pickupannouncerentry, S, Inventory)
+{
+	PROP_STRING_PARM(str, 0);
 }
 
 //==========================================================================
@@ -1557,7 +1621,7 @@ DEFINE_CLASS_PROPERTY_PREFIX(powerup, duration, I, Inventory)
 	}
 	else
 	{
-		I_Error("\"powerup.color\" requires an actor of type \"Powerup\"\n");
+		I_Error("\"powerup.duration\" requires an actor of type \"Powerup\"\n");
 		return;
 	}
 
@@ -1799,7 +1863,18 @@ DEFINE_CLASS_PROPERTY_PREFIX(player, scoreicon, S, PlayerPawn)
 DEFINE_CLASS_PROPERTY_PREFIX(player, crouchsprite, S, PlayerPawn)
 {
 	PROP_STRING_PARM(z, 0);
-	defaults->crouchsprite = GetSpriteIndex (z);
+	if (strlen(z) == 4)
+	{
+		defaults->crouchsprite = GetSpriteIndex (z);
+	}
+	else if (*z == 0)
+	{
+		defaults->crouchsprite = 0;
+	}
+	else
+	{
+		I_Error("Sprite name must have exactly 4 characters");
+	}
 }
 
 //==========================================================================
@@ -1808,9 +1883,7 @@ DEFINE_CLASS_PROPERTY_PREFIX(player, crouchsprite, S, PlayerPawn)
 DEFINE_CLASS_PROPERTY_PREFIX(player, damagescreencolor, C, PlayerPawn)
 {
 	PROP_COLOR_PARM(c, 0);
-	defaults->RedDamageFade = RPART (c);
-	defaults->GreenDamageFade = GPART (c);
-	defaults->BlueDamageFade = BPART (c);
+	defaults->DamageFade = c;
 }
 
 //==========================================================================

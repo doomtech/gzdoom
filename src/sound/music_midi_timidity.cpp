@@ -34,6 +34,7 @@ private:
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <wordexp.h>
+#include <signal.h>
 
 int ChildQuit;
 
@@ -173,7 +174,7 @@ TimiditySong::~TimiditySong ()
 #endif
 }
 
-TimiditySong::TimiditySong (FILE *file, char * musiccache, int len)
+TimiditySong::TimiditySong (FILE *file, BYTE *musiccache, int len)
 	: DiskName ("zmid"),
 #ifdef _WIN32
 	  ReadWavePipe (INVALID_HANDLE_VALUE), WriteWavePipe (INVALID_HANDLE_VALUE),
@@ -211,7 +212,10 @@ TimiditySong::TimiditySong (FILE *file, char * musiccache, int len)
 		buf = new BYTE[len];
 		fread (buf, 1, len, file);
 	}
-	else buf = (BYTE*)musiccache;
+	else
+	{
+		buf = musiccache;
+	}
 
 
 	// The file type has already been checked before this class instance was
@@ -226,7 +230,7 @@ TimiditySong::TimiditySong (FILE *file, char * musiccache, int len)
 		success = ProduceMIDI (buf, f);
 	}
 	fclose (f);
-	if (file!=NULL) 
+	if (file != NULL) 
 	{
 		delete[] buf;
 	}

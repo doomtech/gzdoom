@@ -170,14 +170,14 @@ static WORD DIKToKeySym[256] =
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, SDLK_KP_DIVIDE, 0, SDLK_SYSREQ,
 	SDLK_RALT, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, SDLK_HOME,
+	0, 0, 0, 0, 0, SDLK_PAUSE, 0, SDLK_HOME,
 	SDLK_UP, SDLK_PAGEUP, 0, SDLK_LEFT, 0, SDLK_RIGHT, 0, SDLK_END,
 	SDLK_DOWN, SDLK_PAGEDOWN, SDLK_INSERT, SDLK_DELETE, 0, 0, 0, 0,
 	0, 0, 0, SDLK_LSUPER, SDLK_RSUPER, SDLK_MENU, SDLK_POWER, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, SDLK_PAUSE
+	0, 0, 0, 0, 0, 0, 0, 0
 };
 
 static void FlushDIKState (int low=0, int high=NUM_KEYS-1)
@@ -390,14 +390,8 @@ void MessagePump (const SDL_Event &sev)
 			if (sev.active.gain == 0)
 			{ // kill focus
 				FlushDIKState ();
-				if (!paused)
-					S_PauseSound (false);
 			}
-			else
-			{ // set focus
-				if (!paused)
-					S_ResumeSound ();
-			}
+			S_SetSoundPaused(sev.active.gain);
 		}
 		break;
 

@@ -489,7 +489,6 @@ void FMultiPatchTexture::MakeTexture ()
 	// a power of 2, in case somebody accidentally makes it repeat vertically.
 	int numpix = Width * Height + (1 << HeightBits) - Height;
 	BYTE blendwork[256];
-	static BYTE NullMap[256] = {0};
 	bool hasTranslucent = false;
 
 	Pixels = new BYTE[numpix];
@@ -503,18 +502,20 @@ void FMultiPatchTexture::MakeTexture ()
 	// and merge these pixels in.
 	for (int i = 0; i < NumParts; ++i)
 	{
-		BYTE *trans = Parts[i].Translation? Parts[i].Translation->Remap : NULL;
+		BYTE *trans = Parts[i].Translation ? Parts[i].Translation->Remap : NULL;
 		if (Parts[i].op != OP_COPY)
 		{
-			trans = NullMap;
 			hasTranslucent = true;
 		}
-		else if (Parts[i].Blend != 0)
+		else
 		{
-			trans = GetBlendMap(Parts[i].Blend, blendwork);
+			if (Parts[i].Blend != 0)
+			{
+				trans = GetBlendMap(Parts[i].Blend, blendwork);
+			}
+			Parts[i].Texture->CopyToBlock (Pixels, Width, Height,
+				Parts[i].OriginX, Parts[i].OriginY, Parts[i].Rotate, trans);
 		}
-		Parts[i].Texture->CopyToBlock (Pixels, Width, Height,
-			Parts[i].OriginX, Parts[i].OriginY, Parts[i].Rotate, trans);
 	}
 
 	if (hasTranslucent)
@@ -522,6 +523,7 @@ void FMultiPatchTexture::MakeTexture ()
 		// In case there are translucent patches let's do the composition in
 		// True color to keep as much precision as possible before downconverting to the palette.
 		BYTE *buffer = new BYTE[Width * Height * 4];
+		memset(buffer, 0, Width * Height * 4);
 		FillBuffer(buffer, Width * 4, Height, TEX_RGB);
 		for(int y = 0; y < Height; y++)
 		{
@@ -1144,7 +1146,7 @@ FMultiPatchTexture::FMultiPatchTexture (FScanner &sc, int usetype)
 	sc.MustGetNumber();
 	Height = sc.Number;
 	UseType = usetype;
-
+	
 	if (sc.CheckString("{"))
 	{
 		while (!sc.CheckString("}"))
@@ -1198,7 +1200,7 @@ FMultiPatchTexture::FMultiPatchTexture (FScanner &sc, int usetype)
 		Parts = new TexPart[NumParts];
 		memcpy(Parts, &parts[0], NumParts * sizeof(*Parts));
 
-		CalcBitSize ();
+		//CalcBitSize ();
 
 		// If this texture is just a wrapper around a single patch, we can simply
 		// forward GetPixels() and GetColumn() calls to that patch.
@@ -1214,6 +1216,16 @@ FMultiPatchTexture::FMultiPatchTexture (FScanner &sc, int usetype)
 			}
 		}
 	}
+	
+	if (Width <= 0 || Height <= 0)
+	{
+		UseType = FTexture::TEX_Null;
+		Printf("Texture %s has invalid dimensions (%d, %d)\n", Name, Width, Height);
+		Width = Height = 1;
+	}
+	CalcBitSize ();
+
+	
 	sc.SetCMode(false);
 }
 

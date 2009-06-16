@@ -259,7 +259,7 @@ void level_info_t::Reset()
 	intermusicorder = 0;
 	SoundInfo = "";
 	SndSeq = "";
-	strcpy (bordertexture, gameinfo.borderFlat);
+	bordertexture[0] = 0;
 	teamdamage = 0.f;
 	specialactions.Clear();
 }
@@ -760,15 +760,20 @@ void FMapInfoParser::ParseNextMap(char *mapname)
 	}
 	else
 	{
-		sc.MustGetString();
 
+		sc.MustGetString();
 		if (sc.Compare("endgame"))
 		{
+			if (!sc.CheckString("{"))
+			{
+				// Make Demon Eclipse work again
+				sc.UnGet();
+				goto standard_endgame;
+			}
 			newSeq.Advanced = true;
 			newSeq.EndType = END_Pic1;
 			newSeq.PlayTheEnd = false;
 			newSeq.MusicLooping = true;
-			sc.MustGetStringName("{");
 			while (!sc.CheckString("}"))
 			{
 				sc.MustGetString();
@@ -843,6 +848,7 @@ void FMapInfoParser::ParseNextMap(char *mapname)
 			case 'C':	type = END_Cast;		break;
 			case 'W':	type = END_Underwater;	break;
 			case 'S':	type = END_Strife;		break;
+		standard_endgame:
 			default:	type = END_Pic3;		break;
 			}
 			newSeq.EndType = type;
@@ -884,6 +890,11 @@ void FMapInfoParser::ParseNextMap(char *mapname)
 		else if (sc.Compare("endbuystrife"))
 		{
 			newSeq.EndType = END_BuyStrife;
+			useseq = true;
+		}
+		else if (sc.Compare("endtitle"))
+		{
+			newSeq.EndType = END_TitleScreen;
 			useseq = true;
 		}
 		else
@@ -948,6 +959,7 @@ DEFINE_MAP_OPTION(cluster, true)
 	{
 		unsigned int clusterindex = wadclusterinfos.Reserve(1);
 		cluster_info_t *clusterinfo = &wadclusterinfos[clusterindex];
+		clusterinfo->Reset();
 		clusterinfo->cluster = parse.sc.Number;
 		if (parse.HexenHack)
 		{
@@ -966,7 +978,7 @@ DEFINE_MAP_OPTION(sky1, true)
 		{
 			parse.sc.Float /= 256;
 		}
-		info->skyspeed1 = parse.sc.Float * (35.f / 1000.f);
+		info->skyspeed1 = float(parse.sc.Float * (35. / 1000.));
 	}
 }
 
@@ -980,7 +992,7 @@ DEFINE_MAP_OPTION(sky2, true)
 		{
 			parse.sc.Float /= 256;
 		}
-		info->skyspeed2 = parse.sc.Float * (35.f / 1000.f);
+		info->skyspeed2 = float(parse.sc.Float * (35. / 1000.));
 	}
 }
 
@@ -1089,14 +1101,14 @@ DEFINE_MAP_OPTION(gravity, true)
 {
 	parse.ParseAssign();
 	parse.sc.MustGetFloat();
-	info->gravity = parse.sc.Float;
+	info->gravity = float(parse.sc.Float);
 }
 
 DEFINE_MAP_OPTION(aircontrol, true)
 {
 	parse.ParseAssign();
 	parse.sc.MustGetFloat();
-	info->aircontrol = parse.sc.Float;
+	info->aircontrol = float(parse.sc.Float);
 }
 
 DEFINE_MAP_OPTION(airsupply, true)
@@ -1205,7 +1217,7 @@ DEFINE_MAP_OPTION(teamdamage, true)
 {
 	parse.ParseAssign();
 	parse.sc.MustGetFloat();
-	info->teamdamage = parse.sc.Float;
+	info->teamdamage = float(parse.sc.Float);
 }
 
 DEFINE_MAP_OPTION(mapbackground, true)
@@ -1302,6 +1314,9 @@ MapFlagHandlers[] =
 	{ "teamplayoff",					MITYPE_SCFLAGS2,	LEVEL2_FORCETEAMPLAYOFF, ~LEVEL2_FORCETEAMPLAYON },
 	{ "checkswitchrange",				MITYPE_SETFLAG2,	LEVEL2_CHECKSWITCHRANGE, 0 },
 	{ "nocheckswitchrange",				MITYPE_CLRFLAG2,	LEVEL2_CHECKSWITCHRANGE, 0 },
+	{ "grinding_polyobj",				MITYPE_SETFLAG2,	LEVEL2_POLYGRIND, 0 },
+	{ "no_grinding_polyobj",			MITYPE_CLRFLAG2,	LEVEL2_POLYGRIND, 0 },
+	{ "resetinventory",					MITYPE_SETFLAG2,	LEVEL2_RESETINVENTORY, 0 },
 	{ "unfreezesingleplayerconversations",MITYPE_SETFLAG2,	LEVEL2_CONV_SINGLE_UNFREEZE, 0 },
 	{ "nobotnodes",						MITYPE_IGNORE,	0, 0 },		// Skulltag option: nobotnodes
 	{ "compat_shorttex",				MITYPE_COMPATFLAG, COMPATF_SHORTTEX},
@@ -1322,6 +1337,7 @@ MapFlagHandlers[] =
 	{ "compat_sectorsounds",			MITYPE_COMPATFLAG, COMPATF_SECTORSOUNDS},
 	{ "compat_missileclip",				MITYPE_COMPATFLAG, COMPATF_MISSILECLIP},
 	{ "compat_crossdropoff",			MITYPE_COMPATFLAG, COMPATF_CROSSDROPOFF},
+	{ "compat_minotaur",				MITYPE_COMPATFLAG, COMPATF_MINOTAUR},
 	{ "cd_start_track",					MITYPE_EATNEXT,	0, 0 },
 	{ "cd_end1_track",					MITYPE_EATNEXT,	0, 0 },
 	{ "cd_end2_track",					MITYPE_EATNEXT,	0, 0 },
@@ -1763,10 +1779,8 @@ static void SetLevelNum (level_info_t *info, int num)
 //
 //==========================================================================
 
-void FMapInfoParser::ParseMapInfo (int lump, level_info_t &gamedefaults)
+void FMapInfoParser::ParseMapInfo (int lump, level_info_t &gamedefaults, level_info_t &defaultinfo)
 {
-	level_info_t defaultinfo;
-
 	sc.OpenLumpNum(lump);
 
 	defaultinfo = gamedefaults;
@@ -1774,7 +1788,19 @@ void FMapInfoParser::ParseMapInfo (int lump, level_info_t &gamedefaults)
 
 	while (sc.GetString ())
 	{
-		if (sc.Compare("gamedefaults"))
+		if (sc.Compare("include"))
+		{
+			sc.MustGetString();
+			int inclump = Wads.CheckNumForFullName(sc.String, true);
+			if (inclump < 0)
+			{
+				sc.ScriptError("include file '%s' not found", sc.String);
+			}
+			FScanner saved_sc = sc;
+			ParseMapInfo(inclump, gamedefaults, defaultinfo);
+			sc = saved_sc;
+		}
+		else if (sc.Compare("gamedefaults"))
 		{
 			gamedefaults.Reset();
 			ParseMapDefinition(gamedefaults);
@@ -1825,6 +1851,18 @@ void FMapInfoParser::ParseMapInfo (int lump, level_info_t &gamedefaults)
 		{
 			AllSkills.Clear();
 		}
+		else if (sc.Compare("gameinfo"))
+		{
+			if (format_type != FMT_Old)
+			{
+				format_type = FMT_New;
+				ParseGameInfo();
+			}
+			else
+			{
+				sc.ScriptError("gameinfo definitions not supported with old MAPINFO syntax");
+			}
+		}
 		else
 		{
 			sc.ScriptError("%s: Unknown top level keyword", sc.String);
@@ -1841,7 +1879,7 @@ void FMapInfoParser::ParseMapInfo (int lump, level_info_t &gamedefaults)
 //
 //==========================================================================
 
-void G_ParseMapInfo ()
+void G_ParseMapInfo (const char *basemapinfo)
 {
 	int lump, lastlump = 0;
 	level_info_t gamedefaults;
@@ -1849,20 +1887,19 @@ void G_ParseMapInfo ()
 	atterm(ClearEpisodes);
 
 	// Parse the default MAPINFO for the current game.
-	for(int i=0; i<2; i++)
+	if (basemapinfo != NULL)
 	{
-		if (gameinfo.mapinfo[i] != NULL)
-		{
-			FMapInfoParser parse;
-			parse.ParseMapInfo(Wads.GetNumForFullName(gameinfo.mapinfo[i]), gamedefaults);
-		}
+		FMapInfoParser parse;
+		level_info_t defaultinfo;
+		parse.ParseMapInfo(Wads.GetNumForFullName(basemapinfo), gamedefaults, defaultinfo);
 	}
 
 	// Parse any extra MAPINFOs.
 	while ((lump = Wads.FindLump ("MAPINFO", &lastlump)) != -1)
 	{
 		FMapInfoParser parse;
-		parse.ParseMapInfo(lump, gamedefaults);
+		level_info_t defaultinfo;
+		parse.ParseMapInfo(lump, gamedefaults, defaultinfo);
 	}
 	EndSequences.ShrinkToFit ();
 

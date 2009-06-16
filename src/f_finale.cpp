@@ -25,7 +25,7 @@
 
 #include <ctype.h>
 #include <math.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #include "i_system.h"
 #include "m_swap.h"
@@ -49,6 +49,7 @@
 #include "g_level.h"
 #include "d_event.h"
 #include "v_palette.h"
+#include "d_main.h"
 
 static void FadePic ();
 static void GetFinaleText (const char *msgLumpName);
@@ -89,7 +90,7 @@ void	F_AdvanceSlideshow ();
 void F_StartFinale (const char *music, int musicorder, int cdtrack, unsigned int cdid, const char *flat, 
 					const char *text, INTBOOL textInLump, INTBOOL finalePic, INTBOOL lookupText, bool ending)
 {
-	bool loopmusic = ending ? !(gameinfo.flags & GI_NOLOOPFINALEMUSIC) : true;
+	bool loopmusic = ending ? !gameinfo.noloopfinalemusic : true;
 	gameaction = ga_nothing;
 	gamestate = GS_FINALE;
 	viewactive = false;
@@ -229,7 +230,7 @@ void F_Ticker ()
 	if (FinaleStage == 0)
 	{
 		if (interrupt ||
-			((gamemode != commercial || gameinfo.flags & GI_SHAREWARE)
+			((!(gameinfo.flags & GI_MAPxx) || gameinfo.flags & GI_SHAREWARE)
 			 && FinaleCount > FinaleTextLen*TEXTSPEED+TEXTWAIT))
 		{
 			if (FinaleCount < FinaleTextLen*TEXTSPEED+10)
@@ -308,7 +309,7 @@ void F_Ticker ()
 			case 12: // Pic 2, Text 2
 				GetFinaleText ("win2msg");
 				FinaleEndCount = FinaleTextLen*TEXTSPEED+TEXTWAIT;
-				S_ChangeMusic ("orb", 0, !(gameinfo.flags & GI_NOLOOPFINALEMUSIC));
+				S_ChangeMusic ("orb", 0, !gameinfo.noloopfinalemusic);
 				break;
 
 			case 13: // Pic 2 -- Fade out
@@ -319,7 +320,7 @@ void F_Ticker ()
 			case 14: // Pic 3 -- Fade in
 				FinaleEndCount = 71;
 				FadeDir = -1;
-				S_ChangeMusic ("chess", 0, !(gameinfo.flags & GI_NOLOOPFINALEMUSIC));
+				S_ChangeMusic ("chess", 0, !gameinfo.noloopfinalemusic);
 				break;
 
 			case 15: // Pic 3, Text 3
@@ -460,13 +461,13 @@ void F_TextWrite (void)
 // Casting by id Software.
 //	 in order of appearance
 //
-typedef struct
+struct castinfo_t
 {
 	const char		*name;
 	const char		*type;
 	const AActor	*info;
 	const PClass	*Class;
-} castinfo_t;
+};
 
 castinfo_t castorder[] =
 {
@@ -1247,19 +1248,19 @@ void F_Drawer (void)
 		{
 		default:
 		case END_Pic1:
-			picname = gameinfo.finalePage1;
+			picname = gameinfo.GetFinalePage(1);
 			screen->DrawTexture (TexMan[picname], 0, 0,
 				DTA_DestWidth, screen->GetWidth(),
 				DTA_DestHeight, screen->GetHeight(), TAG_DONE);
 			break;
 		case END_Pic2:
-			picname = gameinfo.finalePage2;
+			picname = gameinfo.GetFinalePage(2);
 			screen->DrawTexture (TexMan[picname], 0, 0,
 				DTA_DestWidth, screen->GetWidth(),
 				DTA_DestHeight, screen->GetHeight(), TAG_DONE);
 			break;
 		case END_Pic3:
-			picname = gameinfo.finalePage3;
+			picname = gameinfo.GetFinalePage(3);
 			screen->DrawTexture (TexMan[picname], 0, 0,
 				DTA_DestWidth, screen->GetWidth(),
 				DTA_DestHeight, screen->GetHeight(), TAG_DONE);
@@ -1276,6 +1277,9 @@ void F_Drawer (void)
 			break;
 		case END_Demon:
 			F_DemonScroll ();
+			break;
+		case END_TitleScreen:
+			D_StartTitle ();
 			break;
 		}
 		break;
