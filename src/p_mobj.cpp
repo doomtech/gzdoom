@@ -4536,6 +4536,7 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t x, fixed_t y, fixed_t z
 	AActor *mo = NULL;
 	FSplashDef *splash;
 	int terrainnum;
+	sector_t *hsec = NULL;
 	
 	if (x == FIXED_MIN) x = thing->x;
 	if (y == FIXED_MIN) y = thing->y;
@@ -4561,7 +4562,7 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t x, fixed_t y, fixed_t z
 		if (planez < z) return false;
 	}
 #endif
-	sector_t *hsec = sec->GetHeightSec();
+	hsec = sec->GetHeightSec();
 	if (hsec == NULL || !(hsec->MoreFlags & SECF_CLIPFAKEPLANES))
 	{
 		terrainnum = TerrainTypes[sec->GetTexture(sector_t::floor)];

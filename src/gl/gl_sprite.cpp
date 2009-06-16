@@ -146,7 +146,7 @@ void GLSprite::Draw(int pass)
 		if (actor)
 		{
 			gl_SetSpriteLighting(RenderStyle, actor, lightlevel, rel, &Colormap, ThingColor, 
-								 trans, !!(actor->renderflags & RF_FULLBRIGHT), false);
+								 trans, (actor->renderflags & RF_FULLBRIGHT) || gl_fixedcolormap >= CM_INVERT, false);
 		}
 		else if (particle)
 		{
