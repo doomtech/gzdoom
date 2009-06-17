@@ -47,14 +47,10 @@
 #include "r_main.h"
 #include "m_png.h"
 #include "m_crc32.h"
-#include "gl/gl_basic.h"
-#include "gl/gl_struct.h"
-#include "gl/gl_texture.h"
-#include "gl/gl_functions.h"
-#include "gl/gl_shader.h"
+#include "v_palette.h"
 #include "gl/gl_framebuffer.h"
-#include "gl/gl_translate.h"
 #include "vectors.h"
+#include "templates.h"
 
 IMPLEMENT_CLASS(OpenGLFrameBuffer)
 EXTERN_CVAR (Float, vid_brightness)
@@ -63,6 +59,8 @@ EXTERN_CVAR (Float, vid_contrast)
 void gl_InitSpecialTextures();
 void gl_FreeSpecialTextures();
 void gl_SetupMenu();
+
+int palette_brightness;
 
 //==========================================================================
 //
@@ -81,16 +79,16 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(int width, int height, int bits, int refres
 	DoSetGamma();
 
 	InitializeState();
-	gl_GenerateGlobalBrightmapFromColormap();
-	gl_InitSpecialTextures();
+	//gl_GenerateGlobalBrightmapFromColormap();
+	//gl_InitSpecialTextures();
 }
 
 OpenGLFrameBuffer::~OpenGLFrameBuffer()
 {
-	gl_FreeSpecialTextures();
+	//gl_FreeSpecialTextures();
 	// all native textures must be completely removed before destroying the frame buffer
-	FGLTexture::DeleteAll();
-	gl_ClearShaders();
+	//FGLTexture::DeleteAll();
+	//gl_ClearShaders();
 }
 
 //==========================================================================
@@ -114,36 +112,32 @@ void OpenGLFrameBuffer::InitializeState()
 		gl.PrintStartupLog();
 #endif
 
-		if (gl.flags&RFL_NPOT_TEXTURE)
-		{
-			Printf("Support for non power 2 textures enabled.\n");
-		}
 		if (gl.flags&RFL_OCCLUSION_QUERY)
 		{
 			Printf("Occlusion query enabled.\n");
 		}
 	}
-	gl.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	gl.ClearDepth(1.0f);
-	gl.DepthFunc(GL_LESS);
-	gl.ShadeModel(GL_SMOOTH);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClearDepth(1.0f);
+	glDepthFunc(GL_LESS);
+	glShadeModel(GL_SMOOTH);
 
-	gl.Enable(GL_DITHER);
-	gl.Enable(GL_ALPHA_TEST);
-	gl.Disable(GL_CULL_FACE);
-	gl.Disable(GL_POLYGON_OFFSET_FILL);
-	gl.Enable(GL_POLYGON_OFFSET_LINE);
-	gl.Enable(GL_BLEND);
-	gl.Enable(GL_DEPTH_CLAMP_NV);
-	gl.Disable(GL_DEPTH_TEST);
-	gl.Enable(GL_TEXTURE_2D);
-	gl.Disable(GL_LINE_SMOOTH);
-	gl.AlphaFunc(GL_GEQUAL,0.5f);
-	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	gl.Hint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-	gl.Hint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-	gl.Hint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-	gl.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DITHER);
+	glEnable(GL_ALPHA_TEST);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_POLYGON_OFFSET_FILL);
+	glEnable(GL_POLYGON_OFFSET_LINE);
+	glEnable(GL_BLEND);
+	glEnable(GL_DEPTH_CLAMP_NV);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_TEXTURE_2D);
+	glDisable(GL_LINE_SMOOTH);
+	glAlphaFunc(GL_GEQUAL,0.5f);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+	glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	/*
 	gl.MatrixMode(GL_PROJECTION);
@@ -155,16 +149,11 @@ void OpenGLFrameBuffer::InitializeState()
 	//GL::SetPerspective(90.f, GetWidth() * 1.f / GetHeight(), 0.f, 1000.f);
 	*/
 
-	gl.Viewport(0, (GetTrueHeight()-GetHeight())/2, GetWidth(), GetHeight()); 
+	glViewport(0, (GetTrueHeight()-GetHeight())/2, GetWidth(), GetHeight()); 
 
-	gl_InitShaders();
-	gl_InitFog();
+	//gl_InitShaders();
+	//gl_InitFog();
 	Begin2D(false);
-
-	if (gl_vertices.Size())
-	{
-		gl.ArrayPointer(&gl_vertices[0], sizeof(GLVertex));
-	}
 }
 
 //==========================================================================
@@ -186,42 +175,42 @@ void OpenGLFrameBuffer::Update()
 		// Letterbox time! Draw black top and bottom borders.
 		int borderHeight = (GetTrueHeight() - GetHeight()) / 2;
 
-		gl.Viewport(0, 0, GetWidth(), GetTrueHeight());
-		gl.MatrixMode(GL_PROJECTION);
-		gl.LoadIdentity();
-		gl.Ortho(0.0, GetWidth() * 1.0, 0.0, GetTrueHeight(), -1.0, 1.0);
-		gl.MatrixMode(GL_MODELVIEW);
-		gl.Color3f(0.f, 0.f, 0.f);
-		gl_EnableTexture(false);
-		gl_DisableShader();
+		glViewport(0, 0, GetWidth(), GetTrueHeight());
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0.0, GetWidth() * 1.0, 0.0, GetTrueHeight(), -1.0, 1.0);
+		glMatrixMode(GL_MODELVIEW);
+		glColor3f(0.f, 0.f, 0.f);
+		//gl_EnableTexture(false);
+		//gl_DisableShader();
 
-		gl.Begin(GL_QUADS);
+		glBegin(GL_QUADS);
 		// upper quad
-		gl.Vertex2i(0, borderHeight);
-		gl.Vertex2i(0, 0);
-		gl.Vertex2i(GetWidth(), 0);
-		gl.Vertex2i(GetWidth(), borderHeight);
-		gl.End();
+		glVertex2i(0, borderHeight);
+		glVertex2i(0, 0);
+		glVertex2i(GetWidth(), 0);
+		glVertex2i(GetWidth(), borderHeight);
+		glEnd();
 
-		gl.Begin(GL_QUADS);
+		glBegin(GL_QUADS);
 		// lower quad
-		gl.Vertex2i(0, GetTrueHeight());
-		gl.Vertex2i(0, GetTrueHeight() - borderHeight);
-		gl.Vertex2i(GetWidth(), GetTrueHeight() - borderHeight);
-		gl.Vertex2i(GetWidth(), GetTrueHeight());
-		gl.End();
+		glVertex2i(0, GetTrueHeight());
+		glVertex2i(0, GetTrueHeight() - borderHeight);
+		glVertex2i(GetWidth(), GetTrueHeight() - borderHeight);
+		glVertex2i(GetWidth(), GetTrueHeight());
+		glEnd();
 
-		gl_EnableTexture(true);
+		//gl_EnableTexture(true);
 
 		Begin2D(false);
 		gl.Viewport(0, (GetTrueHeight() - GetHeight()) / 2, GetWidth(), GetHeight()); 
 
 	}
 
-	Finish.Reset();
-	Finish.Clock();
+	//Finish.Reset();
+	//Finish.Clock();
 	gl.Finish();
-	Finish.Unclock();
+	//Finish.Unclock();
 	gl.SwapBuffers();
 	Unlock();
 }
@@ -343,6 +332,7 @@ int OpenGLFrameBuffer::GetPageCount()
 
 void OpenGLFrameBuffer::PrecacheTexture(FTexture *tex, bool cache)
 {
+	/*
 	if (tex != NULL)
 	{
 		if (cache)
@@ -354,6 +344,7 @@ void OpenGLFrameBuffer::PrecacheTexture(FTexture *tex, bool cache)
 			tex->UncacheGL();
 		}
 	}
+	*/
 }
 
 
@@ -367,7 +358,7 @@ void OpenGLFrameBuffer::PrecacheTexture(FTexture *tex, bool cache)
 
 FNativePalette *OpenGLFrameBuffer::CreatePalette(FRemapTable *remap)
 {
-	return GLTranslationPalette::CreatePalette(remap);
+	return NULL; //GLTranslationPalette::CreatePalette(remap);
 }
 
 //==========================================================================
@@ -377,11 +368,11 @@ FNativePalette *OpenGLFrameBuffer::CreatePalette(FRemapTable *remap)
 //==========================================================================
 bool OpenGLFrameBuffer::Begin2D(bool)
 {
-	gl.MatrixMode(GL_MODELVIEW);
-	gl.LoadIdentity();
-	gl.MatrixMode(GL_PROJECTION);
-	gl.LoadIdentity();
-	gl.Ortho(
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(
 		(GLdouble) 0,
 		(GLdouble) GetWidth(), 
 		(GLdouble) GetHeight(), 
@@ -389,9 +380,9 @@ bool OpenGLFrameBuffer::Begin2D(bool)
 		(GLdouble) -1.0, 
 		(GLdouble) 1.0 
 		);
-	gl.Disable(GL_DEPTH_TEST);
-	gl.Disable(GL_MULTISAMPLE);
-	gl_EnableFog(false);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_MULTISAMPLE);
+	//gl_EnableFog(false);
 	return true;
 }
 
@@ -409,6 +400,7 @@ void STACK_ARGS OpenGLFrameBuffer::DrawTextureV(FTexture *img, int x0, int y0, u
 	{
 		return;
 	}
+	/*
 
 	float x = FIXED2FLOAT(parms.x - Scale (parms.left, parms.destwidth, parms.texwidth));
 	float y = FIXED2FLOAT(parms.y - Scale (parms.top, parms.destheight, parms.texheight));
@@ -513,6 +505,7 @@ void STACK_ARGS OpenGLFrameBuffer::DrawTextureV(FTexture *img, int x0, int y0, u
 	gl_SetTextureMode(TM_MODULATE);
 	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	gl.BlendEquation(GL_FUNC_ADD);
+	*/
 }
 
 //==========================================================================
@@ -523,14 +516,14 @@ void STACK_ARGS OpenGLFrameBuffer::DrawTextureV(FTexture *img, int x0, int y0, u
 void OpenGLFrameBuffer::DrawLine(int x1, int y1, int x2, int y2, int palcolor, uint32 color)
 {
 	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[color];
-	gl_EnableTexture(false);
-	gl_DisableShader();
-	gl.Color3ub(p.r, p.g, p.b);
-	gl.Begin(GL_LINES);
-	gl.Vertex2i(x1, y1);
-	gl.Vertex2i(x2, y2);
-	gl.End();
-	gl_EnableTexture(true);
+	//gl_EnableTexture(false);
+	//gl_DisableShader();
+	glColor3ub(p.r, p.g, p.b);
+	glBegin(GL_LINES);
+	glVertex2i(x1, y1);
+	glVertex2i(x2, y2);
+	glEnd();
+	//gl_EnableTexture(true);
 }
 
 //==========================================================================
@@ -541,13 +534,13 @@ void OpenGLFrameBuffer::DrawLine(int x1, int y1, int x2, int y2, int palcolor, u
 void OpenGLFrameBuffer::DrawPixel(int x1, int y1, int palcolor, uint32 color)
 {
 	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[color];
-	gl_EnableTexture(false);
-	gl_DisableShader();
-	gl.Color3ub(p.r, p.g, p.b);
-	gl.Begin(GL_POINTS);
-	gl.Vertex2i(x1, y1);
-	gl.End();
-	gl_EnableTexture(true);
+	//gl_EnableTexture(false);
+	//gl_DisableShader();
+	glColor3ub(p.r, p.g, p.b);
+	glBegin(GL_POINTS);
+	glVertex2i(x1, y1);
+	glEnd();
+	//gl_EnableTexture(true);
 }
 
 //==========================================================================
@@ -566,24 +559,24 @@ void OpenGLFrameBuffer::Dim(PalEntry color, float damount, int x1, int y1, int w
 {
 	float r, g, b;
 	
-	gl_EnableTexture(false);
-	gl_DisableShader();
-	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	gl.AlphaFunc(GL_GREATER,0);
+	//gl_EnableTexture(false);
+	//gl_DisableShader();
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glAlphaFunc(GL_GREATER,0);
 	
 	r = color.r/255.0f;
 	g = color.g/255.0f;
 	b = color.b/255.0f;
 	
-	gl.Begin(GL_TRIANGLE_FAN);
-	gl.Color4f(r, g, b, damount);
-	gl.Vertex2i(x1, y1);
-	gl.Vertex2i(x1, y1 + h);
-	gl.Vertex2i(x1 + w, y1 + h);
-	gl.Vertex2i(x1 + w, y1);
-	gl.End();
+	glBegin(GL_TRIANGLE_FAN);
+	glColor4f(r, g, b, damount);
+	glVertex2i(x1, y1);
+	glVertex2i(x1, y1 + h);
+	glVertex2i(x1 + w, y1 + h);
+	glVertex2i(x1 + w, y1);
+	glEnd();
 	
-	gl_EnableTexture(true);
+	//gl_EnableTexture(true);
 }
 
 //==========================================================================
@@ -593,36 +586,6 @@ void OpenGLFrameBuffer::Dim(PalEntry color, float damount, int x1, int y1, int w
 //==========================================================================
 void OpenGLFrameBuffer::FlatFill (int left, int top, int right, int bottom, FTexture *src, bool local_origin)
 {
-	float fU1,fU2,fV1,fV2;
-
-	FGLTexture *gltexture=FGLTexture::ValidateTexture(src);
-	
-	if (!gltexture) return;
-
-	const WorldTextureInfo * wti = gltexture->Bind(CM_DEFAULT, 0, 0);
-	if (!wti) return;
-	
-	if (!local_origin)
-	{
-		fU1=wti->GetU(left);
-		fV1=wti->GetV(top);
-		fU2=wti->GetU(right);
-		fV2=wti->GetV(bottom);
-	}
-	else
-	{
-		fU1=wti->GetU(0);
-		fV1=wti->GetV(0);
-		fU2=wti->GetU(right-left);
-		fV2=wti->GetV(bottom-top);
-	}
-	gl_ApplyShader();
-	gl.Begin(GL_TRIANGLE_STRIP);
-	gl.TexCoord2f(fU1, fV1); gl.Vertex2f(left, top);
-	gl.TexCoord2f(fU1, fV2); gl.Vertex2f(left, bottom);
-	gl.TexCoord2f(fU2, fV1); gl.Vertex2f(right, top);
-	gl.TexCoord2f(fU2, fV2); gl.Vertex2f(right, bottom);
-	gl.End();
 }
 
 //==========================================================================
@@ -643,24 +606,17 @@ void OpenGLFrameBuffer::Clear(int left, int top, int right, int bottom, int palc
 	
 	int space = (static_cast<OpenGLFrameBuffer*>(screen)->GetTrueHeight()-screen->GetHeight())/2;	// ugh...
 	rt += space;
-	/*
-	if (!m_windowed && (m_trueHeight != m_height))
-	{
-		offY = (m_trueHeight - m_height) / 2;
-		rt += offY;
-	}
-	*/
-	
-	gl_DisableShader();
 
-	gl.Enable(GL_SCISSOR_TEST);
-	gl.Scissor(left, rt - height, width, height);
+	//gl_DisableShader();
+
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(left, rt - height, width, height);
 	
-	gl.ClearColor(p.r/255.0f, p.g/255.0f, p.b/255.0f, 0.f);
-	gl.Clear(GL_COLOR_BUFFER_BIT);
-	gl.ClearColor(0.f, 0.f, 0.f, 0.f);
+	glClearColor(p.r/255.0f, p.g/255.0f, p.b/255.0f, 0.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glClearColor(0.f, 0.f, 0.f, 0.f);
 	
-	gl.Disable(GL_SCISSOR_TEST);
+	glDisable(GL_SCISSOR_TEST);
 }
 
 //===========================================================================
@@ -677,7 +633,7 @@ void OpenGLFrameBuffer::GetScreenshotBuffer(const BYTE *&buffer, int &pitch, ESS
 	ReleaseScreenshotBuffer();
 	ScreenshotBuffer = new BYTE[w * h * 3];
 
-	gl.ReadPixels(0,(GetTrueHeight() - GetHeight()) / 2,w,h,GL_RGB,GL_UNSIGNED_BYTE,ScreenshotBuffer);
+	glReadPixels(0,(GetTrueHeight() - GetHeight()) / 2,w,h,GL_RGB,GL_UNSIGNED_BYTE,ScreenshotBuffer);
 	pitch = -w*3;
 	color_type = SS_RGB;
 	buffer = ScreenshotBuffer + w * 3 * (h - 1);

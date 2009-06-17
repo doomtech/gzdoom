@@ -85,7 +85,7 @@
 
 
 
-#include "gl/gl_functions.h"
+//#include "gl/gl_functions.h"
 
 #ifndef STAT
 #define STAT_NEW(map)
@@ -696,7 +696,7 @@ void G_DoCompleted (void)
 {
 	int i; 
 
-	gl_DeleteAllAttachedLights();
+	//FGLRenderer::DeleteAllAttachedLights();
 
 	gameaction = ga_nothing;
 
@@ -1412,7 +1412,7 @@ void G_SerializeLevel (FArchive &arc, bool hubLoad)
 {
 	int i = level.totaltime;
 	
-	gl_DeleteAllAttachedLights();
+	//FGLRenderer::DeleteAllAttachedLights();
 
 	arc << level.flags
 		<< level.flags2
@@ -1531,7 +1531,7 @@ void G_SerializeLevel (FArchive &arc, bool hubLoad)
 			}
 		}
 	}
-	gl_RecreateAllAttachedLights();
+	//FGLRenderer::RecreateAllAttachedLights();
 	STAT_SAVE(arc, hubLoad);
 }
 

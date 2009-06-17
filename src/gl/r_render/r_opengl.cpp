@@ -38,7 +38,7 @@
 #include "gl/gl_include.h"
 #include "tarray.h"
 #include "doomtype.h"
-#include "gl/gl_intern.h"
+//#include "gl/gl_intern.h"
 
 #ifndef unix
 static void CollectExtensions(HDC);
@@ -870,10 +870,12 @@ static void APIENTRY SetTextureMode(int type)
 {
 	static float white[] = {1.f,1.f,1.f,1.f};
 
+	/*
 	if (gl_vid_compatibility)
 	{
 		type = TM_MODULATE;
 	}
+	*/
 	if (type == TM_MASK)
 	{
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);

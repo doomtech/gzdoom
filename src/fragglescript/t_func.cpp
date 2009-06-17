@@ -66,7 +66,7 @@
 #include "v_palette.h"
 #include "v_font.h"
 
-#include "gl/gl_data.h"
+//#include "gl/gl_data.h"
 
 static FRandom pr_script("FScript");
 
@@ -295,7 +295,7 @@ static int T_GetPlayerNum(const svalue_t &arg)
 			//script_error("mobj not a player!\n");
 			return -1;
 		}
-		playernum = arg.value.mobj->player - players;
+		playernum = int(arg.value.mobj->player - players);
 	}
 	else
 		playernum = intvalue(arg);
@@ -769,7 +769,7 @@ void FParser::SF_PlayerName(void)
 	{
 		player_t *pl=NULL;
 		if (Script->trigger) pl = Script->trigger->player;
-		if(pl) plnum = pl - players;
+		if(pl) plnum = int(pl - players);
 		else plnum=-1;
 	}
 	else
@@ -800,7 +800,7 @@ void FParser::SF_PlayerObj(void)
 	{
 		player_t *pl=NULL;
 		if (Script->trigger) pl = Script->trigger->player;
-		if(pl) plnum = pl - players;
+		if(pl) plnum = int(pl - players);
 		else plnum=-1;
 	}
 	else
@@ -1873,7 +1873,7 @@ void FParser::SF_LightLevel(void)
 			// set all sectors with tag
 			while ((i = T_FindSectorFromTag(tagnum, i)) >= 0)
 			{
-				sectors[i].lightlevel = (short)intvalue(t_argv[1]);
+				sectors[i].lightlevel = (BYTE)intvalue(t_argv[1]);
 			}
 		}
 		

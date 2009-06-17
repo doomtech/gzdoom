@@ -2,12 +2,14 @@
 
 #include "win32iface.h"
 #include "win32gliface.h"
+/*
 #include "gl/gl_basic.h"
 #include "gl/gl_intern.h"
 #include "gl/gl_struct.h"
 #include "gl/gl_texture.h"
 #include "gl/gl_functions.h"
 #include "gl/gl_shader.h"
+*/
 #include "gl/gl_framebuffer.h"
 #include "templates.h"
 #include "version.h"
@@ -16,9 +18,9 @@
 #include "v_video.h"
 #include "i_input.h"
 #include "doomstat.h"
+#include "x86.h"
+#include "i_system.h"
 //#include "gl_defs.h"
-
-void gl_CalculateCPUSpeed();
 
 CUSTOM_CVAR(Int, gl_vid_multisample, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL )
 {
@@ -34,9 +36,6 @@ EXTERN_CVAR(Int, vid_refreshrate)
 
 Win32GLVideo::Win32GLVideo(int parm) : m_Modes(NULL), m_IsFullscreen(false)
 {
-	#ifdef _WIN32
-		 if (CPU.bRDTSC) gl_CalculateCPUSpeed();
-	#endif
 	I_SetWndProc();
 	m_DisplayWidth = vid_defwidth;
 	m_DisplayHeight = vid_defheight;
@@ -50,7 +49,7 @@ Win32GLVideo::Win32GLVideo(int parm) : m_Modes(NULL), m_IsFullscreen(false)
 Win32GLVideo::~Win32GLVideo()
 {
 	FreeModes();
-	FGLTexture::FlushAll();
+	//FGLRenderer::FlushAllTextures();
 }
 
 void Win32GLVideo::SetWindowedScale(float scale)
@@ -235,7 +234,7 @@ DFrameBuffer *Win32GLVideo::CreateFrameBuffer(int width, int height, bool fs, DF
 
 bool Win32GLVideo::SetResolution (int width, int height, int bits)
 {
-	FGLTexture::FlushAll();
+	//FGLRenderer::FlushAllTextures();
 	I_ShutdownGraphics();
 	
 	Video = new Win32GLVideo(0);

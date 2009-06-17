@@ -42,11 +42,13 @@
 #include "p_local.h"
 #include "c_dispatch.h"
 #include "g_level.h"
+/*
 #include "gl/gl_lights.h"
 #include "gl/gl_data.h"
 #include "gl/gl_basic.h"
 #include "gl/gl_functions.h"
 #include "gl/gl_values.h"
+*/
 #include "thingdef/thingdef.h"
 #include "i_system.h"
 

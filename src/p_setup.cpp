@@ -66,7 +66,10 @@
 #include "md5.h"
 #include "compatibility.h"
 
-#include "gl/gl_functions.h"
+//#include "gl/gl_functions.h"
+bool gl_LoadGLNodes(MapData * map);
+void gl_CheckNodes(MapData * map);
+
 
 #include "fragglescript/t_fs.h"
 
@@ -3220,7 +3223,7 @@ extern polyblock_t **PolyBlockMap;
 
 void P_FreeLevelData ()
 {
-	gl_CleanLevelData();
+	//FGLRenderer::CleanLevelData();
 	SN_StopAllSequences ();
 	DThinker::DestroyAllThinkers ();
 	level.total_monsters = level.total_items = level.total_secrets =
@@ -3711,7 +3714,7 @@ void P_SetupLevel (char *lumpname, int position)
 	P_SpawnSpecials ();
 
 	// This must be done BEFORE the PolyObj Spawn!!!
-	gl_PreprocessLevel();
+	//FGLRenderer::PreprocessLevel();
 
 	times[16].Clock();
 	PO_Init ();	// Initialize the polyobjs

@@ -225,7 +225,7 @@ protected:
 		CopySize(other);
 		bNoDecals = other->bNoDecals;
 		Rotations = other->Rotations;
-		gl_info = other->gl_info;
+		//gl_info = other->gl_info;
 	}
 
 	static void FlipSquareBlock (BYTE *block, int x, int y);
@@ -236,7 +236,8 @@ protected:
 	friend class D3DTex;
 
 public:
-
+	
+	/*
 	struct MiscGLInfo
 	{
 		FGLTexture *GLTexture;
@@ -258,11 +259,12 @@ public:
 	};
 	MiscGLInfo gl_info;
 
-	virtual void PrecacheGL();
-	virtual void UncacheGL();
+	//virtual void PrecacheGL();
+	//virtual void UncacheGL();
 	void GetGlowColor(float *data);
 	bool isGlowing() { return gl_info.bGlowing; }
 	bool isFullbright() { return gl_info.bFullbright; }
+	*/
 };
 
 // Texture manager

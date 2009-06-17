@@ -3,7 +3,7 @@
 #include "gl/gl_include.h"
 #include "m_menu.h"
 #include "v_video.h"
-#include "gl/gl_intern.h"
+//#include "gl/gl_intern.h"
 #include "version.h"
 
 
@@ -18,6 +18,13 @@ void StartGLPrefMenu (void);
 void StartGLShaderMenu (void);
 void StartDisableGL();
 void ReturnToMainMenu();
+
+CUSTOM_CVAR(Float, maxviewpitch, 90.f, CVAR_ARCHIVE|CVAR_SERVERINFO)
+{
+	if (self>90.f) self=90.f;
+	else if (self<-90.f) self=-90.f;
+}
+
 
 CUSTOM_CVAR(Bool, gl_nogl, false, CVAR_GLOBALCONFIG|CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
@@ -159,16 +166,18 @@ static value_t FogMode[] =
 };
 
 static menuitem_t OpenGLItems[] = {
+	/*
 	{ more,     "Disable GL system",		{NULL}, {0.0}, {0.0},	{0.0},	{(value_t *)StartDisableGL} },
 	{ more,     "Dynamic Light Options",	{NULL}, {0.0}, {0.0},	{0.0},	{(value_t *)StartGLLightMenu} },
 	{ more,     "Texture Options",			{NULL}, {0.0}, {0.0},	{0.0},	{(value_t *)StartGLTextureMenu} },
 	{ more,     "Shader Options",			{NULL}, {0.0}, {0.0},	{0.0},	{(value_t *)StartGLShaderMenu} },
 	{ more,     "Preferences",				{NULL}, {0.0}, {0.0},	{0.0},	{(value_t *)StartGLPrefMenu} },
+	*/
 	{ redtext,	" ",						{NULL},							{0.0}, {0.0}, {0.0}, {NULL} },
-	{ discrete, "Vertical Sync",			{&vid_vsync},					{2.0}, {0.0}, {0.0}, {OnOff} },
-	{ discrete, "Rendering quality",		{&gl_render_precise},			{2.0}, {0.0}, {0.0}, {Precision} },
+	//{ discrete, "Rendering quality",		{&gl_render_precise},			{2.0}, {0.0}, {0.0}, {Precision} },
 };
 
+/*
 static menuitem_t OpenGLItems2[] = {
 	{ more,     "Disable GL system",		{NULL}, {0.0}, {0.0},	{0.0},	{(value_t *)StartDisableGL} },
 	{ more,     "Dynamic Light Options",	{NULL}, {0.0}, {0.0},	{0.0},	{(value_t *)StartGLLightMenu} },
@@ -230,6 +239,7 @@ menuitem_t OpenGLDisabled[] = {
 	{ redtext,	"until "GAMENAME" is restarted.",		{NULL},	{0.0}, {0.0}, {0.0}, {NULL} },
 	{ more,     "",									{NULL}, {0.0}, {0.0},	{0.0}, {(value_t *)ReturnToMainMenu} },
 };
+*/
 
 menu_t OpenGLMenu = {
    "OPENGL OPTIONS",
@@ -240,6 +250,7 @@ menu_t OpenGLMenu = {
    0,
 };
 
+/*
 menu_t OpenGLMessage = {
    "",
    2,
@@ -284,10 +295,11 @@ menu_t GLShaderMenu = {
    GLShaderItems,
    0,
 };
+*/
 
 void StartDisableGL()
 {
-	M_SwitchMenu(&OpenGLMessage);
+	//M_SwitchMenu(&OpenGLMessage);
 	gl_nogl=true;
 }
 
@@ -304,11 +316,12 @@ void StartGLMenu (void)
 	}
 	else
 	{
-		M_SwitchMenu(&OpenGLMessage);
+		//M_SwitchMenu(&OpenGLMessage);
 		gl_nogl=false;
 	}
 }
 
+/*
 void StartGLLightMenu (void)
 {
 	M_SwitchMenu(&GLLightMenu);
@@ -328,10 +341,12 @@ void StartGLShaderMenu (void)
 {
 	M_SwitchMenu(&GLShaderMenu);
 }
+*/
 
 void gl_SetupMenu()
 {
 	// Customize the GL menu depending on shader availability
+	/*
 	if (!(gl.flags & RFL_GLSL))
 	{
 		menuitem_t *lightmodeitem = &GLPrefItems[0];
@@ -360,6 +375,7 @@ void gl_SetupMenu()
 		OpenGLMenu.numitems = sizeof(OpenGLItems)/sizeof(OpenGLItems[0]);
 		OpenGLMenu.items = OpenGLItems;
 	}
+	*/
 }
 
 CUSTOM_CVAR (Float, vid_brightness, 0.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)

@@ -60,7 +60,7 @@
 #include "colormatcher.h"
 #include "v_palette.h"
 #include "p_enemy.h"
-#include "gl/gl_functions.h"
+//#include "gl/gl_functions.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -537,7 +537,7 @@ bool AActor::SetState (FState *newstate)
 		newstate = newstate->GetNextState();
 	} while (tics == 0);
 
-	gl_SetActorLights(this);
+	//FGLRenderer::SetActorLights(this);
 	return true;
 }
 
@@ -597,7 +597,7 @@ bool AActor::SetStateNF (FState *newstate)
 		newstate = newstate->GetNextState();
 	} while (tics == 0);
 
-	gl_SetActorLights(this);
+	//FGLRenderer::SetActorLights(this);
 	return true;
 }
 
@@ -3514,7 +3514,7 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 	}
 	bool smt = SpawningMapThing;
 	SpawningMapThing = false;
-	gl_SetActorLights(actor);
+	//FGLRenderer::SetActorLights(actor);
 	SpawningMapThing = smt;
 	return actor;
 }

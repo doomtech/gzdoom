@@ -67,13 +67,16 @@ public:
 
 	FNativePalette *CreatePalette(FRemapTable *remap);
 
-	void RenderView (player_t* player);
+	//void RenderView (player_t* player);
+
+	/*
 	void WriteSavePic (player_t *player, FILE *file, int width, int height);
 
 	bool WipeStartScreen(int type);
 	void WipeEndScreen();
 	bool WipeDo(int ticks);
 	void WipeCleanup();
+	*/
 
 
 private:
@@ -87,6 +90,7 @@ private:
 	PalEntry SourcePalette[256];
 	BYTE *ScreenshotBuffer;
 
+	/*
 	class Wiper
 	{
 	public:
@@ -101,6 +105,7 @@ private:
 	Wiper *ScreenWipe;
 	GLTexture *wipestartscreen;
 	GLTexture *wipeendscreen;
+	*/
 
 	AActor * LastCamera;
 

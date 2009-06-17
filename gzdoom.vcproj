@@ -6473,75 +6473,7 @@
 			Name="GL Renderer"
 			>
 			<File
-				RelativePath=".\src\gl\a_dynlight.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gfxfuncs.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_bsp.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_clipper.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_clock.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_cycler.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_data.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_decal.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_drawinfo.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_dynlight.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_fakeflat.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_flats.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\gl\gl_framebuffer.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_geometric.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_glow.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_hirestex.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_hqresize.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_light.cpp"
 				>
 			</File>
 			<File
@@ -6549,126 +6481,14 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\gl\gl_missingtexture.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_models.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_models_md2.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_models_md3.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\gl\gl_nodes.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_portal.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_scene.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_sections.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_shader.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_sky.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_skydome.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_sprite.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_swshaders.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_texture.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_translate.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_vertex.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_walls.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_walls_draw.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_weapon.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_wipe.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gltexture.cpp"
 				>
 			</File>
 			<Filter
 				Name="GL Header"
 				>
 				<File
-					RelativePath=".\src\gl\gl_basic.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_clipper.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_cycler.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_data.h"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\gl_framebuffer.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_functions.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_geometric.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_glow.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_hqresize.h"
 					>
 				</File>
 				<File
@@ -6676,63 +6496,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\gl_intern.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_lights.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_models.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_pch.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_portal.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_renderstruct.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_shader.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_struct.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_swshaders.h"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\gl_system.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_texture.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_translate.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_values.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gltexture.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\tab_anorms.h"
 					>
 				</File>
 			</Filter>
