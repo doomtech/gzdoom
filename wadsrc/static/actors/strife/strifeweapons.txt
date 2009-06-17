@@ -782,8 +782,8 @@ ACTOR HEGrenade
 		+NOBOUNCESOUND
 		+BOUNCEONACTORS
 		+EXPLODEONWATER
-		+DOOMBOUNCE
 		MaxStepHeight (4)
+		BounceType ("Doom")
 		BounceFactor (0.5)
 		BounceCount (2)
 		SeeSound ("weapons/hegrenadeshoot")
@@ -827,8 +827,8 @@ ACTOR PhosphorousGrenade
 		+NOBOUNCESOUND
 		+BOUNCEONACTORS
 		+EXPLODEONWATER
-		+DOOMBOUNCE
 		MaxStepHeight (4)
+		BounceType ("Doom")
 		BounceFactor (0.5)
 		BounceCount (2)
 		SeeSound ("weapons/phgrenadeshoot")

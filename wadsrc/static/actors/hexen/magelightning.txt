@@ -22,7 +22,7 @@ ACTOR MWeapLightning : MageWeapon
 	}
 
 	native action A_LightningReady();
-	native action A_MLightningAttack();
+	native action A_MLightningAttack(class<Actor> floor = "LightningFloor", class<Actor> ceiling = "LightningCeiling");
 
 	States
 	{
@@ -61,6 +61,9 @@ ACTOR MWeapLightning : MageWeapon
 
 ACTOR Lightning native
 {
+	MissileType "LightningZap"
+	AttackSound "MageLightningZap"
+	ActiveSound "MageLightningContinuous"
 }
 
 ACTOR LightningCeiling : Lightning

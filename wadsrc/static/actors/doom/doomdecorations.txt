@@ -1148,6 +1148,8 @@ ACTOR ColonGibs
 	{
 		Radius (20)
 		Height (4)
+		+NOBLOCKMAP
+		+MOVEWITHSECTOR
 	}
 
 	States
@@ -1173,6 +1175,8 @@ ACTOR SmallBloodPool
 	{
 		Radius (20)
 		Height (1)
+		+NOBLOCKMAP
+		+MOVEWITHSECTOR
 	}
 
 	States
@@ -1198,12 +1202,40 @@ ACTOR BrainStem
 	{
 		Radius (20)
 		Height (4)
+		+NOBLOCKMAP
+		+MOVEWITHSECTOR
 	}
 
 	States
 	{
 	Spawn:
 		BRS1 A -1;
+		Stop
+	}
+}
+
+
+// Grey stalagmite (unused Doom sprite, definition taken from Skulltag -----
+
+ACTOR Stalagmite
+{
+	Info
+	{
+		DoomEdNum (5050)
+		Game ("Doom")
+	}
+
+	Defaults
+	{
+		Radius (16)
+		Height (48)
+		+SOLID
+	}
+
+	States
+	{
+	Spawn:
+		SMT2 A -1;
 		Stop
 	}
 }

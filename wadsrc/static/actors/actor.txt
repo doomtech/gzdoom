@@ -19,6 +19,7 @@ ACTOR Actor native
 		BounceCount (-1)
 		FloatSpeed (4)
 		Gravity (1)
+		PushFactor (0.25)
 	}
 	// Variables for the expression evaluator
 	// NOTE: fixed_t and angle_t are only used here to ensure proper conversion
@@ -41,6 +42,7 @@ ACTOR Actor native
 	native fixed_t momx;
 	native fixed_t momy;
 	native fixed_t momz;
+	native int damage;
 
 	native action A_MonsterRail();
 	native action A_BFGSpray(class<Actor> spraytype = "BFGExtra", int numrays = 40, int damagecount = 15);
@@ -155,11 +157,11 @@ ACTOR Actor native
 	native action A_MeleeAttack();
 	native action A_ComboAttack();
 	native action A_BulletAttack();
-	native action A_PlaySound(sound whattoplay);
+	native action A_PlaySound(sound whattoplay, int slot = CHAN_BODY, float volume = 1.0, bool looping = false, float attenuation = ATTN_NORM);
 	native action A_PlayWeaponSound(sound whattoplay);
 	native action A_FLoopActiveSound();
 	native action A_LoopActiveSound();
-	native action A_StopSound();
+	native action A_StopSound(int slot = CHAN_VOICE);	// Bad default but that's what is originally was...
 	native action A_PlaySoundEx(sound whattoplay, name slot, bool looping = false, int attenuation = 0);
 	native action A_StopSoundEx(name slot);
 	native action A_SeekerMissile(int threshold, int turnmax);
@@ -170,6 +172,7 @@ ACTOR Actor native
 	native action A_JumpIfHealthLower(int health, state label);
 	native action A_JumpIfCloser(float distance, state label);
 	native action A_JumpIfInventory(class<Inventory> itemtype, int itemamount, state label);
+	native action A_JumpIfArmorType(string Type, state label, int amount = 1);
 	native action A_GiveInventory(class<Inventory> itemtype, int amount = 0);
 	native action A_TakeInventory(class<Inventory> itemtype, int amount = 0);
 	native action A_SpawnItem(class<Actor> itemtype, float distance = 0, float zheight = 0, bool useammo = true, bool transfer_translation = false);
@@ -177,7 +180,7 @@ ACTOR Actor native
 	native action A_Print(string whattoprint, float time = 0, string fontname = "");
 	native action A_SetTranslucent(float alpha, int style = 0);
 	native action A_FadeIn(float reduce = 0.1);
-	native action A_FadeOut(float reduce = 0.1);
+	native action A_FadeOut(float reduce = 0.1, bool remove = true);
 	native action A_SpawnDebris(class<Actor> spawntype, bool transfer_translation = false, float mult_h = 1, float mult_v = 1);
 	native action A_CheckSight(state label);
 	native action A_ExtChase(bool usemelee, bool usemissile, bool playactive = true, bool nightmarefast = false);
@@ -191,6 +194,7 @@ ACTOR Actor native
 	native action A_KillChildren();
 	native action A_KillSiblings();
 	native action A_CheckFloor(state label);
+	native action A_CheckCeiling(state label);
 	native action A_PlayerSkinCheck(state label);
 	native action A_BasicAttack(int meleedamage, sound meleesound, class<actor> missiletype, float missileheight);
 	native action A_ThrowGrenade(class<Actor> itemtype, float zheight = 0, float xymom = 0, float zmom = 0, bool useammo = true);
@@ -212,6 +216,7 @@ ACTOR Actor native
 	native action A_LookEx(int flags = 0, float minseedist = 0, float maxseedist = 0, float maxheardist = 0, float fov = 0, state label = "");
 	native action A_ClearTarget();
 	native action A_JumpIfTargetInLOS (state label, float fov = 0, bool projectiletarget = false);
+	native action A_JumpIfInTargetLOS (state label, float fov = 0, bool projectiletarget = false);
 	native action A_DamageMaster(int amount, name damagetype = "none");
 	native action A_DamageChildren(int amount, name damagetype = "none");
 	native action A_DamageSiblings(int amount, name damagetype = "none");
@@ -243,7 +248,3 @@ ACTOR Actor native
 		Wait
 	}
 }
-
-
-
-

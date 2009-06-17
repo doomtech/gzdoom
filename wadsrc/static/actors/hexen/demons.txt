@@ -247,6 +247,7 @@ ACTOR Demon2 : Demon1
 
 	Defaults
 	{
+		Species ("Demon2")
 		Obituary ("$OB_DEMON2")
 	}
 

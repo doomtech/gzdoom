@@ -28,6 +28,7 @@ ACTOR Inventory native
 	native action A_LoadShotgun2();
 	native action A_CloseShotgun2();
 	native action A_FireCGun();
+	native action A_FireSTGrenade(class<Actor> grenadetype = "Grenade");
 	native action A_FireMissile();
 	native action A_FirePlasma();
 	native action A_FireRailgun();
@@ -387,12 +388,21 @@ ACTOR PowerHighJump : Powerup native
 {
 }
 
+ACTOR PowerDoubleFiringSpeed : Powerup native 
+{
+}
+
 ACTOR PowerMorph : Powerup native
 {
 	Defaults
 	{
 		Powerup.Duration (-40)
 	}
+}
+
+ACTOR PowerInfiniteAmmo : Powerup native
+{
+	Powerup.Duration -30
 }
 
 ACTOR MapRevealer : Inventory native

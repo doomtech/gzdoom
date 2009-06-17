@@ -84,6 +84,7 @@ ACTOR FlameSmall : SwitchableDecoration
 		+NOTELEPORT
 		+INVISIBLE
 		RenderStyle ("Add")
+		Radius (15)
 	}
 
 	States
@@ -128,6 +129,7 @@ ACTOR FlameLarge : SwitchableDecoration
 		+NOTELEPORT
 		+INVISIBLE
 		RenderStyle ("Add")
+		Radius (15)
 	}
 
 	States

@@ -93,7 +93,7 @@ ACTOR SorcBall native
 		+FULLVOLDEATH
 		+CANBOUNCEWATER
 		+NOWALLBOUNCESND
-		+HEXENBOUNCE
+		BounceType ("Hexen")
 		SeeSound ("SorcererBallBounce")
 		DeathSound ("SorcererBigBallExplode")
 	}
