@@ -61,6 +61,7 @@ void gl_FreeSpecialTextures();
 void gl_SetupMenu();
 
 int palette_brightness;
+int gl_frameMS;
 
 //==========================================================================
 //
@@ -358,7 +359,7 @@ void OpenGLFrameBuffer::PrecacheTexture(FTexture *tex, bool cache)
 
 FNativePalette *OpenGLFrameBuffer::CreatePalette(FRemapTable *remap)
 {
-	return NULL; //GLTranslationPalette::CreatePalette(remap);
+	return NULL; //GLRenderer::GLTranslationPalette::CreatePalette(remap);
 }
 
 //==========================================================================

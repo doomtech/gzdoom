@@ -84,6 +84,7 @@ enum FTextureFormat
 
 class FNativeTexture;
 class FGLTexture;
+class FMaterial;
 
 // Base texture class
 class FTexture
@@ -237,12 +238,25 @@ protected:
 
 public:
 	
-	/*
 	struct MiscGLInfo
 	{
-		FGLTexture *GLTexture;
-		FTexture *Brightmap;
-		PalEntry GlowColor;
+		/*
+		struct GLTexDataItem
+		{
+			FGLTexture *Texture[2];		// 2 GL tectures: one for sprite and one for world.
+			FMaterial *Material[2];	// A material defines the association between a texture and shaders
+		};
+		typedef TMap<int, GLTexDataItem> GLTexDataMap;
+
+		GLTexDataItem GLTexData;			// gl texture data
+		GLTexDataMap *GLTexDataTranslated;	// for translated textures - only create when needed.
+		*/
+
+		int HiresTextureLump;
+		FTexture *HiresTexture;
+		FTexture *Brightmap;		// Brightmap associated with this texture
+
+		PalEntry GlowColor;						// Color used for glows emanating from this texture
 		PalEntry FloorSkyColor;
 		PalEntry CeilingSkyColor;
 		int GlowHeight;
@@ -264,7 +278,6 @@ public:
 	void GetGlowColor(float *data);
 	bool isGlowing() { return gl_info.bGlowing; }
 	bool isFullbright() { return gl_info.bFullbright; }
-	*/
 };
 
 // Texture manager
