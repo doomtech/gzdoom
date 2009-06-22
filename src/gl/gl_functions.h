@@ -82,7 +82,10 @@ void gl_SetFog(int lightlevel, int rellight, const FColormap *cm, bool isadditiv
 
 // textures + sprites
 
+namespace GLRendererOld
+{
 void gl_SetPlaneTextureRotation(const GLSectorPlane * secplane, FGLTexture * gltexture);
+}
 
 void gl_ClearShaders();
 void gl_EnableShader(bool on);
@@ -137,8 +140,6 @@ void gl_RecreateAllAttachedLights();
 void gl_ParseDefs();
 
 
-void gl_SplitLeftEdge(GLWall * wall, texcoord * tcs, bool glow);
-void gl_SplitRightEdge(GLWall * wall, texcoord * tcs, bool glow);
 void gl_RecalcVertexHeights(vertex_t * v);
 void gl_InitVertexData();
 void gl_CleanVertexData();

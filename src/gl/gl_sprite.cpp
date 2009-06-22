@@ -62,7 +62,11 @@ CVAR(Int, gl_billboard_mode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 extern bool r_showviewer;
 EXTERN_CVAR (Float, transsouls)
 
-const BYTE SF_FRAMEMASK  = 0x1f;
+extern TArray<spritedef_t> sprites;
+extern TArray<spriteframe_t> SpriteFrames;
+
+namespace GLRendererOld
+{
 
 //==========================================================================
 //
@@ -824,6 +828,8 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 	rendered_sprites++;
 }
 
+} // namespace
+
 
 
 //===========================================================================
@@ -831,8 +837,7 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 //  Gets the texture index for a sprite frame
 //
 //===========================================================================
-extern TArray<spritedef_t> sprites;
-extern TArray<spriteframe_t> SpriteFrames;
+const BYTE SF_FRAMEMASK  = 0x1f;
 
 FTextureID gl_GetSpriteFrame(unsigned sprite, int frame, int rot, angle_t ang, bool *mirror)
 {

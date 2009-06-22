@@ -122,11 +122,17 @@ struct GLHorizonInfo
 	FColormap colormap;
 };
 
+
+struct FSpriteModelFrame;
+struct particle_t;
+
 //==========================================================================
 //
 // One wall segment in the draw list
 //
 //==========================================================================
+namespace GLRendererOld
+{
 
 class GLWall
 {
@@ -189,6 +195,7 @@ public:
 	subsector_t * sub;		// For polyobjects
 private:
 
+	void CheckGlowing();
 	void PutWall(bool translucent);
 
 	bool PrepareLight(texcoord * tcs, ADynamicLight * light);
@@ -246,6 +253,9 @@ private:
 	void RenderMirrorSurface();
 	void RenderTranslucentWall();
 
+	void SplitLeftEdge(texcoord * tcs, bool glow);
+	void SplitRightEdge(texcoord * tcs, bool glow);
+
 public:
 
 	void Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, subsector_t * polysub, bool render_segs);
@@ -269,13 +279,13 @@ public:
 
 };
 
+
+
 //==========================================================================
 //
 // One flat plane in the draw list
 //
 //==========================================================================
-
-struct FSpriteModelFrame;
 
 class GLFlat
 {
@@ -315,7 +325,6 @@ public:
 //
 //==========================================================================
 
-struct particle_t;
 
 class GLSprite
 {
@@ -587,6 +596,9 @@ public:
 };
 
 extern GLDrawInfo * gl_drawinfo;
+
+}
+
 
 extern int gl_anglecache;
 inline angle_t vertex_t::GetViewAngle()

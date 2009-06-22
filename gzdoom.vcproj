@@ -6501,14 +6501,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\gl\gl_decal.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_drawinfo.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\gl\gl_dynlight.cpp"
 				>
 			</File>
@@ -6569,10 +6561,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\gl\gl_portal.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\gl\gl_scene.cpp"
 				>
 			</File>
@@ -6582,18 +6570,6 @@
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_shader.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_sky.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_skydome.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_sprite.cpp"
 				>
 			</File>
 			<File
@@ -6610,18 +6586,6 @@
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_vertex.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_walls.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_walls_draw.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_weapon.cpp"
 				>
 			</File>
 			<File
@@ -6692,10 +6656,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\gl_portal.h"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\gl_renderstruct.h"
 					>
 				</File>
@@ -6747,6 +6707,54 @@
 					RelativePath=".\src\gl\r_render\r_render.h"
 					>
 				</File>
+			</Filter>
+			<Filter
+				Name="Old Renderer"
+				>
+				<File
+					RelativePath=".\src\gl\gl_decal.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\gl_drawinfo.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\gl_portal.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\gl_sky.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\gl_skydome.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\gl_sprite.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\gl_walls.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\gl_walls_draw.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\gl_weapon.cpp"
+					>
+				</File>
+				<Filter
+					Name="Includes"
+					>
+					<File
+						RelativePath=".\src\gl\gl_portal.h"
+						>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 		<Filter

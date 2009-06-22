@@ -563,6 +563,9 @@ void gl_RenderFrameModels( const FSpriteModelFrame *smf,
 	}
 }
 
+namespace GLRendererOld
+{
+
 void gl_RenderModel(GLSprite * spr, int cm)
 {
 	FSpriteModelFrame * smf = spr->modelframe;
@@ -744,6 +747,8 @@ void gl_RenderHUDModel(pspdef_t *psp, fixed_t ofsx, fixed_t ofsy, int cm)
 	gl.DepthFunc(GL_LESS);
 	if (!( playermo->RenderStyle == LegacyRenderStyles[STYLE_Normal] ))
 		gl.Disable(GL_CULL_FACE);
+}
+
 }
 
 
