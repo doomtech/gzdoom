@@ -6509,10 +6509,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\gl\gl_flats.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\gl\gl_framebuffer.cpp"
 				>
 			</File>
@@ -6755,7 +6751,15 @@
 					Name="Includes"
 					>
 					<File
+						RelativePath=".\src\gl\old_renderer\gl1_drawinfo.h"
+						>
+					</File>
+					<File
 						RelativePath=".\src\gl\old_renderer\gl1_portal.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\old_renderer\gl1_wall.h"
 						>
 					</File>
 				</Filter>
