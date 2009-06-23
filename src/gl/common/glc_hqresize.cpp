@@ -34,24 +34,25 @@
 **
 */
 
-#include "gl_hqresize.h"
+#include "gl/common/glc_renderer.h"
+#include "gl/common/glc_texture.h"
 #include "c_cvars.h"
 
 CUSTOM_CVAR(Int, gl_texture_hqresize, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	if (self < 0 || self > 3) self = 0;
-	FGLTexture::FlushAll();
+	GLRenderer->FlushTextures();
 }
 
 CUSTOM_CVAR(Int, gl_texture_hqresize_maxinputsize, 512, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	if (self > 1024) self = 1024;
-	FGLTexture::FlushAll();
+	GLRenderer->FlushTextures();
 }
 
 CUSTOM_CVAR(Int, gl_texture_hqresize_targets, 7, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
-	FGLTexture::FlushAll();
+	GLRenderer->FlushTextures();
 }
 
 CVAR (Flag, gl_texture_hqresize_textures, gl_texture_hqresize_targets, 1);
@@ -180,21 +181,18 @@ static unsigned char *scaleNxHelper( void (*scaleNxFunction) ( uint32* , uint32*
 //  the upsampled buffer.
 //
 //===========================================================================
-unsigned char *gl_CreateUpsampledTextureBuffer ( const FGLTexture *inputGLTexture, unsigned char *inputBuffer, const int inWidth, const int inHeight, int &outWidth, int &outHeight )
+unsigned char *gl_CreateUpsampledTextureBuffer ( const FTexture *inputTexture, unsigned char *inputBuffer, const int inWidth, const int inHeight, int &outWidth, int &outHeight )
 {
 	// [BB] Don't resample if the width or height of the input texture is bigger than gl_texture_hqresize_maxinputsize.
 	if ( ( inWidth > gl_texture_hqresize_maxinputsize ) || ( inHeight > gl_texture_hqresize_maxinputsize ) )
 		return inputBuffer;
 
-	// [BB] The hqnx upsampling (not the scaleN one) destroys partial transparency, don't upsamle textures using it.
-	if ( inputGLTexture->bIsTransparent == 1 )
-		return inputBuffer;
 
 	// [BB] Don't try to upsample textures based off FCanvasTexture.
-	if ( inputGLTexture->tex->bHasCanvas )
+	if ( inputTexture->bHasCanvas )
 		return inputBuffer;
 
-	switch (inputGLTexture->tex->UseType)
+	switch (inputTexture->UseType)
 	{
 	case FTexture::TEX_Sprite:
 	case FTexture::TEX_SkinSprite:

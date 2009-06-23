@@ -6481,19 +6481,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\gl\gl_bsp.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\gl\gl_data.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_dynlight.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_fakeflat.cpp"
 				>
 			</File>
 			<File
@@ -6506,14 +6498,6 @@
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_glow.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_hirestex.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_hqresize.cpp"
 				>
 			</File>
 			<File
@@ -6545,14 +6529,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\gl\gl_shader.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_texture.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\gl\gl_translate.cpp"
 				>
 			</File>
@@ -6562,10 +6538,6 @@
 			</File>
 			<File
 				RelativePath=".\src\gl\gl_wipe.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gltexture.cpp"
 				>
 			</File>
 			<Filter
@@ -6596,10 +6568,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\gl_hqresize.h"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\gl_include.h"
 					>
 				</File>
@@ -6624,10 +6592,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\gl_shader.h"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\gl_struct.h"
 					>
 				</File>
@@ -6636,19 +6600,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\gl_texture.h"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\gl_translate.h"
 					>
 				</File>
 				<File
 					RelativePath=".\src\gl\gl_values.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gltexture.h"
 					>
 				</File>
 				<File
@@ -6684,7 +6640,15 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\gl\old_renderer\gl1_hwtexture.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\gl\old_renderer\gl1_portal.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\old_renderer\gl1_shader.cpp"
 					>
 				</File>
 				<File
@@ -6697,6 +6661,10 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\old_renderer\gl1_sprite.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\old_renderer\gl1_texture.cpp"
 					>
 				</File>
 				<File
@@ -6719,7 +6687,19 @@
 						>
 					</File>
 					<File
+						RelativePath=".\src\gl\old_renderer\gl1_hwtexture.h"
+						>
+					</File>
+					<File
 						RelativePath=".\src\gl\old_renderer\gl1_portal.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\old_renderer\gl1_shader.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\old_renderer\gl1_texture.h"
 						>
 					</File>
 					<File
@@ -6731,6 +6711,10 @@
 			<Filter
 				Name="Common"
 				>
+				<File
+					RelativePath=".\src\gl\common\glc_bsp.cpp"
+					>
+				</File>
 				<File
 					RelativePath=".\src\gl\common\glc_clipper.cpp"
 					>
@@ -6744,11 +6728,27 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\gl\common\glc_fakeflat.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\common\glc_hirestex.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\common\glc_hqresize.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\gl\common\glc_nodes.cpp"
 					>
 				</File>
 				<File
 					RelativePath=".\src\gl\common\glc_sections.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\common\glc_texture.cpp"
 					>
 				</File>
 				<Filter
@@ -6759,11 +6759,23 @@
 						>
 					</File>
 					<File
+						RelativePath=".\src\gl\common\glc_clock.h"
+						>
+					</File>
+					<File
 						RelativePath=".\src\gl\common\glc_cycler.h"
 						>
 					</File>
 					<File
+						RelativePath=".\src\gl\common\glc_renderer.h"
+						>
+					</File>
+					<File
 						RelativePath=".\src\gl\common\glc_sections.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\common\glc_texture.h"
 						>
 					</File>
 				</Filter>

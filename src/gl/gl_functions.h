@@ -16,9 +16,7 @@ struct GLSectorPlane;
 struct sector_t;
 class player_s;
 struct GL_IRECT;
-class FGLTexture;
 class FCanvasTexture;
-class GLWall;
 struct texcoord;
 struct MapData;
 struct FColormap;
@@ -84,9 +82,9 @@ void gl_SetFog(int lightlevel, int rellight, const FColormap *cm, bool isadditiv
 
 namespace GLRendererOld
 {
-void gl_SetPlaneTextureRotation(const GLSectorPlane * secplane, FGLTexture * gltexture);
-}
+class FGLTexture;
 
+void gl_SetPlaneTextureRotation(const GLSectorPlane * secplane, FGLTexture * gltexture);
 void gl_ClearShaders();
 void gl_EnableShader(bool on);
 
@@ -101,8 +99,7 @@ void gl_SetGlowPosition(float topdist, float bottomdist);
 void gl_SetTextureShader(int warped, int cm, bool usebright, float warptime);
 
 void gl_ApplyShader();
-
-void gl_EnableTexture(bool on);
+}
 
 // Scene
 

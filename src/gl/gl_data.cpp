@@ -39,6 +39,9 @@
 */
 
 #include "gl/gl_include.h"
+#include "gl/common/glc_renderer.h"
+#include "colormatcher.h"
+#include "r_translate.h"
 #include "i_system.h"
 #include "p_local.h"
 #include "p_lnspec.h"
@@ -49,12 +52,14 @@
 #include "gl/gl_models.h"
 #include "gl/gl_renderstruct.h"
 #include "gl/gl_functions.h"
-#include "gl/gl_texture.h"
+#include "gl/old_renderer/gl1_texture.h"
 #include "r_sky.h"
 #include "sc_man.h"
 #include "w_wad.h"
 #include "gi.h"
 #include "g_level.h"
+
+using namespace GLRendererOld;
 
 GLRenderSettings glset;
 
@@ -118,7 +123,7 @@ void AdjustSpriteOffsets()
 	{
 		FScanner sc;
 		sc.OpenLumpNum(lump);
-		FGLTexture::FlushAll();
+		GLRenderer->FlushTextures();
 		while (sc.GetString())
 		{
 			int x,y;
@@ -311,6 +316,39 @@ CCMD(gl_resetmap)
 	else glset.lightmode = glset.map_lightmode;
 	if (glset.map_nocoloredspritelighting == -1) glset.nocoloredspritelighting = gl_nocoloredspritelighting;
 	else glset.nocoloredspritelighting = !!glset.map_nocoloredspritelighting;
+}
+
+
+//==========================================================================
+//
+// GL status data for a texture
+//
+//==========================================================================
+
+FTexture::MiscGLInfo::MiscGLInfo() throw()
+{
+	bGlowing = false;
+	GlowColor = 0;
+	GlowHeight = 128;
+	bSkybox = false;
+	FloorSkyColor = 0;
+	CeilingSkyColor = 0;
+	bFullbright = false;
+	bSkyColorDone = false;
+	bBrightmapChecked = false;
+	bBrightmap = false;
+	bBrightmapDisablesFullbright = false;
+
+	GLTexture = NULL;
+	Brightmap = NULL;
+}
+
+FTexture::MiscGLInfo::~MiscGLInfo()
+{
+	if (GLTexture != NULL) delete GLTexture;
+	GLTexture = NULL;
+	if (Brightmap != NULL) delete Brightmap;
+	Brightmap = NULL;
 }
 
 //==========================================================================
