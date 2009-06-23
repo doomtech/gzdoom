@@ -670,6 +670,11 @@ add_executable( zdoom WIN32
 	g_shared/sbar_mugshot.cpp
 	g_shared/shared_hud.cpp
 	g_shared/shared_sbar.cpp
+	gl/common/glc_clipper.cpp
+	gl/common/glc_clock.cpp
+	gl/common/glc_cycler.cpp
+	gl/common/glc_nodes.cpp
+	gl/common/glc_sections.cpp
 	gl/old_renderer/gl1_decal.cpp
 	gl/old_renderer/gl1_drawinfo.cpp
 	gl/old_renderer/gl1_flats.cpp
