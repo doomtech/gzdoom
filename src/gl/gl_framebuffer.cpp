@@ -55,6 +55,7 @@
 #include "gl/gl_framebuffer.h"
 #include "gl/gl_translate.h"
 #include "vectors.h"
+#include "gl/old_renderer/gl1_drawinfo.h"
 
 IMPLEMENT_CLASS(OpenGLFrameBuffer)
 EXTERN_CVAR (Float, vid_brightness)
@@ -63,6 +64,8 @@ EXTERN_CVAR (Float, vid_contrast)
 void gl_InitSpecialTextures();
 void gl_FreeSpecialTextures();
 void gl_SetupMenu();
+
+GLRendererBase *GLRenderer;
 
 //==========================================================================
 //
@@ -73,6 +76,7 @@ void gl_SetupMenu();
 OpenGLFrameBuffer::OpenGLFrameBuffer(int width, int height, int bits, int refreshHz, bool fullscreen) : 
 	Super(width, height, bits, refreshHz, fullscreen) 
 {
+	GLRenderer = new GL1Renderer;
 	memcpy (SourcePalette, GPalette.BaseColors, sizeof(PalEntry)*256);
 	UpdatePalette ();
 	ScreenshotBuffer = NULL;
@@ -91,6 +95,7 @@ OpenGLFrameBuffer::~OpenGLFrameBuffer()
 	// all native textures must be completely removed before destroying the frame buffer
 	FGLTexture::DeleteAll();
 	gl_ClearShaders();
+	delete GLRenderer;
 }
 
 //==========================================================================
@@ -693,4 +698,38 @@ void OpenGLFrameBuffer::ReleaseScreenshotBuffer()
 {
 	if (ScreenshotBuffer != NULL) delete [] ScreenshotBuffer;
 	ScreenshotBuffer = NULL;
+}
+
+
+//===========================================================================
+// 
+// Renderer interface
+//
+//===========================================================================
+
+using namespace GLRendererOld;
+EXTERN_CVAR(Bool, gl_render_segs)
+
+void GL1Renderer::ProcessWall(seg_t *seg, sector_t *sector, sector_t *backsector, subsector_t *polysub)
+{
+	GLRendererOld::GLWall wall;
+	wall.Process(seg, sector, backsector, polysub, gl_render_segs);
+}
+
+void GL1Renderer::ProcessSprite(AActor *thing, sector_t *sector)
+{
+	GLSprite glsprite;
+	glsprite.Process(thing, sector);
+}
+
+void GL1Renderer::ProcessParticle(particle_t *part, sector_t *sector)
+{
+	GLSprite glsprite;
+	glsprite.ProcessParticle(part, sector);//, 0, 0);
+}
+
+void GL1Renderer::ProcessSector(sector_t *fakesector, subsector_t *sub)
+{
+	GLFlat glflat;
+	glflat.ProcessSector(fakesector, sub);
 }
