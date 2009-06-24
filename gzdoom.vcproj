@@ -6473,10 +6473,6 @@
 			Name="GL Renderer"
 			>
 			<File
-				RelativePath=".\src\gl\a_dynlight.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\gl\gfxfuncs.cpp"
 				>
 			</File>
@@ -6485,19 +6481,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\gl\gl_dynlight.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\gl\gl_framebuffer.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_geometric.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_glow.cpp"
 				>
 			</File>
 			<File
@@ -6544,10 +6528,6 @@
 				Name="GL Header"
 				>
 				<File
-					RelativePath=".\src\gl\gl_basic.h"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\gl_data.h"
 					>
 				</File>
@@ -6557,14 +6537,6 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\gl_functions.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_geometric.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_glow.h"
 					>
 				</File>
 				<File
@@ -6712,6 +6684,28 @@
 				Name="Common"
 				>
 				<File
+					RelativePath=".\src\gl\common\a_dynlight.cpp"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath=".\src\gl\common\glc_bsp.cpp"
 					>
 				</File>
@@ -6728,7 +6722,19 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\gl\common\glc_dynlight.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\gl\common\glc_fakeflat.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\common\glc_geometric.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\common\glc_glow.cpp"
 					>
 				</File>
 				<File
@@ -6767,11 +6773,31 @@
 						>
 					</File>
 					<File
+						RelativePath=".\src\gl\common\glc_dynlight.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\common\glc_geometric.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\common\glc_glow.h"
+						>
+					</File>
+					<File
 						RelativePath=".\src\gl\common\glc_renderer.h"
 						>
 					</File>
 					<File
 						RelativePath=".\src\gl\common\glc_sections.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\common\glc_skyboxtexture.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\common\glc_templates.h"
 						>
 					</File>
 					<File

@@ -670,11 +670,15 @@ add_executable( zdoom WIN32
 	g_shared/sbar_mugshot.cpp
 	g_shared/shared_hud.cpp
 	g_shared/shared_sbar.cpp
+	gl/common/a_dynlight.cpp
 	gl/common/glc_bsp.cpp
 	gl/common/glc_clipper.cpp
 	gl/common/glc_clock.cpp
 	gl/common/glc_cycler.cpp
+	gl/common/glc_dynlight.cpp
 	gl/common/glc_fakeflat.cpp
+	gl/common/glc_geometric.cpp
+	gl/common/glc_glow.cpp
 	gl/common/glc_hirestex.cpp
 	gl/common/glc_hqresize.cpp
 	gl/common/glc_nodes.cpp
@@ -693,13 +697,9 @@ add_executable( zdoom WIN32
 	gl/old_renderer/gl1_walls.cpp
 	gl/old_renderer/gl1_walls_draw.cpp
 	gl/old_renderer/gl1_weapon.cpp
-	gl/a_dynlight.cpp
 	gl/gfxfuncs.cpp
 	gl/gl_data.cpp
-	gl/gl_dynlight.cpp
 	gl/gl_framebuffer.cpp
-	gl/gl_geometric.cpp
-	gl/gl_glow.cpp
 	gl/gl_light.cpp
 	gl/gl_menu.cpp
 	gl/gl_missingtexture.cpp

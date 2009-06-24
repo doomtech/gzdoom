@@ -35,21 +35,18 @@
 **
 */
 
-#include "gl/gl_include.h"
-#include "gl/common/glc_renderer.h"
 #include "templates.h"
 #include "m_random.h"
 #include "r_main.h"
 #include "p_local.h"
 #include "c_dispatch.h"
 #include "g_level.h"
-#include "gl/gl_lights.h"
-#include "gl/gl_data.h"
-#include "gl/gl_basic.h"
-#include "gl/gl_functions.h"
-#include "gl/gl_values.h"
 #include "thingdef/thingdef.h"
 #include "i_system.h"
+#include "gl/common/glc_convert.h"
+#include "gl/common/glc_renderer.h"
+#include "gl/common/glc_dynlight.h"
+#include "gl/common/glc_templates.h"
 
 EXTERN_CVAR (Float, gl_lights_size);
 EXTERN_CVAR (Bool, gl_lights_additive);
@@ -95,7 +92,7 @@ void AVavoomLight::BeginPlay ()
 
 void AVavoomLightWhite::BeginPlay ()
 {
-	byte l_args[5];
+	BYTE l_args[5];
 	memcpy(l_args, args, 5);
 	memset(args, 0, 5);
 	m_intensity[0] = l_args[0]*4;
@@ -187,7 +184,7 @@ void ADynamicLight::Activate(AActor *activator)
 	//Super::Activate(activator);
 	flags2&=~MF2_DORMANT;	
 
-	m_currentIntensity = m_intensity[0];
+	m_currentIntensity = float(m_intensity[0]);
 	m_tickCount = 0;
 
 	if (lighttype == PulseLight)
@@ -195,10 +192,10 @@ void ADynamicLight::Activate(AActor *activator)
 		float pulseTime = ANGLE_TO_FLOAT(this->angle) / TICRATE;
 		
 		m_lastUpdate = level.maptime;
-		m_cycler.SetParams(m_intensity[1], m_intensity[0], pulseTime);
+		m_cycler.SetParams(float(m_intensity[1]), float(m_intensity[0]), pulseTime);
 		m_cycler.ShouldCycle(true);
 		m_cycler.SetCycleType(CYCLE_Sin);
-		m_currentIntensity = (byte)m_cycler.GetVal();
+		m_currentIntensity = (BYTE)m_cycler.GetVal();
 	}
 }
 
@@ -252,10 +249,10 @@ void ADynamicLight::Tick()
 
 	case FlickerLight:
 	{
-		byte rnd = randLight();
+		BYTE rnd = randLight();
 		float pct = ANGLE_TO_FLOAT(angle)/360.f;
 		
-		m_currentIntensity = m_intensity[rnd >= pct * 255];
+		m_currentIntensity = float(m_intensity[rnd >= pct * 255]);
 		break;
 	}
 
@@ -268,7 +265,7 @@ void ADynamicLight::Tick()
 		
 		if (m_tickCount > ANGLE_TO_FLOAT(angle))
 		{
-			m_currentIntensity = m_intensity[0] + (amt * flickerRange);
+			m_currentIntensity = float(m_intensity[0] + (amt * flickerRange));
 			m_tickCount = 0;
 		}
 		break;
@@ -278,7 +275,7 @@ void ADynamicLight::Tick()
 	// These need some more work elsewhere
 	case ColorFlickerLight:
 	{
-		byte rnd = randLight();
+		BYTE rnd = randLight();
 		float pct = ANGLE_TO_FLOAT(angle)/360.f;
 		
 		m_currentIntensity = m_intensity[rnd >= pct * 255];
@@ -316,7 +313,7 @@ void ADynamicLight::Tick()
 	}
 
 	case PointLight:
-		m_currentIntensity = m_intensity[0];
+		m_currentIntensity = float(m_intensity[0]);
 		break;
 	}
 
@@ -356,7 +353,7 @@ void ADynamicLight::UpdateLocation()
 
 		if (lighttype == FlickerLight || lighttype == RandomFlickerLight) 
 		{
-			intensity = m_intensity[1];
+			intensity = float(m_intensity[1]);
 		}
 		else
 		{
