@@ -66,7 +66,7 @@
 #include "v_palette.h"
 #include "v_font.h"
 
-#include "gl/gl_data.h"
+#include "gl/common/glc_data.h"
 
 static FRandom pr_script("FScript");
 
@@ -1873,7 +1873,7 @@ void FParser::SF_LightLevel(void)
 			// set all sectors with tag
 			while ((i = T_FindSectorFromTag(tagnum, i)) >= 0)
 			{
-				sectors[i].lightlevel = (short)intvalue(t_argv[1]);
+				sectors[i].lightlevel = (BYTE)intvalue(t_argv[1]);
 			}
 		}
 		

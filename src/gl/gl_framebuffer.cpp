@@ -50,7 +50,7 @@
 #include "m_png.h"
 #include "m_crc32.h"
 #include "gl/common/glc_templates.h"
-#include "gl/gl_data.h"
+#include "gl/common/glc_data.h"
 #include "gl/gl_struct.h"
 #include "gl/gl_intern.h"
 #include "gl/old_renderer/gl1_texture.h"
@@ -65,8 +65,6 @@ IMPLEMENT_CLASS(OpenGLFrameBuffer)
 EXTERN_CVAR (Float, vid_brightness)
 EXTERN_CVAR (Float, vid_contrast)
 
-void gl_InitSpecialTextures();
-void gl_FreeSpecialTextures();
 void gl_SetupMenu();
 
 GLRendererBase *GLRenderer;
@@ -783,3 +781,47 @@ unsigned char *GL1Renderer::GetTextureBuffer(FTexture *tex, int &w, int &h)
 	}
 	return NULL;
 }
+
+TArray<GLVertex> gl_vertices(1024);
+
+void GL1Renderer::SetupLevel()
+{
+	int i,j;
+
+	gl_vertices.Resize(100);	
+	gl_vertices.Clear();	
+
+	// Create the flat vertex array
+	for (i=0; i<numsubsectors; i++)
+	{
+		subsector_t * ssector = &subsectors[i];
+
+		if (ssector->numlines<=2) continue;
+			
+		ssector->numvertices = ssector->numlines;
+		ssector->firstvertex = gl_vertices.Size();
+
+		for(j = 0;  j < ssector->numlines; j++)
+		{
+			seg_t * seg = &segs[ssector->firstline + j];
+			vertex_t * vtx = seg->v1;
+			GLVertex * vt=&gl_vertices[gl_vertices.Reserve(1)];
+
+			vt->u =  TO_GL(vtx->x)/64.0f;
+			vt->v = -TO_GL(vtx->y)/64.0f;
+			vt->x =  TO_GL(vtx->x);
+			vt->y =  TO_GL(vtx->y);
+			vt->z = 0.0f;
+			vt->vt = vtx;
+		}
+	}
+	gl_InitVertexData();
+	gl.ArrayPointer(&gl_vertices[0], sizeof(GLVertex));
+	pitch=0.0f;
+}
+
+void GL1Renderer::CleanLevelData()
+{
+	gl_CleanVertexData();
+}
+

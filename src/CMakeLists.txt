@@ -675,6 +675,7 @@ add_executable( zdoom WIN32
 	gl/common/glc_clipper.cpp
 	gl/common/glc_clock.cpp
 	gl/common/glc_cycler.cpp
+	gl/common/glc_data.cpp
 	gl/common/glc_dynlight.cpp
 	gl/common/glc_fakeflat.cpp
 	gl/common/glc_geometric.cpp
@@ -697,8 +698,6 @@ add_executable( zdoom WIN32
 	gl/old_renderer/gl1_walls.cpp
 	gl/old_renderer/gl1_walls_draw.cpp
 	gl/old_renderer/gl1_weapon.cpp
-	gl/gfxfuncs.cpp
-	gl/gl_data.cpp
 	gl/gl_framebuffer.cpp
 	gl/gl_light.cpp
 	gl/gl_menu.cpp

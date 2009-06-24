@@ -6473,14 +6473,6 @@
 			Name="GL Renderer"
 			>
 			<File
-				RelativePath=".\src\gl\gfxfuncs.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_data.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\gl\gl_framebuffer.cpp"
 				>
 			</File>
@@ -6722,6 +6714,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\gl\common\glc_data.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\gl\common\glc_dynlight.cpp"
 					>
 				</File>
@@ -6770,6 +6766,10 @@
 					</File>
 					<File
 						RelativePath=".\src\gl\common\glc_cycler.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\common\glc_data.h"
 						>
 					</File>
 					<File
