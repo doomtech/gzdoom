@@ -685,6 +685,7 @@ add_executable( zdoom WIN32
 	gl/common/glc_nodes.cpp
 	gl/common/glc_sections.cpp
 	gl/common/glc_texture.cpp
+	gl/common/glc_translate.cpp
 	gl/old_renderer/gl1_decal.cpp
 	gl/old_renderer/gl1_drawinfo.cpp
 	gl/old_renderer/gl1_flats.cpp
@@ -706,7 +707,6 @@ add_executable( zdoom WIN32
 	gl/gl_models_md2.cpp
 	gl/gl_models_md3.cpp
 	gl/gl_scene.cpp
-	gl/gl_translate.cpp
 	gl/gl_vertex.cpp
 	gl/gl_wipe.cpp
 	gl/r_render/r_opengl.cpp

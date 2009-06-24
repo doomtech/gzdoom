@@ -90,6 +90,10 @@ void gl_SetGlowPosition(float topdist, float bottomdist);
 void gl_SetTextureShader(int warped, int cm, bool usebright, float warptime);
 
 void gl_ApplyShader();
+
+void gl_RecalcVertexHeights(vertex_t * v);
+void gl_InitVertexData();
+void gl_CleanVertexData();
 }
 
 // Scene
@@ -112,9 +116,6 @@ void gl_RecreateAllAttachedLights();
 void gl_ParseDefs();
 
 
-void gl_RecalcVertexHeights(vertex_t * v);
-void gl_InitVertexData();
-void gl_CleanVertexData();
 
 inline float Dist2(float x1,float y1,float x2,float y2)
 {

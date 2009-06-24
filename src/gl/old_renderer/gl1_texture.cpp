@@ -59,7 +59,7 @@
 #include "gl/old_renderer/gl1_texture.h"
 #include "gl/gl_functions.h"
 #include "gl/old_renderer/gl1_shader.h"
-#include "gl/gl_translate.h"
+#include "gl/common/glc_translate.h"
 #include "gl/common/glc_texture.h"
 
 EXTERN_CVAR(Bool, gl_render_precise)
@@ -1195,7 +1195,10 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 {
 	int usebright = false;
 
-	translation = GLTranslationPalette::GetInternalTranslation(translation);
+	if (translation <= 0) translation = -translation;
+	else if (translation == TRANSLATION(TRANSLATION_Standard, 8)) translation = CM_GRAY;
+	else if (translation == TRANSLATION(TRANSLATION_Standard, 7)) translation = CM_ICE;
+	else translation = GLTranslationPalette::GetInternalTranslation(translation);
 
 	if (GetWorldTextureInfo())
 	{
@@ -1261,7 +1264,10 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 	bool usebright = false;
 	int transparm = translation;
 
-	translation = GLTranslationPalette::GetInternalTranslation(translation);
+	if (translation <= 0) translation = -translation;
+	else if (translation == TRANSLATION(TRANSLATION_Standard, 8)) translation = CM_GRAY;
+	else if (translation == TRANSLATION(TRANSLATION_Standard, 7)) translation = CM_ICE;
+	else translation = GLTranslationPalette::GetInternalTranslation(translation);
 
 	if (GetPatchTextureInfo())
 	{

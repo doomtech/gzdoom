@@ -6505,14 +6505,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\gl\gl_translate.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_vertex.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\gl\gl_wipe.cpp"
 				>
 			</File>
@@ -6629,6 +6621,10 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\old_renderer\gl1_texture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\old_renderer\gl1_vertex.cpp"
 					>
 				</File>
 				<File
@@ -6753,6 +6749,10 @@
 					RelativePath=".\src\gl\common\glc_texture.cpp"
 					>
 				</File>
+				<File
+					RelativePath=".\src\gl\common\glc_translate.cpp"
+					>
+				</File>
 				<Filter
 					Name="Includes"
 					>
@@ -6802,6 +6802,10 @@
 					</File>
 					<File
 						RelativePath=".\src\gl\common\glc_texture.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\common\glc_translate.h"
 						>
 					</File>
 				</Filter>
