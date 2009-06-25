@@ -38,8 +38,6 @@
 **
 */
 
-#include "gl/gl_include.h"
-
 #include "a_sharedglobal.h"
 #include "r_main.h"
 #include "r_sky.h"
@@ -663,60 +661,53 @@ void FRenderHackInfo::HandleMissingTextures()
 
 void FRenderHackInfo::DrawUnhandledMissingTextures()
 {
-	if (!(gl.flags&RFL_NOSTENCIL))	// needs a stencil to work!
+	validcount++;
+	for(int i=MissingUpperSegs.Size()-1; i>=0; i--)
 	{
-		// Set the drawing mode
-		SetFloodingDrawMode();
+		int index = MissingUpperSegs[i].MTI_Index;
+		if (index>=0 && MissingUpperTextures[index].seg==NULL) continue;
 
-		validcount++;
-		for(int i=MissingUpperSegs.Size()-1; i>=0; i--)
-		{
-			int index = MissingUpperSegs[i].MTI_Index;
-			if (index>=0 && MissingUpperTextures[index].seg==NULL) continue;
+		seg_t * seg = MissingUpperSegs[i].seg;
 
-			seg_t * seg = MissingUpperSegs[i].seg;
+		// already done!
+		if (seg->linedef->validcount==validcount) continue;		// already done
+		seg->linedef->validcount=validcount;
+		if (seg->frontsector->GetPlaneTexZ(sector_t::ceiling) < viewz) continue;	// out of sight
+		//if (seg->frontsector->ceilingpic==skyflatnum) continue;
 
-			// already done!
-			if (seg->linedef->validcount==validcount) continue;		// already done
-			seg->linedef->validcount=validcount;
-			if (seg->frontsector->GetPlaneTexZ(sector_t::ceiling) < viewz) continue;	// out of sight
-			//if (seg->frontsector->ceilingpic==skyflatnum) continue;
+		// FIXME: The check for degenerate subsectors should be more precise
+		if (seg->PartnerSeg && seg->PartnerSeg->Subsector->degenerate) continue;
+		if (seg->backsector->transdoor) continue;
+		if (seg->backsector->GetTexture(sector_t::ceiling)==skyflatnum) continue;
+		if (seg->backsector->CeilingSkyBox && seg->backsector->CeilingSkyBox->bAlways) continue;
 
-			// FIXME: The check for degenerate subsectors should be more precise
-			if (seg->PartnerSeg && seg->PartnerSeg->Subsector->degenerate) continue;
-			if (seg->backsector->transdoor) continue;
-			if (seg->backsector->GetTexture(sector_t::ceiling)==skyflatnum) continue;
-			if (seg->backsector->CeilingSkyBox && seg->backsector->CeilingSkyBox->bAlways) continue;
+		if (!gl_notexturefill) FloodUpperGap(seg);
+	}
 
-			if (!gl_notexturefill) FloodUpperGap(seg);
-		}
+	validcount++;
+	for(int i=MissingLowerSegs.Size()-1; i>=0; i--)
+	{
+		int index = MissingLowerSegs[i].MTI_Index;
+		if (index>=0 && MissingLowerTextures[index].seg==NULL) continue;
 
-		validcount++;
-		for(int i=MissingLowerSegs.Size()-1; i>=0; i--)
-		{
-			int index = MissingLowerSegs[i].MTI_Index;
-			if (index>=0 && MissingLowerTextures[index].seg==NULL) continue;
+		seg_t * seg = MissingLowerSegs[i].seg;
 
-			seg_t * seg = MissingLowerSegs[i].seg;
+		// already done!
+		if (seg->linedef->validcount==validcount) continue;		// already done
+		seg->linedef->validcount=validcount;
+		if (!(sectorrenderflags[seg->backsector->sectornum] & SSRF_RENDERFLOOR)) continue;
+		if (seg->frontsector->GetPlaneTexZ(sector_t::floor) > viewz) continue;	// out of sight
+		if (seg->backsector->transdoor) continue;
+		if (seg->backsector->GetTexture(sector_t::floor)==skyflatnum) continue;
+		if (seg->backsector->FloorSkyBox && seg->backsector->FloorSkyBox->bAlways) continue;
 
-			// already done!
-			if (seg->linedef->validcount==validcount) continue;		// already done
-			seg->linedef->validcount=validcount;
-			if (!(sectorrenderflags[seg->backsector->sectornum] & SSRF_RENDERFLOOR)) continue;
-			if (seg->frontsector->GetPlaneTexZ(sector_t::floor) > viewz) continue;	// out of sight
-			if (seg->backsector->transdoor) continue;
-			if (seg->backsector->GetTexture(sector_t::floor)==skyflatnum) continue;
-			if (seg->backsector->FloorSkyBox && seg->backsector->FloorSkyBox->bAlways) continue;
-
-			if (!gl_notexturefill) FloodLowerGap(seg);
-		}
+		if (!gl_notexturefill) FloodLowerGap(seg);
 	}
 	MissingUpperTextures.Clear();
 	MissingLowerTextures.Clear();
 	MissingUpperSegs.Clear();
 	MissingLowerSegs.Clear();
 
-	gl.DepthMask(true);
 }
 
 ADD_STAT(missingtextures)

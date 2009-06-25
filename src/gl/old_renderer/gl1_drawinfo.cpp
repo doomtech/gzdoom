@@ -927,14 +927,6 @@ void GLDrawInfo::EndDrawInfo()
 //
 //==========================================================================
 
-void GLDrawInfo::SetFloodingDrawMode()
-{
-	gl.DepthMask(false);							// don't write to Z-buffer!
-	gl_EnableFog(true);
-	gl.AlphaFunc(GL_GEQUAL,0.5f);
-	gl.BlendFunc(GL_ONE,GL_ZERO);
-}
-
 void GLDrawInfo::SetupFloodStencil(wallseg * ws)
 {
 	int recursion = GLPortal::GetRecursion();

@@ -120,7 +120,6 @@ class GLDrawInfo : public FRenderHackInfo
 	GLDrawInfo * next;
 
 	void StartScene();
-	void SetFloodingDrawMode();
 	void SetupFloodStencil(wallseg * ws);
 	void ClearFloodStencil(wallseg * ws);
 	void DrawFloodedPlane(wallseg * ws, float planez, sector_t * sec, bool ceiling);

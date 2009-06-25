@@ -94,7 +94,6 @@ struct FRenderHackInfo
 		else return NULL;
 	}
 
-	virtual void SetFloodingDrawMode() = 0;
 	virtual void FloodUpperGap(seg_t * seg) = 0;
 	virtual void FloodLowerGap(seg_t * seg) = 0;
 };
