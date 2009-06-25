@@ -295,7 +295,7 @@ static int T_GetPlayerNum(const svalue_t &arg)
 			//script_error("mobj not a player!\n");
 			return -1;
 		}
-		playernum = arg.value.mobj->player - players;
+		playernum = int(arg.value.mobj->player - players);
 	}
 	else
 		playernum = intvalue(arg);
@@ -769,7 +769,7 @@ void FParser::SF_PlayerName(void)
 	{
 		player_t *pl=NULL;
 		if (Script->trigger) pl = Script->trigger->player;
-		if(pl) plnum = pl - players;
+		if(pl) plnum = int(pl - players);
 		else plnum=-1;
 	}
 	else
@@ -800,7 +800,7 @@ void FParser::SF_PlayerObj(void)
 	{
 		player_t *pl=NULL;
 		if (Script->trigger) pl = Script->trigger->player;
-		if(pl) plnum = pl - players;
+		if(pl) plnum = int(pl - players);
 		else plnum=-1;
 	}
 	else
