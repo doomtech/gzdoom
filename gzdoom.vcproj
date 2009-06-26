@@ -6536,14 +6536,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\gl_pch.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_renderstruct.h"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\gl_struct.h"
 					>
 				</File>
@@ -6553,10 +6545,6 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\gl_translate.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_values.h"
 					>
 				</File>
 				<File
@@ -6655,11 +6643,19 @@
 						>
 					</File>
 					<File
+						RelativePath=".\src\gl\old_renderer\gl1_renderstruct.h"
+						>
+					</File>
+					<File
 						RelativePath=".\src\gl\old_renderer\gl1_shader.h"
 						>
 					</File>
 					<File
 						RelativePath=".\src\gl\old_renderer\gl1_texture.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\old_renderer\gl1_values.h"
 						>
 					</File>
 					<File

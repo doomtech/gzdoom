@@ -40,7 +40,7 @@
 */
 #include "gl/gl_include.h"
 #include "gl/gl_intern.h"
-#include "gl/gl_values.h"
+#include "gl/old_renderer/gl1_values.h"
 #include "c_cvars.h"
 #include "v_video.h"
 #include "name.h"
