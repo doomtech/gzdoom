@@ -81,6 +81,17 @@ void GL1Renderer::Initialize()
 	}
 }
 
+void GL1Renderer::SetPaused()
+{
+	gl_DisableShader();
+	gl_SetTextureMode(-1);
+}
+
+void GL1Renderer::UnsetPaused()
+{
+	gl_SetTextureMode(TM_MODULATE);
+}
+
 //===========================================================================
 // 
 //

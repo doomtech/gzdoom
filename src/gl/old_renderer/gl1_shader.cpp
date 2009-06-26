@@ -691,7 +691,7 @@ void gl_EnableFog(bool on)
 
 void gl_SetTextureMode(int which)
 {
-	if (which != gl_texturemode) gl.SetTextureMode(which);
+	if (which != gl_texturemode && which != -1) gl.SetTextureMode(which);
 	gl_texturemode = which;
 }
 

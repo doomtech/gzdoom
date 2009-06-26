@@ -30,6 +30,8 @@ public:
 	~GLRendererBase() {}
 
 	virtual void Initialize() = 0;
+	virtual void SetPaused() = 0;
+	virtual void UnsetPaused() = 0;
 
 	virtual void DrawTexture(FTexture *img, DCanvas::DrawParms &parms) = 0;
 	virtual void DrawLine(int x1, int y1, int x2, int y2, int palcolor, uint32 color) = 0;

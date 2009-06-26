@@ -115,6 +115,8 @@ private:
 class GL1Renderer : public GLRendererBase
 {
 	void Initialize();
+	void SetPaused();
+	void UnsetPaused();
 
 	void DrawTexture(FTexture *img, DCanvas::DrawParms &parms);
 	void DrawLine(int x1, int y1, int x2, int y2, int palcolor, uint32 color);
