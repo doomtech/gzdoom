@@ -696,6 +696,7 @@ add_executable( zdoom WIN32
 	gl/old_renderer/gl1_hwtexture.cpp
 	gl/old_renderer/gl1_portal.cpp
 	gl/old_renderer/gl1_renderer.cpp
+	gl/old_renderer/gl1_scene.cpp
 	gl/old_renderer/gl1_shader.cpp
 	gl/old_renderer/gl1_sky.cpp
 	gl/old_renderer/gl1_skydome.cpp
@@ -704,14 +705,13 @@ add_executable( zdoom WIN32
 	gl/old_renderer/gl1_walls.cpp
 	gl/old_renderer/gl1_walls_draw.cpp
 	gl/old_renderer/gl1_weapon.cpp
+	gl/old_renderer/gl1_vertex.cpp
 	gl/gl_framebuffer.cpp
 	gl/gl_light.cpp
 	gl/gl_menu.cpp
 	gl/gl_models.cpp
 	gl/gl_models_md2.cpp
 	gl/gl_models_md3.cpp
-	gl/gl_scene.cpp
-	gl/gl_vertex.cpp
 	gl/r_render/r_opengl.cpp
 	oplsynth/fmopl.cpp
 	oplsynth/mlopl.cpp
