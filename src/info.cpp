@@ -48,8 +48,12 @@
 #include "p_local.h"
 #include "templates.h"
 #include "cmdlib.h"
+#include "g_level.h"
 
 extern void LoadActors ();
+
+extern TArray<FSkillInfo> AllSkills;
+
 
 //==========================================================================
 //
@@ -164,9 +168,21 @@ void FActorInfo::RegisterIDs ()
 //
 //==========================================================================
 
-FActorInfo *FActorInfo::GetReplacement ()
+FActorInfo *FActorInfo::GetReplacement (bool lookskill)
 {
-	if (Replacement == NULL)
+	FName skillrepname = AllSkills[gameskill].GetReplacement(this->Class->TypeName);
+	if (skillrepname != NAME_None && PClass::FindClass(skillrepname) == NULL)
+	{
+		Printf("Warning: incorrect actor name in definition of skill %s: \n\
+			   class %s is replaced by inexistent class %s\n\
+			   Skill replacement will be ignored for this actor.\n", 
+			   AllSkills[gameskill].Name.GetChars(), 
+			   this->Class->TypeName.GetChars(), skillrepname.GetChars());
+		AllSkills[gameskill].SetReplacement(this->Class->TypeName, NAME_None);
+		AllSkills[gameskill].SetReplacedBy(skillrepname, NAME_None);
+		lookskill = false; skillrepname = NAME_None;
+	}
+	if (Replacement == NULL && (!lookskill || skillrepname == NAME_None))
 	{
 		return this;
 	}
@@ -174,7 +190,18 @@ FActorInfo *FActorInfo::GetReplacement ()
 	// potential infinite recursion.
 	FActorInfo *savedrep = Replacement;
 	Replacement = NULL;
-	FActorInfo *rep = savedrep->GetReplacement ();
+	FActorInfo *rep = savedrep;
+	// Handle skill-based replacement here. It has precedence on DECORATE replacement
+	// in that the skill replacement is applied first, followed by DECORATE replacement
+	// on the actor indicated by the skill replacement.
+	if (lookskill && (skillrepname != NAME_None))
+	{
+		rep = PClass::FindClass(skillrepname)->ActorInfo;
+	}
+	// Now handle DECORATE replacement chain
+	// Skill replacements are not recursive, contrarily to DECORATE replacements
+	rep = rep->GetReplacement(false);
+	// Reset the temporarily NULLed field
 	Replacement = savedrep;
 	return rep;
 }
@@ -184,9 +211,19 @@ FActorInfo *FActorInfo::GetReplacement ()
 //
 //==========================================================================
 
-FActorInfo *FActorInfo::GetReplacee ()
+FActorInfo *FActorInfo::GetReplacee (bool lookskill)
 {
-	if (Replacee == NULL)
+	FName skillrepname = AllSkills[gameskill].GetReplacedBy(this->Class->TypeName);	if (skillrepname != NAME_None && PClass::FindClass(skillrepname) == NULL)	{
+		Printf("Warning: incorrect actor name in definition of skill %s: \
+			   inexistent class %s is replaced by class %s\n\
+			   Skill replacement will be ignored for this actor.\n", 
+			   AllSkills[gameskill].Name.GetChars(), 
+			   skillrepname.GetChars(), this->Class->TypeName.GetChars());
+		AllSkills[gameskill].SetReplacedBy(this->Class->TypeName, NAME_None);
+		AllSkills[gameskill].SetReplacement(skillrepname, NAME_None);
+		lookskill = false; 
+	}
+	if (Replacee == NULL && (!lookskill || skillrepname == NAME_None))
 	{
 		return this;
 	}
@@ -194,8 +231,7 @@ FActorInfo *FActorInfo::GetReplacee ()
 	// potential infinite recursion.
 	FActorInfo *savedrep = Replacee;
 	Replacee = NULL;
-	FActorInfo *rep = savedrep->GetReplacee ();
-	Replacee = savedrep;
+	FActorInfo *rep = savedrep;	if (lookskill && (skillrepname != NAME_None) && (PClass::FindClass(skillrepname) != NULL))	{		rep = PClass::FindClass(skillrepname)->ActorInfo;	}	rep = rep->GetReplacee (false);	Replacee = savedrep;
 	return rep;
 }
 

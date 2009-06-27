@@ -1,4 +1,53 @@
-﻿June 14, 2009  (Changes by Graf Zahl)
+﻿June 27, 2009  (Changes by Graf Zahl)
+- Added Gez's submissions for A_M_Saw customization, area damage and 
+  pitch for A_FireCustomMissile.
+
+June 26, 2009
+- Attaching and detaching joysticks once again updates the joystick menu.
+- Added joystick axis -> button mapping.
+
+June 26, 2009  (Changes by Graf Zahl)
+- Added Gez's actor replacement per skill submission.
+
+June 25, 2009
+- Joystick axes can be configured in the menu again. TODO: Config saving
+  and loading, XInput, allow axes to be used as buttons (for the Xbox
+  controller's trigger buttons), allow the joystick to move through the
+  menus, and my PS2 adapter which has no Vista x64 drivers.
+
+June 22, 2009
+- Changed the definition of SBarInfoCoordinate to use bitfields to pack its
+  members into 32 bits so that it can be stored in a plain old int without
+  any transformations. The transformation coord -> int -> coord was
+  destructive if the coordinate value was negative, causing the final
+  coordinate to be centered even if the original was not.
+- SBARINFO patch: Enable forcescaled with fullscreenoffsets.
+- Fixed: Since UDMF allows for fractional vertex coordinates, it is no longer
+  safe for P_AlignPlane() to truncate coordinates when searching for the
+  furthest vertex from the line.
+
+June 19, 2009
+- The reorganized DirectInput game controller code finally compiles. (Ugh! It
+  took far too long to reach this point.) Manual axis configuration is
+  currently disabled, since I need to rewrite that, too. The eventual point of
+  this is that the code will be modular enough that I can just plop in
+  routines for XInput controllers and driver-less PlayStation 2 adapters
+  without much fuss, since the old joystick code was very much DirectInput-
+  centric.
+
+June 19, 2009  (Changes by Graf Zahl)
+- Changed AWeaponGiver to keep the weapon actor around instead of respawning a new
+  one for each call.
+- Fixed: AWeaponGiver::TryPickup checked the wrong item for ammo to give.
+- fixed: FRandom::Random2(int mask) must return the difference between 2 byte values
+  for compatibility.
+- fixed: The sound name world/volcano/shoot was accidentally destroyed in the source.
+
+June 16, 2009  (Changes by Graf Zahl)
+- Reintroduced damage thrust clamping but with a higher threshold. The clamping
+  is now also done in floating point before any fixed point overflows can occur.
+
+June 14, 2009  (Changes by Graf Zahl)
 - added a compatibility option to restore the original Heretic bug where
   a Minotaur couldn't spawn floor flames when standing in water having its
   feet clipped.

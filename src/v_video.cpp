@@ -1499,9 +1499,6 @@ void V_Init2()
 	M_InitVideoModesMenu();
 	BorderNeedRefresh = screen->GetPageCount ();
 	setsizeneeded = true;
-	#ifndef _WIN32
-		setmodeneeded = true;
-	#endif
 }
 
 void V_Shutdown()
