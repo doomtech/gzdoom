@@ -59,6 +59,14 @@ void AWeapon::Serialize (FArchive &arc)
 		<< Ammo1 << Ammo2 << SisterWeapon << GivenAsMorphWeapon
 		<< bAltFire
 		<< ReloadCounter;
+	if (SaveVersion >= 1688)
+	{
+		arc << FOVScale;
+		if (SaveVersion >= 1700)
+		{
+			arc << Crosshair;
+		}
+	}
 }
 
 //===========================================================================
@@ -1689,4 +1697,48 @@ const PClass *Net_ReadWeapon(BYTE **stream)
 		return NULL;
 	}
 	return Weapons_ntoh[index];
+}
+
+//===========================================================================
+//
+// A_ZoomFactor
+//
+//===========================================================================
+
+DEFINE_ACTION_FUNCTION_PARAMS(AWeapon, A_ZoomFactor)
+{
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_FLOAT(zoom, 0);
+	ACTION_PARAM_INT(flags, 1);
+
+	if (self->player != NULL && self->player->ReadyWeapon != NULL)
+	{
+		zoom = 1 / clamp(zoom, 0.1f, 50.f);
+		if (flags & 1)
+		{ // Make the zoom instant.
+			self->player->FOV = self->player->DesiredFOV * zoom;
+		}
+		if (flags & 2)
+		{ // Disable pitch/yaw scaling.
+			zoom = -zoom;
+		}
+		self->player->ReadyWeapon->FOVScale = zoom;
+	}
+}
+
+//===========================================================================
+//
+// A_SetCrosshair
+//
+//===========================================================================
+
+DEFINE_ACTION_FUNCTION_PARAMS(AWeapon, A_SetCrosshair)
+{
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_INT(xhair, 0);
+
+	if (self->player != NULL && self->player->ReadyWeapon != NULL)
+	{
+		self->player->ReadyWeapon->Crosshair = xhair;
+	}
 }

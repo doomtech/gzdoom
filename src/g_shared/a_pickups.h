@@ -263,6 +263,8 @@ public:
 	// In-inventory instance variables
 	TObjPtr<AAmmo> Ammo1, Ammo2;
 	TObjPtr<AWeapon> SisterWeapon;
+	float FOVScale;
+	int Crosshair;							// 0 to use player's crosshair
 	bool GivenAsMorphWeapon;
 
 	bool bAltFire;	// Set when this weapon's alternate fire is used.

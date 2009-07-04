@@ -120,6 +120,7 @@ public:
 	int			crouchsprite;
 	int			MaxHealth;
 	int			RunHealth;
+	int			PlayerFlags;
 	TObjPtr<AInventory> InvFirst;		// first inventory item displayed on inventory bar
 	TObjPtr<AInventory> InvSel;			// selected inventory item
 
@@ -148,6 +149,14 @@ class APlayerChunk : public APlayerPawn
 };
 
 //
+// PlayerPawn flags
+//
+enum
+{
+	PPF_NOTHRUSTWHENINVUL = 1,	// Attacks do not thrust the player if they are invulnerable.
+};
+
+//
 // Player states.
 //
 typedef enum
@@ -166,7 +175,7 @@ typedef enum
 {
 	CF_NOCLIP			= 1 << 0,		// No clipping, walk through barriers.
 	CF_GODMODE			= 1 << 1,		// No damage, no health loss.
-	CF_NOMOMENTUM		= 1 << 2,		// Not really a cheat, just a debug aid.
+	CF_NOVELOCITY		= 1 << 2,		// Not really a cheat, just a debug aid.
 	CF_NOTARGET			= 1 << 3,		// [RH] Monsters don't target
 	CF_FLY				= 1 << 4,		// [RH] Flying player
 	CF_CHASECAM			= 1 << 5,		// [RH] Put camera behind player
@@ -187,6 +196,7 @@ typedef enum
 	CF_DOUBLEFIRINGSPEED= 1 << 21,		// Player owns a double firing speed artifact
 	CF_EXTREMELYDEAD	= 1 << 22,		// [RH] Reliably let the status bar know about extreme deaths.
 	CF_INFINITEAMMO		= 1 << 23,		// Player owns an infinite ammo artifact
+	CF_WEAPONBOBBING	= 1 << 24,		// [HW] Bob weapon while the player is moving
 } cheat_t;
 
 #define WPIECE1		1
@@ -253,13 +263,13 @@ public:
 	fixed_t		viewz;					// focal origin above r.z
 	fixed_t		viewheight;				// base height above floor for viewz
 	fixed_t		deltaviewheight;		// squat speed.
-	fixed_t		bob;					// bounded/scaled total momentum
+	fixed_t		bob;					// bounded/scaled total velocity
 
 	// killough 10/98: used for realistic bobbing (i.e. not simply overall speed)
-	// mo->momx and mo->momy represent true momenta experienced by player.
+	// mo->velx and mo->vely represent true velocity experienced by player.
 	// This only represents the thrust that the player applies himself.
 	// This avoids anomolies with such things as Boom ice and conveyors.
-	fixed_t		momx, momy;				// killough 10/98
+	fixed_t		velx, vely;				// killough 10/98
 
 	bool		centering;
 	BYTE		turnticks;

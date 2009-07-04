@@ -217,8 +217,8 @@ player_t::player_t()
   viewheight(0),
   deltaviewheight(0),
   bob(0),
-  momx(0),
-  momy(0),
+  velx(0),
+  vely(0),
   centering(0),
   turnticks(0),
   attackdown(0),
@@ -425,6 +425,10 @@ void APlayerPawn::Serialize (FArchive &arc)
 		<< InvSel
 		<< MorphWeapon
 		<< DamageFade;
+	if (SaveVersion >= 1695)
+	{
+		arc << PlayerFlags;
+	}
 }
 
 //===========================================================================
@@ -1267,7 +1271,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_PlayerScream)
 	// Handle the different player death screams
 	if ((((level.flags >> 15) | (dmflags)) &
 		(DF_FORCE_FALLINGZD | DF_FORCE_FALLINGHX)) &&
-		self->momz <= -39*FRACUNIT)
+		self->velz <= -39*FRACUNIT)
 	{
 		sound = S_FindSkinnedSound (self, "*splat");
 		chan = CHAN_BODY;
@@ -1337,9 +1341,9 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SkullPop)
 	self->flags &= ~MF_SOLID;
 	mo = (APlayerPawn *)Spawn (spawntype, self->x, self->y, self->z + 48*FRACUNIT, NO_REPLACE);
 	//mo->target = self;
-	mo->momx = pr_skullpop.Random2() << 9;
-	mo->momy = pr_skullpop.Random2() << 9;
-	mo->momz = 2*FRACUNIT + (pr_skullpop() << 6);
+	mo->velx = pr_skullpop.Random2() << 9;
+	mo->vely = pr_skullpop.Random2() << 9;
+	mo->velz = 2*FRACUNIT + (pr_skullpop() << 6);
 	// Attach player mobj to bloody skull
 	player = self->player;
 	self->player = NULL;
@@ -1457,8 +1461,8 @@ void P_SideThrust (player_t *player, angle_t angle, fixed_t move)
 {
 	angle = (angle - ANGLE_90) >> ANGLETOFINESHIFT;
 
-	player->mo->momx += FixedMul (move, finecosine[angle]);
-	player->mo->momy += FixedMul (move, finesine[angle]);
+	player->mo->velx += FixedMul (move, finecosine[angle]);
+	player->mo->vely += FixedMul (move, finesine[angle]);
 }
 
 void P_ForwardThrust (player_t *player, angle_t angle, fixed_t move)
@@ -1472,11 +1476,11 @@ void P_ForwardThrust (player_t *player, angle_t angle, fixed_t move)
 		fixed_t zpush = FixedMul (move, finesine[pitch]);
 		if (player->mo->waterlevel && player->mo->waterlevel < 2 && zpush < 0)
 			zpush = 0;
-		player->mo->momz -= zpush;
+		player->mo->velz -= zpush;
 		move = FixedMul (move, finecosine[pitch]);
 	}
-	player->mo->momx += FixedMul (move, finecosine[angle]);
-	player->mo->momy += FixedMul (move, finesine[angle]);
+	player->mo->velx += FixedMul (move, finecosine[angle]);
+	player->mo->vely += FixedMul (move, finesine[angle]);
 }
 
 //
@@ -1494,8 +1498,8 @@ void P_Bob (player_t *player, angle_t angle, fixed_t move)
 {
 	angle >>= ANGLETOFINESHIFT;
 
-	player->momx += FixedMul(move,finecosine[angle]);
-	player->momy += FixedMul(move,finesine[angle]);
+	player->velx += FixedMul(move, finecosine[angle]);
+	player->vely += FixedMul(move, finesine[angle]);
 }
 
 /*
@@ -1530,7 +1534,7 @@ void P_CalcHeight (player_t *player)
 	}
 	else
 	{
-		player->bob = DMulScale16 (player->momx, player->momx, player->momy, player->momy);
+		player->bob = DMulScale16 (player->velx, player->velx, player->vely, player->vely);
 		if (player->bob == 0)
 		{
 			still = true;
@@ -1546,7 +1550,7 @@ void P_CalcHeight (player_t *player)
 
 	fixed_t defaultviewheight = player->mo->ViewHeight + player->crouchviewdelta;
 
-	if (player->cheats & CF_NOMOMENTUM)
+	if (player->cheats & CF_NOVELOCITY)
 	{
 		player->viewz = player->mo->z + defaultviewheight;
 
@@ -1739,7 +1743,7 @@ void P_FallingDamage (AActor *actor)
 {
 	int damagestyle;
 	int damage;
-	fixed_t mom;
+	fixed_t vel;
 
 	damagestyle = ((level.flags >> 15) | (dmflags)) &
 		(DF_FORCE_FALLINGZD | DF_FORCE_FALLINGHX);
@@ -1750,7 +1754,7 @@ void P_FallingDamage (AActor *actor)
 	if (actor->floorsector->Flags & SECF_NOFALLINGDAMAGE)
 		return;
 
-	mom = abs (actor->momz);
+	vel = abs(actor->velz);
 
 	// Since Hexen falling damage is stronger than ZDoom's, it takes
 	// precedence. ZDoom falling damage may not be as strong, but it
@@ -1759,19 +1763,19 @@ void P_FallingDamage (AActor *actor)
 	switch (damagestyle)
 	{
 	case DF_FORCE_FALLINGHX:		// Hexen falling damage
-		if (mom <= 23*FRACUNIT)
+		if (vel <= 23*FRACUNIT)
 		{ // Not fast enough to hurt
 			return;
 		}
-		if (mom >= 63*FRACUNIT)
+		if (vel >= 63*FRACUNIT)
 		{ // automatic death
 			damage = 1000000;
 		}
 		else
 		{
-			mom = FixedMul (mom, 16*FRACUNIT/23);
-			damage = ((FixedMul (mom, mom) / 10) >> FRACBITS) - 24;
-			if (actor->momz > -39*FRACUNIT && damage > actor->health
+			vel = FixedMul (vel, 16*FRACUNIT/23);
+			damage = ((FixedMul (vel, vel) / 10) >> FRACBITS) - 24;
+			if (actor->velz > -39*FRACUNIT && damage > actor->health
 				&& actor->health != 1)
 			{ // No-death threshold
 				damage = actor->health-1;
@@ -1780,17 +1784,17 @@ void P_FallingDamage (AActor *actor)
 		break;
 	
 	case DF_FORCE_FALLINGZD:		// ZDoom falling damage
-		if (mom <= 19*FRACUNIT)
+		if (vel <= 19*FRACUNIT)
 		{ // Not fast enough to hurt
 			return;
 		}
-		if (mom >= 84*FRACUNIT)
+		if (vel >= 84*FRACUNIT)
 		{ // automatic death
 			damage = 1000000;
 		}
 		else
 		{
-			damage = ((MulScale23 (mom, mom*11) >> FRACBITS) - 30) / 2;
+			damage = ((MulScale23 (vel, vel*11) >> FRACBITS) - 30) / 2;
 			if (damage < 1)
 			{
 				damage = 1;
@@ -1799,13 +1803,13 @@ void P_FallingDamage (AActor *actor)
 		break;
 
 	case DF_FORCE_FALLINGST:		// Strife falling damage
-		if (mom <= 20*FRACUNIT)
+		if (vel <= 20*FRACUNIT)
 		{ // Not fast enough to hurt
 			return;
 		}
 		// The minimum amount of damage you take from falling in Strife
 		// is 52. Ouch!
-		damage = mom / 25000;
+		damage = vel / 25000;
 		break;
 
 	default:
@@ -1996,16 +2000,26 @@ void P_PlayerThink (player_t *player)
 	}
 
 	// [RH] Zoom the player's FOV
-	if (player->FOV != player->DesiredFOV)
+	float desired = player->DesiredFOV;
+	// Adjust FOV using on the currently held weapon.
+	if (player->playerstate != PST_DEAD &&		// No adjustment while dead.
+		player->ReadyWeapon != NULL &&			// No adjustment if no weapon.
+		player->ReadyWeapon->FOVScale != 0)		// No adjustment if the adjustment is zero.
 	{
-		if (fabsf (player->FOV - player->DesiredFOV) < 7.f)
+		// A negative scale is used top prevent G_AddViewAngle/G_AddViewPitch
+		// from scaling with the FOV scale.
+		desired *= fabs(player->ReadyWeapon->FOVScale);
+	}
+	if (player->FOV != desired)
+	{
+		if (fabsf (player->FOV - desired) < 7.f)
 		{
-			player->FOV = player->DesiredFOV;
+			player->FOV = desired;
 		}
 		else
 		{
-			float zoom = MAX(7.f, fabsf (player->FOV - player->DesiredFOV) * 0.025f);
-			if (player->FOV > player->DesiredFOV)
+			float zoom = MAX(7.f, fabsf(player->FOV - desired) * 0.025f);
+			if (player->FOV > desired)
 			{
 				player->FOV = player->FOV - zoom;
 			}
@@ -2079,7 +2093,7 @@ void P_PlayerThink (player_t *player)
 		{
 			int crouchdir = player->crouching;
 		
-			if (crouchdir==0)
+			if (crouchdir == 0)
 			{
 				crouchdir = (player->cmd.ucmd.buttons & BT_CROUCH)? -1 : 1;
 			}
@@ -2183,20 +2197,20 @@ void P_PlayerThink (player_t *player)
 			else
 			if (player->mo->waterlevel >= 2)
 			{
-				player->mo->momz = 4*FRACUNIT;
+				player->mo->velz = 4*FRACUNIT;
 			}
 			else if (player->mo->flags & MF_NOGRAVITY)
 			{
-				player->mo->momz = 3*FRACUNIT;
+				player->mo->velz = 3*FRACUNIT;
 			}
 			else if (level.IsJumpingAllowed() && onground && !player->jumpTics)
 			{
-				fixed_t jumpmomz = player->mo->JumpZ * 35 / TICRATE;
+				fixed_t jumpvelz = player->mo->JumpZ * 35 / TICRATE;
 
 				// [BC] If the player has the high jump power, double his jump velocity.
-				if ( player->cheats & CF_HIGHJUMP )	jumpmomz *= 2;
+				if ( player->cheats & CF_HIGHJUMP )	jumpvelz *= 2;
 
-				player->mo->momz += jumpmomz;
+				player->mo->velz += jumpvelz;
 				S_Sound (player->mo, CHAN_BODY, "*jump", 1, ATTN_NORM);
 				player->mo->flags2 &= ~MF2_ONMOBJ;
 				player->jumpTics = 18*TICRATE/35;
@@ -2221,12 +2235,12 @@ void P_PlayerThink (player_t *player)
 			}
 			if (player->mo->waterlevel >= 2 || (player->mo->flags2 & MF2_FLY))
 			{
-				player->mo->momz = cmd->ucmd.upmove << 9;
+				player->mo->velz = cmd->ucmd.upmove << 9;
 				if (player->mo->waterlevel < 2 && !(player->mo->flags & MF_NOGRAVITY))
 				{
 					player->mo->flags2 |= MF2_FLY;
 					player->mo->flags |= MF_NOGRAVITY;
-					if (player->mo->momz <= -39*FRACUNIT)
+					if (player->mo->velz <= -39*FRACUNIT)
 					{ // Stop falling scream
 						S_StopSound (player->mo, CHAN_VOICE);
 					}
@@ -2253,8 +2267,8 @@ void P_PlayerThink (player_t *player)
 			P_PlayerInSpecialSector (player);
 		}
 		P_PlayerOnSpecialFlat (player, P_GetThingFloorType (player->mo));
-		if (player->mo->momz <= -35*FRACUNIT &&
-			player->mo->momz >= -40*FRACUNIT && !player->morphTics &&
+		if (player->mo->velz <= -35*FRACUNIT &&
+			player->mo->velz >= -40*FRACUNIT && !player->morphTics &&
 			player->mo->waterlevel == 0)
 		{
 			int id = S_FindSkinnedSound (player->mo, "*falling");
@@ -2474,8 +2488,8 @@ void player_t::Serialize (FArchive &arc)
 		<< viewheight
 		<< deltaviewheight
 		<< bob
-		<< momx
-		<< momy
+		<< velx
+		<< vely
 		<< centering
 		<< health
 		<< inventorytics

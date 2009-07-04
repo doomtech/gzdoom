@@ -10,6 +10,7 @@ const int SXF_TRANSFERTRANSLATION=1;
 const int SXF_ABSOLUTEPOSITION=2;
 const int SXF_ABSOLUTEANGLE=4;
 const int SXF_ABSOLUTEMOMENTUM=8;
+const int SXF_ABSOLUTEVELOCITY=8;
 const int SXF_SETMASTER=16;
 const int SXF_NOCHECKPOSITION = 32;
 const int SXF_TELEFRAG=64;
@@ -31,6 +32,10 @@ const int LOF_NOSOUNDCHECK = 2;
 const int LOF_DONTCHASEGOAL = 4;
 const int LOF_NOSEESOUND = 8;
 const int LOF_FULLVOLSEESOUND = 16;
+
+// Flags for A_ChangeVelocity
+const int CVF_RELATIVE = 1;
+const int CVF_REPLACE = 2;
 
 // Morph constants
 const int MRF_ADDSTAMINA = 1;
