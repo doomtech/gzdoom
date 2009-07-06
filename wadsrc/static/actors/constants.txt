@@ -37,6 +37,10 @@ const int LOF_FULLVOLSEESOUND = 16;
 const int CVF_RELATIVE = 1;
 const int CVF_REPLACE = 2;
 
+// Flags for A_WeaponReady
+const int WRF_NoBob = 1;
+const int WRF_NoFire = 2;
+
 // Morph constants
 const int MRF_ADDSTAMINA = 1;
 const int MRF_FULLHEALTH = 2;
@@ -50,6 +54,9 @@ const int MRF_NEWTIDBEHAVIOUR = 256;
 const int MRF_UNDOBYDEATH = 512;
 const int MRF_UNDOBYDEATHFORCED = 1024;
 const int MRF_UNDOBYDEATHSAVES = 2048;
+
+const int RGF_SILENT = 1;
+const int RGF_NOPIERCING = 2;
 
 // constants for A_PlaySound
 enum
