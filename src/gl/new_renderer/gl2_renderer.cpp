@@ -126,7 +126,7 @@ void GL2Renderer::ProcessSector(sector_t *fakesector, subsector_t *sub)
 
 void GL2Renderer::FlushTextures()
 {
-	mTextures->FlushAllTextures();
+	if (mTextures != NULL) mTextures->FlushAllTextures();
 }
 
 //===========================================================================

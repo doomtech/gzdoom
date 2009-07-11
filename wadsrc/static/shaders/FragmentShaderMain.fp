@@ -21,10 +21,12 @@ uniform int fogradial;
 uniform vec4 camerapos;
 
 // common stuff
-uniform sampler2D tex;
+uniform sampler2D texture1;
 uniform int texturemode;
 uniform float timer;
 uniform float desaturation_factor;
+
+vec4 ProcessPixel();
 
 //===========================================================================
 //
@@ -53,13 +55,13 @@ vec4 GetPixelLight()
 		const float LOG2E = 1.442692;	// = 1/log(2)
 		float fc;
 		if (fogradial == 0) fc = fogcoord;
-		else fc = max(16.0, distance(pixelpos, camerapos));
+		else fc = max(16.0, distance(pixelpos, camerapos.xyz));
 		
 		float lfactor = LightParams.z;
 		float dist = LightParams.w;
 		if (lfactor != 1.0 && fc < dist) 
 		{
-			pixin.rgb *= lfactor - (fc / dist) * (lfactor - 1.0);
+			color.rgb *= lfactor - (fc / dist) * (lfactor - 1.0);
 		}
 		
 		float factor = exp2 ( LightParams.y * fc * LOG2E);
@@ -97,7 +99,7 @@ vec4 ApplyPixelFog(vec4 pixin)
 		const float LOG2E = 1.442692;	// = 1/log(2)
 		float fc;
 		if (fogradial == 0) fc = fogcoord;
-		else fc = max(16.0, distance(pixelpos, camerapos));
+		else fc = max(16.0, distance(pixelpos, camerapos.xyz));
 		
 		float factor = exp2 ( -FogColor.a * fc * LOG2E);
 		return vec4(mix(FogColor, pixin, factor).rgb, pixin.a);

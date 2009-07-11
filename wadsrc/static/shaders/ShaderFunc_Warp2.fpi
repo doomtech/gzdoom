@@ -1,3 +1,9 @@
+uniform sampler2D texture1;
+vec4 GetPixelLight();
+vec4 ApplyPixelFog(vec4 pix);
+vec4 Desaturate(vec4 pix);
+uniform float timer;
+
 vec4 ProcessPixel()
 {
 	vec2 texCoord = gl_TexCoord[0].st;
@@ -11,7 +17,7 @@ vec4 ProcessPixel()
 
 	texCoord += offset;
 
-	vec4 texel = texture2D(tex, texCoord);
+	vec4 texel = texture2D(texture1, texCoord);
 	vec4 light = GetPixelLight();
 	return ApplyPixelFog(Desaturate(texel) * light);
 }

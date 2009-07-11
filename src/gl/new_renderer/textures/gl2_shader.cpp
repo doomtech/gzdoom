@@ -43,7 +43,7 @@ int gl_frameMS;
 
 	FShaderObject::FShaderObject()
 	{
-		hShader = hVertProg = hFragProg = NULL;
+		hShader = hVertProg = hFragProg = hPixFunc = NULL;
 	}
 
 	//----------------------------------------------------------------------------
@@ -54,6 +54,10 @@ int gl_frameMS;
 
 	FShaderObject::~FShaderObject()
 	{
+		gl.DeleteObject(hShader);
+		gl.DeleteObject(hVertProg);
+		gl.DeleteObject(hFragProg);
+		gl.DeleteObject(hPixFunc);
 	}
 
 	//----------------------------------------------------------------------------
@@ -62,24 +66,29 @@ int gl_frameMS;
 	//
 	//----------------------------------------------------------------------------
 
-	bool FShaderObject::Create(const char *name, const char *vertexshader, const char *fragmentshader)
+	bool FShaderObject::Create(const char *name, const char *vertexshader, const char *fragmentshader, const char *pixfunc)
 	{
-		hVertProg = gl.CreateShaderObject(GL_VERTEX_SHADER_ARB);
-		hFragProg = gl.CreateShaderObject(GL_FRAGMENT_SHADER_ARB);	
+		hVertProg = gl.CreateShaderObject(GL_VERTEX_SHADER);
+		hFragProg = gl.CreateShaderObject(GL_FRAGMENT_SHADER);	
+		hPixFunc = gl.CreateShaderObject(GL_FRAGMENT_SHADER);	
 
 		int vp_size = (int)strlen(vertexshader);
 		int fp_size = (int)strlen(fragmentshader);
+		int pp_size = (int)strlen(pixfunc);
 
 		gl.ShaderSource(hVertProg, 1, &vertexshader, &vp_size);
 		gl.ShaderSource(hFragProg, 1, &fragmentshader, &fp_size);
+		gl.ShaderSource(hPixFunc, 1, &pixfunc, &pp_size);
 
 		gl.CompileShader(hVertProg);
 		gl.CompileShader(hFragProg);
+		gl.CompileShader(hPixFunc);
 
 		hShader = gl.CreateProgramObject();
 
 		gl.AttachObject(hShader, hVertProg);
 		gl.AttachObject(hShader, hFragProg);
+		gl.AttachObject(hShader, hPixFunc);
 
 		gl.BindAttribLocation(hShader, attrLightParams, "aLightParams");
 		gl.BindAttribLocation(hShader, attrFogColor, "aFogColor");
@@ -107,7 +116,7 @@ int gl_frameMS;
 		mColormapColor.setIndex(hShader, "colormapcolor");
 	
 		gl.UseProgramObject(hShader);
-		for(int i=2; i<=8;i++)
+		for(int i=1; i<=16;i++)
 		{
 			char buf[20];
 			mysnprintf(buf, 20, "texture%d", i);
@@ -175,11 +184,10 @@ int gl_frameMS;
 		FMemLump lump1 = Wads.ReadLump(lumpnum1);
 		FMemLump lump2 = Wads.ReadLump(lumpnum2);
 		FMemLump lump3 = Wads.ReadLump(lumpnum3);
-		FString fp_combined = lump2.GetString() + lump3.GetString();
 
 		FShaderObject *sh = new FShaderObject;
 
-		if (sh->Create(mName, lump1.GetString(), fp_combined)) return sh;
+		if (sh->Create(mName, lump1.GetString(), lump2.GetString(), lump3.GetString())) return sh;
 		delete sh;
 		return NULL;
 	}
@@ -192,10 +200,10 @@ int gl_frameMS;
 
 	bool FShader::Create(const char * filename_pixfunc)
 	{
-		mBaseShader = CreateShader("shaders/VertexShaderMain.vp", "shader/FragmentShaderMain.fp", filename_pixfunc);
+		mBaseShader = CreateShader("shaders/VertexShaderMain.vp", "shaders/FragmentShaderMain.fp", filename_pixfunc);
 		if (!mBaseShader) return false;
 
-		mColormapShader = CreateShader("shaders/VertexShaderColormap.vp", "shader/FragmentShaderColormap.fp", filename_pixfunc);
+		mColormapShader = CreateShader("shaders/VertexShaderColormap.vp", "shaders/FragmentShaderColormap.fp", filename_pixfunc);
 		if (!mColormapShader)
 		{
 			delete mBaseShader;
@@ -267,7 +275,7 @@ int gl_frameMS;
 
 	bool FShaderContainer::CreateDefaultShaders()
 	{
-		const char *shaderdefs[] = {
+		static const char * const shaderdefs[] = {
 			"Default", "shaders/ShaderFunc_Default.fpi",
 			"Warp1", "shaders/ShaderFunc_Warp1.fpi",
 			"Warp2", "shaders/ShaderFunc_Warp2.fpi",

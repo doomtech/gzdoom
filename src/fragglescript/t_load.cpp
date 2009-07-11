@@ -60,6 +60,7 @@ class FScriptLoader
 
 	int drownflag;
 	bool HasScripts;
+	bool IgnoreInfo;
 
 	void ParseInfoCmd(char *line, FString &scriptsrc);
 public:
@@ -229,6 +230,12 @@ void FScriptLoader::ParseInfoCmd(char *line, FString &scriptsrc)
 			if (comm) *comm=0;
 			FS_EmulateCmd(beg);
 		}
+		else if (sc.Compare("ignore"))
+		{
+			sc.MustGetStringName("=");
+			sc.MustGetNumber();
+			IgnoreInfo=!!sc.Number;
+		}
 		// Ignore anything unknows
 		sc.Close();
 	}
@@ -254,6 +261,7 @@ bool FScriptLoader::ParseInfo(MapData * map)
 	static bool done=false;
 					
 	// Load the script lump
+	IgnoreInfo = false;
 	lumpsize = map->Size(0);
 	if (lumpsize==0)
 	{
@@ -287,7 +295,7 @@ bool FScriptLoader::ParseInfo(MapData * map)
 		if(*rover == '\n') // end of line
 		{
 			*rover = 0;               // make it an end of string (0)
-			ParseInfoCmd(startofline, scriptsrc);
+			if (!IgnoreInfo) ParseInfoCmd(startofline, scriptsrc);
 			startofline = rover+1; // next line
 			*rover = '\n';            // back to end of line
 		}

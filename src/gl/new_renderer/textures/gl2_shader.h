@@ -125,6 +125,7 @@ class FShaderObject
 	GLhandleARB hShader;
 	GLhandleARB hVertProg;
 	GLhandleARB hFragProg;
+	GLhandleARB hPixFunc;
 
 	FShaderPropertyInt mTimer;
 	FShaderPropertyFloat mDesaturationFactor;
@@ -146,7 +147,7 @@ public:
 
 	FShaderObject();
 	~FShaderObject();
-	bool Create(const char *name, const char *vertexshader, const char *fragmentshader);
+	bool Create(const char *name, const char *vertexshader, const char *fragmentshader, const char *pixfunc);
 	void Bind();
 
 	void setTimer(int time)
