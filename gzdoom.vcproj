@@ -682,6 +682,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\m_joy.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\m_menu.cpp"
 				>
 			</File>
@@ -1371,6 +1375,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\m_joy.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\m_menu.h"
 				>
 			</File>
@@ -1991,6 +1999,10 @@
 			</File>
 			<File
 				RelativePath=".\src\win32\i_movie.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\win32\i_rawps2.cpp"
 				>
 			</File>
 			<File
@@ -6817,9 +6829,21 @@
 			<Filter
 				Name="New Renderer"
 				>
+				<File
+					RelativePath=".\src\gl\new_renderer\gl2_renderer.cpp"
+					>
+				</File>
 				<Filter
 					Name="Includes"
 					>
+					<File
+						RelativePath=".\src\gl\new_renderer\gl2_renderer.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\new_renderer\gl2_vertex.h"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="Texture Management"
