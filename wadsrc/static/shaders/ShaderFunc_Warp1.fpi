@@ -1,0 +1,16 @@
+vec4 ProcessPixel()
+{
+	vec2 texCoord = gl_TexCoord[0].st;
+
+	const float pi = 3.14159265358979323846;
+	vec2 offset = vec2(0,0);
+
+	offset.y = sin(pi * 2.0 * (texCoord.x + timer * 0.125)) * 0.1;
+	offset.x = sin(pi * 2.0 * (texCoord.y + timer * 0.125)) * 0.1;
+
+	texCoord += offset;
+
+	vec4 texel = texture2D(tex, texCoord);
+	vec4 light = GetPixelLight();
+	return ApplyPixelFog(Desaturate(texel) * light);
+}
