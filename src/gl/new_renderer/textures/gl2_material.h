@@ -1,9 +1,13 @@
 #ifndef __GL_MATERIAL_H
 #define __GL_MATERIAL_H
 
+class FTexture;
 
-namespace GLRenderer
+namespace GLRendererNew
 {
+
+	class FShader;
+	class FGLTexture;
 
 struct FRect
 {
@@ -26,6 +30,27 @@ struct FRect
 };
 
 
+struct FISize
+{
+	int w,h;
+};
+
+struct FFSize
+{
+	float w,h;
+};
+
+struct FIPoint
+{
+	int x, y;
+};
+
+struct FFPoint
+{
+	float x, y;
+};
+
+
 
 class FMaterial
 {
@@ -45,23 +70,24 @@ class FMaterial
 	FShader *mShader;
 	TArray<ShaderParameter> mParams;
 
-	int mSizeTexels[2];
-	float mSizeUnits[2];
+	FISize mSizeTexels;
+	FISize mSizeUnits;
 
-	int mOffsetTexels[2];
-	float mOffsetUnits[2];
+	FIPoint mOffsetTexels;
+	FIPoint mOffsetUnits;
 
 	float mAlphaThreshold;
 
-	float mDefaultScale[2];
-	float mTempScale[2];
+	FFPoint mDefaultScale;
+	FFPoint mTempScale;
 
 	TArray<FRect> mAreas;	// for optimizing mid texture drawing.
 	bool mIsTransparent;
 
+	static int Scale (int val, int scale) ;
+
 public:
-	static FMaterial *GetMaterial(FTexture *tex, bool asSprite = false, int translation = 0);
-	FMaterial(FTexture *tex, bool asSprite);
+	FMaterial(FTexture *tex, bool asSprite, int translation);
 	~FMaterial();
 
 	void SetTempScale(float scalex, float scaley);
@@ -70,42 +96,42 @@ public:
 
 	int GetWidth() const
 	{
-		return mSizeTexels[0];
+		return mSizeTexels.w;
 	}
 
 	int GetHeight() const
 	{
-		return mSizeTexels[1];
+		return mSizeTexels.h;
 	}
 
-	float GetScaledWidth() const
+	int GetScaledWidth() const
 	{
-		return mSizeUnits[0];
+		return mSizeUnits.w;
 	}
 
-	float GetScaledHeight() const
+	int GetScaledHeight() const
 	{
-		return mSizeUnits[1];
+		return mSizeUnits.h;
 	}
 
 	int GetLeftOffset() const
 	{
-		return mOffsetTexels[0];
+		return mOffsetTexels.x;
 	}
 
 	int GetTopOffset() const
 	{
-		return mOffsetTexels[1];
+		return mOffsetTexels.y;
 	}
 
-	float GetScaledLeftOffset() const
+	int GetScaledLeftOffset() const
 	{
-		return mOffsetUnits[0];
+		return mOffsetUnits.x;
 	}
 
-	float GetScaledTopOffset() const
+	int GetScaledTopOffset() const
 	{
-		return mOffsetUnits[1];
+		return mOffsetUnits.y;
 	}
 
 	float RowOffset(float ofs) const;
@@ -116,6 +142,47 @@ public:
 	void CreateDefaultBrightmap();
 
 
+};
+
+
+struct MaterialKey
+{
+	int keyval;
+
+	MaterialKey() {}
+	MaterialKey(bool assprite, int trans)
+	{
+		keyval = (trans<<1) + assprite;
+	}
+};
+
+
+struct MaterialHashTraits
+{
+	// Returns the hash value for a key.
+	hash_t Hash(const MaterialKey &key) { return (hash_t)key.keyval; }
+
+	// Compares two keys, returning zero if they are the same.
+	int Compare(const MaterialKey &left, const MaterialKey &right) 
+	{ 
+		return left.keyval != right.keyval;
+	}
+};
+
+
+typedef TMap<MaterialKey, FMaterial *, MaterialHashTraits> FMaterialMap;
+
+
+class FMaterialContainer
+{
+	FTexture *mTexture;
+	FMaterial *mMatWorld;
+	FMaterial *mMatPatch;
+	FMaterialMap *mMatOthers;
+
+public:
+	FMaterial *GetWorldMaterial(int translation);
+	FMaterial *GetPatchMaterial(int translation);
 };
 
 

@@ -335,6 +335,10 @@ int gl_frameMS;
 				active->setCameraPos(mCameraPos);
 				active->Bind();
 			}
+			else
+			{
+				gl.UseProgramObject(NULL);
+			}
 		}
 	}
 

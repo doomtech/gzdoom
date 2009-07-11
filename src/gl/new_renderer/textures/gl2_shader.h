@@ -227,6 +227,17 @@ class FShaderContainer
 
 public:
 
+	FShaderContainer()
+	{
+		mActiveShader = NULL;
+		mFogType = -1;
+		mCameraPos[0] = 
+		mCameraPos[1] = 
+		mCameraPos[2] = 
+		mCameraPos[3] = -1e30;
+		CreateDefaultShaders();
+	}
+	
 	~FShaderContainer();
 
 	bool CreateDefaultShaders();

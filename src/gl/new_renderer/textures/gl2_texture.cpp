@@ -369,6 +369,7 @@ namespace GLRendererNew
 			delete texaddr;
 			texaddr = NULL;
 		}
+		mGLTextures[key] = texaddr;
 		return texaddr;
 	}
 
