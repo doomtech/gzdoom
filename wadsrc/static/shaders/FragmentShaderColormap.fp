@@ -67,8 +67,8 @@ vec4 ApplyColormap(vec4 texel)
 void main()
 {
 	vec4 texel = ProcessPixel();	// ProcessPixel is the shader specific routine which is located in a separate file.
-	if (colormapcolors.a != 0) texel = ApplyColormap(texel);
 	if (texturemode == 1) texel.a=1.0;
 	else if (texturemode == 2) texel.rgb = vec3(1.0, 1.0, 1.0);
+	if (colormapcolors.a != 0) texel = ApplyColormap(texel);
 	gl_FragColor = texel;
 }
