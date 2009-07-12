@@ -11,6 +11,7 @@ class FGLTextureManager;
 class FMaterialContainer;
 class FMaterial;
 class FGLTexture;
+class FPrimitiveBuffer2D;
 
 class GL2Renderer : public GLRendererBase
 {
@@ -18,11 +19,13 @@ public:
 	FShaderContainer *mShaders;
 	FGLTextureManager *mTextures;
 	TArray<FMaterialContainer *> mMaterials;
+	FPrimitiveBuffer2D *mRender2D;
 
 	GL2Renderer() 
 	{
 		mShaders = NULL;
 		mTextures = NULL;
+		mRender2D = NULL;
 	}
 	~GL2Renderer();
 

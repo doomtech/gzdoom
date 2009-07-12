@@ -10,7 +10,6 @@
 EXTERN_CVAR(Bool, gl_precache)
 EXTERN_CVAR(Bool, gl_brightmap_shader)
 
-struct GL_RECT;
 struct FRemapTable;
 
 
@@ -138,7 +137,6 @@ private:
 
 	signed char areacount;
 	bool bHasColorkey;		// only for hires
-	GL_RECT * areas;
 
 	short LeftOffset[2];
 	short TopOffset[2];
@@ -149,10 +147,6 @@ private:
 	float AlphaThreshold;
 	fixed_t tempScaleX, tempScaleY;
 
-	bool FindHoles(const unsigned char * buffer, int w, int h);
-	bool ProcessData(unsigned char * buffer, int w, int h, int cm, bool ispatch);
-	void CheckTrans(unsigned char * buffer, int size, int trans);
-	static bool SmoothEdges(unsigned char * buffer,int w, int h, bool clampsides);
 	unsigned char * LoadHiresTexture(int *width, int *height, int cm);
 
 	BYTE *WarpBuffer(BYTE *buffer, int Width, int Height, int warp);
@@ -184,7 +178,7 @@ public:
 
 	// Patch drawing utilities
 
-	void GetRect(GL_RECT * r, ETexUse i) const;
+	void GetRect(FloatRect *r, ETexUse i) const;
 
 	void SetWallScaling(fixed_t x, fixed_t y);
 
@@ -192,7 +186,7 @@ public:
 	int TextureWidth(ETexUse i) const { return RenderWidth[i]; }
 
 	int GetAreaCount() const { return areacount; }
-	GL_RECT * GetAreas() const { return areas; }
+	FloatRect *GetAreas() const { return tex->gl_info.areas; }
 
 	fixed_t RowOffset(fixed_t rowoffset) const;
 	fixed_t TextureOffset(fixed_t textureoffset) const;

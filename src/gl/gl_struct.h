@@ -21,31 +21,6 @@ namespace GLRendererOld
 extern DWORD gl_fixedcolormap;
 }
 
-struct GL_RECT
-{
-	float left,top;
-	float width,height;
-
-
-	void Offset(float xofs,float yofs)
-	{
-		left+=xofs;
-		top+=yofs;
-	}
-	void Scale(float xfac,float yfac)
-	{
-		left*=xfac;
-		width*=xfac;
-		top*=yfac;
-		height*=yfac;
-	}
-	void Scale(fixed_t xfac,fixed_t yfac)
-	{
-		Scale(xfac/(float)FRACUNIT,yfac/(float)FRACUNIT);
-	}
-};
-
-
 struct GL_IRECT
 {
 	int left,top;

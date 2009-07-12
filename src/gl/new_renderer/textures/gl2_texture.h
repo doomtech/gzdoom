@@ -28,9 +28,6 @@ class FGLTexture
 
 	unsigned char * CreateTexBuffer(int translation, int &w, int &h);
 	void CheckHires();
-	bool SmoothEdges(unsigned char * buffer,int w, int h);
-	bool ProcessData(unsigned char * buffer, int w, int h);
-	void CheckTrans(unsigned char * buffer, int size, int trans);
 	
 
 public:

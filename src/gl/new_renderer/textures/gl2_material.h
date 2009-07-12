@@ -11,25 +11,6 @@ namespace GLRendererNew
 	class FShader;
 	class FGLTexture;
 
-struct FRect
-{
-	float left,top;
-	float width,height;
-
-
-	void Offset(float xofs,float yofs)
-	{
-		left+=xofs;
-		top+=yofs;
-	}
-	void Scale(float xfac,float yfac)
-	{
-		left*=xfac;
-		width*=xfac;
-		top*=yfac;
-		height*=yfac;
-	}
-};
 
 
 struct FISize
@@ -79,12 +60,10 @@ class FMaterial
 	FIPoint mOffsetUnits;
 
 	float mAlphaThreshold;
+	float mSpeed;
 
 	FFPoint mDefaultScale;
 	FFPoint mTempScale;
-
-	TArray<FRect> mAreas;	// for optimizing mid texture drawing.
-	bool mIsTransparent;
 
 	static int Scale (int val, int scale) ;
 
@@ -141,7 +120,8 @@ public:
 
 	bool FindHoles(const unsigned char * buffer, int w, int h);
 	void CheckTransparent(const unsigned char * buffer, int w, int h);
-	void CreateDefaultBrightmap();
+	void Bind(float *colormap, int texturemode, float desaturation, int clamp);
+
 
 
 };

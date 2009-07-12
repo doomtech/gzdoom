@@ -43,7 +43,6 @@ struct RenderContext
 
 	void (APIENTRY * LoadExtensions) ();
 	void (APIENTRY * SetTextureMode) (int type);
-	void (APIENTRY * ArrayPointer) (void * data, int stride);
 	void (APIENTRY * PrintStartupLog) ();
 	BOOL (APIENTRY * SetVSync) (int on);
 #ifndef unix
@@ -156,7 +155,6 @@ struct RenderContext
 	PFNGLVERTEXATTRIB4FARBPROC VertexAttrib4f;
 	PFNGLGETATTRIBLOCATIONARBPROC GetAttribLocation;
 	PFNGLBINDATTRIBLOCATIONARBPROC BindAttribLocation;
-	PFNGLVERTEXATTRIBPOINTERPROC VertexAttribPointer;
 
 	PFNGLUNIFORM1FARBPROC Uniform1f;
 	PFNGLUNIFORM2FARBPROC Uniform2f;
@@ -205,6 +203,9 @@ struct RenderContext
 	PFNGLBUFFERDATAPROC BufferData;
 	PFNGLMAPBUFFERPROC MapBuffer;
 	PFNGLUNMAPBUFFERPROC UnmapBuffer;
+	PFNGLENABLEVERTEXATTRIBARRAYPROC EnableVertexAttribArray;
+	PFNGLDISABLEVERTEXATTRIBARRAYPROC DisableVertexAttribArray;
+	PFNGLVERTEXATTRIBPOINTERPROC VertexAttribPointer;
 
 
 };

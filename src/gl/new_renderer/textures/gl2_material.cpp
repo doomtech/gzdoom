@@ -28,10 +28,13 @@
 #include "gl/gl_include.h"
 #include "gl/gl_intern.h"	// CVAR declarations only.
 #include "r_translate.h"
+#include "r_data.h"
 #include "textures/textures.h"
+#include "gl/common/glc_translate.h"
 #include "gl/new_renderer/gl2_renderer.h"
 #include "gl/new_renderer/textures/gl2_texture.h"
 #include "gl/new_renderer/textures/gl2_material.h"
+#include "gl/new_renderer/textures/gl2_shader.h"
 
 
 namespace GLRendererNew
@@ -62,6 +65,8 @@ FMaterial::FMaterial(FTexture *tex, bool asSprite, int translation)
 	{
 		tex->CreateDefaultBrightmap();
 	}
+
+	mSpeed = 0;
 
 	mSizeTexels.w = tex->GetWidth();
 	mSizeTexels.h = tex->GetHeight();
@@ -110,23 +115,25 @@ FMaterial::FMaterial(FTexture *tex, bool asSprite, int translation)
 		FGLTexture *gltex = GLRenderer2->GetGLTexture(tex, asSprite, translation);
 		mLayers.Push(gltex);	// The first layer is always the owning texture
 
-		if (translation == TRANSLATION(TRANSLATION_Standard, 8))
+		if (translation == TRANSLATION_INTENSITY)
 		{
 			shadername = "Intensity";
 		}
-		else if (translation == TRANSLATION(TRANSLATION_Standard, 9))	// Placeholder for alpha shade
+		else if (translation == TRANSLATION_SHADE)
 		{
 			shadername = "AlphaShade";
 		}
 		if (tex->bWarped == 1)
 		{
 			shadername = "Warp1";
+			mSpeed = static_cast<FWarpTexture*>(tex)->GetSpeed();
 		}
 		else if (tex->bWarped == 2)
 		{
 			shadername = "Warp2";
+			mSpeed = static_cast<FWarpTexture*>(tex)->GetSpeed();
 		}
-		else if (tex->gl_info.Brightmap != NULL && translation != TRANSLATION(TRANSLATION_Standard, 7))
+		else if (tex->gl_info.Brightmap != NULL && translation != TRANSLATION_ICE)
 		{
 			// NOTE: No brightmaps for icy textures!
 			gltex = GLRenderer2->GetGLTexture(tex->gl_info.Brightmap, asSprite, 0);
@@ -153,6 +160,22 @@ FMaterial::~FMaterial()
 {
 }
 
+
+//===========================================================================
+// 
+//
+//
+//===========================================================================
+
+void FMaterial::Bind(float *colormap, int texturemode, float desaturation, int clamp)
+{
+	mShader->Bind(colormap, texturemode, desaturation, mSpeed);
+	for(unsigned i=0;i<mLayers.Size();i++)
+	{
+		mLayers[i]->Bind(i, clamp);
+	}
+
+}
 
 //===========================================================================
 // 

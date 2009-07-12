@@ -395,7 +395,6 @@ static void APIENTRY LoadExtensions()
 		gl->VertexAttrib4f = (PFNGLVERTEXATTRIB4FARBPROC)wglGetProcAddress("glVertexAttrib4fARB");
 		gl->GetAttribLocation = (PFNGLGETATTRIBLOCATIONARBPROC)wglGetProcAddress("glGetAttribLocationARB");
 		gl->BindAttribLocation = (PFNGLBINDATTRIBLOCATIONARBPROC)wglGetProcAddress("glBindAttribLocationARB");
-		gl->VertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)wglGetProcAddress("glVertexAttribPointerARB");
 
 
 		gl->Uniform1f = (PFNGLUNIFORM1FARBPROC)wglGetProcAddress("glUniform1fARB");
@@ -461,6 +460,9 @@ static void APIENTRY LoadExtensions()
 		gl->BufferData				= (PFNGLBUFFERDATAPROC)wglGetProcAddress("glBufferData");
 		gl->MapBuffer				= (PFNGLMAPBUFFERPROC)wglGetProcAddress("glMapBuffer");
 		gl->UnmapBuffer				= (PFNGLUNMAPBUFFERPROC)wglGetProcAddress("glUnmapBuffer");
+		gl->EnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("EnableVertexAttribArray");
+		gl->DisableVertexAttribArray= (PFNGLDISABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("DisableVertexAttribArray");
+		gl->VertexAttribPointer		= (PFNGLVERTEXATTRIBPOINTERPROC)wglGetProcAddress("glVertexAttribPointer");
 
 	}
 
@@ -1009,18 +1011,6 @@ static void APIENTRY SetTextureMode(int type)
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	}
 }
-//==========================================================================
-//
-// 
-//
-//==========================================================================
-
-static void APIENTRY ArrayPointer(void * data, int stride)
-{
-	glTexCoordPointer(2,GL_FLOAT, stride, (float*)data + 3);
-	glVertexPointer(3,GL_FLOAT, stride, data);
-}
-
 
 //==========================================================================
 //
@@ -1042,7 +1032,6 @@ void APIENTRY GetContext(RenderContext & gl)
 
 	gl.LoadExtensions = LoadExtensions;
 	gl.SetTextureMode = SetTextureMode;
-	gl.ArrayPointer = ArrayPointer;
 	gl.PrintStartupLog = PrintStartupLog;
 	gl.InitHardware = InitHardware;
 #ifndef unix

@@ -30,33 +30,81 @@ struct FVertex2D
 	unsigned char r,g,b,a;
 };
 
-struct FPrimitive2D
-{
-	int mPrimitiveType;
-	int mTextureMode;
-	int mSrcBlend;
-	int mDstBlend;
-	int mBlendEquation;
-	FMaterial *mMaterial;
-	bool mUseScissor;
-	int mScissor[4];
-	int mVertexStart;
-};
-
 class FVertexBuffer
 {
 	static unsigned int mLastBound;	// Crappy GL state machine. :(
 protected:
 	unsigned int mBufferId;
-	unsigned int mMaxSize;
+	void *mMap;
 
-	FVertexBuffer(int size);
+	FVertexBuffer();
 	void BindBuffer();
-	void *Map();
-	bool Unmap();
 public:
 	~FVertexBuffer();
-	virtual bool Bind() = 0;
+	void Map();
+	bool Unmap();
+};
+
+class FVertexBuffer2D : public FVertexBuffer
+{
+	int mMaxSize;
+public:
+	FVertexBuffer2D(int size);
+	bool Bind();
+
+	int GetSize() const
+	{
+		return mMaxSize;
+	}
+
+	void ChangeSize(int newsize)
+	{
+		mMaxSize = newsize;
+	}
+
+	FVertex2D *GetVertexPointer(int vt) const
+	{
+		return ((FVertex2D*)mMap)+vt;
+	}
+};
+
+struct FPrimitive2D
+{
+	int mPrimitiveType;
+	int mVertexStart;
+	int mVertexCount;
+
+	FMaterial *mMaterial;
+	int mTextureMode;
+
+	int mSrcBlend;
+	int mDstBlend;
+	int mBlendEquation;
+
+	bool mUseScissor;
+	int mScissor[4];
+
+	void Draw();
+};
+
+class FPrimitiveBuffer2D
+{
+	enum
+	{
+		BUFFER_INCREMENT = 1000,
+		BUFFER_MAXIMUM = 20000
+	};
+
+	TArray<FPrimitive2D> mPrimitives;
+	int mCurrentVertexIndex;
+	int mCurrentVertexBufferSize;
+	FVertexBuffer2D *mVertexBuffer;
+
+public:
+	FPrimitiveBuffer2D();
+	~FPrimitiveBuffer2D();
+	int NewPrimitive(int vertexcount, FPrimitive2D *&primptr, FVertex2D *&vertptr);
+	void Flush();
 };
 
 }

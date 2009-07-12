@@ -697,6 +697,7 @@ add_executable( zdoom WIN32
 	gl/common/glc_glow.cpp
 	gl/common/glc_hirestex.cpp
 	gl/common/glc_hqresize.cpp
+	gl/common/glc_light.cpp
 	gl/common/glc_nodes.cpp
 	gl/common/glc_renderhacks.cpp
 	gl/common/glc_sections.cpp

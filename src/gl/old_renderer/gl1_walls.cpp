@@ -969,7 +969,7 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 			// split the poly!
 			GLWall split;
 			int i,t=0;
-			GL_RECT * splitrect=gltexture->GetAreas();
+			FloatRect * splitrect=gltexture->GetAreas();
 			float v_factor=(zbottom[0]-ztop[0])/(lolft.v-uplft.v);
 			// only split the vertical area of the polygon that does not contain slopes!
 			float splittopv = MAX(uplft.v, uprgt.v);
