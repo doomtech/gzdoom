@@ -10,6 +10,7 @@ class FShaderContainer;
 class FGLTextureManager;
 class FMaterialContainer;
 class FMaterial;
+class FGLTexture;
 
 class GL2Renderer : public GLRendererBase
 {
@@ -25,6 +26,7 @@ public:
 	}
 	~GL2Renderer();
 
+	// renderer interface
 	void Initialize();
 	void SetPaused();
 	void UnsetPaused();
@@ -55,8 +57,16 @@ public:
 	void WriteSavePic (player_t *player, FILE *file, int width, int height);
 	void RenderView (player_t* player);
 
+	// renderer internal functions
+	FGLTexture *GetGLTexture(FTexture *tex, bool asSprite, int translation);
+	FMaterial *GetMaterial(FTexture *tex, bool asSprite, int translation);
+	FMaterial *GetMaterial(FTextureID texindex, bool animtrans, bool asSprite, int translation);
+
 };
 
+// same as GLRenderer but with another type because this will be needed throughout the
+// new renderer.
+extern GL2Renderer *GLRenderer2;
 }
 
 #endif

@@ -3,6 +3,12 @@
 
 #include "doomtype.h"
 
+class FGLTextureBase
+{
+public:
+	virtual ~FGLTextureBase() {}
+};
+
 class FBitmap;
 struct FRemapTable;
 struct FCopyInfo;
@@ -83,15 +89,6 @@ enum FTextureFormat
 };
 
 class FNativeTexture;
-namespace GLRendererOld
-{
-	class FGLTexture;
-}
-
-namespace GLRendererNew
-{
-	class FMaterialContainer;
-}
 
 // Base texture class
 class FTexture
@@ -247,8 +244,7 @@ public:
 
 	struct MiscGLInfo
 	{
-		GLRendererOld::FGLTexture *GLTexture;
-		GLRendererNew::FMaterialContainer *GLMaterial;
+		FGLTextureBase *RenderTexture;
 		FTexture *Brightmap;
 		PalEntry GlowColor;
 		PalEntry FloorSkyColor;

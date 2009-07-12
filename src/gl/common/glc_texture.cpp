@@ -48,11 +48,6 @@
 #include "gl/common/glc_renderer.h"
 #include "gl/common/glc_texture.h"
 
-// Needed to destroy the old renderer's texture pointer 
-#include "gl/old_renderer/gl1_texture.h"
-
-
-
 //==========================================================================
 //
 // Texture CVARs
@@ -242,14 +237,13 @@ FTexture::MiscGLInfo::MiscGLInfo() throw()
 	bBrightmap = false;
 	bBrightmapDisablesFullbright = false;
 
-	GLTexture = NULL;
+	RenderTexture = NULL;
 	Brightmap = NULL;
 }
 
 FTexture::MiscGLInfo::~MiscGLInfo()
 {
-	if (GLTexture != NULL) delete GLTexture;
-	GLTexture = NULL;
+	if (RenderTexture != NULL) delete RenderTexture;
 	if (Brightmap != NULL) delete Brightmap;
 	Brightmap = NULL;
 }

@@ -2,6 +2,8 @@
 #define __GL_MATERIAL_H
 
 class FTexture;
+#include "tarray.h"
+#include "textures/textures.h"
 
 namespace GLRendererNew
 {
@@ -173,7 +175,7 @@ struct MaterialHashTraits
 typedef TMap<MaterialKey, FMaterial *, MaterialHashTraits> FMaterialMap;
 
 
-class FMaterialContainer
+class FMaterialContainer : public FGLTextureBase
 {
 	FTexture *mTexture;
 	FMaterial *mMatWorld;
@@ -181,8 +183,9 @@ class FMaterialContainer
 	FMaterialMap *mMatOthers;
 
 public:
-	FMaterial *GetWorldMaterial(int translation);
-	FMaterial *GetPatchMaterial(int translation);
+	FMaterialContainer(FTexture *tex);
+	~FMaterialContainer();
+	FMaterial *GetMaterial(bool asSprite, int translation);
 };
 
 

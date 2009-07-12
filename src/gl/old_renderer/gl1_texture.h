@@ -117,7 +117,7 @@ public:
 //
 //===========================================================================
 
-class FGLTexture : protected WorldTextureInfo, protected PatchTextureInfo
+class FGLTexture : public FGLTextureBase, protected WorldTextureInfo, protected PatchTextureInfo
 {
 	static TArray<FGLTexture *> gltextures;
 public:

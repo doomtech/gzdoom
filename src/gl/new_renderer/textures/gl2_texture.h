@@ -78,7 +78,11 @@ class FGLTextureManager
 	FGLTextureMap mGLTextures;
 
 public:
-	FGLTexture *FindTexture(FTexture *gametex, bool asSprite, int translation);
+	~FGLTextureManager()
+	{
+		DestroyAllTextures();
+	}
+	FGLTexture *GetTexture(FTexture *gametex, bool asSprite, int translation);
 	void FlushAllTextures();
 	void DestroyAllTextures();
 };

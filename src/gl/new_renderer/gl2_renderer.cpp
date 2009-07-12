@@ -45,9 +45,28 @@
 namespace GLRendererNew
 {
 
+GL2Renderer *GLRenderer2;
+
 //===========================================================================
 // 
-// Renderer interface
+// Destroy renderer
+//
+//===========================================================================
+
+GL2Renderer::~GL2Renderer()
+{
+	for(unsigned i=0;i<mMaterials.Size();i++)
+	{
+		delete mMaterials[i];
+	}
+	mMaterials.Clear();
+	if (mShaders != NULL) delete mShaders;
+	if (mTextures != NULL) delete mTextures;
+}
+
+//===========================================================================
+// 
+// Initialize renderer
 //
 //===========================================================================
 
@@ -57,11 +76,23 @@ void GL2Renderer::Initialize()
 	mTextures = new FGLTextureManager;
 }
 
+//===========================================================================
+// 
+// Pause renderer
+//
+//===========================================================================
+
 void GL2Renderer::SetPaused()
 {
 	mShaders->SetActiveShader(NULL);
 	gl.SetTextureMode(TM_MODULATE);
 }
+
+//===========================================================================
+// 
+// Unpause renderer
+//
+//===========================================================================
 
 void GL2Renderer::UnsetPaused()
 {
@@ -504,6 +535,41 @@ void GL2Renderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 
 void GL2Renderer::RenderView (player_t* player)
 {       
+}
+
+//-----------------------------------------------------------------------------
+//
+// gets the GL texture for a specific texture
+//
+//-----------------------------------------------------------------------------
+
+FGLTexture *GL2Renderer::GetGLTexture(FTexture *tex, bool asSprite, int translation)
+{
+	return mTextures->GetTexture(tex, asSprite, translation);
+}
+
+//-----------------------------------------------------------------------------
+//
+// gets the material for a specific texture
+//
+//-----------------------------------------------------------------------------
+
+FMaterial *GL2Renderer::GetMaterial(FTexture *tex, bool asSprite, int translation)
+{
+	FMaterialContainer *matc = static_cast<FMaterialContainer*>(tex->gl_info.RenderTexture);
+
+	if (matc == NULL)
+	{
+		tex->gl_info.RenderTexture = matc = new FMaterialContainer(tex);
+		mMaterials.Push(matc);
+	}
+	return matc->GetMaterial(asSprite, translation);
+
+}
+
+FMaterial *GL2Renderer::GetMaterial(FTextureID no, bool animtrans, bool asSprite, int translation)
+{
+	return GetMaterial(animtrans? TexMan(no) : TexMan[no], asSprite, translation);
 }
 
 }

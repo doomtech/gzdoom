@@ -357,7 +357,7 @@ namespace GLRendererNew
 	//
 	//===========================================================================
 
-	FGLTexture *FGLTextureManager::FindTexture(FTexture *gametex, bool asSprite, int translation)
+	FGLTexture *FGLTextureManager::GetTexture(FTexture *gametex, bool asSprite, int translation)
 	{
 		TexManKey key(gametex, asSprite, translation);
 		FGLTexture *&texaddr = mGLTextures[key];

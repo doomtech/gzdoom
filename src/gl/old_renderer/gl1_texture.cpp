@@ -544,6 +544,7 @@ FGLTexture::~FGLTexture()
 	Clean(true);
 	if (areas) delete [] areas;
 	if (hirestexture) delete hirestexture;
+	if (tex != NULL && tex->gl_info.RenderTexture == this) tex->gl_info.RenderTexture = NULL;
 
 	for(unsigned i=0;i<gltextures.Size();i++)
 	{
@@ -1305,7 +1306,6 @@ void FGLTexture::DeleteAll()
 {
 	for(int i=gltextures.Size()-1;i>=0;i--)
 	{
-		gltextures[i]->tex->gl_info.GLTexture = NULL;
 		delete gltextures[i];
 	}
 	gltextures.Clear();
@@ -1322,11 +1322,11 @@ FGLTexture * FGLTexture::ValidateTexture(FTexture * tex)
 {
 	if (tex	&& tex->UseType!=FTexture::TEX_Null)
 	{
-		FGLTexture *gltex = tex->gl_info.GLTexture;
+		FGLTexture *gltex = static_cast<FGLTexture*>(tex->gl_info.RenderTexture);
 		if (gltex == NULL) 
 		{
 			gltex = new FGLTexture(tex);
-			tex->gl_info.GLTexture = gltex;
+			tex->gl_info.RenderTexture = gltex;
 		}
 		return gltex;
 	}
