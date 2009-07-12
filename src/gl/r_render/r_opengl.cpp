@@ -362,6 +362,10 @@ static void APIENTRY LoadExtensions()
 	if (CheckExtension("GL_ATI_texture_env_combine3")) gl->flags|=RFL_TEX_ENV_COMBINE4_NV;
 	if (CheckExtension("GL_ARB_texture_non_power_of_two")) gl->flags|=RFL_NPOT_TEXTURE;
 
+	if (strcmp((const char*)glGetString(GL_VERSION), "2.1") >= 0) gl->flags|=RFL_GL_21;
+	if (strcmp((const char*)glGetString(GL_VERSION), "3.0") >= 0) gl->flags|=RFL_GL_30;
+
+
 #ifndef unix
 	PFNWGLSWAPINTERVALEXTPROC vs = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
 	if (vs) gl->SetVSync = vs;
@@ -447,6 +451,17 @@ static void APIENTRY LoadExtensions()
         gl->BeginQuery             = BeginOcclusionQuery;
         gl->EndQuery               = EndOcclusionQuery;
 		gl->flags|=RFL_OCCLUSION_QUERY;
+	}
+
+	if (gl->flags & RFL_GL_21)
+	{
+		gl->BindBuffer				= (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBuffer");
+		gl->DeleteBuffers			= (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffers");
+		gl->GenBuffers				= (PFNGLGENBUFFERSPROC)wglGetProcAddress("glGenBuffers");
+		gl->BufferData				= (PFNGLBUFFERDATAPROC)wglGetProcAddress("glBufferData");
+		gl->MapBuffer				= (PFNGLMAPBUFFERPROC)wglGetProcAddress("glMapBuffer");
+		gl->UnmapBuffer				= (PFNGLUNMAPBUFFERPROC)wglGetProcAddress("glUnmapBuffer");
+
 	}
 
 	// [BB] Check for the extensions that are necessary for on the fly texture compression.

@@ -93,8 +93,8 @@ int gl_frameMS;
 		gl.BindAttribLocation(hShader, attrLightParams, "aLightParams");
 		gl.BindAttribLocation(hShader, attrFogColor, "aFogColor");
 		gl.BindAttribLocation(hShader, attrGlowDistance, "aGlowDistance");
-		gl.BindAttribLocation(hShader, attrLightParams, "aGlowTopColor");
-		gl.BindAttribLocation(hShader, attrLightParams, "aGlowBottomColor");
+		gl.BindAttribLocation(hShader, attrGlowTopColor, "aGlowTopColor");
+		gl.BindAttribLocation(hShader, attrGlowBottomColor, "aGlowBottomColor");
 
 		gl.LinkProgram(hShader);
 
@@ -150,6 +150,7 @@ int gl_frameMS;
 		mName = shadername;
 		mBaseShader = NULL;
 		mColormapShader = NULL;
+		m2DShader = NULL;
 	}
 
 	//----------------------------------------------------------------------------
@@ -160,8 +161,23 @@ int gl_frameMS;
 
 	FShader::~FShader()
 	{
+		Destroy();
+	}
+
+	//----------------------------------------------------------------------------
+	//
+	//
+	//
+	//----------------------------------------------------------------------------
+
+	void FShader::Destroy()
+	{
 		if (mBaseShader != NULL) delete mBaseShader;
 		if (mColormapShader != NULL) delete mColormapShader;
+		if (m2DShader != NULL) delete m2DShader;
+		mBaseShader = NULL;
+		mColormapShader = NULL;
+		m2DShader = NULL;
 	}
 
 	//----------------------------------------------------------------------------
@@ -201,18 +217,24 @@ int gl_frameMS;
 	bool FShader::Create(const char * filename_pixfunc)
 	{
 		mBaseShader = CreateShader("shaders/VertexShaderMain.vp", "shaders/FragmentShaderMain.fp", filename_pixfunc);
-		if (!mBaseShader) return false;
-
-		mColormapShader = CreateShader("shaders/VertexShaderColormap.vp", "shaders/FragmentShaderColormap.fp", filename_pixfunc);
-		if (!mColormapShader)
+		if (mBaseShader != NULL)
 		{
-			delete mBaseShader;
-			mBaseShader = NULL;
-			return false;
+			mColormapShader = CreateShader("shaders/VertexShaderColormap.vp", "shaders/FragmentShaderColormap.fp", filename_pixfunc);
+			if (mColormapShader != NULL)
+			{
+				m2DShader = CreateShader("shaders/VertexShader2D.vp", "shaders/FragmentShader2D.fp", filename_pixfunc);
+				if (mColormapShader != NULL) return true;
+			}
 		}
-		return true;
+		Destroy();
+		return false;
 	}
 
+	//----------------------------------------------------------------------------
+	//
+	//
+	//
+	//----------------------------------------------------------------------------
 
 	void FShader::Bind(float *cm, int texturemode, float desaturation, float Speed)
 	{
@@ -220,15 +242,22 @@ int gl_frameMS;
 
 		if (cm == NULL)
 		{
-			so = mBaseShader;
-			so->setDesaturationFactor(desaturation);
-			so->setTextureMode(texturemode);
+			if (desaturation >= 0)
+			{
+				so = mBaseShader;
+				so->setDesaturationFactor(desaturation);
+			}
+			else
+			{
+				so = m2DShader;
+			}
 		}
 		else
 		{
 			so = mColormapShader;
 			so->setColormapColor(cm);
 		}
+		so->setTextureMode(texturemode);
 		so->setTimer(gl_frameMS*Speed/1000.f);
 		mOwner->SetActiveShader(so);
 	}

@@ -134,6 +134,8 @@ class FShaderObject
 	FShaderPropertyVector mCameraPos;
 	FShaderPropertyVector mColormapColor;
 
+public:
+
 	enum AttributeIndices
 	{
 		attrLightParams = 11,
@@ -142,8 +144,6 @@ class FShaderObject
 		attrGlowTopColor,
 		attrGlowBottomColor,
 	};
-
-public:
 
 	FShaderObject();
 	~FShaderObject();
@@ -195,9 +195,11 @@ class FShader
 	FName mName;
 	FShaderObject *mBaseShader;
 	FShaderObject *mColormapShader;
+	FShaderObject *m2DShader;
 	FShaderContainer *mOwner;
 
 	FShaderObject *CreateShader(const char *vp, const char *fp,const char * filename_pixfunc);
+	void Destroy();
 
 public:
 

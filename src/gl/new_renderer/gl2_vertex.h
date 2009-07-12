@@ -5,8 +5,9 @@
 
 namespace GLRendererNew
 {
+class FMaterial;
 
-struct GLVertex3D
+struct FVertex3D
 {
 	float x,y,z;				// coordinates
 	float u,v;					// texture coordinates
@@ -14,20 +15,22 @@ struct GLVertex3D
 	unsigned char fr,fg,fb,fd;	// fog color
 	unsigned char tr,tg,tb,td;	// ceiling glow
 	unsigned char br,bg,bb,bd;	// floor glow
+	float lighton;
 	float lightfogdensity;
 	float lightfactor;
+	float lightdist;
 	float glowdisttop;
 	float glowdistbottom;
 };
 
-struct GLVertex2D
+struct FVertex2D
 {
 	float x,y;
 	float u,v;
 	unsigned char r,g,b,a;
 };
 
-struct GLPrimitive2D
+struct FPrimitive2D
 {
 	int mPrimitiveType;
 	int mTextureMode;
@@ -40,10 +43,21 @@ struct GLPrimitive2D
 	int mVertexStart;
 };
 
+class FVertexBuffer
+{
+	static unsigned int mLastBound;	// Crappy GL state machine. :(
+protected:
+	unsigned int mBufferId;
+	unsigned int mMaxSize;
 
-extern TArray<GLVertex3D> Vertices3D;
-extern TArray<GLVertex2D> Vertices2D;
-extern TArray<GLPrimitive2D> Primitives2D;
+	FVertexBuffer(int size);
+	void BindBuffer();
+	void *Map();
+	bool Unmap();
+public:
+	~FVertexBuffer();
+	virtual bool Bind() = 0;
+};
 
 }
 
