@@ -6742,6 +6742,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\gl\common\glc_light.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\gl\common\glc_nodes.cpp"
 					>
 				</File>
