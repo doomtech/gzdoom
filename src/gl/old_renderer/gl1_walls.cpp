@@ -750,6 +750,7 @@ void GLWall::DoTexture(int _type,seg_t * seg,int peg,
 // 
 //
 //==========================================================================
+
 void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary, 
 						  sector_t * realfront, sector_t * realback,
 						  fixed_t fch1, fixed_t fch2, fixed_t ffh1, fixed_t ffh2,

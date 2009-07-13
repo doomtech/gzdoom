@@ -135,7 +135,6 @@ public:
 private:
 	int index;
 
-	signed char areacount;
 	bool bHasColorkey;		// only for hires
 
 	short LeftOffset[2];
@@ -185,7 +184,7 @@ public:
 	int TextureHeight(ETexUse i) const { return RenderHeight[i]; }
 	int TextureWidth(ETexUse i) const { return RenderWidth[i]; }
 
-	int GetAreaCount() const { return areacount; }
+	int GetAreaCount() const { return tex->gl_info.areacount; }
 	FloatRect *GetAreas() const { return tex->gl_info.areas; }
 
 	fixed_t RowOffset(fixed_t rowoffset) const;
