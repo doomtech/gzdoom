@@ -1,4 +1,23 @@
-﻿July 6, 2009  (Changes by Graf Zahl)
+﻿July 12, 2009  (Changes by Graf Zahl)
+- Backported 2 fixes from Skulltag:
+  * A_SentinelAttack must check for a NULL target
+  * Monsters with CANTLEAVEFLOORPIC could not move because their floor
+    texture was not initialized.
+- Fixed: The 'idclev' cheat set the player's health to 0 which caused the
+  level to end when in a sector of type 'end level when health below 10'.
+
+July 11, 2009  (Changes by Graf Zahl)
+- Fixed: The 'kill' cheat set the player to nonshootable even if it did not
+  succeed.
+
+July 10, 2009
+- Added joystick config loading and saving support; moved generic joystick
+  interfaces to m_joy.h.
+
+July 9, 2009
+- Added Raw Input PS2 adapter support.
+
+July 6, 2009  (Changes by Graf Zahl)
 - Added Gez's A_WeaponReady enhancement submission.
 
 July 5, 2009  (Changes by Graf Zahl)
