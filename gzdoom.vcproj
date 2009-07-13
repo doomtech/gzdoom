@@ -6837,6 +6837,10 @@
 					RelativePath=".\src\gl\new_renderer\gl2_renderer.cpp"
 					>
 				</File>
+				<File
+					RelativePath=".\src\gl\new_renderer\gl2_vertex.cpp"
+					>
+				</File>
 				<Filter
 					Name="Includes"
 					>
