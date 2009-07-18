@@ -181,11 +181,16 @@ void OpenGLFrameBuffer::InitializeState()
 
 void OpenGLFrameBuffer::Update()
 {
-	if (!CanUpdate()) return;
+	if (!CanUpdate()) 
+	{
+		GLRenderer->Flush();
+		return;
+	}
 
 	Begin2D(false);
 
 	DrawRateStuff();
+	GLRenderer->Flush();
 
 	if (GetTrueHeight() != GetHeight())
 	{

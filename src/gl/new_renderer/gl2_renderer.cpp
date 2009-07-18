@@ -74,6 +74,7 @@ GL2Renderer::~GL2Renderer()
 
 void GL2Renderer::Initialize()
 {
+	GLRenderer2 = this;
 	mShaders = new FShaderContainer;
 	mTextures = new FGLTextureManager;
 	mRender2D = new FPrimitiveBuffer2D;
@@ -244,6 +245,17 @@ void GL2Renderer::Begin2D()
 {
 }
 
+//===========================================================================
+// 
+//
+//
+//===========================================================================
+
+void GL2Renderer::Flush()
+{
+	mRender2D->Flush();
+}
+
 //==========================================================================
 //
 // Draws a texture
@@ -296,6 +308,7 @@ void GL2Renderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 	}
 	
 	FMaterial *mat = GetMaterial(img, true, translation);
+	if (mat == NULL) return;
 
 	if (parms.flipX)
 	{
@@ -314,9 +327,7 @@ void GL2Renderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 	int vtindex = mRender2D->NewPrimitive(4, prim, vert);
 	if (vtindex >= 0)
 	{
-		prim->mVertexStart = vtindex;
-		prim->mVertexCount = 4;
-
+		prim->mMaterial = mat;
 		prim->mScissor[0] = parms.lclip;
 		prim->mScissor[1] = parms.uclip;
 		prim->mScissor[2] = parms.rclip;
@@ -328,19 +339,7 @@ void GL2Renderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 		gl_GetRenderStyle(parms.style, !parms.masked, false, 
 					&prim->mTextureMode, &prim->mSrcBlend, &prim->mDstBlend, &prim->mBlendEquation);
 
-		prim->mPrimitiveType = GL_TRIANGLE_STRIP;
-
-		vert[0].x = x;      vert[0].y = y;
-		vert[0].u = ox;     vert[0].v = oy;
-
-		vert[1].x = x;      vert[1].y = y + h;
-		vert[1].u = ox;     vert[1].v = cy;
-
-		vert[2].x = x + w;  vert[2].y = y;
-		vert[2].u = cx;     vert[2].v = oy;
-
-		vert[3].x = x + w;  vert[3].y = y + h;
-		vert[3].u = cx;     vert[3].v = cy;
+		prim->mPrimitiveType = GL_TRIANGLE_FAN;
 
 		if (parms.style.Flags & STYLEF_ColorIsFixed)
 		{
@@ -354,13 +353,10 @@ void GL2Renderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 		}
 		int a = Scale(parms.alpha, 255, FRACUNIT);
 
-		for(int i=0;i<4;i++)
-		{
-			vert[i].r = (unsigned char)r;
-			vert[i].g = (unsigned char)g;
-			vert[i].b = (unsigned char)b;
-			vert[i].a = (unsigned char)a;
-		}
+		vert[0].set(x, y, ox, oy, r, g, b, a);
+		vert[1].set(x, y+h, ox, cy, r, g, b, a);
+		vert[3].set(x+w, y, cx, oy, r, g, b, a);
+		vert[2].set(x+w, y+h, cx, cy, r, g, b, a);
 	}
 }
 
@@ -579,5 +575,12 @@ FMaterial *GL2Renderer::GetMaterial(FTextureID no, bool animtrans, bool asSprite
 {
 	return GetMaterial(animtrans? TexMan(no) : TexMan[no], asSprite, translation);
 }
+
+
+FShader *GL2Renderer::GetShader(const char *name)
+{
+	return mShaders->FindShader(name);
+}
+
 
 }

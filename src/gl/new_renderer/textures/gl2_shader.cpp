@@ -223,7 +223,7 @@ int gl_frameMS;
 			if (mColormapShader != NULL)
 			{
 				m2DShader = CreateShader("shaders/VertexShader2D.vp", "shaders/FragmentShader2D.fp", filename_pixfunc);
-				if (mColormapShader != NULL) return true;
+				if (m2DShader != NULL) return true;
 			}
 		}
 		Destroy();
@@ -291,9 +291,9 @@ int gl_frameMS;
 				mShaders.Insert(i, shader);
 				return;
 			}
-			mShaders.Push(shader);
-			shader->mOwner = this;
 		}
+		mShaders.Push(shader);
+		shader->mOwner = this;
 	}
 
 	//----------------------------------------------------------------------------

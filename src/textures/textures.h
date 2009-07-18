@@ -252,6 +252,8 @@ protected:
 		bNoDecals = other->bNoDecals;
 		Rotations = other->Rotations;
 		gl_info = other->gl_info;
+		gl_info.Brightmap = NULL;
+		gl_info.areas = NULL;
 	}
 
 	static void FlipSquareBlock (BYTE *block, int x, int y);

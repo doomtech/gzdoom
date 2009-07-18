@@ -672,6 +672,11 @@ void gl_ParseBrightmap(FScanner &sc, int deflump)
 
 	if (maplump != -1)
 	{
+		if (tex->bWarped != 0)
+		{
+			Printf("Cannot combine warping with brightmap on texture '%s'\n", tex->Name);
+			return;
+		}
 		FTexture *brightmap = FTexture::CreateTexture(maplump, tex->UseType);
 		if (!brightmap)
 		{

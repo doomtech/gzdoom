@@ -58,6 +58,7 @@ public:
 	virtual void SetFixedColormap (player_t *player) = 0;
 	virtual void WriteSavePic (player_t *player, FILE *file, int width, int height) = 0;
 	virtual void RenderView (player_t* player) = 0;
+	virtual void Flush() {}
 
 };
 

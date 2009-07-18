@@ -82,11 +82,11 @@ FMaterial::FMaterial(FTexture *tex, bool asSprite, int translation)
 
 	// a little adjustment to make sprites look better with texture filtering:
 	// create a 1 pixel wide empty frame around them.
-	if (tex->UseType == FTexture::TEX_Sprite || 
-		tex->UseType == FTexture::TEX_SkinSprite || 
-		tex->UseType == FTexture::TEX_Decal)
+	if (asSprite)
 	{
-		if (!tex->bWarped)
+		if (tex->UseType == FTexture::TEX_Sprite || 
+			tex->UseType == FTexture::TEX_SkinSprite || 
+			tex->UseType == FTexture::TEX_Decal)
 		{
 			mSizeTexels.w += 2;
 			mSizeTexels.h += 2;
@@ -145,8 +145,8 @@ FMaterial::FMaterial(FTexture *tex, bool asSprite, int translation)
 		{
 			shadername = "Default";
 		}
+		mShader = GLRenderer2->GetShader(shadername);
 	}
-	//mShader = GLRenderer2->GetShader(shadername);
 	mLayers.ShrinkToFit();
 }
 
@@ -238,7 +238,12 @@ FMaterial *FMaterialContainer::GetMaterial(bool asSprite, int translation)
 	{
 		MaterialKey key(asSprite, translation);
 		if (mMatOthers == NULL) mMatOthers = new FMaterialMap;
-		mat = &(*mMatOthers)[key];
+		mat = mMatOthers->CheckKey(key);
+		if (mat == NULL)
+		{
+			mat = &(*mMatOthers)[key];
+			*mat = NULL;
+		}
 	}
 	if (*mat == NULL)
 	{

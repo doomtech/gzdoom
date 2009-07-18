@@ -10,6 +10,7 @@ class FShaderContainer;
 class FGLTextureManager;
 class FMaterialContainer;
 class FMaterial;
+class FShader;
 class FGLTexture;
 class FPrimitiveBuffer2D;
 
@@ -59,12 +60,13 @@ public:
 	void SetFixedColormap (player_t *player);
 	void WriteSavePic (player_t *player, FILE *file, int width, int height);
 	void RenderView (player_t* player);
+	void Flush();
 
 	// renderer internal functions
 	FGLTexture *GetGLTexture(FTexture *tex, bool asSprite, int translation);
 	FMaterial *GetMaterial(FTexture *tex, bool asSprite, int translation);
 	FMaterial *GetMaterial(FTextureID texindex, bool animtrans, bool asSprite, int translation);
-
+	FShader *GetShader(const char *name);
 };
 
 // same as GLRenderer but with another type because this will be needed throughout the
