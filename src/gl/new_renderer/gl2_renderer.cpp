@@ -64,6 +64,7 @@ GL2Renderer::~GL2Renderer()
 	if (mShaders != NULL) delete mShaders;
 	if (mTextures != NULL) delete mTextures;
 	if (mRender2D != NULL) delete mRender2D;
+	if (mDefaultMaterial != NULL) delete mDefaultMaterial;
 }
 
 //===========================================================================
@@ -78,6 +79,7 @@ void GL2Renderer::Initialize()
 	mShaders = new FShaderContainer;
 	mTextures = new FGLTextureManager;
 	mRender2D = new FPrimitiveBuffer2D;
+	mDefaultMaterial = new FMaterialContainer(NULL);
 }
 
 //===========================================================================
@@ -332,6 +334,7 @@ void GL2Renderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 		prim->mScissor[1] = parms.uclip;
 		prim->mScissor[2] = parms.rclip;
 		prim->mScissor[3] = parms.dclip;
+		prim->mAlphaThreshold = FIXED2FLOAT(parms.alpha>>1);
 
 		prim->mUseScissor = (parms.lclip > 0 || parms.uclip > 0 || 
 							parms.rclip < screen->GetWidth() || parms.dclip < screen->GetHeight());
@@ -367,17 +370,28 @@ void GL2Renderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 //==========================================================================
 void GL2Renderer::DrawLine(int x1, int y1, int x2, int y2, int palcolor, uint32 color)
 {
-#if 0
 	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[color];
-	gl_EnableTexture(false);
-	gl_DisableShader();
-	gl.Color3ub(p.r, p.g, p.b);
-	gl.Begin(GL_LINES);
-	gl.Vertex2i(x1, y1);
-	gl.Vertex2i(x2, y2);
-	gl.End();
-	gl_EnableTexture(true);
-#endif
+	FPrimitive2D *prim;
+	FVertex2D *vert;
+
+	if (!mRender2D->CheckPrimitive(GL_LINES, 2, vert))
+	{
+		int vtindex = mRender2D->NewPrimitive(2, prim, vert);
+		if (vtindex >= 0)
+		{
+			prim->mMaterial = GetMaterial(NULL, false, 0);
+			prim->mAlphaThreshold = 0;
+			prim->mUseScissor = false;
+			prim->mSrcBlend = GL_SRC_ALPHA;
+			prim->mDstBlend = GL_ONE_MINUS_SRC_ALPHA;
+			prim->mBlendEquation = GL_FUNC_ADD;
+			prim->mPrimitiveType = GL_LINES;
+			prim->mTextureMode = TM_MODULATE;
+		}
+		else return;
+	}
+	vert[0].set(x1, y1, 0, 0, p.r, p.g, p.b, 255);
+	vert[1].set(x2, y2, 0, 0, p.r, p.g, p.b, 255);
 }
 
 //==========================================================================
@@ -387,16 +401,28 @@ void GL2Renderer::DrawLine(int x1, int y1, int x2, int y2, int palcolor, uint32 
 //==========================================================================
 void GL2Renderer::DrawPixel(int x1, int y1, int palcolor, uint32 color)
 {
-#if 0
 	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[color];
-	gl_EnableTexture(false);
-	gl_DisableShader();
-	gl.Color3ub(p.r, p.g, p.b);
-	gl.Begin(GL_POINTS);
-	gl.Vertex2i(x1, y1);
-	gl.End();
-	gl_EnableTexture(true);
-#endif
+
+	FPrimitive2D *prim;
+	FVertex2D *vert;
+
+	if (!mRender2D->CheckPrimitive(GL_POINTS, 1, vert))
+	{
+		int vtindex = mRender2D->NewPrimitive(1, prim, vert);
+		if (vtindex >= 0)
+		{
+			prim->mMaterial = GetMaterial(NULL, false, 0);
+			prim->mAlphaThreshold = 0;
+			prim->mUseScissor = false;
+			prim->mSrcBlend = GL_SRC_ALPHA;
+			prim->mDstBlend = GL_ONE_MINUS_SRC_ALPHA;
+			prim->mBlendEquation = GL_FUNC_ADD;
+			prim->mPrimitiveType = GL_POINTS;
+			prim->mTextureMode = TM_MODULATE;
+		}
+		else return;
+	}
+	vert[0].set(x1, y1, 0, 0, p.r, p.g, p.b, 255);
 }
 
 //===========================================================================
@@ -539,6 +565,13 @@ void GL2Renderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 
 void GL2Renderer::RenderView (player_t* player)
 {       
+	#ifdef _DEBUG
+		gl.ClearColor(0.0f, 0.0f, 0.0f, 0.0f); 
+		gl.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	#else
+		gl.Clear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	#endif
+
 }
 
 //-----------------------------------------------------------------------------
@@ -560,12 +593,22 @@ FGLTexture *GL2Renderer::GetGLTexture(FTexture *tex, bool asSprite, int translat
 
 FMaterial *GL2Renderer::GetMaterial(FTexture *tex, bool asSprite, int translation)
 {
-	FMaterialContainer *matc = static_cast<FMaterialContainer*>(tex->gl_info.RenderTexture);
-
-	if (matc == NULL)
+	FMaterialContainer *matc;
+	
+	if (tex != NULL) 
 	{
-		tex->gl_info.RenderTexture = matc = new FMaterialContainer(tex);
-		mMaterials.Push(matc);
+		matc = static_cast<FMaterialContainer*>(tex->gl_info.RenderTexture);
+		if (matc == NULL)
+		{
+			tex->gl_info.RenderTexture = matc = new FMaterialContainer(tex);
+			mMaterials.Push(matc);
+		}
+	}
+	else
+	{
+		matc = mDefaultMaterial;
+		asSprite = false;
+		translation = 0;
 	}
 	return matc->GetMaterial(asSprite, translation);
 

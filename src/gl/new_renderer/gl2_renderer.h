@@ -21,12 +21,14 @@ public:
 	FGLTextureManager *mTextures;
 	TArray<FMaterialContainer *> mMaterials;
 	FPrimitiveBuffer2D *mRender2D;
+	FMaterialContainer *mDefaultMaterial;
 
 	GL2Renderer() 
 	{
 		mShaders = NULL;
 		mTextures = NULL;
 		mRender2D = NULL;
+		mDefaultMaterial = NULL;
 	}
 	~GL2Renderer();
 

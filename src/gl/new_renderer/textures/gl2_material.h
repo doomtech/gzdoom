@@ -69,6 +69,7 @@ class FMaterial
 
 public:
 	FMaterial(FTexture *tex, bool asSprite, int translation);
+	FMaterial();
 	~FMaterial();
 
 	void SetTempScale(float scalex, float scaley);

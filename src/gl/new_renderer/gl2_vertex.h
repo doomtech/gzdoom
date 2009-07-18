@@ -101,6 +101,7 @@ struct FPrimitive2D
 
 	FMaterial *mMaterial;
 	int mTextureMode;
+	float mAlphaThreshold;
 
 	int mSrcBlend;
 	int mDstBlend;
@@ -130,6 +131,7 @@ public:
 	FPrimitiveBuffer2D();
 	~FPrimitiveBuffer2D();
 	int NewPrimitive(int vertexcount, FPrimitive2D *&primptr, FVertex2D *&vertptr);
+	bool CheckPrimitive(int type, int newvertexcount, FVertex2D *&vertptr);
 	void Flush();
 };
 

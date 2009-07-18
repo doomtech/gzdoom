@@ -161,6 +161,7 @@ void FPrimitive2D::Draw()
 
 	gl.BlendEquation(mBlendEquation);
 	gl.BlendFunc(mSrcBlend, mDstBlend);
+	gl.AlphaFunc(GL_GEQUAL, mAlphaThreshold);
 
 	if (mUseScissor)
 	{
@@ -243,6 +244,27 @@ int FPrimitiveBuffer2D::NewPrimitive(int numvertices, FPrimitive2D *&primptr, FV
 	mCurrentVertexIndex += numvertices;
 
 	return primindex;
+}
+
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
+bool FPrimitiveBuffer2D::CheckPrimitive(int type, int newvertexcount, FVertex2D *&vertptr)
+{
+	int primindex = mPrimitives.Size()-1;
+	FPrimitive2D *primptr = &mPrimitives[primindex];
+
+	if (primptr->mPrimitiveType == type)
+	{
+		primptr->mVertexCount += newvertexcount;
+		vertptr = mVertexBuffer->GetVertexPointer(mCurrentVertexIndex);
+		mCurrentVertexIndex += newvertexcount;
+		return true;
+	}
+	return false;
 }
 
 //----------------------------------------------------------------------------
