@@ -342,7 +342,7 @@ void GL2Renderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 		gl_GetRenderStyle(parms.style, !parms.masked, false, 
 					&prim->mTextureMode, &prim->mSrcBlend, &prim->mDstBlend, &prim->mBlendEquation);
 
-		prim->mPrimitiveType = GL_TRIANGLE_FAN;
+		prim->mPrimitiveType = GL_TRIANGLE_STRIP;
 
 		if (parms.style.Flags & STYLEF_ColorIsFixed)
 		{
@@ -358,8 +358,8 @@ void GL2Renderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 
 		vert[0].set(x, y, ox, oy, r, g, b, a);
 		vert[1].set(x, y+h, ox, cy, r, g, b, a);
-		vert[3].set(x+w, y, cx, oy, r, g, b, a);
-		vert[2].set(x+w, y+h, cx, cy, r, g, b, a);
+		vert[2].set(x+w, y, cx, oy, r, g, b, a);
+		vert[3].set(x+w, y+h, cx, cy, r, g, b, a);
 	}
 }
 
@@ -370,7 +370,7 @@ void GL2Renderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 //==========================================================================
 void GL2Renderer::DrawLine(int x1, int y1, int x2, int y2, int palcolor, uint32 color)
 {
-	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[color];
+	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[palcolor];
 	FPrimitive2D *prim;
 	FVertex2D *vert;
 
@@ -401,7 +401,7 @@ void GL2Renderer::DrawLine(int x1, int y1, int x2, int y2, int palcolor, uint32 
 //==========================================================================
 void GL2Renderer::DrawPixel(int x1, int y1, int palcolor, uint32 color)
 {
-	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[color];
+	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[palcolor];
 
 	FPrimitive2D *prim;
 	FVertex2D *vert;
@@ -431,30 +431,29 @@ void GL2Renderer::DrawPixel(int x1, int y1, int palcolor, uint32 color)
 //
 //===========================================================================
 
-void GL2Renderer::Dim(PalEntry color, float damount, int x1, int y1, int w, int h)
+void GL2Renderer::Dim(PalEntry color, float damount, int x, int y, int w, int h)
 {
-#if 0
-	float r, g, b;
-	
-	gl_EnableTexture(false);
-	gl_DisableShader();
-	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	gl.AlphaFunc(GL_GREATER,0);
-	
-	r = color.r/255.0f;
-	g = color.g/255.0f;
-	b = color.b/255.0f;
-	
-	gl.Begin(GL_TRIANGLE_FAN);
-	gl.Color4f(r, g, b, damount);
-	gl.Vertex2i(x1, y1);
-	gl.Vertex2i(x1, y1 + h);
-	gl.Vertex2i(x1 + w, y1 + h);
-	gl.Vertex2i(x1 + w, y1);
-	gl.End();
-	
-	gl_EnableTexture(true);
-#endif
+	FPrimitive2D *prim;
+	FVertex2D *vert;
+	int vtindex = mRender2D->NewPrimitive(4, prim, vert);
+
+	if (vtindex >= 0)
+	{
+		prim->mMaterial = GetMaterial(NULL, false, 0);
+		prim->mAlphaThreshold = damount;
+		prim->mUseScissor = false;
+		prim->mSrcBlend = GL_SRC_ALPHA;
+		prim->mDstBlend = GL_ONE_MINUS_SRC_ALPHA;
+		prim->mBlendEquation = GL_FUNC_ADD;
+		prim->mPrimitiveType = GL_TRIANGLE_STRIP;
+
+		int a = (int)(damount*255);
+
+		vert[0].set(x, y, 0, 0, color.r, color.g, color.b, a);
+		vert[1].set(x, y+h, 0, 0, color.r, color.g, color.b, a);
+		vert[2].set(x+w, y, 0, 0, color.r, color.g, color.b, a);
+		vert[3].set(x+w, y+h, 0, 0, color.r, color.g, color.b, a);
+	}
 }
 
 //==========================================================================
@@ -464,37 +463,45 @@ void GL2Renderer::Dim(PalEntry color, float damount, int x1, int y1, int w, int 
 //==========================================================================
 void GL2Renderer::FlatFill (int left, int top, int right, int bottom, FTexture *src, bool local_origin)
 {
-#if 0
-	float fU1,fU2,fV1,fV2;
+	FPrimitive2D *prim;
+	FVertex2D *vert;
+	int vtindex = mRender2D->NewPrimitive(4, prim, vert);
 
-	FGLTexture *gltexture=FGLTexture::ValidateTexture(src);
-	
-	if (!gltexture) return;
-
-	const WorldTextureInfo * wti = gltexture->Bind(CM_DEFAULT, 0, 0);
-	if (!wti) return;
-	
-	if (!local_origin)
+	if (vtindex >= 0)
 	{
-		fU1=wti->GetU(left);
-		fV1=wti->GetV(top);
-		fU2=wti->GetU(right);
-		fV2=wti->GetV(bottom);
+		prim->mMaterial = GetMaterial(src, false, 0);
+		prim->mAlphaThreshold = 0.5f;
+		prim->mUseScissor = false;
+		prim->mSrcBlend = GL_SRC_ALPHA;
+		prim->mDstBlend = GL_ONE_MINUS_SRC_ALPHA;
+		prim->mBlendEquation = GL_FUNC_ADD;
+		prim->mPrimitiveType = GL_TRIANGLE_STRIP;
+
+		float u1 = 0;
+		float v1 = 0;
+		float u2 = 0;
+		float v2 = 0;
+
+		if (!local_origin)
+		{
+			u1=prim->mMaterial->GetU(left);
+			v1=prim->mMaterial->GetV(top);
+			u2=prim->mMaterial->GetU(right);
+			v2=prim->mMaterial->GetV(bottom);
+		}
+		else
+		{	
+			u1=prim->mMaterial->GetU(0);
+			v1=prim->mMaterial->GetV(0);
+			u2=prim->mMaterial->GetU(right-left);
+			v2=prim->mMaterial->GetV(bottom-top);
+		}
+
+		vert[0].set(left, top, u1, v1, 255, 255, 255, 255);
+		vert[1].set(left, bottom, u1, v2, 255, 255, 255, 255);
+		vert[2].set(right, top, u2, v1, 255, 255, 255, 255);
+		vert[3].set(right, bottom, u2, v2, 255, 255, 255, 255);
 	}
-	else
-	{		fU1=wti->GetU(0);
-		fV1=wti->GetV(0);
-		fU2=wti->GetU(right-left);
-		fV2=wti->GetV(bottom-top);
-	}
-	gl_ApplyShader();
-	gl.Begin(GL_TRIANGLE_STRIP);
-	gl.TexCoord2f(fU1, fV1); gl.Vertex2f(left, top);
-	gl.TexCoord2f(fU1, fV2); gl.Vertex2f(left, bottom);
-	gl.TexCoord2f(fU2, fV1); gl.Vertex2f(right, top);
-	gl.TexCoord2f(fU2, fV2); gl.Vertex2f(right, bottom);
-	gl.End();
-#endif
 }
 
 //==========================================================================
@@ -504,37 +511,26 @@ void GL2Renderer::FlatFill (int left, int top, int right, int bottom, FTexture *
 //==========================================================================
 void GL2Renderer::Clear(int left, int top, int right, int bottom, int palcolor, uint32 color)
 {
-#if 0
-	int rt;
-	int offY = 0;
+	FPrimitive2D *prim;
+	FVertex2D *vert;
 	PalEntry p = palcolor==-1? (PalEntry)color : GPalette.BaseColors[palcolor];
-	int width = right-left;
-	int height= bottom-top;
-	
-	
-	rt = screen->GetHeight() - top;
-	
-	int space = (static_cast<OpenGLFrameBuffer*>(screen)->GetTrueHeight()-screen->GetHeight())/2;	// ugh...
-	rt += space;
-	/*
-	if (!m_windowed && (m_trueHeight != m_height))
-	{
-		offY = (m_trueHeight - m_height) / 2;
-		rt += offY;
-	}
-	*/
-	
-	gl_DisableShader();
 
-	gl.Enable(GL_SCISSOR_TEST);
-	gl.Scissor(left, rt - height, width, height);
-	
-	gl.ClearColor(p.r/255.0f, p.g/255.0f, p.b/255.0f, 0.f);
-	gl.Clear(GL_COLOR_BUFFER_BIT);
-	gl.ClearColor(0.f, 0.f, 0.f, 0.f);
-	
-	gl.Disable(GL_SCISSOR_TEST);
-#endif
+	int vtindex = mRender2D->NewPrimitive(4, prim, vert);
+	if (vtindex >= 0)
+	{
+		prim->mMaterial = GetMaterial(NULL, false, 0);
+		prim->mAlphaThreshold = 0.5f;
+		prim->mUseScissor = false;
+		prim->mSrcBlend = GL_SRC_ALPHA;
+		prim->mDstBlend = GL_ONE_MINUS_SRC_ALPHA;
+		prim->mBlendEquation = GL_FUNC_ADD;
+		prim->mPrimitiveType = GL_TRIANGLE_STRIP;
+
+		vert[0].set(left, top, 0, 0, p.r, p.g, p.b, 255);
+		vert[1].set(left, bottom, 0, 0, p.r, p.g, p.b, 255);
+		vert[2].set(right, top, 0, 0, p.r, p.g, p.b, 255);
+		vert[3].set(right, bottom, 0, 0, p.r, p.g, p.b, 255);
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -565,12 +561,12 @@ void GL2Renderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 
 void GL2Renderer::RenderView (player_t* player)
 {       
-	#ifdef _DEBUG
+	//#ifdef _DEBUG
 		gl.ClearColor(0.0f, 0.0f, 0.0f, 0.0f); 
 		gl.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	#else
-		gl.Clear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	#endif
+	//#else
+		//gl.Clear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	//#endif
 
 }
 

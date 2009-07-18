@@ -74,7 +74,15 @@ public:
 
 	void SetTempScale(float scalex, float scaley);
 
+	float GetU(int pos)
+	{
+		return (float)pos / mSizeUnits.w;
+	}
 
+	float GetV(int pos)
+	{
+		return (float)pos / mSizeUnits.h;
+	}
 
 	int GetWidth() const
 	{
