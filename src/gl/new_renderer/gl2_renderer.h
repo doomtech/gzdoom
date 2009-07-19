@@ -2,7 +2,6 @@
 #define __GL2_RENDERER
 
 #include "tarray.h"
-#include "vectors.h"
 #include "gl/common/glc_renderer.h"
 
 namespace GLRendererNew
@@ -24,27 +23,16 @@ public:
 	FPrimitiveBuffer2D *mRender2D;
 	FMaterialContainer *mDefaultMaterial;
 
-	int mMirrorCount;
-	int mPlaneMirrorCount;
-
-
-	FRotator mAngles;
-	FVector2 mViewVector;
-	FVector3 mCameraPos;
-
 	GL2Renderer() 
 	{
 		mShaders = NULL;
 		mTextures = NULL;
 		mRender2D = NULL;
 		mDefaultMaterial = NULL;
-		mMirrorCount = 0;
-		mPlaneMirrorCount = 0;
-		mAngles = FRotator(0,0,0);
-		mViewVector = FVector2(0,0);
-		mCameraPos = FVector3(0,0,0);
 	}
 	~GL2Renderer();
+
+	sector_t *RenderView (AActor * camera, GL_IRECT * bounds, float fov, float ratio, float fovratio, bool mainview);
 
 	// renderer interface
 	void Initialize();
@@ -77,7 +65,11 @@ public:
 	void WriteSavePic (player_t *player, FILE *file, int width, int height);
 	void RenderMainView (player_t *player, float fov, float ratio, float fovratio);
 	void SetupView(fixed_t viewx, fixed_t viewy, fixed_t viewz, angle_t viewangle);
+	void ProcessScene();
 	void Flush();
+
+	void SetProjection(float fov, float ratio, float fovratio);
+	void SetViewMatrix(bool mirror, bool planemirror);
 
 	// renderer internal functions
 	FGLTexture *GetGLTexture(FTexture *tex, bool asSprite, int translation);

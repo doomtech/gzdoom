@@ -173,7 +173,7 @@ void GLWall::DrawDecal(DBaseDecal *actor, seg_t *seg, sector_t *frontSector, sec
 
 		gl_GetLightColor(light, rel, &p, &red, &green, &blue);
 		
-		if (gl_lights && gl_lightcount && !gl_fixedcolormap && gl_light_sprites)
+		if (gl_lights && GLRenderer->mLightCount && !gl_fixedcolormap && gl_light_sprites)
 		{
 			float result[3];
 			fixed_t x, y;

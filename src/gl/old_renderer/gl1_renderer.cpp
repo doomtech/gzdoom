@@ -263,7 +263,7 @@ void GL1Renderer::SetupLevel()
 		}
 	}
 	gl_InitVertexData();
-	pitch=0.0f;
+	mAngles.Pitch = 0.0f;
 }
 
 //===========================================================================

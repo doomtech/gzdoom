@@ -13,8 +13,6 @@ class GL1Renderer : public GLRendererBase
 {
 	~GL1Renderer();
 
-	void StartDrawScene(GL_IRECT * bounds, float fov, float ratio, float fovratio);
-	sector_t * RenderView (AActor * camera, GL_IRECT * bounds, float fov, float ratio, float fovratio, bool mainview);
 	void RenderTextureView(FCanvasTexture *Texture, AActor * Viewpoint, int FOV);
 
 	void Initialize();
@@ -45,15 +43,16 @@ class GL1Renderer : public GLRendererBase
 	void SetFixedColormap (player_t *player);
 	void WriteSavePic (player_t *player, FILE *file, int width, int height);
 	void RenderMainView (player_t *player, float fov, float ratio, float fovratio);
+	void ProcessScene();
+
+	void SetProjection(float fov, float ratio, float fovratio);
+	void SetViewMatrix(bool mirror, bool planemirror);
 
 };
 
 // textures + sprites
 
 extern DWORD gl_fixedcolormap;
-extern float pitch;
-extern float viewvecX,viewvecY;
-extern AActor * viewactor;
 
 class FGLTexture;
 
@@ -78,8 +77,7 @@ void gl_RecalcVertexHeights(vertex_t * v);
 void gl_InitVertexData();
 void gl_CleanVertexData();
 
-angle_t gl_FrustumAngle();
-void gl_SetupView(fixed_t viewx, fixed_t viewy, fixed_t viewz, angle_t viewangle, bool mirror, bool planemirror, bool nosectorclear=false);
+void gl_SetupView(fixed_t viewx, fixed_t viewy, fixed_t viewz, angle_t viewangle, bool mirror, bool planemirror);
 void gl_DrawScene();
 void gl_EndDrawScene();
 sector_t * gl_RenderView (AActor * camera, GL_IRECT * bounds, float fov, float ratio, bool mainview);

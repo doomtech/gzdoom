@@ -42,14 +42,46 @@
 #include "gl/gl_framebuffer.h"
 #include "r_local.h"
 #include "i_system.h"
+#include "r_main.h"
+#include "g_level.h"
+#include "templates.h"
+#include "r_interpolate.h"
 #include "gl/common/glc_renderer.h"
 #include "gl/common/glc_clock.h"
+#include "gl/common/glc_dynlight.h"
+#include "gl/common/glc_convert.h"
+#include "gl/common/glc_clipper.h"
+
+CVAR(Int,gl_nearclip,5,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 EXTERN_CVAR (Int, screenblocks)
 EXTERN_CVAR (Bool, cl_capfps)
+EXTERN_CVAR (Bool, r_deathcamera)
 
+void R_SetupFrame (AActor * camera);
+extern int viewpitch;
 
 area_t			in_area;
+
+//-----------------------------------------------------------------------------
+//
+// R_FrustumAngle
+//
+//-----------------------------------------------------------------------------
+angle_t GLRendererBase::FrustumAngle()
+{
+	float tilt= fabs(mAngles.Pitch);
+
+	// If the pitch is larger than this you can look all around at a FOV of 90°
+	if (tilt>46.0f) return 0xffffffff;
+
+	// ok, this is a gross hack that barely works...
+	// but at least it doesn't overestimate too much...
+	double floatangle=2.0+(45.0+((tilt/1.9)))*mCurrentFoV*48.0/BaseRatioSizes[WidescreenRatio][3]/90.0;
+	angle_t a1 = ANGLE_1*toint(floatangle);
+	if (a1>=ANGLE_180) return 0xffffffff;
+	return a1;
+}
 
 //-----------------------------------------------------------------------------
 //
@@ -140,6 +172,74 @@ void GLRendererBase::SetViewport(GL_IRECT *bounds)
 	gl.StencilFunc(GL_ALWAYS,0,~0);	// default stencil
 	gl.StencilOp(GL_KEEP,GL_KEEP,GL_REPLACE);
 }
+
+//-----------------------------------------------------------------------------
+//
+// Setup the camera position
+//
+//-----------------------------------------------------------------------------
+
+void GLRendererBase::SetCameraPos(fixed_t viewx, fixed_t viewy, fixed_t viewz, angle_t viewangle)
+{
+	float fviewangle=(float)(viewangle>>ANGLETOFINESHIFT)*360.0f/FINEANGLES;
+
+	GLRenderer->mAngles.Yaw = 270.0f-fviewangle;
+	GLRenderer->mViewVector = FVector2(cos(DEG2RAD(fviewangle)), sin(DEG2RAD(fviewangle)));
+	GLRenderer->mCameraPos = FVector3(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
+}
+	
+//-----------------------------------------------------------------------------
+//
+// Renders one viewpoint in a scene
+//
+//-----------------------------------------------------------------------------
+
+sector_t * GLRendererBase::RenderViewpoint (AActor * camera, GL_IRECT * bounds, float fov, float ratio, float fovratio, bool mainview)
+{       
+	TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
+
+	// Check if there's some lights. If not some code can be skipped.
+	mLightCount = (it.Next()!=NULL);
+
+	sector_t * retval;
+	R_SetupFrame (camera);
+	SetViewArea();
+	mAngles.Pitch = clamp<float>((float)((double)(int)(viewpitch))/ANGLE_1, -90, 90);
+
+	// Scroll the sky
+	mSky1Pos = (float)fmod(gl_frameMS * level.skyspeed1, 1024.f) * 90.f/256.f;
+	mSky2Pos = (float)fmod(gl_frameMS * level.skyspeed2, 1024.f) * 90.f/256.f;
+
+
+
+	if (camera->player && camera->player-players==consoleplayer &&
+		((camera->player->cheats & CF_CHASECAM) || (r_deathcamera && camera->health <= 0)) && camera==camera->player->mo)
+	{
+		mViewActor=NULL;
+	}
+	else
+	{
+		mViewActor=camera;
+	}
+
+	retval = viewsector;
+
+	SetViewport(bounds);
+	mCurrentFoV = fov;
+	SetProjection(fov, ratio, fovratio);	// switch to perspective mode and set up clipper
+	SetCameraPos(viewx, viewy, viewz, viewangle);
+	SetViewMatrix(false, false);
+
+	clipper.Clear();
+	angle_t a1 = GLRenderer->FrustumAngle();
+	clipper.SafeAddClipRange(viewangle+a1, viewangle-a1);
+
+	ProcessScene();
+
+	interpolator.RestoreInterpolations ();
+	return retval;
+}
+
 
 //-----------------------------------------------------------------------------
 //

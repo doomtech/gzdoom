@@ -261,7 +261,7 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 	savedviewx=viewx;
 	savedviewy=viewy;
 	savedviewz=viewz;
-	savedviewactor=viewactor;
+	savedviewactor=GLRenderer->mViewActor;
 	savedviewangle=viewangle;
 	savedviewarea=in_area;
 	GLRenderer->mirrorline=NULL;
@@ -294,7 +294,7 @@ inline void GLPortal::ClearClipper()
 	}
 
 	// and finally clip it to the visible area
-	angle_t a1 = gl_FrustumAngle();
+	angle_t a1 = GLRenderer->FrustumAngle();
 	if (a1<ANGLE_180) clipper.SafeAddClipRange(viewangle+a1, viewangle-a1);
 
 }
@@ -319,7 +319,7 @@ void GLPortal::End(bool usestencil)
 		viewy=savedviewy;
 		viewz=savedviewz;
 		viewangle=savedviewangle;
-		viewactor=savedviewactor;
+		GLRenderer->mViewActor=savedviewactor;
 		in_area=savedviewarea;
 		gl_SetupView(viewx, viewy, viewz, viewangle, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
 
@@ -375,7 +375,7 @@ void GLPortal::End(bool usestencil)
 		viewy=savedviewy;
 		viewz=savedviewz;
 		viewangle=savedviewangle;
-		viewactor=savedviewactor;
+		GLRenderer->mViewActor=savedviewactor;
 		in_area=savedviewarea;
 		gl_SetupView(viewx, viewy, viewz, viewangle, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
 
@@ -542,7 +542,7 @@ void GLSkyboxPortal::DrawContents()
 
 	viewangle += origin->angle;
 
-	viewactor = origin;
+	GLRenderer->mViewActor = origin;
 
 	validcount++;
 	inskybox=true;
@@ -570,7 +570,7 @@ void GLSectorStackPortal::DrawContents()
 	viewx -= origin->deltax;
 	viewy -= origin->deltay;
 	viewz -= origin->deltaz;
-	viewactor = NULL;
+	GLRenderer->mViewActor = NULL;
 
 	validcount++;
 
@@ -601,7 +601,7 @@ void GLPlaneMirrorPortal::DrawContents()
 
 	fixed_t planez = origin->ZatPoint(viewx, viewy);
 	viewz = 2*planez - viewz;
-	viewactor = NULL;
+	GLRenderer->mViewActor = NULL;
 	PlaneMirrorMode = ksgn(origin->c);
 
 	validcount++;
@@ -700,7 +700,7 @@ void GLMirrorPortal::DrawContents()
 	viewangle = 2*R_PointToAngle2 (GLRenderer->mirrorline->v1->x, GLRenderer->mirrorline->v1->y,
 										GLRenderer->mirrorline->v2->x, GLRenderer->mirrorline->v2->y) - startang;
 
-	viewactor = NULL;
+	GLRenderer->mViewActor = NULL;
 
 	validcount++;
 
@@ -709,7 +709,7 @@ void GLMirrorPortal::DrawContents()
 
 	clipper.Clear();
 
-	angle_t af = gl_FrustumAngle();
+	angle_t af = GLRenderer->FrustumAngle();
 	if (af<ANGLE_180) clipper.SafeAddClipRange(viewangle+af, viewangle-af);
 
 	angle_t a2 = GLRenderer->mirrorline->v1->GetViewAngle();

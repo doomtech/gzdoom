@@ -30,6 +30,7 @@
 #include "textures/textures.h"
 #include "textures/bitmap.h"
 #include "w_wad.h"
+#include "r_main.h"
 #include "c_cvars.h"
 #include "i_system.h"
 #include "v_palette.h"
@@ -41,7 +42,11 @@
 #include "gl/common/glc_texture.h"
 #include "gl/common/glc_translate.h"
 #include "gl/common/glc_convert.h"
+#include "gl/common/glc_dynlight.h"
 
+
+void R_SetupFrame (AActor * camera);
+extern int viewpitch;
 
 
 namespace GLRendererNew
@@ -608,6 +613,17 @@ void GL2Renderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 
 //-----------------------------------------------------------------------------
 //
+// Renders a view
+//
+//-----------------------------------------------------------------------------
+
+sector_t * GL2Renderer::RenderView (AActor * camera, GL_IRECT * bounds, float fov, float ratio, float fovratio, bool mainview)
+{       
+	return NULL;
+}
+
+//-----------------------------------------------------------------------------
+//
 // R_RenderPlayerView - the main rendering function
 //
 //-----------------------------------------------------------------------------
@@ -625,28 +641,47 @@ void GL2Renderer::RenderMainView (player_t *player, float fov, float ratio, floa
 
 //-----------------------------------------------------------------------------
 //
-// gl_SetupView
-// Setup the view rotation matrix for the given viewpoint
+// SetProjection
+// sets projection matrix
+// (separated so that it can be redone with non-GL matrices later)
 //
 //-----------------------------------------------------------------------------
-void GL2Renderer::SetupView(fixed_t viewx, fixed_t viewy, fixed_t viewz, angle_t viewangle)
+
+void GL2Renderer::SetProjection(float fov, float ratio, float fovratio)
 {
-	float fviewangle=(float)(viewangle>>ANGLETOFINESHIFT)*360.0f/FINEANGLES;
+	gl.MatrixMode(GL_PROJECTION);
+	gl.LoadIdentity();
 
-	mAngles.Yaw = 270.0f-fviewangle;
-	mViewVector = FVector2(sin(DEG2RAD(fviewangle)), cos(DEG2RAD(fviewangle)));
-	mCameraPos = FVector3(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
-	
-	float mult = (mMirrorCount & 1)? -1:1;
-	float planemult = (mPlaneMirrorCount & 1)? -1:1;
+	float fovy = 2 * RAD2DEG(atan(tan(DEG2RAD(fov) / 2) / fovratio));
+	gluPerspective(fovy, ratio, (float)gl_nearclip, 65536.f);
 
+}
+
+//-----------------------------------------------------------------------------
+//
+// Setup the modelview matrix
+// (separated so that it can be redone with non-GL matrices later)
+//
+//-----------------------------------------------------------------------------
+
+void GL2Renderer::SetViewMatrix(bool mirror, bool planemirror)
+{
 	gl.MatrixMode(GL_MODELVIEW);
 	gl.LoadIdentity();
-	gl.Rotatef(mAngles.Roll,  0.0f, 0.0f, 1.0f);
-	gl.Rotatef(mAngles.Pitch, 1.0f, 0.0f, 0.0f);
-	gl.Rotatef(mAngles.Yaw,   0.0f, mult, 0.0f);
-	gl.Translatef( mCameraPos.X, -mCameraPos.Z * planemult, -mCameraPos.Y);
+
+	float mult = mirror? -1:1;
+	float planemult = planemirror? -1:1;
+
+	gl.Rotatef(GLRenderer->mAngles.Roll,  0.0f, 0.0f, 1.0f);
+	gl.Rotatef(GLRenderer->mAngles.Pitch, 1.0f, 0.0f, 0.0f);
+	gl.Rotatef(GLRenderer->mAngles.Yaw,   0.0f, mult, 0.0f);
+	gl.Translatef( GLRenderer->mCameraPos.X * mult, -GLRenderer->mCameraPos.Z*planemult, -GLRenderer->mCameraPos.Y);
 	gl.Scalef(-mult, planemult, 1);
+}
+
+
+void GL2Renderer::ProcessScene()
+{
 }
 
 
