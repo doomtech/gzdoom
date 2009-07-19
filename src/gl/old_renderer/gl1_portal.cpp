@@ -95,6 +95,7 @@ bool	 GLPortal::inskybox;
 //==========================================================================
 void GLPortal::ClearScreen()
 {
+	bool multi = !!gl.IsEnabled(GL_MULTISAMPLE);
 	gl.MatrixMode(GL_MODELVIEW);
 	gl.PushMatrix();
 	gl.MatrixMode(GL_PROJECTION);
@@ -106,6 +107,7 @@ void GLPortal::ClearScreen()
 	gl.PopMatrix();
 	gl.MatrixMode(GL_MODELVIEW);
 	gl.PopMatrix();
+	if (multi) gl.Enable(GL_MULTISAMPLE);
 }
 
 
@@ -545,7 +547,7 @@ void GLSkyboxPortal::DrawContents()
 	validcount++;
 	inskybox=true;
 	gl_SetupView(viewx, viewy, viewz, viewangle, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
-	gl_SetViewArea();
+	GLRenderer->SetViewArea();
 	ClearClipper();
 	gl_DrawScene();
 	origin->flags&=~MF_JUSTHIT;

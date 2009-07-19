@@ -42,7 +42,6 @@ EXTERN_CVAR(Int, gl_fogmode)
 EXTERN_CVAR(Int, gl_lightmode)
 EXTERN_CVAR(Bool,gl_mirror_envmap)
 
-extern int rendered_lines,rendered_flats,rendered_sprites,rendered_decals,render_vertexsplit,render_texsplit;
 extern int iter_dlightf, iter_dlight, draw_dlight, draw_dlightf;
 extern int gl_lightcount;
 extern int gl_spriteindex;

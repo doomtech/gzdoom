@@ -16,6 +16,19 @@ enum SectorRenderFlags
 	SSRF_PROCESSED=8,
 };
 
+struct GL_IRECT
+{
+	int left,top;
+	int width,height;
+
+
+	void Offset(int xofs,int yofs)
+	{
+		left+=xofs;
+		top+=yofs;
+	}
+};
+
 
 class GLRendererBase
 {
@@ -28,6 +41,10 @@ public:
 		mirrorline = NULL;
 	}
 	~GLRendererBase() {}
+
+	void SetViewArea();
+	void SetViewport(GL_IRECT *bounds);
+	void RenderView(player_t *player);
 
 	virtual void Initialize() = 0;
 	virtual void SetPaused() = 0;
@@ -57,7 +74,7 @@ public:
 
 	virtual void SetFixedColormap (player_t *player) = 0;
 	virtual void WriteSavePic (player_t *player, FILE *file, int width, int height) = 0;
-	virtual void RenderView (player_t* player) = 0;
+	virtual void RenderMainView (player_t *player, float fov, float ratio, float fovratio) = 0;
 	virtual void Flush() {}
 
 };

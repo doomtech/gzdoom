@@ -74,7 +74,6 @@ CVAR(Int,gl_nearclip,5,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Float, gl_mask_threshold, 0.5f,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_forcemultipass, false, 0)
 
-EXTERN_CVAR (Bool, cl_capfps)
 EXTERN_CVAR (Bool, r_deathcamera)
 CVAR(Bool, gl_blendcolormaps, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
@@ -106,8 +105,6 @@ int gl_spriteindex;
 float gl_sky1pos, gl_sky2pos;
 int gl_lightcount;
 
-glcycle_t ProcessAll;
-glcycle_t RenderAll;
 
 
 
@@ -177,58 +174,17 @@ static void gl_ResetViewport()
 	gl.Viewport(0, (trueheight-screen->GetHeight())/2, screen->GetWidth(), screen->GetHeight()); 
 }
 
+
 //-----------------------------------------------------------------------------
 //
 // gl_StartDrawScene
 // sets 3D viewport and initializes hardware for 3D rendering
 //
 //-----------------------------------------------------------------------------
-static void gl_StartDrawScene(GL_IRECT * bounds, float fov, float ratio, float fovratio)
+
+void GL1Renderer::StartDrawScene(GL_IRECT * bounds, float fov, float ratio, float fovratio)
 {
-	if (!bounds)
-	{
-		int height, width;
-
-		// Special handling so the view with a visible status bar displays properly
-
-		if (screenblocks >= 10)
-		{
-			height = SCREENHEIGHT;
-			width  = SCREENWIDTH;
-		}
-		else
-		{
-			height = (screenblocks*SCREENHEIGHT/10) & ~7;
-			width = (screenblocks*SCREENWIDTH/10);
-		}
-
-		int trueheight = static_cast<OpenGLFrameBuffer*>(screen)->GetTrueHeight();	// ugh...
-		int bars = (trueheight-screen->GetHeight())/2; 
-
-		int vw = viewwidth;
-		int vh = viewheight;
-		gl.Viewport(viewwindowx, trueheight-bars-(height+viewwindowy-((height-vh)/2)), vw, height);
-		gl.Scissor(viewwindowx, trueheight-bars-(vh+viewwindowy), vw, vh);
-	}
-	else
-	{
-		gl.Viewport(bounds->left, bounds->top, bounds->width, bounds->height);
-		gl.Scissor(bounds->left, bounds->top, bounds->width, bounds->height);
-	}
-	gl.Enable(GL_SCISSOR_TEST);
-	
-	#ifdef _DEBUG
-		gl.ClearColor(0.0f, 0.0f, 0.0f, 0.0f); 
-		gl.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	#else
-		gl.Clear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	#endif
-
-	gl.Enable(GL_MULTISAMPLE);
-	gl.Enable(GL_DEPTH_TEST);
-	gl.Enable(GL_STENCIL_TEST);
-	gl.StencilFunc(GL_ALWAYS,0,~0);	// default stencil
-	gl.StencilOp(GL_KEEP,GL_KEEP,GL_REPLACE);
+	SetViewport(bounds);
 	
 	gl.MatrixMode(GL_PROJECTION);
 	gl.LoadIdentity();
@@ -236,25 +192,12 @@ static void gl_StartDrawScene(GL_IRECT * bounds, float fov, float ratio, float f
 	float fovy = 2 * RAD2DEG(atan(tan(DEG2RAD(fov) / 2) / fovratio));
 	gluPerspective(fovy, ratio, (float)gl_nearclip, 65536.f);
 
-	// reset statistics counters
-	render_texsplit=render_vertexsplit=rendered_lines=rendered_flats=rendered_sprites=rendered_decals = 0;
+	currentFoV=fov;
 	iter_dlightf = iter_dlight = draw_dlight = draw_dlightf = 0;
-	RenderWall.Reset();
-	SetupWall.Reset();
-	ClipWall.Reset();
-	RenderFlat.Reset();
-	SetupFlat.Reset();
-	RenderSprite.Reset();
-	SetupSprite.Reset();
-
-	gl.EnableClientState(GL_TEXTURE_COORD_ARRAY);
-	gl.EnableClientState(GL_VERTEX_ARRAY);
-
 	UniqueSkies.Clear();
 	UniqueHorizons.Clear();
 	UniqueStacks.Clear();
 	UniquePlaneMirrors.Clear();
-	currentFoV=fov;
 }
 
 
@@ -293,43 +236,6 @@ void gl_SetupView(fixed_t viewx, fixed_t viewy, fixed_t viewz, angle_t viewangle
 	gl.Translatef( xCamera*mult, -zCamera*planemult, -yCamera);
 	gl.Scalef(-mult, planemult, 1);
 }
-
-//-----------------------------------------------------------------------------
-//
-// Sets the area the camera is in
-//
-//-----------------------------------------------------------------------------
-void gl_SetViewArea()
-{
-	// The render_sector is better suited to represent the current position in GL
-	viewsector = R_PointInSubsector(viewx, viewy)->render_sector;
-
-	// keep the view within the render sector's floor and ceiling
-	fixed_t theZ = viewsector->ceilingplane.ZatPoint (viewx, viewy) - 4*FRACUNIT;
-	if (viewz > theZ)
-	{
-		viewz = theZ;
-	}
-
-	theZ = viewsector->floorplane.ZatPoint (viewx, viewy) + 4*FRACUNIT;
-	if (viewz < theZ)
-	{
-		viewz = theZ;
-	}
-
-	// Get the heightsec state from the render sector, not the current one!
-	if (viewsector->heightsec && !(viewsector->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC))
-	{
-		in_area = viewz<=viewsector->heightsec->floorplane.ZatPoint(viewx,viewy) ? area_below :
-				   (viewz>viewsector->heightsec->ceilingplane.ZatPoint(viewx,viewy) &&
-				   !(viewsector->heightsec->MoreFlags&SECF_FAKEFLOORONLY)) ? area_above:area_normal;
-	}
-	else
-	{
-		in_area=area_default;	// depends on exposed lower sectors
-	}
-}
-
 
 //-----------------------------------------------------------------------------
 //
@@ -800,9 +706,6 @@ void gl_EndDrawScene(sector_t * viewsector)
 		gl_DrawPlayerSprites (viewsector, true);
 	}
 
-	gl.DisableClientState(GL_TEXTURE_COORD_ARRAY);
-	gl.DisableClientState(GL_VERTEX_ARRAY);
-
 	gl.Disable(GL_STENCIL_TEST);
 	gl.Disable(GL_POLYGON_SMOOTH);
 
@@ -834,7 +737,7 @@ void gl_EndDrawScene(sector_t * viewsector)
 //-----------------------------------------------------------------------------
 static GLDrawInfo GlobalDrawInfo;
 
-sector_t * gl_RenderView (AActor * camera, GL_IRECT * bounds, float fov, float ratio, float fovratio, bool mainview)
+sector_t * GL1Renderer::RenderView (AActor * camera, GL_IRECT * bounds, float fov, float ratio, float fovratio, bool mainview)
 {       
 	TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
 
@@ -843,7 +746,7 @@ sector_t * gl_RenderView (AActor * camera, GL_IRECT * bounds, float fov, float r
 
 	sector_t * retval;
 	R_SetupFrame (camera);
-	gl_SetViewArea();
+	SetViewArea();
 	pitch = clamp<float>((float)((double)(int)(viewpitch))/ANGLE_1, -90, 90);
 
 	// Scroll the sky
@@ -863,7 +766,7 @@ sector_t * gl_RenderView (AActor * camera, GL_IRECT * bounds, float fov, float r
 		viewactor=camera;
 	}
 
-	gl_StartDrawScene(bounds, fov, ratio, fovratio);	// switch to perspective mode and set up clipper
+	StartDrawScene(bounds, fov, ratio, fovratio);	// switch to perspective mode and set up clipper
 
 	GLDrawInfo::StartDrawInfo(&GlobalDrawInfo);
 	gl_SetupView(viewx, viewy, viewz, viewangle, false, false);
@@ -885,7 +788,7 @@ sector_t * gl_RenderView (AActor * camera, GL_IRECT * bounds, float fov, float r
 // R_RenderTextureView - renders camera textures
 //
 //-----------------------------------------------------------------------------
-void gl_RenderTextureView(FCanvasTexture *Texture, AActor * Viewpoint, int FOV)
+void GL1Renderer::RenderTextureView(FCanvasTexture *Texture, AActor * Viewpoint, int FOV)
 {
 	GL_IRECT bounds;
 	FGLTexture * gltex = FGLTexture::ValidateTexture(Texture);
@@ -899,7 +802,7 @@ void gl_RenderTextureView(FCanvasTexture *Texture, AActor * Viewpoint, int FOV)
 	bounds.height=GLTexture::GetTexDimension(gltex->GetHeight(FGLTexture::GLUSE_TEXTURE));
 
 	gl.Flush();
-	gl_RenderView(Viewpoint, &bounds, FOV, (float)width/height, (float)width/height, false);
+	RenderView(Viewpoint, &bounds, FOV, (float)width/height, (float)width/height, false);
 	gl.Flush();
 	gltex->Bind(CM_DEFAULT, 0, 0);
 	gl.CopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, bounds.width, bounds.height);
@@ -966,7 +869,7 @@ void GL1Renderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 	bounds.height=height;
 	gl.Flush();
 	SetFixedColormap(player);
-	sector_t *viewsector = gl_RenderView(players[consoleplayer].camera, &bounds, 
+	sector_t *viewsector = RenderView(players[consoleplayer].camera, &bounds, 
 								FieldOfView * 360.0f / FINEANGLES, 1.6f, 1.6f, true);
 	gl.Disable(GL_STENCIL_TEST);
 	screen->Begin2D(false);
@@ -985,90 +888,17 @@ void GL1Renderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 //
 //-----------------------------------------------------------------------------
 
-void GL1Renderer::RenderView (player_t* player)
+void GL1Renderer::RenderMainView (player_t *player, float fov, float ratio, float fovratio)
 {       
-	AActor *&LastCamera = static_cast<OpenGLFrameBuffer*>(screen)->LastCamera;
-
-	if (player->camera != LastCamera)
-	{
-		// If the camera changed don't interpolate
-		// Otherwise there will be some not so nice effects.
-		R_ResetViewInterpolation();
-		LastCamera=player->camera;
-	}
-
-	//Printf("Starting scene\n");
-	All.Reset();
-	All.Clock();
-	PortalAll.Reset();
-	RenderAll.Reset();
-	ProcessAll.Reset();
-	flatvertices=flatprimitives=vertexcount=0;
-
-	// Get this before everything else
-	if (cl_capfps || r_NoInterpolate) r_TicFrac = FRACUNIT;
-	else r_TicFrac = I_GetTimeFrac (&r_FrameTime);
-	gl_frameMS = I_MSTime();
-
-	R_FindParticleSubsectors ();
-
-	// prepare all camera textures that have been used in the last frame
-	FCanvasTextureInfo::UpdateAll();
-
 	SetFixedColormap (player);
 
-	// I stopped using BaseRatioSizes here because the information there wasn't well presented.
-	#define RMUL (1.6f/1.333333f)
-	static float ratios[]={RMUL*1.333333f, RMUL*1.777777f, RMUL*1.6f, RMUL*1.333333f, RMUL*1.2f};
-
-	// now render the main view
-	float fovratio;
-	float ratio = ratios[WidescreenRatio];
-	if (!(WidescreenRatio&4))
-	{
-		fovratio = 1.6f;
-	}
-	else
-	{
-		fovratio = ratio;
-	}
-
-	sector_t * viewsector = gl_RenderView(player->camera, NULL, FieldOfView * 360.0f / FINEANGLES, ratio, fovratio, true);
+	sector_t * viewsector = RenderView(player->camera, NULL, fov, ratio, fovratio, true);
 	gl_EndDrawScene(viewsector);
-
-	All.Unclock();
 }
 
 } // namespace
 
-//-----------------------------------------------------------------------------
-//
-// Rendering statistics
-//
-//-----------------------------------------------------------------------------
-ADD_STAT(rendertimes)
-{
-	static FString buff;
-	static int lasttime=0;
-	int t=I_MSTime();
-	if (t-lasttime>1000) 
-	{
-		buff.Format("W: Render=%2.2f, Setup=%2.2f, Clip=%2.2f - F: Render=%2.2f, Setup=%2.2f - S: Render=%2.2f, Setup=%2.2f - All=%2.2f, Render=%2.2f, Setup=%2.2f, Portal=%2.2f, Finish=%2.2f\n",
-		RenderWall.TimeMS(), SetupWall.TimeMS(), ClipWall.TimeMS(), RenderFlat.TimeMS(), SetupFlat.TimeMS(),
-		RenderSprite.TimeMS(), SetupSprite.TimeMS(), All.TimeMS() + Finish.TimeMS(), RenderAll.TimeMS(),
-		ProcessAll.TimeMS(), PortalAll.TimeMS(), Finish.TimeMS());
-		lasttime=t;
-	}
-	return buff;
-}
 
-ADD_STAT(renderstats)
-{
-	FString out;
-	out.Format("Walls: %d (%d splits, %d t-splits, %d vertices), Flats: %d (%d primitives, %d vertices), Sprites: %d, Decals=%d\n", 
-		rendered_lines, render_vertexsplit, render_texsplit, vertexcount, rendered_flats, flatprimitives, flatvertices, rendered_sprites,rendered_decals );
-	return out;
-}
 
 ADD_STAT(lightstats)
 {

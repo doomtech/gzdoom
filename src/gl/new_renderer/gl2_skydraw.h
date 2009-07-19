@@ -78,7 +78,7 @@ namespace GLRendererNew
 		FSkyDrawer();
 		~FSkyDrawer();
 		void Clear();
-		void RenderSky(FTextureID tex1, FTextureID tex2, PalEntry fogcolor);
+		void RenderSky(FTextureID tex1, FTextureID tex2, PalEntry fogcolor, float xofs1, float xofs2, float yofs);
 	};
 
 }

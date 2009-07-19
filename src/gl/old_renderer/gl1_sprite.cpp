@@ -48,6 +48,7 @@
 #include "gl/old_renderer/gl1_renderstruct.h"
 #include "gl/gl_lights.h"
 #include "gl/common/glc_glow.h"
+#include "gl/common/glc_clock.h"
 #include "gl/old_renderer/gl1_texture.h"
 #include "gl/gl_functions.h"
 #include "gl/old_renderer/gl1_portal.h"

@@ -6750,6 +6750,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\gl\common\glc_renderer.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\gl\common\glc_renderhacks.cpp"
 					>
 				</File>

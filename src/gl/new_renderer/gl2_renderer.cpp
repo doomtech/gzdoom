@@ -40,6 +40,7 @@
 #include "gl/new_renderer/textures/gl2_shader.h"
 #include "gl/common/glc_texture.h"
 #include "gl/common/glc_translate.h"
+#include "gl/common/glc_convert.h"
 
 
 
@@ -236,6 +237,58 @@ void GL2Renderer::CleanLevelData()
 void GL2Renderer::ClearBorders()
 {
 }
+
+//-----------------------------------------------------------------------------
+//
+// gets the GL texture for a specific texture
+//
+//-----------------------------------------------------------------------------
+
+FGLTexture *GL2Renderer::GetGLTexture(FTexture *tex, bool asSprite, int translation)
+{
+	return mTextures->GetTexture(tex, asSprite, translation);
+}
+
+//-----------------------------------------------------------------------------
+//
+// gets the material for a specific texture
+//
+//-----------------------------------------------------------------------------
+
+FMaterial *GL2Renderer::GetMaterial(FTexture *tex, bool asSprite, int translation)
+{
+	FMaterialContainer *matc;
+	
+	if (tex != NULL) 
+	{
+		matc = static_cast<FMaterialContainer*>(tex->gl_info.RenderTexture);
+		if (matc == NULL)
+		{
+			tex->gl_info.RenderTexture = matc = new FMaterialContainer(tex);
+			mMaterials.Push(matc);
+		}
+	}
+	else
+	{
+		matc = mDefaultMaterial;
+		asSprite = false;
+		translation = 0;
+	}
+	return matc->GetMaterial(asSprite, translation);
+
+}
+
+FMaterial *GL2Renderer::GetMaterial(FTextureID no, bool animtrans, bool asSprite, int translation)
+{
+	return GetMaterial(animtrans? TexMan(no) : TexMan[no], asSprite, translation);
+}
+
+
+FShader *GL2Renderer::GetShader(const char *name)
+{
+	return mShaders->FindShader(name);
+}
+
 
 //===========================================================================
 // 
@@ -559,7 +612,7 @@ void GL2Renderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 //
 //-----------------------------------------------------------------------------
 
-void GL2Renderer::RenderView (player_t* player)
+void GL2Renderer::RenderMainView (player_t *player, float fov, float ratio, float fovratio)
 {       
 	//#ifdef _DEBUG
 		gl.ClearColor(0.0f, 0.0f, 0.0f, 0.0f); 
@@ -572,54 +625,30 @@ void GL2Renderer::RenderView (player_t* player)
 
 //-----------------------------------------------------------------------------
 //
-// gets the GL texture for a specific texture
+// gl_SetupView
+// Setup the view rotation matrix for the given viewpoint
 //
 //-----------------------------------------------------------------------------
-
-FGLTexture *GL2Renderer::GetGLTexture(FTexture *tex, bool asSprite, int translation)
+void GL2Renderer::SetupView(fixed_t viewx, fixed_t viewy, fixed_t viewz, angle_t viewangle)
 {
-	return mTextures->GetTexture(tex, asSprite, translation);
-}
+	float fviewangle=(float)(viewangle>>ANGLETOFINESHIFT)*360.0f/FINEANGLES;
 
-//-----------------------------------------------------------------------------
-//
-// gets the material for a specific texture
-//
-//-----------------------------------------------------------------------------
-
-FMaterial *GL2Renderer::GetMaterial(FTexture *tex, bool asSprite, int translation)
-{
-	FMaterialContainer *matc;
+	mAngles.Yaw = 270.0f-fviewangle;
+	mViewVector = FVector2(sin(DEG2RAD(fviewangle)), cos(DEG2RAD(fviewangle)));
+	mCameraPos = FVector3(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
 	
-	if (tex != NULL) 
-	{
-		matc = static_cast<FMaterialContainer*>(tex->gl_info.RenderTexture);
-		if (matc == NULL)
-		{
-			tex->gl_info.RenderTexture = matc = new FMaterialContainer(tex);
-			mMaterials.Push(matc);
-		}
-	}
-	else
-	{
-		matc = mDefaultMaterial;
-		asSprite = false;
-		translation = 0;
-	}
-	return matc->GetMaterial(asSprite, translation);
+	float mult = (mMirrorCount & 1)? -1:1;
+	float planemult = (mPlaneMirrorCount & 1)? -1:1;
 
+	gl.MatrixMode(GL_MODELVIEW);
+	gl.LoadIdentity();
+	gl.Rotatef(mAngles.Roll,  0.0f, 0.0f, 1.0f);
+	gl.Rotatef(mAngles.Pitch, 1.0f, 0.0f, 0.0f);
+	gl.Rotatef(mAngles.Yaw,   0.0f, mult, 0.0f);
+	gl.Translatef( mCameraPos.X, -mCameraPos.Z * planemult, -mCameraPos.Y);
+	gl.Scalef(-mult, planemult, 1);
 }
 
-FMaterial *GL2Renderer::GetMaterial(FTextureID no, bool animtrans, bool asSprite, int translation)
-{
-	return GetMaterial(animtrans? TexMan(no) : TexMan[no], asSprite, translation);
-}
-
-
-FShader *GL2Renderer::GetShader(const char *name)
-{
-	return mShaders->FindShader(name);
-}
 
 
 }

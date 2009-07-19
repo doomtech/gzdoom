@@ -179,17 +179,6 @@ void GL1Renderer::FlushTextures()
 //
 //===========================================================================
 
-void GL1Renderer::RenderTextureView (FCanvasTexture *self, AActor *viewpoint, int fov)
-{
-	gl_RenderTextureView(self, viewpoint, fov);
-}
-
-//===========================================================================
-// 
-//
-//
-//===========================================================================
-
 void GL1Renderer::PrecacheTexture(FTexture *tex)
 {
 	FGLTexture * gltex = FGLTexture::ValidateTexture(tex);

@@ -400,7 +400,7 @@ void FSkyDrawer::Clear()
 //
 //----------------------------------------------------------------------------
 
-void FSkyDrawer::RenderSky(FTextureID tex1, FTextureID tex2, PalEntry fogcolor)
+void FSkyDrawer::RenderSky(FTextureID tex1, FTextureID tex2, PalEntry fogcolor, float xofs1, float xofs2, float yofs)
 {
 	// Always use the cap color from the first texture in an animation. 
 	// This prevents flickering effects if the animation frames produce different cap colors
@@ -444,6 +444,26 @@ void FSkyDrawer::RenderSky(FTextureID tex1, FTextureID tex2, PalEntry fogcolor)
 		}
 	}
 	if (vbo == NULL) return;
+
+	if (yofs != 0)
+	{
+		// This is only necessary for MBF sky transfers with a scrolling texture
+		yofs = yofs / tex_info->GetScaledHeight();
+		yofs -= floor(yofs);
+		gl.MatrixMode(GL_TEXTURE);
+		gl.PushMatrix();
+		gl.Translatef(0, 0, yofs);
+		gl.MatrixMode(GL_MODELVIEW);
+	}
+
+
+
+	if (yofs != 0)
+	{
+		gl.MatrixMode(GL_TEXTURE);
+		gl.PopMatrix();
+		gl.MatrixMode(GL_MODELVIEW);
+	}
 
 }
 

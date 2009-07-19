@@ -238,6 +238,7 @@ static bool ReadInitExtensions()
 // 
 //
 //==========================================================================
+const char *wgl_extensions;
 
 #ifndef unix
 static void CollectExtensions(HDC m_hDC)
@@ -252,7 +253,7 @@ static void CollectExtensions()
 
 	if (wglGetExtString)
 	{
-		supported = ((char*(__stdcall*)(HDC))wglGetExtString)(m_hDC);
+		wgl_extensions = supported = ((char*(__stdcall*)(HDC))wglGetExtString)(m_hDC);
 	}
 
 	if (supported)
@@ -493,6 +494,9 @@ static void APIENTRY PrintStartupLog()
 	Printf ("GL_RENDERER: %s\n", glGetString(GL_RENDERER));
 	Printf ("GL_VERSION: %s\n", glGetString(GL_VERSION));
 	Printf ("GL_EXTENSIONS: %s\n", glGetString(GL_EXTENSIONS));
+#ifndef unix
+	Printf ("WGL_EXTENSIONS: %s\n", wgl_extensions);
+#endif
 }
 
 //==========================================================================
