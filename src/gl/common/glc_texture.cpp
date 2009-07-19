@@ -351,6 +351,37 @@ void FTexture::GetGlowColor(float *data)
 
 //===========================================================================
 // 
+//	Gets the average color of a texture for use as a sky cap color
+//
+//===========================================================================
+PalEntry FTexture::GetSkyCapColor(bool bottom)
+{
+	PalEntry col;
+	int w;
+	int h;
+
+	if (!gl_info.bSkyColorDone)
+	{
+		gl_info.bSkyColorDone = true;
+
+		unsigned char *buffer = GLRenderer->GetTextureBuffer(this, w, h);
+
+		if (buffer)
+		{
+			gl_info.CeilingSkyColor = averageColor((DWORD *) buffer, w * MIN(30, h), 0);
+			if (h>30)
+			{
+				gl_info.FloorSkyColor = averageColor(((DWORD *) buffer)+(h-30)*w, w * 30, 0);
+			}
+			else gl_info.FloorSkyColor = gl_info.CeilingSkyColor;
+			delete buffer;
+		}
+	}
+	return bottom? gl_info.FloorSkyColor : gl_info.CeilingSkyColor;
+}
+
+//===========================================================================
+// 
 //	Finds gaps in the texture which can be skipped by the renderer
 //  This was mainly added to speed up one area in E4M6 of 007LTSD
 //

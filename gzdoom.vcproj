@@ -6838,6 +6838,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\gl\new_renderer\gl2_skydraw.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\gl\new_renderer\gl2_vertex.cpp"
 					>
 				</File>
@@ -6846,6 +6850,10 @@
 					>
 					<File
 						RelativePath=".\src\gl\new_renderer\gl2_renderer.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\new_renderer\gl2_skydraw.h"
 						>
 					</File>
 					<File

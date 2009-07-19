@@ -292,6 +292,7 @@ public:
 	virtual void PrecacheGL();
 	virtual void UncacheGL();
 	void GetGlowColor(float *data);
+	PalEntry GetSkyCapColor(bool bottom);
 	bool isGlowing() { return gl_info.bGlowing; }
 	bool isFullbright() { return gl_info.bFullbright; }
 	void CreateDefaultBrightmap();

@@ -102,7 +102,6 @@ extern int viewpitch;
 int rendered_lines,rendered_flats,rendered_sprites,render_vertexsplit,render_texsplit,rendered_decals;
 int iter_dlightf, iter_dlight, draw_dlight, draw_dlightf;
 int palette_brightness;
-long gl_frameMS;
 int gl_spriteindex;
 float gl_sky1pos, gl_sky2pos;
 int gl_lightcount;

@@ -30,11 +30,10 @@
 #include "i_system.h"
 #include "gl/new_renderer/textures/gl2_shader.h"
 
+extern long gl_frameMS;
 
 namespace GLRendererNew
 {
-int gl_frameMS;
-
 	//----------------------------------------------------------------------------
 	//
 	//

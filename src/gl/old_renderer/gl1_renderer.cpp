@@ -455,7 +455,7 @@ void GL1Renderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 //==========================================================================
 void GL1Renderer::DrawLine(int x1, int y1, int x2, int y2, int palcolor, uint32 color)
 {
-	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[color];
+	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[palcolor];
 	gl_EnableTexture(false);
 	gl_DisableShader();
 	gl.Color3ub(p.r, p.g, p.b);
@@ -473,7 +473,7 @@ void GL1Renderer::DrawLine(int x1, int y1, int x2, int y2, int palcolor, uint32 
 //==========================================================================
 void GL1Renderer::DrawPixel(int x1, int y1, int palcolor, uint32 color)
 {
-	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[color];
+	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[palcolor];
 	gl_EnableTexture(false);
 	gl_DisableShader();
 	gl.Color3ub(p.r, p.g, p.b);

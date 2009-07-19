@@ -10,6 +10,8 @@ namespace GLRendererOld
 	class GLTexture;
 }
 
+extern long gl_frameMS;
+
 class OpenGLFrameBuffer : public Win32GLFrameBuffer
 {
 	typedef Win32GLFrameBuffer Super;

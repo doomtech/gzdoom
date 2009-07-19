@@ -202,7 +202,7 @@ void GLSprite::Draw(int pass)
 	{
 		// [BB] Billboard stuff
 		const bool drawWithXYBillboard = ( !(actor && actor->renderflags & RF_FORCEYBILLBOARD)
-		                                   && players[consoleplayer].camera
+		                                   && viewactor != NULL
 		                                   && (gl_billboard_mode == 1 || (actor && actor->renderflags & RF_FORCEXYBILLBOARD )) );
 		gl_ApplyShader();
 		gl.Begin(GL_TRIANGLE_STRIP);
@@ -214,12 +214,12 @@ void GLSprite::Draw(int pass)
 			float xcenter = (x1+x2)*0.5;
 			float ycenter = (y1+y2)*0.5;
 			float zcenter = (z1+z2)*0.5;
-			float angleRad = ANGLE_TO_RAD(players[consoleplayer].camera->angle);
+			float angleRad = ANGLE_TO_RAD(viewactor->angle);
 			
 			Matrix3x4 mat;
 			mat.MakeIdentity();
 			mat.Translate( xcenter, zcenter, ycenter);
-			mat.Rotate(-sin(angleRad), 0, cos(angleRad),-ANGLE_TO_FLOAT(players[consoleplayer].camera->pitch));
+			mat.Rotate(-sin(angleRad), 0, cos(angleRad),-ANGLE_TO_FLOAT(viewactor->pitch));
 			mat.Translate( -xcenter, -zcenter, -ycenter);
 			Vector v1 = mat * Vector(x1,z1,y1);
 			Vector v2 = mat * Vector(x2,z1,y2);

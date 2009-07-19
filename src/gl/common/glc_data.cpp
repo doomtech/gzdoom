@@ -61,6 +61,7 @@ void gl_SetFogParams(int _fogdensity, PalEntry _outsidefogcolor, int _outsidefog
 void gl_InitModels();
 
 GLRenderSettings glset;
+long gl_frameMS;
 
 EXTERN_CVAR(Int, gl_lightmode)
 

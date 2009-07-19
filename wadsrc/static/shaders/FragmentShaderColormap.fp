@@ -39,7 +39,7 @@ vec4 ApplyTextureMode(vec4 texel)
 
 vec4 GetPixelLight()
 {
-	return vec4(1.0,1.0,1.0,1.0);
+	return gl_Color;
 }
 
 vec4 Desaturate(vec4 texel)
@@ -70,7 +70,7 @@ vec4 ApplyColormap(vec4 texel)
 	float gray = texel.r * 0.3 + texel.g * 0.56 + texel.b * 0.14;
 	if (colormapcolor.a < 0.0) gray = 1.0 - gray;
 	
-	return clamp(vec4(colormapcolor.r*gray, colormapcolor.g*gray, colormapcolor.b*gray, texel.a), 0.0, 1.0) * gl_Color;
+	return clamp(vec4(colormapcolor.r*gray, colormapcolor.g*gray, colormapcolor.b*gray, texel.a), 0.0, 1.0);
 }
 
 //===========================================================================
