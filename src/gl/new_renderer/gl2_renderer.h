@@ -13,6 +13,7 @@ class FMaterial;
 class FShader;
 class FGLTexture;
 class FPrimitiveBuffer2D;
+class FSkyDrawer;
 
 class GL2Renderer : public GLRendererBase
 {
@@ -22,6 +23,7 @@ public:
 	TArray<FMaterialContainer *> mMaterials;
 	FPrimitiveBuffer2D *mRender2D;
 	FMaterialContainer *mDefaultMaterial;
+	FSkyDrawer *mSkyDrawer;
 
 	GL2Renderer() 
 	{
@@ -29,6 +31,7 @@ public:
 		mTextures = NULL;
 		mRender2D = NULL;
 		mDefaultMaterial = NULL;
+		mSkyDrawer = NULL;
 	}
 	~GL2Renderer();
 

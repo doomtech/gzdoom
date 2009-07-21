@@ -34,8 +34,11 @@
 #include "c_cvars.h"
 #include "i_system.h"
 #include "v_palette.h"
+#include "r_sky.h"
+#include "g_level.h"
 #include "gl/new_renderer/gl2_renderer.h"
 #include "gl/new_renderer/gl2_vertex.h"
+#include "gl/new_renderer/gl2_skydraw.h"
 #include "gl/new_renderer/textures/gl2_material.h"
 #include "gl/new_renderer/textures/gl2_texture.h"
 #include "gl/new_renderer/textures/gl2_shader.h"
@@ -71,6 +74,7 @@ GL2Renderer::~GL2Renderer()
 	if (mTextures != NULL) delete mTextures;
 	if (mRender2D != NULL) delete mRender2D;
 	if (mDefaultMaterial != NULL) delete mDefaultMaterial;
+	if (mSkyDrawer != NULL) delete mSkyDrawer;
 }
 
 //===========================================================================
@@ -86,6 +90,7 @@ void GL2Renderer::Initialize()
 	mTextures = new FGLTextureManager;
 	mRender2D = new FPrimitiveBuffer2D;
 	mDefaultMaterial = new FMaterialContainer(NULL);
+	mSkyDrawer = new FSkyDrawer;
 }
 
 //===========================================================================
@@ -210,7 +215,8 @@ void GL2Renderer::UncacheTexture(FTexture *tex)
 
 unsigned char *GL2Renderer::GetTextureBuffer(FTexture *tex, int &w, int &h)
 {
-	return NULL;
+	FGLTexture *gltex = mTextures->GetTexture(tex, false, 0);
+	return gltex->CreateTexBuffer(0, w, h);
 }
 
 //===========================================================================
@@ -630,13 +636,7 @@ sector_t * GL2Renderer::RenderView (AActor * camera, GL_IRECT * bounds, float fo
 
 void GL2Renderer::RenderMainView (player_t *player, float fov, float ratio, float fovratio)
 {       
-	//#ifdef _DEBUG
-		gl.ClearColor(0.0f, 0.0f, 0.0f, 0.0f); 
-		gl.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	//#else
-		//gl.Clear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	//#endif
-
+	sector_t * viewsector = RenderViewpoint(player->camera, NULL, fov, ratio, fovratio, true);
 }
 
 //-----------------------------------------------------------------------------
@@ -682,6 +682,17 @@ void GL2Renderer::SetViewMatrix(bool mirror, bool planemirror)
 
 void GL2Renderer::ProcessScene()
 {
+	// for testing. The sky must be rendered with depth buffer disabled.
+	gl.Disable(GL_DEPTH_TEST);	
+	// Just a quick hack to check the features
+	if (level.flags&LEVEL_DOUBLESKY)
+	{
+		mSkyDrawer->RenderSky(sky2texture, sky1texture, 0, mSky2Pos, mSky1Pos, 0);
+	}
+	else
+	{
+		mSkyDrawer->RenderSky(sky1texture, FNullTextureID(), 0, mSky1Pos, mSky2Pos, 0xffffff);
+	}
 }
 
 

@@ -490,11 +490,6 @@ void OpenGLFrameBuffer::ReleaseScreenshotBuffer()
 }
 
 
-void OpenGLFrameBuffer::SetFixedColormap (player_t *player)
-{
-	GLRenderer->SetFixedColormap(player);
-}
-
 void OpenGLFrameBuffer::WriteSavePic (player_t *player, FILE *file, int width, int height)
 {
 	GLRenderer->WriteSavePic(player, file, width, height);

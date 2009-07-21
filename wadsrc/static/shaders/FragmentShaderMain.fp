@@ -129,7 +129,5 @@ vec4 ApplyPixelFog(vec4 pixin)
 void main()
 {
 	vec4 texel = ProcessPixel();	// ProcessPixel is the shader specific routine which is located in a separate file.
-	if (texturemode == 2) texel.a=1.0;
-	else if (texturemode == 1) texel.rgb = vec3(1.0, 1.0, 1.0);
 	gl_FragColor = texel;
 }

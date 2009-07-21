@@ -52,20 +52,16 @@ namespace GLRendererNew
 
 	class FSkyDrawer
 	{
-		enum
-		{
-			maxSideAngle = ANGLE_180 / 3,
-			rows = 4,
-			columns = 64,
-			scale = 10000 << FRACBITS
-		};
+		static const unsigned maxSideAngle = unsigned(ANGLE_180) / 3;
+		static const int rows = 4;
+		static const int columns = 64;
+		static const int scale = 10000 << FRACBITS;
 
 		// cache the most recently used VBOs used for the sky in the current level.
 		FVertexBufferSky *mSkyVBOs[5];
 
 		void SkyVertex(FVertexSky *dest, int r, int c, int texw, float yMult, bool yflip, bool textured);
-		void GenerateHemisphere(int texno, FTexture *tex, bool yflip, PalEntry capcolor, 
-								TArray<FPrimitiveSky> &prims, TArray<FVertexSky> &verts);
+		void GenerateHemispheres(int texno, FTexture *tex, TArray<FPrimitiveSky> &prims, TArray<FVertexSky> &verts);
 		FVertexBufferSky *FindVBO(int type, FTexture* t1, FTexture* t2, PalEntry fogcolor, bool stretch);
 		FVertexBufferSky *CreateDomeVBO(FTexture *tex1, FTexture *tex2, PalEntry fogcolor);
 		FVertexBufferSky *CreateBox6VBO();

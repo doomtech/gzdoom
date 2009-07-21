@@ -107,9 +107,6 @@ private:
 
 public:
 	AActor * LastCamera;
-
-	void SetFixedColormap (player_t *player);
-
 };
 
 

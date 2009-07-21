@@ -701,8 +701,6 @@ void GL1Renderer::ProcessScene()
 	UniqueStacks.Clear();
 	UniquePlaneMirrors.Clear();
 
-	//gl_SetupView(viewx, viewy, viewz, viewangle, false, false);
-
 	gl_DrawScene();
 	GLDrawInfo::EndDrawInfo();
 
@@ -815,8 +813,6 @@ void GL1Renderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 
 void GL1Renderer::RenderMainView (player_t *player, float fov, float ratio, float fovratio)
 {       
-	SetFixedColormap (player);
-
 	sector_t * viewsector = RenderViewpoint(player->camera, NULL, fov, ratio, fovratio, true);
 	gl_EndDrawScene(viewsector);
 }

@@ -303,6 +303,7 @@ void GLRendererBase::RenderView (player_t* player)
 		fovratio = ratio;
 	}
 
+	SetFixedColormap (player);
 	RenderMainView(player, FieldOfView * 360.0f / FINEANGLES, ratio, fovratio);
 
 	All.Unclock();

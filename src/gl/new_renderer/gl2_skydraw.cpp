@@ -29,11 +29,15 @@
 #include "c_cvars.h"
 #include "g_level.h"
 #include "m_fixed.h"
+#include "r_state.h"
 #include "textures/textures.h"
+#include "gl/common/glc_renderer.h"
 #include "gl/common/glc_convert.h"
 #include "gl/common/glc_skyboxtexture.h"
+#include "gl/new_renderer/gl2_renderer.h"
 #include "gl/new_renderer/gl2_skydraw.h"
 #include "gl/new_renderer/textures/gl2_shader.h"
+#include "gl/new_renderer/textures/gl2_material.h"
 
 EXTERN_CVAR (Bool, r_stretchsky)
 extern long gl_frameMS;
@@ -67,9 +71,9 @@ FVertexBufferSky::FVertexBufferSky()
 bool FVertexBufferSky::Bind()
 {
 	BindBuffer();
-	glVertexPointer(3,GL_FLOAT, sizeof(FVertex2D), &VT2->x);
-	glTexCoordPointer(2,GL_FLOAT, sizeof(FVertex2D), &VT2->u);
-	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(FVertex2D), &VT2->r);
+	glVertexPointer(3,GL_FLOAT, sizeof(FVertexSky), &VT2->x);
+	glTexCoordPointer(2,GL_FLOAT, sizeof(FVertexSky), &VT2->u);
+	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(FVertexSky), &VT2->r);
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -225,13 +229,13 @@ void FSkyDrawer::SkyVertex(FVertexSky *dest, int r, int c, int texw, float yMult
 //
 //-----------------------------------------------------------------------------
 
-void FSkyDrawer::GenerateHemisphere(int texno, FTexture *tex, bool yflip, PalEntry capcolor, 
-									TArray<FPrimitiveSky> &prims, TArray<FVertexSky> &verts)
+void FSkyDrawer::GenerateHemispheres(int texno, FTexture *tex, TArray<FPrimitiveSky> &prims, TArray<FVertexSky> &verts)
 {
 	int r, c;
 	FPrimitiveSky *prim;
 	FVertexSky *vert;
 	float yMult;
+	PalEntry capcolor; 
 	
 	int texw = tex->GetScaledWidth();
 	int texh = tex->GetScaledHeight();
@@ -245,47 +249,53 @@ void FSkyDrawer::GenerateHemisphere(int texno, FTexture *tex, bool yflip, PalEnt
 
 	if (texno != 2)
 	{
-		prim = &prims[prims.Reserve(1)];
-		prim->mType = GL_TRIANGLE_FAN;
-		prim->mUseTexture = 0;
-		prim->mStartVertex = verts.Size();
-		prim->mVertexCount = columns;
-
-		vert = &verts[verts.Reserve(columns)];
-		for(c = 0; c < columns; c++)
+		for(int i=0;i<2;i++)
 		{
-			SkyVertex(&vert[c], 1, c, 0, 0, yflip, false);
-			vert[c].r = capcolor.r;
-			vert[c].g = capcolor.g;
-			vert[c].b = capcolor.b;
-		}
-	}
-	
-	// The total number of triangles per hemisphere can be calculated
-	// as follows: rows * columns * 2 + 2 (for the top cap).
-	for(r = 0; r < rows; r++)
-	{
-		prim = &prims[prims.Reserve(1)];
-		prim->mType = GL_TRIANGLE_STRIP;
-		prim->mUseTexture = texno;
-		prim->mStartVertex = verts.Size();
-		prim->mVertexCount = columns*2+2;
-		vert = &verts[verts.Reserve(prim->mVertexCount)];
+			prim = &prims[prims.Reserve(1)];
+			prim->mType = GL_TRIANGLE_FAN;
+			prim->mUseTexture = 0;
+			prim->mStartVertex = verts.Size();
+			prim->mVertexCount = columns;
 
-		if (yflip)
-		{
-			for(c = 0; c <= columns; c++)
+			vert = &verts[verts.Reserve(columns)];
+			for(c = 0; c < columns; c++)
 			{
-				SkyVertex(vert++, r + 1, c, texw, yMult, yflip, true);
-				SkyVertex(vert++, r, c, texw, yMult, yflip, true);
+				SkyVertex(&vert[c], 1, c, 0, 0, !!i, false);
+				capcolor = tex->GetSkyCapColor(!!i);
+				vert[c].r = capcolor.r;
+				vert[c].g = capcolor.g;
+				vert[c].b = capcolor.b;
 			}
 		}
-		else
+	}
+	// The total number of triangles per hemisphere can be calculated
+	// as follows: rows * columns * 2 + 2 (for the top cap).
+	for(int i=0;i<2;i++)
+	{
+		for(r = 0; r < rows; r++)
 		{
-			for(c = 0; c <= columns; c++)
+			prim = &prims[prims.Reserve(1)];
+			prim->mType = GL_TRIANGLE_STRIP;
+			prim->mUseTexture = texno;
+			prim->mStartVertex = verts.Size();
+			prim->mVertexCount = columns*2+2;
+			vert = &verts[verts.Reserve(prim->mVertexCount)];
+
+			if (i)
 			{
-				SkyVertex(vert++, r, c, texw, yMult, yflip, true);
-				SkyVertex(vert++, r + 1, c, texw, yMult, yflip, true);
+				for(c = 0; c <= columns; c++)
+				{
+					SkyVertex(vert++, r + 1, c, texw, yMult, true, true);
+					SkyVertex(vert++, r, c, texw, yMult, true, true);
+				}
+			}
+			else
+			{
+				for(c = 0; c <= columns; c++)
+				{
+					SkyVertex(vert++, r, c, texw, yMult, false, true);
+					SkyVertex(vert++, r + 1, c, texw, yMult, false, true);
+				}
 			}
 		}
 	}
@@ -302,12 +312,10 @@ FVertexBufferSky *FSkyDrawer::CreateDomeVBO(FTexture *tex1, FTexture *tex2, PalE
 	TArray<FVertexSky> verts;
 	FVertexBufferSky *vbo = new FVertexBufferSky();
 
-	GenerateHemisphere(1, tex1, false, tex1->GetSkyCapColor(false), vbo->mPrimitives, verts);
-	GenerateHemisphere(1, tex1, true, tex1->GetSkyCapColor(true), vbo->mPrimitives, verts);
-	if (tex2 != NULL)
+	GenerateHemispheres(1, tex1, vbo->mPrimitives, verts);
+	if (tex2 != NULL && tex2 != tex1)
 	{
-		GenerateHemisphere(2, tex2, false, 0, vbo->mPrimitives, verts);
-		GenerateHemisphere(2, tex2, true, 0, vbo->mPrimitives, verts);
+		GenerateHemispheres(2, tex2, vbo->mPrimitives, verts);
 	}
 	if (fogcolor != 0)
 	{
@@ -317,7 +325,7 @@ FVertexBufferSky *FSkyDrawer::CreateDomeVBO(FTexture *tex1, FTexture *tex2, PalE
 
 		FPrimitiveSky *prim = &vbo->mPrimitives[vbo->mPrimitives.Reserve(1)];
 		prim->mType = GL_TRIANGLE_STRIP;
-		prim->mUseTexture = 0;
+		prim->mUseTexture = 3;
 		prim->mStartVertex = verts.Size();
 		prim->mVertexCount = 6;
 		FVertexSky *vert = &verts[verts.Reserve(6)];
@@ -409,6 +417,8 @@ void FSkyDrawer::RenderSky(FTextureID tex1, FTextureID tex2, PalEntry fogcolor, 
 	FTexture *tex_info2 = NULL;
 	FTexture *tex_render2 = NULL;
 	FVertexBufferSky *vbo = NULL;
+	FMaterial *material;
+	int texh;
 
 	if (tex_info->gl_info.bSkybox != tex_render->gl_info.bSkybox)
 	{
@@ -445,9 +455,17 @@ void FSkyDrawer::RenderSky(FTextureID tex1, FTextureID tex2, PalEntry fogcolor, 
 	}
 	if (vbo == NULL) return;
 
+	//----------------------------------------------------------------------------
+	//
+	// Render the sky using the retrieved VBO
+	//
+	//----------------------------------------------------------------------------
+
+
+	// Handle y-scrolling
+	// This is only necessary for MBF sky transfers with a scrolling texture
 	if (yofs != 0)
 	{
-		// This is only necessary for MBF sky transfers with a scrolling texture
 		yofs = yofs / tex_info->GetScaledHeight();
 		yofs -= floor(yofs);
 		gl.MatrixMode(GL_TEXTURE);
@@ -457,14 +475,82 @@ void FSkyDrawer::RenderSky(FTextureID tex1, FTextureID tex2, PalEntry fogcolor, 
 	}
 
 
+	// set up the view matrix. Always view from (0,0,0)
+	gl.PushMatrix();
+	GLRenderer->SetCameraPos(0, 0, 0, viewangle);
+	GLRenderer2->SetViewMatrix(!!(GLRenderer->mMirrorCount&1), !!(GLRenderer->mPlaneMirrorCount&1));
+	// For sky domes shift the view up a little to push the border between upper and lower hemisphere
+	// below the horizon.
+	if (vbo->type == SKYVBO_Dome) gl.Translatef(0.f, -1000.f, 0.f);
 
+	gl.Enable(GL_ALPHA_TEST);
+	gl.AlphaFunc(GL_GEQUAL,0.05f);
+	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// transformation settings for the first layer
+	gl.PushMatrix();
+	texh = tex_info->GetScaledHeight();
+	gl.Rotatef(-180.0f+xofs1, 0.f, 1.f, 0.f);
+	if (texh>190 && SkyStretch()) texh=190;
+	else if (texh<=180 && !SkyStretch()) // && skystretch)
+	{
+		gl.Scalef(1.f, texh/180.f, 1.f);
+	}
+
+	int lasttexturetype = -1;
+	vbo->Bind();
+	for(unsigned i=0;i<vbo->mPrimitives.Size(); i++)
+	{
+		FPrimitiveSky *prim = &vbo->mPrimitives[i];
+
+		if (lasttexturetype != prim->mUseTexture)
+		{
+			switch (prim->mUseTexture)
+			{
+			case 0:	// cap of first layer
+				material = GLRenderer2->GetMaterial(NULL, false, 0);
+				material->Bind(NULL, TM_OPAQUE, -1, false);
+				break;
+
+			case 1:	// first layer
+				material = GLRenderer2->GetMaterial(tex_render, false, 0);
+				material->Bind(NULL, TM_OPAQUE, -1, false);
+				break;
+
+			case 2:	// second layer (has no cap)
+
+				// apply the transformation for the second layer
+				gl.PopMatrix();
+				gl.PushMatrix();
+				texh = tex_info2->GetScaledHeight();
+				gl.Rotatef(-180.0f+xofs2, 0.f, 1.f, 0.f);
+				if (texh>190 && SkyStretch()) texh=190;
+				else if (texh<=180 && !SkyStretch()) // && skystretch)
+				{
+					gl.Scalef(1.f, texh/180.f, 1.f);
+				}
+				// now render it
+				material = GLRenderer2->GetMaterial(tex_render2, false, 0);
+				material->Bind(NULL, TM_MODULATE, -1, false);
+				break;
+
+			case 3:	// fog layer
+				material = GLRenderer2->GetMaterial(NULL, false, 0);
+				material->Bind(NULL, TM_OPAQUE, -1, false);
+				break;
+			}
+		}
+		gl.DrawArrays(prim->mType, prim->mStartVertex, prim->mVertexCount);
+	}
+	gl.PopMatrix();
+	gl.PopMatrix();
+	// if there was an y offset we need to pop off the original texture matrix.
 	if (yofs != 0)
 	{
 		gl.MatrixMode(GL_TEXTURE);
 		gl.PopMatrix();
 		gl.MatrixMode(GL_MODELVIEW);
 	}
-
 }
 
 
