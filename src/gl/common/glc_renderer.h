@@ -117,8 +117,6 @@ sector_t * gl_FakeFlat(sector_t * sec, sector_t * dest, bool back);
 
 void gl_GetRenderStyle(FRenderStyle style, bool drawopaque, bool allowcolorblending,
 					   int *tm, int *sb, int *db, int *be);
-
-
 typedef enum
 {
         area_normal,
