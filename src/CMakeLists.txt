@@ -33,7 +33,7 @@ set( MINOR_VERSIONS "50" "49" "48" "47" "46" "45" "44" "43" "42" "41"
 	"27" "26" "25" "24" "23" "22" "21" "20" "21" "19" "18" "17" "16"
 	"15" "14" "13" "12" "11" "10" "09" "08" "07" "06" "05" "04" "03"
 	"02" "01" "00" )
-set( MAJOR_VERSIONS "24" "22" "20" )
+set( MAJOR_VERSIONS "26" "24" "22" "20" )
 set( FMOD_DIR_VERSIONS ${FMOD_DIR_VERSIONS} "../fmod" )
 foreach( majver ${MAJOR_VERSIONS} )
 	foreach( minver ${MINOR_VERSIONS} )
@@ -129,9 +129,13 @@ else( WIN32 )
 
 	set( FMOD_SEARCH_PATHS
 		/usr/local/include
+		/usr/local/include/fmodex
 		/usr/include
+		/usr/include/fmodex
 		/opt/local/include
-		/opt/include )
+		/opt/local/include/fmodex
+		/opt/include
+		/opt/include/fmodex )
 	set( FMOD_INC_PATH_SUFFIXES PATH_SUFFIXES fmodex )
 	set( NASM_NAMES nasm )
 	
@@ -336,7 +340,14 @@ if( CMAKE_COMPILER_IS_GNUCXX )
 	set( CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} ${REL_CXX_FLAGS}" )
 	set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${REL_CXX_FLAGS}" )
 
-	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused -fno-strict-aliasing" )
+	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused" )
+
+	# Remove extra warnings when using the official DirectX headers.
+	# Also, TDM-GCC 4.4.0 no longer accepts glibc-style printf formats as valid,
+	# which is a royal pain. The previous version I had been using was fine with them.
+	if( WIN32 )
+		set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas -Wno-comment -Wno-format" )
+	endif( WIN32 )
 
 	if( NOT NO_STRIP )
 		set (CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -s" )

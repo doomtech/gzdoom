@@ -248,7 +248,7 @@ void GL1Renderer::SetupLevel()
 		ssector->numvertices = ssector->numlines;
 		ssector->firstvertex = gl_vertices.Size();
 
-		for(j = 0;  j < ssector->numlines; j++)
+		for(j = 0;  j < (int)ssector->numlines; j++)
 		{
 			seg_t * seg = &segs[ssector->firstline + j];
 			vertex_t * vtx = seg->v1;

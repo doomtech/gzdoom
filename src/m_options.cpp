@@ -86,6 +86,7 @@
 // Data.
 #include "m_menu.h"
 
+extern FButtonStatus MenuButtons[NUM_MKEYS];
 void StartGLMenu (void);
 EXTERN_CVAR(Int, vid_renderer)
 EXTERN_CVAR(Bool, nomonsterinterpolation)
@@ -1118,6 +1119,7 @@ static menuitem_t CompatibilityItems[] = {
 	{ bitflag,  "Use Doom heights for missile clipping",	{&compatflags}, {0}, {0}, {0}, {(value_t *)COMPATF_MISSILECLIP} },
 	{ bitflag,  "Allow any bossdeath for level special",	{&compatflags}, {0}, {0}, {0}, {(value_t *)COMPATF_ANYBOSSDEATH} },
 	{ bitflag,  "No Minotaur floor flames in water",		{&compatflags}, {0}, {0}, {0}, {(value_t *)COMPATF_MINOTAUR} },
+	{ bitflag,  "Original A_Mushroom speed in DEH mods",	{&compatflags}, {0}, {0}, {0}, {(value_t *)COMPATF_MUSHROOM} },
 	
 	{ discrete, "Interpolate monster movement",	{&nomonsterinterpolation},		{2.0}, {0.0},	{0.0}, {NoYes} },
 };
@@ -1532,7 +1534,7 @@ static void CalcIndent (menu_t *menu)
 	{
 		item = menu->items + i;
 		if (item->type != whitetext && item->type != redtext && item->type != screenres &&
-			item->type != joymore && (item->type != discrete || !item->c.discretecenter))
+			item->type != joymore && (item->type != discrete || item->c.discretecenter != 1))
 		{
 			thiswidth = SmallFont->StringWidth (item->label);
 			if (thiswidth > widest)
@@ -1704,7 +1706,7 @@ void M_OptDrawer ()
 
 		item = CurrentMenu->items + i;
 		overlay = 0;
-		if (item->type == discrete && item->c.discretecenter)
+		if (item->type == discrete && item->c.discretecenter == 1)
 		{
 			indent = 160;
 		}
@@ -2118,50 +2120,82 @@ void M_OptDrawer ()
 	}
 }
 
-void M_OptResponder (event_t *ev)
+void M_OptResponder(event_t *ev)
 {
-	menuitem_t *item;
-	int ch = tolower (ev->data1);
-	UCVarValue value;
-
-	item = CurrentMenu->items + CurrentItem;
+	menuitem_t *item = CurrentMenu->items + CurrentItem;
 
 	if (menuactive == MENU_WaitKey && ev->type == EV_KeyDown)
 	{
 		if (ev->data1 != KEY_ESCAPE)
 		{
-			C_ChangeBinding (item->e.command, ev->data1);
-			M_BuildKeyList (CurrentMenu->items, CurrentMenu->numitems);
+			C_ChangeBinding(item->e.command, ev->data1);
+			M_BuildKeyList(CurrentMenu->items, CurrentMenu->numitems);
 		}
 		menuactive = MENU_On;
 		CurrentMenu->items[0].label = OldMessage;
 		CurrentMenu->items[0].type = OldType;
-		return;
 	}
-
-	if (ev->subtype == EV_GUI_KeyRepeat)
+	else if (ev->type == EV_GUI_Event && ev->subtype == EV_GUI_KeyDown && tolower(ev->data1) == 't')
 	{
-		if (ch != GK_LEFT && ch != GK_RIGHT && ch != GK_UP && ch != GK_DOWN)
+		// Test selected resolution
+		if (CurrentMenu == &ModesMenu)
 		{
-			return;
+			if (!(item->type == screenres &&
+				GetSelectedSize (CurrentItem, &NewWidth, &NewHeight)))
+			{
+				NewWidth = SCREENWIDTH;
+				NewHeight = SCREENHEIGHT;
+			}
+			OldWidth = SCREENWIDTH;
+			OldHeight = SCREENHEIGHT;
+			OldBits = DisplayBits;
+			NewBits = BitTranslate[DummyDepthCvar];
+			setmodeneeded = true;
+			testingmode = I_GetTime(false) + 5 * TICRATE;
+			S_Sound (CHAN_VOICE | CHAN_UI, "menu/choose", 1, ATTN_NONE);
+			SetModesMenu (NewWidth, NewHeight, NewBits);
 		}
 	}
-	else if (ev->subtype != EV_GUI_KeyDown)
-	{
-		return;
-	}
-	
+}
+
+void M_OptButtonHandler(EMenuKey key, bool repeat)
+{
+	menuitem_t *item;
+	UCVarValue value;
+
+	item = CurrentMenu->items + CurrentItem;
+
 	if (item->type == bitflag &&
-		(ch == GK_LEFT || ch == GK_RIGHT || ch == '\r')
+		(key == MKEY_Left || key == MKEY_Right || key == MKEY_Enter)
 		&& !demoplayback)
 	{
 		*(item->a.intcvar) = (*(item->a.intcvar)) ^ item->e.flagmask;
 		return;
 	}
 
-	switch (ch)
+	// The controls that manipulate joystick interfaces can only be changed from the
+	// keyboard, because I can't think of a good way to avoid problems otherwise.
+	if (item->type == discrete && item->c.discretecenter == 2 && (key == MKEY_Left || key == MKEY_Right))
 	{
-	case GK_DOWN:
+		if (repeat)
+		{
+			return;
+		}
+		for (int i = 0; i < FButtonStatus::MAX_KEYS; ++i)
+		{
+			if (MenuButtons[key].Keys[i] >= KEY_FIRSTJOYBUTTON)
+			{
+				return;
+			}
+		}
+	}
+
+	switch (key)
+	{
+	default:
+		break;		// Keep GCC quiet
+
+	case MKEY_Down:
 		if (CurrentMenu->numitems > 1)
 		{
 			int modecol;
@@ -2210,7 +2244,7 @@ void M_OptResponder (event_t *ev)
 		}
 		break;
 
-	case GK_UP:
+	case MKEY_Up:
 		if (CurrentMenu->numitems > 1)
 		{
 			int modecol;
@@ -2278,7 +2312,7 @@ void M_OptResponder (event_t *ev)
 		}
 		break;
 
-	case GK_PGUP:
+	case MKEY_PageUp:
 		if (CurrentMenu->scrollpos > 0)
 		{
 			CurrentMenu->scrollpos -= VisBottom - CurrentMenu->scrollpos - CurrentMenu->scrolltop;
@@ -2300,7 +2334,7 @@ void M_OptResponder (event_t *ev)
 		}
 		break;
 
-	case GK_PGDN:
+	case MKEY_PageDown:
 		if (CanScrollDown)
 		{
 			int pagesize = VisBottom - CurrentMenu->scrollpos - CurrentMenu->scrolltop;
@@ -2323,7 +2357,7 @@ void M_OptResponder (event_t *ev)
 		}
 		break;
 
-	case GK_LEFT:
+	case MKEY_Left:
 		switch (item->type)
 		{
 			case slider:
@@ -2520,7 +2554,7 @@ void M_OptResponder (event_t *ev)
 		}
 		break;
 
-	case GK_RIGHT:
+	case MKEY_Right:
 		switch (item->type)
 		{
 			case slider:
@@ -2720,14 +2754,14 @@ void M_OptResponder (event_t *ev)
 		}
 		break;
 
-	case '\b':
+	case MKEY_Clear:
 		if (item->type == control)
 		{
 			C_UnbindACommand (item->e.command);
 			item->b.key1 = item->c.key2 = 0;
 		}
 		break;
-
+/*
 	case '0':
 	case '1':
 	case '2':
@@ -2755,8 +2789,8 @@ void M_OptResponder (event_t *ev)
 			}
 			// Otherwise, fall through to '\r' below
 		}
-
-	case '\r':
+*/
+	case MKEY_Enter:
 		if (CurrentMenu == &ModesMenu && item->type == screenres)
 		{
 			if (!GetSelectedSize (CurrentItem, &NewWidth, &NewHeight))
@@ -2862,37 +2896,13 @@ void M_OptResponder (event_t *ev)
 		}
 		break;
 
-	case GK_ESCAPE:
+	case MKEY_Back:
 		CurrentMenu->lastOn = CurrentItem;
 		if (CurrentMenu->EscapeHandler != NULL)
 		{
 			CurrentMenu->EscapeHandler ();
 		}
 		M_PopMenuStack ();
-		break;
-
-	default:
-		if (ch == 't')
-		{
-			// Test selected resolution
-			if (CurrentMenu == &ModesMenu)
-			{
-				if (!(item->type == screenres &&
-					GetSelectedSize (CurrentItem, &NewWidth, &NewHeight)))
-				{
-					NewWidth = SCREENWIDTH;
-					NewHeight = SCREENHEIGHT;
-				}
-				OldWidth = SCREENWIDTH;
-				OldHeight = SCREENHEIGHT;
-				OldBits = DisplayBits;
-				NewBits = BitTranslate[DummyDepthCvar];
-				setmodeneeded = true;
-				testingmode = I_GetTime(false) + 5 * TICRATE;
-				S_Sound (CHAN_VOICE | CHAN_UI, "menu/choose", 1, ATTN_NONE);
-				SetModesMenu (NewWidth, NewHeight, NewBits);
-			}
-		}
 		break;
 	}
 }
@@ -3226,6 +3236,7 @@ void UpdateJoystickMenu(IJoystickConfig *selected)
 	item.label = "Enable controller support";
 	item.a.cvar = &use_joystick;
 	item.b.numvalues = 2;
+	item.c.discretecenter = 2;
 	item.e.values = YesNo;
 	JoystickItems.Push(item);
 
@@ -3245,6 +3256,7 @@ void UpdateJoystickMenu(IJoystickConfig *selected)
 
 	item.type = redtext;
 	item.label = " ";
+	item.c.discretecenter = 0;
 	JoystickItems.Push(item);
 
 	if (Joysticks.Size() == 0)
@@ -3303,7 +3315,7 @@ void UpdateJoystickMenu(IJoystickConfig *selected)
 			break;
 		}
 	}
-	if (i == Joysticks.Size())
+	if (i == (int)Joysticks.Size())
 	{
 		SELECTED_JOYSTICK = NULL;
 		if (CurrentMenu == &JoystickConfigMenu)
