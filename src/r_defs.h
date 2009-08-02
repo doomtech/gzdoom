@@ -71,6 +71,8 @@ extern size_t MaxDrawSegs;
 struct vertex_t
 {
 	fixed_t x, y;
+
+	float fx, fy;		// Floating point coordinates of this vertex (excluding polyoblect translation!)
 	angle_t viewangle;	// precalculated angle for clipping
 	int angletime;		// recalculation time for view angle
 
