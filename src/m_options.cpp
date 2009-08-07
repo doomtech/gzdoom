@@ -1502,7 +1502,7 @@ CCMD (sizeup)
 
 // Draws a string in the console font, scaled to the 8x8 cells
 // used by the default console font.
-static void M_DrawConText (int color, int x, int y, const char *str)
+void M_DrawConText (int color, int x, int y, const char *str)
 {
 	int len = (int)strlen(str);
 
