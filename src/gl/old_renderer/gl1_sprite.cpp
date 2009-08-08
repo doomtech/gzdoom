@@ -217,7 +217,7 @@ void GLSprite::Draw(int pass)
 			float xcenter = (x1+x2)*0.5;
 			float ycenter = (y1+y2)*0.5;
 			float zcenter = (z1+z2)*0.5;
-			float angleRad = FLOAT_TO_RAD(GLRenderer->mAngles.Yaw);
+			float angleRad = FLOAT_TO_RAD(270. - GLRenderer->mAngles.Yaw);
 			
 			Matrix3x4 mat;
 			mat.MakeIdentity();
