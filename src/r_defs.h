@@ -24,6 +24,7 @@
 #define __R_DEFS_H__
 
 #include "doomdef.h"
+#include "templates.h"
 
 // Some more or less basic data types
 // we depend on.
@@ -468,14 +469,18 @@ struct sector_t
 
 	splane planes[2];
 
+	void Invalidate(int checkmode) {}
+
 	void SetXOffset(int pos, fixed_t o)
 	{
 		planes[pos].xform.xoffs = o;
+		Invalidate(false);
 	}
 
 	void AddXOffset(int pos, fixed_t o)
 	{
 		planes[pos].xform.xoffs += o;
+		Invalidate(false);
 	}
 
 	fixed_t GetXOffset(int pos) const
@@ -486,11 +491,13 @@ struct sector_t
 	void SetYOffset(int pos, fixed_t o)
 	{
 		planes[pos].xform.yoffs = o;
+		Invalidate(false);
 	}
 
 	void AddYOffset(int pos, fixed_t o)
 	{
 		planes[pos].xform.yoffs += o;
+		Invalidate(false);
 	}
 
 	fixed_t GetYOffset(int pos, bool addbase = true) const
@@ -508,6 +515,7 @@ struct sector_t
 	void SetXScale(int pos, fixed_t o)
 	{
 		planes[pos].xform.xscale = o;
+		Invalidate(false);
 	}
 
 	fixed_t GetXScale(int pos) const
@@ -518,6 +526,7 @@ struct sector_t
 	void SetYScale(int pos, fixed_t o)
 	{
 		planes[pos].xform.yscale = o;
+		Invalidate(false);
 	}
 
 	fixed_t GetYScale(int pos) const
@@ -528,6 +537,7 @@ struct sector_t
 	void SetAngle(int pos, angle_t o)
 	{
 		planes[pos].xform.angle = o;
+		Invalidate(false);
 	}
 
 	angle_t GetAngle(int pos, bool addbase = true) const
@@ -541,11 +551,12 @@ struct sector_t
 			return planes[pos].xform.angle + planes[pos].xform.base_angle;
 		}
 	}
-
+	
 	void SetBase(int pos, fixed_t y, angle_t o)
 	{
 		planes[pos].xform.base_yoffs = y;
 		planes[pos].xform.base_angle = o;
+		Invalidate(false);
 	}
 
 	int GetFlags(int pos) const 
@@ -567,6 +578,7 @@ struct sector_t
 	void SetPlaneLight(int pos, int level)
 	{
 		planes[pos].Light = level;
+		Invalidate(false);
 	}
 
 	FTextureID GetTexture(int pos) const
@@ -579,6 +591,7 @@ struct sector_t
 		FTextureID old = planes[pos].Texture;
 		planes[pos].Texture = tex;
 		if (floorclip && pos == floor && tex != old) AdjustFloorClip();
+		Invalidate(true);
 	}
 
 	fixed_t GetPlaneTexZ(int pos) const
@@ -589,16 +602,35 @@ struct sector_t
 	void SetPlaneTexZ(int pos, fixed_t val)
 	{
 		planes[pos].TexZ = val;
+		Invalidate(2);
 	}
 
 	void ChangePlaneTexZ(int pos, fixed_t val)
 	{
 		planes[pos].TexZ += val;
+		Invalidate(2);
 	}
 
 	sector_t *GetHeightSec() const 
 	{
 		return (MoreFlags & SECF_IGNOREHEIGHTSEC)? NULL : heightsec;
+	}
+
+	void ChangeLightLevel(int newval)
+	{
+		lightlevel = (BYTE)clamp(lightlevel + newval, 0, 255);
+		Invalidate(true);
+	}
+
+	void SetLightLevel(int newval)
+	{
+		lightlevel = (BYTE)clamp(newval, 0, 255);
+		Invalidate(true);
+	}
+
+	int GetLightLevel() const
+	{
+		return lightlevel;
 	}
 
 
@@ -762,6 +794,8 @@ struct side_t
 
 	int GetLightLevel (bool foggy, int baselight) const;
 
+	void Invalidate(int mode) {}
+
 	void SetLight(SWORD l)
 	{
 		Light = l;
@@ -774,17 +808,20 @@ struct side_t
 	void SetTexture(int which, FTextureID tex)
 	{
 		textures[which].texture = tex;
+		Invalidate(true);
 	}
 
 	void SetTextureXOffset(int which, fixed_t offset)
 	{
 		textures[which].xoffset = offset;
+		Invalidate(false);
 	}
 	void SetTextureXOffset(fixed_t offset)
 	{
 		textures[top].xoffset =
 		textures[mid].xoffset =
 		textures[bottom].xoffset = offset;
+		Invalidate(false);
 	}
 	fixed_t GetTextureXOffset(int which) const
 	{
@@ -793,17 +830,20 @@ struct side_t
 	void AddTextureXOffset(int which, fixed_t delta)
 	{
 		textures[which].xoffset += delta;
+		Invalidate(false);
 	}
 
 	void SetTextureYOffset(int which, fixed_t offset)
 	{
 		textures[which].yoffset = offset;
+		Invalidate(false);
 	}
 	void SetTextureYOffset(fixed_t offset)
 	{
 		textures[top].yoffset =
 		textures[mid].yoffset =
 		textures[bottom].yoffset = offset;
+		Invalidate(false);
 	}
 	fixed_t GetTextureYOffset(int which) const
 	{
@@ -812,15 +852,18 @@ struct side_t
 	void AddTextureYOffset(int which, fixed_t delta)
 	{
 		textures[which].yoffset += delta;
+		Invalidate(false);
 	}
 
 	void SetTextureXScale(int which, fixed_t scale)
 	{
 		textures[which].xscale = scale <= 0? FRACUNIT : scale;
+		Invalidate(false);
 	}
 	void SetTextureXScale(fixed_t scale)
 	{
 		textures[top].xscale = textures[mid].xscale = textures[bottom].xscale = scale <= 0? FRACUNIT : scale;
+		Invalidate(false);
 	}
 	fixed_t GetTextureXScale(int which) const
 	{
@@ -829,16 +872,19 @@ struct side_t
 	void MultiplyTextureXScale(int which, fixed_t delta)
 	{
 		textures[which].xscale = FixedMul(textures[which].xscale, delta);
+		Invalidate(false);
 	}
 
 
 	void SetTextureYScale(int which, fixed_t scale)
 	{
 		textures[which].yscale = scale <= 0? FRACUNIT : scale;
+		Invalidate(false);
 	}
 	void SetTextureYScale(fixed_t scale)
 	{
 		textures[top].yscale = textures[mid].yscale = textures[bottom].yscale = scale <= 0? FRACUNIT : scale;
+		Invalidate(false);
 	}
 	fixed_t GetTextureYScale(int which) const
 	{
@@ -847,6 +893,7 @@ struct side_t
 	void MultiplyTextureYScale(int which, fixed_t delta)
 	{
 		textures[which].yscale = FixedMul(textures[which].yscale, delta);
+		Invalidate(false);
 	}
 
 	DInterpolation *SetInterpolation(int position);

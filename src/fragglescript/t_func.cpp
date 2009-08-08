@@ -1873,7 +1873,7 @@ void FParser::SF_LightLevel(void)
 			// set all sectors with tag
 			while ((i = T_FindSectorFromTag(tagnum, i)) >= 0)
 			{
-				sectors[i].lightlevel = (BYTE)intvalue(t_argv[1]);
+				sectors[i].SetLightLevel(intvalue(t_argv[1]));
 			}
 		}
 		
@@ -1937,12 +1937,12 @@ void DLightLevel::Tick()
 		if(m_Sector->lightlevel + speed >= destlevel)
 		{
 			// stop changing light level
-			m_Sector->lightlevel = destlevel;    // set to dest lightlevel
+			m_Sector->SetLightLevel(destlevel);    // set to dest lightlevel
 			Destroy();
 		}
 		else
 		{
-			m_Sector->lightlevel = m_Sector->lightlevel+speed;
+			m_Sector->ChangeLightLevel(speed);
 		}
 	}
 	else
@@ -1951,12 +1951,12 @@ void DLightLevel::Tick()
 		if(m_Sector->lightlevel - speed <= destlevel)
 		{
 			// stop changing light level
-			m_Sector->lightlevel = destlevel;    // set to dest lightlevel
+			m_Sector->SetLightLevel(destlevel);    // set to dest lightlevel
 			Destroy();
 		}
 		else
 		{
-			m_Sector->lightlevel = m_Sector->lightlevel-speed;
+			m_Sector->ChangeLightLevel(-speed);
 		}
 	}
 }

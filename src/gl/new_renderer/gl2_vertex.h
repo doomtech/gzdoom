@@ -23,6 +23,26 @@ struct FVertex3D
 	float glowdistbottom;
 };
 
+struct FPrimitive3D
+{
+	int mPrimitiveType;
+	int mVertexStart;
+	int mVertexCount;
+
+	FMaterial *mMaterial;
+	int mClamp;
+	int mTextureMode;
+	float mAlphaThreshold;
+
+	int mSrcBlend;
+	int mDstBlend;
+	int mBlendEquation;
+
+	void Draw();
+};
+
+
+
 struct FVertex2D
 {
 	float x,y;
