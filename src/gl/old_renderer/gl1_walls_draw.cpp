@@ -196,7 +196,7 @@ void GLWall::RenderWall(int textured, float * color2, ADynamicLight * light)
 
 void GLWall::RenderFogBoundary()
 {
-	if (gl_fogmode)
+	if (gl_fogmode && gl_fixedcolormap == 0)
 	{
 		float fogdensity=gl_GetFogDensity(lightlevel, Colormap.FadeColor);
 

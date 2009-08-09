@@ -9,18 +9,25 @@ class FMaterial;
 
 struct FVertex3D
 {
+	enum {
+		FOG_BLACK = 0,
+		FOG_COLOR = 255,
+		FOG_NONE = 128
+	};
+
 	float x,y,z;				// coordinates
 	float u,v;					// texture coordinates
 	unsigned char r,g,b,a;		// light color
-	unsigned char fr,fg,fb,fd;	// fog color
+	unsigned char fr,fg,fb,fon;	// fog color
 	unsigned char tr,tg,tb,td;	// ceiling glow
 	unsigned char br,bg,bb,bd;	// floor glow
-	float lighton;
-	float lightfogdensity;
-	float lightfactor;
-	float lightdist;
-	float glowdisttop;
-	float glowdistbottom;
+	float fogdensity;			// fog density
+	float lightfactor;			// brightening factor for camera light
+	float lightdist;			// brightening distance for camera light
+	float glowdisttop;			// distance from glowing ceiling plane
+	float glowdistbottom;		// distance from glowing floor plane
+
+	void SetLighting(int lightlevel, FDynamicColormap *cm, int extralight, bool additive, FTexture *tex);
 };
 
 struct FPrimitive3D
@@ -32,13 +39,16 @@ struct FPrimitive3D
 	FMaterial *mMaterial;
 	int mClamp;
 	int mTextureMode;
+	int mDesaturation;
 	float mAlphaThreshold;
+	bool mTranslucent;
 
 	int mSrcBlend;
 	int mDstBlend;
 	int mBlendEquation;
 
 	void Draw();
+	void SetRenderStyle(FRenderStyle style, bool opaque, bool allowcolorblending = false);
 };
 
 

@@ -735,6 +735,7 @@ add_executable( zdoom WIN32
 	gl/new_renderer/gl2_renderer.cpp
 	gl/new_renderer/gl2_vertex.cpp
 	gl/new_renderer/gl2_skydraw.cpp	
+	gl/new_renderer/gl2_geom.cpp	
 	gl/new_renderer/textures/gl2_bitmap.cpp
 	gl/new_renderer/textures/gl2_texture.cpp
 	gl/new_renderer/textures/gl2_material.cpp

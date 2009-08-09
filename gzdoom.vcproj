@@ -6785,6 +6785,10 @@
 						>
 					</File>
 					<File
+						RelativePath=".\src\gl\common\glc_convert.h"
+						>
+					</File>
+					<File
 						RelativePath=".\src\gl\common\glc_cycler.h"
 						>
 					</File>
@@ -6821,6 +6825,10 @@
 						>
 					</File>
 					<File
+						RelativePath=".\src\gl\common\glc_structs.h"
+						>
+					</File>
+					<File
 						RelativePath=".\src\gl\common\glc_templates.h"
 						>
 					</File>
@@ -6838,6 +6846,10 @@
 				Name="New Renderer"
 				>
 				<File
+					RelativePath=".\src\gl\new_renderer\gl2_geom.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\gl\new_renderer\gl2_renderer.cpp"
 					>
 				</File>
@@ -6852,6 +6864,10 @@
 				<Filter
 					Name="Includes"
 					>
+					<File
+						RelativePath=".\src\gl\new_renderer\gl2_geom.h"
+						>
+					</File>
 					<File
 						RelativePath=".\src\gl\new_renderer\gl2_renderer.h"
 						>

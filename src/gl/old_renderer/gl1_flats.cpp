@@ -478,7 +478,7 @@ void GLFlat::ProcessSector(sector_t * frontsector, subsector_t * sub)
 			lightlevel = GetFloorLight(frontsector);
 			Colormap=frontsector->ColorMap;
 			stack = frontsector->FloorSkyBox && frontsector->FloorSkyBox->bAlways;
-			alpha= stack ? frontsector->FloorSkyBox->PlaneAlpha/65536.0f : 1.0f-frontsector->floor_reflect;
+			alpha= stack ? frontsector->FloorSkyBox->PlaneAlpha/65536.0f : 1.0f-frontsector->GetFloorReflect();
 
 			ceiling=false;
 			renderflags=SSRF_RENDERFLOOR;
@@ -517,7 +517,7 @@ void GLFlat::ProcessSector(sector_t * frontsector, subsector_t * sub)
 			lightlevel = GetCeilingLight(frontsector);
 			Colormap=frontsector->ColorMap;
 			stack = frontsector->CeilingSkyBox && frontsector->CeilingSkyBox->bAlways;
-			alpha=stack ? frontsector->CeilingSkyBox->PlaneAlpha/65536.0f : 1.0f-frontsector->ceiling_reflect;
+			alpha=stack ? frontsector->CeilingSkyBox->PlaneAlpha/65536.0f : 1.0f-frontsector->GetCeilingReflect();
 
 			ceiling=true;
 			renderflags=SSRF_RENDERCEILING;
