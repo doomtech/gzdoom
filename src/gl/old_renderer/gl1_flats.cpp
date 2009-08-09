@@ -427,7 +427,6 @@ void GLFlat::Process(sector_t * sector, bool whichplane, bool fog)
 // Process a sector's flats for rendering
 //
 //==========================================================================
-#define CenterSpot(sec) (vertex_t*)&(sec)->soundorg[0]
 
 void GLFlat::ProcessSector(sector_t * frontsector, subsector_t * sub)
 {

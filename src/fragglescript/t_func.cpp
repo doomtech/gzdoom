@@ -74,7 +74,6 @@ static FRandom pr_script("FScript");
 #define AngleToFixed(x)  ((((double) x) / ((double) ANG45/45)) * FRACUNIT)
 #define FixedToAngle(x)  ((((double) x) / FRACUNIT) * ANG45/45)
 #define FIXED_TO_FLOAT(f) ((f)/(float)FRACUNIT)
-#define CenterSpot(sec) (vertex_t*)&(sec)->soundorg[0]
 
 // Disables Legacy-incompatible bug fixes.
 //CVAR(Bool, fs_forcecompatible, false, CVAR_ARCHIVE|CVAR_SERVERINFO)

@@ -21,9 +21,10 @@ struct FGLSubsectorPlaneRenderData
 
 struct FGLSectorPlaneRenderData
 {
-	secplane_t *mPlane;
+	secplane_t mPlane;
 	bool mUpside;
 	bool mDownside;
+	bool mLightEffect;	// do not render when a fullbright effect is on
 	TArray<FGLSubsectorPlaneRenderData> mSubsectorData;
 };
 

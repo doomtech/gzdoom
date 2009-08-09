@@ -311,7 +311,7 @@ void FPrimitive3D::SetRenderStyle(FRenderStyle style, bool opaque, bool allowcol
 
 //----------------------------------------------------------------------------
 //
-//
+// Sets light and fog color for this vertex
 //
 //----------------------------------------------------------------------------
 
