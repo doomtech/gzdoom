@@ -1,4 +1,15 @@
-﻿August 7, 2009
+﻿August 9, 2009  (Changes by Graf Zahl)
+- Fixed: A_EntityAttack did not spawn the correct missiles.
+
+August 8, 2009  (Changes by Graf Zahl)
+- replaced all code that changed a sector's light level with a setter function.
+- Fixed: The FeatureFlags array in the CPUInfo struct was not mapped to the flags properly.
+
+August 8, 2009
+- Changed the return value of SetActivatorToTarget to match the description
+  in the wiki.
+
+August 7, 2009
 - If SetActivatorToTarget is used for a player-run script, and the player is
   alive, it now sets the activator to the actor the player is aiming at. I
   also noticed that this looked like it was a quick copy'n'paste job from
