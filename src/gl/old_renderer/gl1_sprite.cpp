@@ -688,7 +688,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 		
 		hw_styleflags = STYLEHW_Solid;
 	}
-	if (gltexture && gltexture->GetTransparent())
+	if ((gltexture && gltexture->GetTransparent()) || (RenderStyle.Flags & STYLEF_RedIsAlpha))
 	{
 		hw_styleflags = STYLEHW_NoAlphaTest;
 	}
