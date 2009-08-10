@@ -180,6 +180,12 @@ public:
 	{
 		mColormapColor.Set(vec);
 	}
+
+	void setTextureScale(float *vec)
+	{
+		mTextureScale.Set(vec);
+	}
+
 };
 
 //----------------------------------------------------------------------------
@@ -210,7 +216,7 @@ public:
 	bool Create(const char * filename_pixfunc);
 	FName GetName() { return mName; }
 
-	virtual void Bind(float *cm, int texturemode, float desaturation, float Speed);
+	virtual void Bind(float *cm, int texturemode, float desaturation, float Speed, int width, int height);
 	//static void Unbind();
 
 };
