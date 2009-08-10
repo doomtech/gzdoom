@@ -133,6 +133,7 @@ class FShaderObject
 	FShaderPropertyInt mTextureMode;
 	FShaderPropertyVector mCameraPos;
 	FShaderPropertyVector mColormapColor;
+	FShaderPropertyVector mTextureScale;
 
 public:
 

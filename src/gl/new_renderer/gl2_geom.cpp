@@ -54,21 +54,9 @@ void MakeTextureMatrix(GLSectorPlane &splane, FMaterial *mat, Matrix3x4 &matx)
 	matx.MakeIdentity();
 	if (mat != NULL)
 	{
-		float uoffs=TO_GL(splane.xoffs) / mat->GetWidth();
-		float voffs=TO_GL(splane.yoffs) / mat->GetHeight();
-
-		float xscale1=TO_GL(splane.xscale);
-		float yscale1=TO_GL(splane.yscale);
-
-		float xscale2=64.f / mat->GetWidth();
-		float yscale2=64.f / mat->GetHeight();
-
-		float angle=-ANGLE_TO_FLOAT(splane.angle);
-
-		matx.Scale(xscale1, yscale1, 1);
-		matx.Translate(uoffs, voffs, 0);
-		matx.Scale(xscale1, yscale2, 1);
-		matx.Rotate(0, 0, 1, angle);
+		matx.Scale(TO_GL(splane.xscale), TO_GL(splane.yscale), 1);
+		matx.Translate(TO_GL(splane.xoffs), TO_GL(splane.yoffs), 0);
+		matx.Rotate(0, 0, 1, -ANGLE_TO_FLOAT(splane.angle));
 	}
 }
 

@@ -113,6 +113,7 @@ namespace GLRendererNew
 		mTextureMode.setIndex(hShader, "texturemode");
 		mCameraPos.setIndex(hShader, "camerapos");
 		mColormapColor.setIndex(hShader, "colormapcolor");
+		mTextureScale.setIndex(hShader, "uTextureScale");
 	
 		gl.UseProgramObject(hShader);
 		for(int i=1; i<=16;i++)
