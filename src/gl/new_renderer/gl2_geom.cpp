@@ -254,7 +254,7 @@ void FGLSectorRenderData::CreatePlane(int in_area, sector_t *sec, GLSectorPlane 
 			ssrd->mVertices[j].y = v->fy;
 			ssrd->mVertices[j].z = splane.plane.ZatPoint(v->fx, v->fy);
 
-			Vector uv = v;
+			Vector uv(v->fx, -v->fy, 0);
 			uv = matx * uv;
 
 			ssrd->mVertices[j].x = uv.X();
