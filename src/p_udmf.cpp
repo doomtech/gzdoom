@@ -1020,6 +1020,7 @@ struct UDMFParser
 		sec->nextsec = -1;	//jff 2/26/98 add fields to support locking out
 		sec->prevsec = -1;	// stair retriggering until build completes
 		sec->heightsec = NULL;	// sector used to get floor and ceiling height
+		sec->sectornum = index;
 		if (floordrop) sec->Flags = SECF_FLOORDROP;
 		// killough 3/7/98: end changes
 
@@ -1295,7 +1296,7 @@ struct UDMFParser
 
 		for(int line = 0, side = 0; line < numlines; line++)
 		{
-			short tempalpha[2] = {-1,-1};
+			short tempalpha[2] = { SHRT_MIN, SHRT_MIN };
 
 			lines[line] = ParsedLines[line];
 
