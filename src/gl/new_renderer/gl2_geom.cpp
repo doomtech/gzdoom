@@ -178,6 +178,47 @@ void FSectorRenderData::Init(int sector)
 
 //===========================================================================
 // 
+// This is for creating primitives for render hacks which can't be precalculated
+// The vertices are generated directly in the VBO here
+//
+//===========================================================================
+
+void FSectorRenderData::CreateDynamicPrimitive(FSectorPlaneObject *plane,
+						FSubsectorPrimitive *prim, int vertstart, FVertex3D *vert,
+						subsector_t *sub)
+{
+
+	Matrix3x4 matx;
+	GLSectorPlane splane;
+
+	splane.GetFromSector(mSector, !plane->mUpside);
+	MakeTextureMatrix(splane, plane->mMat, matx);
+	
+	prim->mSubsector = int(sub - subsectors);
+	prim->mPrimitive = mPrimitives[plane->mPrimitiveIndex].mPrimitive;
+	prim->mPrimitive.mVertexCount = sub->numlines;
+	prim->mPrimitive.mVertexStart = vertstart;
+
+	for(int j=0; j<sub->numlines; j++, vert++)
+	{
+		vertex_t *v = segs[sub->firstline + j].v1;
+
+		*vert = mVertices[prim->mPrimitive.mVertexStart];
+		vert->x = v->fx;
+		vert->y = v->fy;
+		vert->z = plane->mPlane.ZatPoint(v->fx, v->fy);
+
+		Vector uv(v->fx, -v->fy, 0);
+		uv = matx * uv;
+
+		vert->u = uv.X();
+		vert->v = uv.Y();
+	}
+}
+
+
+//===========================================================================
+// 
 //
 //
 //===========================================================================
@@ -330,6 +371,7 @@ void FSectorRenderData::Validate(area_t in_area)
 	FSectorAreaData *area = &mAreas[in_area];
 	if (!area->valid)
 	{
+		area->valid = true;
 		area->m3DFloorsC.Clear();
 		area->m3DFloorsF.Clear();
 

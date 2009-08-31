@@ -36,6 +36,7 @@
 #include "actor.h"
 struct FLightNode;
 struct FGLSection;
+struct seg_t;
 
 #include "dthinker.h"
 #include "farchive.h"
@@ -76,6 +77,7 @@ struct vertex_t
 	float fx, fy;		// Floating point coordinates of this vertex (excluding polyoblect translation!)
 	angle_t viewangle;	// precalculated angle for clipping
 	int angletime;		// recalculation time for view angle
+	bool dirty;			// something has changed and needs to be recalculated
 
 	bool operator== (const vertex_t &other)
 	{
@@ -910,6 +912,9 @@ struct side_t
 	FLightNode * lighthead[2];				// all blended lights that may affect this wall
 	BYTE invalidflags;
 
+	seg_t **segs;	// all segs belonging to this sidedef in ascending order. Used for precise rendering
+	int numsegs;
+
 };
 
 FArchive &operator<< (FArchive &arc, side_t::part &p);
@@ -1019,6 +1024,8 @@ struct seg_t
 	seg_t*			PartnerSeg;
 
 	BITFIELD		bPolySeg:1;
+
+	float			sidefrac;		// relative position of seg's ending vertex on owning sidedef
 };
 
 // ===== Polyobj data =====

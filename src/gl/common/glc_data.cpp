@@ -666,6 +666,95 @@ side_t* getNextSide(sector_t * sec, line_t* line)
 
 //==========================================================================
 //
+// Group segs to sidedefs
+//
+//==========================================================================
+
+static void GetSideVertices(int sdnum, FVector2 *v1, FVector2 *v2)
+{
+	line_t *ln = &lines[sides[sdnum].linenum];
+	if (ln->sidenum[0] == sdnum) 
+	{
+		v1->X = ln->v1->fx;
+		v1->Y = ln->v1->fy;
+		v2->X = ln->v2->fx;
+		v2->Y = ln->v2->fy;
+	}
+	else
+	{
+		v2->X = ln->v1->fx;
+		v2->Y = ln->v1->fy;
+		v1->X = ln->v2->fx;
+		v1->Y = ln->v2->fy;
+	}
+}
+
+static int STACK_ARGS segcmp(const void *a, const void *b)
+{
+	seg_t *A = *(seg_t**)a;
+	seg_t *B = *(seg_t**)b;
+	return quickertoint(FRACUNIT*(A->sidefrac - B->sidefrac));
+}
+
+static void PrepareSegs()
+{
+	int *segcount = new int[numsides];
+	int realsegs = 0;
+
+	// Get floatng point coordinates of vertices
+	for(int i = 0; i < numvertexes; i++)
+	{
+		vertexes[i].fx = TO_GL(vertexes[i].x);
+		vertexes[i].fy = TO_GL(vertexes[i].y);
+		vertexes[i].dirty = true;
+	}
+
+	// count the segs
+	memset(segcount, 0, numsides * sizeof(int));
+	for(int i=0;i<numsegs;i++)
+	{
+		seg_t *seg = &segs[i];
+		if (seg->sidedef == NULL) continue;	// miniseg
+		int sidenum = int(seg->sidedef - sides);
+
+		realsegs++;
+		segcount[sidenum]++;
+		FVector2 sidestart, sideend, segend(seg->v2->fx, seg->v2->fy);
+		GetSideVertices(sidenum, &sidestart, &sideend);
+
+		sideend -=sidestart;
+		segend -= sidestart;
+
+		seg->sidefrac = float(segend.Length() / sideend.Length());
+	}
+
+	// allocate memory
+	sides[0].segs = new seg_t*[realsegs];
+	sides[0].numsegs = 0;
+
+	for(int i = 1; i < numsides; i++)
+	{
+		sides[i].segs = sides[i-1].segs + segcount[i-1];
+		sides[i].numsegs = 0;
+	}
+	delete [] segcount;
+
+	// assign the segs
+	for(int i=0;i<numsegs;i++)
+	{
+		seg_t *seg = &segs[i];
+		if (seg->sidedef != NULL) seg->sidedef->segs[seg->sidedef->numsegs++] = seg;
+	}
+
+	// sort the segs
+	for(int i = 1; i < numsides; i++)
+	{
+		if (sides[i].numsegs > 1) qsort(sides[i].segs, sides[i].numsegs, sizeof(seg_t*), segcmp);
+	}
+}
+
+//==========================================================================
+//
 // Initialize the level data for the GL renderer
 //
 //==========================================================================
@@ -710,17 +799,12 @@ void gl_PreprocessLevel()
 	
 	if (gl_disabled) return;
 
+	PrepareSegs();
 	PrepareSectorData();
 	for(i=0;i<numsectors;i++) 
 	{
 		sectors[i].sectornum = i;
 		PrepareTransparentDoors(&sectors[i]);
-	}
-
-	for(i = 0; i < numvertexes; i++)
-	{
-		vertexes[i].fx = TO_GL(vertexes[i].x);
-		vertexes[i].fy = TO_GL(vertexes[i].y);
 	}
 
 	if (GLRenderer != NULL) GLRenderer->SetupLevel();
@@ -752,10 +836,15 @@ void gl_CleanLevelData()
 		mo=next;
 	}
 
+	if (sides && sides[0].segs)
+	{
+		delete [] sides[0].segs;
+		sides[0].segs = NULL;
+	}
 	if (sectors && sectors[0].subsectors) 
 	{
 		delete [] sectors[0].subsectors;
-		sectors[0].subsectors=NULL;
+		sectors[0].subsectors = NULL;
 	}
 	if (gamenodes && gamenodes!=nodes)
 	{

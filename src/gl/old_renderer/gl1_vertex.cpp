@@ -54,6 +54,7 @@
 
 EXTERN_CVAR(Bool, gl_seamless)
 extern long gl_frameMS;
+extern int vertexcount;
 
 namespace GLRendererOld
 {
@@ -69,6 +70,76 @@ struct FVertexsplitInfo
 
 static FVertexsplitInfo * gl_vertexsplit;
 
+
+//==========================================================================
+//
+// Split upper edge of wall
+//
+//==========================================================================
+
+void GLWall::SplitUpperEdge(texcoord * tcs, bool glow)
+{
+	if (seg == NULL || seg->bPolySeg || seg->sidedef == NULL || seg->sidedef->numsegs == 1) return;
+
+	side_t *sidedef = seg->sidedef;
+	float polyw = glseg.fracright - glseg.fracleft;
+	float facu = (tcs[2].u - tcs[1].u) / polyw;
+	float facv = (tcs[2].v - tcs[1].v) / polyw;
+	float fact = (ztop[1] - ztop[0]) / polyw;
+	float facc = (zceil[1] - zceil[0]) / polyw;
+	float facf = (zfloor[1] - zfloor[2]) / polyw;
+
+	for (int i=0; i < sidedef->numsegs - 1; i++)
+	{
+		seg_t *cseg = sidedef->segs[i];
+		if (cseg->sidefrac <= glseg.fracleft) continue;
+		if (cseg->sidefrac >= glseg.fracright) return;
+
+		float fracfac = cseg->sidefrac - glseg.fracleft;
+
+		if (glow) gl_SetGlowPosition(zceil[0] - ztop[0] + (facc - fact) * fracfac, 
+									 ztop[0] - zfloor[0] + (fact - facf) * fracfac);
+
+		gl.TexCoord2f(tcs[1].u + facu * fracfac, tcs[1].v + facv * fracfac);
+		gl.Vertex3f(cseg->v2->fx, ztop[0] + fact * fracfac, cseg->v2->fy);
+	}
+	vertexcount += sidedef->numsegs-1;
+}
+
+//==========================================================================
+//
+// Split upper edge of wall
+//
+//==========================================================================
+
+void GLWall::SplitLowerEdge(texcoord * tcs, bool glow)
+{
+	if (seg == NULL || seg->bPolySeg || seg->sidedef == NULL || seg->sidedef->numsegs == 1) return;
+
+	side_t *sidedef = seg->sidedef;
+	float polyw = glseg.fracright - glseg.fracleft;
+	float facu = (tcs[3].u - tcs[0].u) / polyw;
+	float facv = (tcs[3].v - tcs[0].v) / polyw;
+	float facb = (zbottom[1] - zbottom[0]) / polyw;
+	float facc = (zceil[1] - zceil[0]) / polyw;
+	float facf = (zfloor[1] - zfloor[2]) / polyw;
+
+	for (int i = sidedef->numsegs-2; i >= 0; i--)
+	{
+		seg_t *cseg = sidedef->segs[i];
+		if (cseg->sidefrac >= glseg.fracright) continue;
+		if (cseg->sidefrac <= glseg.fracleft) return;
+
+		float fracfac = cseg->sidefrac - glseg.fracleft;
+
+		if (glow) gl_SetGlowPosition(zceil[0] - zbottom[0] + (facc - facb) * fracfac, 
+									 zbottom[0] - zfloor[0] + (facb - facf) * fracfac);
+
+		gl.TexCoord2f(tcs[0].u + facu * fracfac, tcs[0].v + facv * fracfac);
+		gl.Vertex3f(cseg->v2->fx, zbottom[0] + facb * fracfac, cseg->v2->fy);
+	}
+	vertexcount += sidedef->numsegs-1;
+}
 
 //==========================================================================
 //
@@ -99,6 +170,7 @@ void GLWall::SplitLeftEdge(texcoord * tcs, bool glow)
 			gl.Vertex3f(glseg.x1, vi->heightlist[i], glseg.y1);
 			i++;
 		}
+		vertexcount+=i;
 	}
 }
 
@@ -131,6 +203,7 @@ void GLWall::SplitRightEdge(texcoord * tcs, bool glow)
 			gl.Vertex3f(glseg.x2, vi->heightlist[i], glseg.y2);
 			i--;
 		}
+		vertexcount+=i;
 	}
 }
 
@@ -148,6 +221,7 @@ void gl_RecalcVertexHeights(vertex_t * v)
 	int i,j,k;
 	float height;
 
+	//if (!v->dirty) return;
 	if (vi->validcount==gl_frameMS) return;
 
 	vi->numheights=0;
@@ -174,6 +248,8 @@ void gl_RecalcVertexHeights(vertex_t * v)
 	}
 	if (vi->numheights<=2) vi->numheights=0;	// is not in need of any special attention
 	vi->validcount=gl_frameMS;
+	//v->dirty = false;
+
 }
 
 

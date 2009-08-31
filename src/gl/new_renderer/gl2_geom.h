@@ -69,6 +69,10 @@ struct FSectorRenderData
 	void SetupDependencies();
 
 
+	void CreateDynamicPrimitive(FSectorPlaneObject *plane,
+							FSubsectorPrimitive *prim, int vertstart, FVertex3D *verts,
+							subsector_t *sub);
+
 	void CreatePlane(FSectorPlaneObject *plane,
 					 int in_area, sector_t *sec, GLSectorPlane &splane, 
 					 int lightlevel, FDynamicColormap *cm, 

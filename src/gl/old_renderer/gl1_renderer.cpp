@@ -112,7 +112,7 @@ void GL1Renderer::Begin2D()
 void GL1Renderer::ProcessWall(seg_t *seg, sector_t *sector, sector_t *backsector, subsector_t *polysub)
 {
 	GLRendererOld::GLWall wall;
-	wall.Process(seg, sector, backsector, polysub, gl_render_segs);
+	wall.Process(seg, sector, backsector, polysub, false); //gl_render_segs);
 	rendered_lines++;
 }
 
