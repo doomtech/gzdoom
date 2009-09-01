@@ -27,6 +27,7 @@ class FTexture;
 
 void gl_FreeSpecialTextures();
 void gl_InitSpecialTextures();
+void gl_RecalcVertexHeights(vertex_t * v);
 void gl_PreprocessLevel();
 void gl_CleanLevelData();
 FTextureID gl_GetSpriteFrame(unsigned sprite, int frame, int rot, angle_t ang, bool *mirror);

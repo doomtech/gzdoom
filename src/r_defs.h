@@ -78,6 +78,10 @@ struct vertex_t
 	angle_t viewangle;	// precalculated angle for clipping
 	int angletime;		// recalculation time for view angle
 	bool dirty;			// something has changed and needs to be recalculated
+	int numheights;
+	int numsectors;
+	sector_t ** sectors;
+	float * heightlist;
 
 	bool operator== (const vertex_t &other)
 	{
@@ -409,6 +413,11 @@ struct extsector_t
 		TArray<sector_t*>				attached;		// 3D floors attached to this sector
 	} XFloor;
 
+	// Links to other objects that get invalidated when this sector changes
+	TArray<sector_t *> SectorDependencies;
+	TArray<side_t *> SideDependencies;
+	TArray<vertex_t *> VertexDependencies;
+	
 	void Serialize(FArchive &arc);
 };
 
@@ -473,16 +482,18 @@ struct sector_t
 
 	splane planes[2];
 
+	void SetDirty(bool dolines, bool dovertices);
+
 	void SetXOffset(int pos, fixed_t o)
 	{
 		planes[pos].xform.xoffs = o;
-		invalidflags |= INVALIDATE_PLANES;
+		SetDirty(false, false);
 	}
 
 	void AddXOffset(int pos, fixed_t o)
 	{
 		planes[pos].xform.xoffs += o;
-		invalidflags |= INVALIDATE_PLANES;
+		SetDirty(false, false);
 	}
 
 	fixed_t GetXOffset(int pos) const
@@ -493,13 +504,13 @@ struct sector_t
 	void SetYOffset(int pos, fixed_t o)
 	{
 		planes[pos].xform.yoffs = o;
-		invalidflags |= INVALIDATE_PLANES;
+		SetDirty(false, false);
 	}
 
 	void AddYOffset(int pos, fixed_t o)
 	{
 		planes[pos].xform.yoffs += o;
-		invalidflags |= INVALIDATE_PLANES;
+		SetDirty(false, false);
 	}
 
 	fixed_t GetYOffset(int pos, bool addbase = true) const
@@ -517,7 +528,7 @@ struct sector_t
 	void SetXScale(int pos, fixed_t o)
 	{
 		planes[pos].xform.xscale = o;
-		invalidflags |= INVALIDATE_PLANES;
+		SetDirty(false, false);
 	}
 
 	fixed_t GetXScale(int pos) const
@@ -528,7 +539,7 @@ struct sector_t
 	void SetYScale(int pos, fixed_t o)
 	{
 		planes[pos].xform.yscale = o;
-		invalidflags |= INVALIDATE_PLANES;
+		SetDirty(false, false);
 	}
 
 	fixed_t GetYScale(int pos) const
@@ -539,7 +550,7 @@ struct sector_t
 	void SetAngle(int pos, angle_t o)
 	{
 		planes[pos].xform.angle = o;
-		invalidflags |= INVALIDATE_PLANES;
+		SetDirty(false, false);
 	}
 
 	angle_t GetAngle(int pos, bool addbase = true) const
@@ -558,7 +569,7 @@ struct sector_t
 	{
 		planes[pos].xform.base_yoffs = y;
 		planes[pos].xform.base_angle = o;
-		invalidflags |= INVALIDATE_PLANES;
+		SetDirty(false, false);
 	}
 
 	int GetFlags(int pos) const 
@@ -580,7 +591,7 @@ struct sector_t
 	void SetPlaneLight(int pos, int level)
 	{
 		planes[pos].Light = level;
-		invalidflags |= INVALIDATE_ME;
+		dirty = true;
 	}
 
 	FTextureID GetTexture(int pos) const
@@ -593,7 +604,7 @@ struct sector_t
 		FTextureID old = planes[pos].Texture;
 		planes[pos].Texture = tex;
 		if (floorclip && pos == floor && tex != old) AdjustFloorClip();
-		invalidflags |= INVALIDATE_ALL;
+		SetDirty(true, false);
 	}
 
 	fixed_t GetPlaneTexZ(int pos) const
@@ -604,13 +615,13 @@ struct sector_t
 	void SetPlaneTexZ(int pos, fixed_t val)
 	{
 		planes[pos].TexZ = val;
-		invalidflags |= INVALIDATE_ALL;
+		SetDirty(true, true);
 	}
 
 	void ChangePlaneTexZ(int pos, fixed_t val)
 	{
 		planes[pos].TexZ += val;
-		invalidflags |= INVALIDATE_ALL;
+		SetDirty(true, true);
 	}
 
 	sector_t *GetHeightSec() const 
@@ -621,13 +632,13 @@ struct sector_t
 	void ChangeLightLevel(int newval)
 	{
 		lightlevel = (BYTE)clamp(lightlevel + newval, 0, 255);
-		invalidflags |= INVALIDATE_ALL;
+		SetDirty(true, false);
 	}
 
 	void SetLightLevel(int newval)
 	{
 		lightlevel = (BYTE)clamp(newval, 0, 255);
-		invalidflags |= INVALIDATE_ALL;
+		SetDirty(true, false);
 	}
 
 	int GetLightLevel() const
@@ -730,7 +741,8 @@ struct sector_t
 	// GL only stuff starts here
 	float						ceiling_reflect, floor_reflect;
 
-	BYTE						invalidflags;		// For renderer validation
+	int							dirtyframe[3];		// last frame this sector was marked dirty
+	bool						dirty;				// marked for recalculation
 	bool						transdoor;			// For transparent door hacks
 	fixed_t						transdoorheight;	// for transparent door hacks
 	int							subsectorcount;		// list of subsectors
@@ -741,9 +753,8 @@ struct sector_t
 
 	enum
 	{
-		INVALIDATE_ME = 1,
-		INVALIDATE_PLANES = 3,
-		INVALIDATE_ALL = 7
+		INVALIDATE_PLANES = 1,
+		INVALIDATE_OTHER = 2
 	};
 
 };
@@ -808,7 +819,7 @@ struct side_t
 	void SetLight(SWORD l)
 	{
 		Light = l;
-		invalidflags = 1;
+		dirty = true;
 	}
 
 	FTextureID GetTexture(int which) const
@@ -818,20 +829,20 @@ struct side_t
 	void SetTexture(int which, FTextureID tex)
 	{
 		textures[which].texture = tex;
-		invalidflags |= (1<<which);
+		dirty = true;
 	}
 
 	void SetTextureXOffset(int which, fixed_t offset)
 	{
 		textures[which].xoffset = offset;
-		invalidflags |= (1<<which);
+		dirty = true;
 	}
 	void SetTextureXOffset(fixed_t offset)
 	{
 		textures[top].xoffset =
 		textures[mid].xoffset =
 		textures[bottom].xoffset = offset;
-		invalidflags |= 7;
+		dirty = true;
 	}
 	fixed_t GetTextureXOffset(int which) const
 	{
@@ -840,20 +851,20 @@ struct side_t
 	void AddTextureXOffset(int which, fixed_t delta)
 	{
 		textures[which].xoffset += delta;
-		invalidflags |= (1<<which);
+		dirty = true;
 	}
 
 	void SetTextureYOffset(int which, fixed_t offset)
 	{
 		textures[which].yoffset = offset;
-		invalidflags |= (1<<which);
+		dirty = true;
 	}
 	void SetTextureYOffset(fixed_t offset)
 	{
 		textures[top].yoffset =
 		textures[mid].yoffset =
 		textures[bottom].yoffset = offset;
-		invalidflags |= 7;
+		dirty = true;
 	}
 	fixed_t GetTextureYOffset(int which) const
 	{
@@ -862,18 +873,18 @@ struct side_t
 	void AddTextureYOffset(int which, fixed_t delta)
 	{
 		textures[which].yoffset += delta;
-		invalidflags |= (1<<which);
+		dirty = true;
 	}
 
 	void SetTextureXScale(int which, fixed_t scale)
 	{
 		textures[which].xscale = scale <= 0? FRACUNIT : scale;
-		invalidflags |= (1<<which);
+		dirty = true;
 	}
 	void SetTextureXScale(fixed_t scale)
 	{
 		textures[top].xscale = textures[mid].xscale = textures[bottom].xscale = scale <= 0? FRACUNIT : scale;
-		invalidflags |= 7;
+		dirty = true;
 	}
 	fixed_t GetTextureXScale(int which) const
 	{
@@ -882,19 +893,19 @@ struct side_t
 	void MultiplyTextureXScale(int which, fixed_t delta)
 	{
 		textures[which].xscale = FixedMul(textures[which].xscale, delta);
-		invalidflags |= (1<<which);
+		dirty = true;
 	}
 
 
 	void SetTextureYScale(int which, fixed_t scale)
 	{
 		textures[which].yscale = scale <= 0? FRACUNIT : scale;
-		invalidflags |= (1<<which);
+		dirty = true;
 	}
 	void SetTextureYScale(fixed_t scale)
 	{
 		textures[top].yscale = textures[mid].yscale = textures[bottom].yscale = scale <= 0? FRACUNIT : scale;
-		invalidflags |= 7;
+		dirty = true;
 	}
 	fixed_t GetTextureYScale(int which) const
 	{
@@ -903,14 +914,14 @@ struct side_t
 	void MultiplyTextureYScale(int which, fixed_t delta)
 	{
 		textures[which].yscale = FixedMul(textures[which].yscale, delta);
-		invalidflags |= (1<<which);
+		dirty = true;
 	}
 
 	DInterpolation *SetInterpolation(int position);
 	void StopInterpolation(int position);
 	//For GL
 	FLightNode * lighthead[2];				// all blended lights that may affect this wall
-	BYTE invalidflags;
+	bool dirty;								// GL info needs to be recalculated
 
 	seg_t **segs;	// all segs belonging to this sidedef in ascending order. Used for precise rendering
 	int numsegs;

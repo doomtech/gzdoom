@@ -59,18 +59,6 @@ extern int vertexcount;
 namespace GLRendererOld
 {
 
-struct FVertexsplitInfo
-{
-	int validcount;
-	int numheights;
-	int numsectors;
-	sector_t ** sectors;
-	float * heightlist;
-};
-
-static FVertexsplitInfo * gl_vertexsplit;
-
-
 //==========================================================================
 //
 // Split upper edge of wall
@@ -151,7 +139,7 @@ void GLWall::SplitLeftEdge(texcoord * tcs, bool glow)
 {
 	if (vertexes[0]==NULL) return;
 
-	FVertexsplitInfo * vi=&gl_vertexsplit[vertexes[0]-::vertexes];
+	vertex_t * vi=vertexes[0];
 
 	if (vi->numheights)
 	{
@@ -184,7 +172,7 @@ void GLWall::SplitRightEdge(texcoord * tcs, bool glow)
 {
 	if (vertexes[1]==NULL) return;
 
-	FVertexsplitInfo * vi=&gl_vertexsplit[vertexes[1]-::vertexes];
+	vertex_t * vi=vertexes[1];
 
 	if (vi->numheights)
 	{
@@ -204,165 +192,6 @@ void GLWall::SplitRightEdge(texcoord * tcs, bool glow)
 			i--;
 		}
 		vertexcount+=i;
-	}
-}
-
-//==========================================================================
-//
-// Recalculate all heights affectting this vertex.
-//
-//==========================================================================
-void gl_RecalcVertexHeights(vertex_t * v)
-{
-	if (gl_vertexsplit==NULL) gl_InitVertexData();
-
-	FVertexsplitInfo * vi = &gl_vertexsplit[v - vertexes];
-
-	int i,j,k;
-	float height;
-
-	//if (!v->dirty) return;
-	if (vi->validcount==gl_frameMS) return;
-
-	vi->numheights=0;
-	for(i=0;i<vi->numsectors;i++)
-	{
-		for(j=0;j<2;j++)
-		{
-			if (j==0) height=TO_GL(vi->sectors[i]->ceilingplane.ZatPoint(v));
-			else height=TO_GL(vi->sectors[i]->floorplane.ZatPoint(v));
-
-			for(k=0;k<vi->numheights;k++)
-			{
-				if (height==vi->heightlist[k]) break;
-				if (height<vi->heightlist[k])
-				{
-					memmove(&vi->heightlist[k+1],&vi->heightlist[k],sizeof(float)*(vi->numheights-k));
-					vi->heightlist[k]=height;
-					vi->numheights++;
-					break;
-				}
-			}
-			if (k==vi->numheights) vi->heightlist[vi->numheights++]=height;
-		}
-	}
-	if (vi->numheights<=2) vi->numheights=0;	// is not in need of any special attention
-	vi->validcount=gl_frameMS;
-	//v->dirty = false;
-
-}
-
-
-//==========================================================================
-//
-// 
-//
-//==========================================================================
-static void AddToVertex(const sector_t * sec, TArray<int> & list)
-{
-	int secno=sec-sectors;
-
-	for(unsigned i=0;i<list.Size();i++)
-	{
-		if (list[i]==secno) return;
-	}
-	list.Push(secno);
-}
-
-//==========================================================================
-//
-// 
-//
-//==========================================================================
-void gl_InitVertexData()
-{
-	if (!gl_seamless || gl_vertexsplit) return;
-
-	TArray<int> * vt_sectorlists;
-
-	int i,j,k;
-	unsigned int l;
-
-	vt_sectorlists = new TArray<int>[numvertexes];
-
-
-	for(i=0;i<numlines;i++)
-	{
-		line_t * line = &lines[i];
-
-		for(j=0;j<2;j++)
-		{
-			vertex_t * v = j==0? line->v1 : line->v2;
-
-			for(k=0;k<2;k++)
-			{
-				sector_t * sec = k==0? line->frontsector : line->backsector;
-
-				if (sec)
-				{
-					extsector_t::xfloor &x = sec->e->XFloor;
-
-					AddToVertex(sec, vt_sectorlists[v-vertexes]);
-					if (sec->heightsec) AddToVertex(sec->heightsec, vt_sectorlists[v-vertexes]);
-
-					for(l=0;l<x.ffloors.Size();l++)
-					{
-						F3DFloor * rover = x.ffloors[l];
-						if(!(rover->flags & FF_EXISTS)) continue;
-						if (rover->flags&FF_NOSHADE) continue; // FF_NOSHADE doesn't create any wall splits 
-
-						AddToVertex(rover->model, vt_sectorlists[v-vertexes]);
-					}
-				}
-			}
-		}
-	}
-
-	gl_vertexsplit = new FVertexsplitInfo[numvertexes];
-
-	for(i=0;i<numvertexes;i++)
-	{
-		int cnt = vt_sectorlists[i].Size();
-
-		gl_vertexsplit[i].validcount=-1;
-		gl_vertexsplit[i].numheights=0;
-		if (cnt>1)
-		{
-			gl_vertexsplit[i].numsectors= cnt;
-			gl_vertexsplit[i].sectors=new sector_t*[cnt];
-			gl_vertexsplit[i].heightlist = new float[cnt*2];
-			for(int j=0;j<cnt;j++)
-			{
-				gl_vertexsplit[i].sectors[j] = &sectors[vt_sectorlists[i][j]];
-			}
-		}
-		else
-		{
-			gl_vertexsplit[i].numsectors=0;
-		}
-	}
-
-	delete [] vt_sectorlists;
-	atterm(gl_CleanVertexData);
-}
-
-
-//==========================================================================
-//
-// 
-//
-//==========================================================================
-void gl_CleanVertexData()
-{
-	if (gl_vertexsplit)
-	{
-		for(int i=0;i<numvertexes;i++) if (gl_vertexsplit[i].numsectors>0)
-		{
-			delete [] gl_vertexsplit[i].sectors;
-			delete [] gl_vertexsplit[i].heightlist;
-		}
-		delete [] gl_vertexsplit;
-		gl_vertexsplit=NULL;
 	}
 }
 

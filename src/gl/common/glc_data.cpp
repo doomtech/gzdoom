@@ -55,6 +55,7 @@
 #include "gl/common/glc_renderer.h"
 #include "gl/common/glc_glow.h"
 #include "gl/common/glc_data.h"
+#include "gl/common/glc_clock.h"
 
 // common function that's still in an unprocessed file
 void gl_SetFogParams(int _fogdensity, PalEntry _outsidefogcolor, int _outsidefogdensity, int _skyfog);
@@ -62,6 +63,7 @@ void gl_InitModels();
 
 GLRenderSettings glset;
 long gl_frameMS;
+long gl_frameCount;
 
 EXTERN_CVAR(Int, gl_lightmode)
 
@@ -644,6 +646,256 @@ static void PrepareTransparentDoors(sector_t * sector)
 }
 
 
+//===========================================================================
+// 
+//
+//
+//===========================================================================
+
+static void AddDependency(sector_t *mysec, sector_t *addsec, int *checkmap)
+{
+	int mysecnum = int(mysec - sectors);
+	int addsecnum = int(addsec - sectors);
+	if (addsec != mysec) 
+	{
+		if (checkmap[addsecnum] < mysecnum)
+		{
+			checkmap[addsecnum] = mysecnum;
+			mysec->e->SectorDependencies.Push(addsec);
+		}
+	}
+
+	// This ignores vertices only used for seg splitting because those aren't needed here
+	for(int i=0; i < addsec->linecount; i++)
+	{
+		line_t *l = addsec->lines[i];
+		int vtnum1 = int(l->v1 - vertexes);
+		int vtnum2 = int(l->v2 - vertexes);
+
+		if (checkmap[numsectors + vtnum1] < mysecnum)
+		{
+			checkmap[numsectors + vtnum1] = mysecnum;
+			mysec->e->VertexDependencies.Push(&vertexes[vtnum1]);
+		}
+
+		if (checkmap[numsectors + vtnum2] < mysecnum)
+		{
+			checkmap[numsectors + vtnum2] = mysecnum;
+			mysec->e->VertexDependencies.Push(&vertexes[vtnum2]);
+		}
+	}
+}
+
+//===========================================================================
+// 
+// Sets up dependency lists for invalidating precalculated data
+//
+//===========================================================================
+
+static void SetupDependencies()
+{
+	int *checkmap = new int[numvertexes + numlines + numsectors];
+	TArray<int> *vt_linelists = new TArray<int>[numvertexes];
+
+	for(int i=0;i<numlines;i++)
+	{
+		line_t * line = &lines[i];
+		int v1i = int(line->v1 - vertexes);
+		int v2i = int(line->v2 - vertexes);
+
+		vt_linelists[v1i].Push(i);
+		vt_linelists[v2i].Push(i);
+	}
+	memset(checkmap, -1, sizeof(int) * (numvertexes + numlines + numsectors));
+
+
+	for(int i=0;i<numsectors;i++)
+	{
+		sector_t *mSector = &sectors[i];
+
+		AddDependency(mSector, mSector, checkmap);
+
+		for(unsigned j = 0; j < mSector->e->FakeFloor.Sectors.Size(); j++)
+		{
+			sector_t *sec = mSector->e->FakeFloor.Sectors[j];
+			// no need to make sectors dependent that don't make visual use of the heightsec
+			if (sec->GetHeightSec() == mSector)
+			{
+				AddDependency(mSector, sec, checkmap);
+			}
+		}
+		for(unsigned j = 0; j < mSector->e->XFloor.attached.Size(); j++)
+		{
+			sector_t *sec = mSector->e->XFloor.attached[j];
+			extsector_t::xfloor &x = sec->e->XFloor;
+
+			for(unsigned l = 0;l < x.ffloors.Size(); l++)
+			{
+				// Check if we really need to bother with this 3D floor
+				F3DFloor * rover = x.ffloors[l];
+				if (rover->model != mSector) continue;
+				if (!(rover->flags & FF_EXISTS)) continue;
+				if (rover->flags&FF_NOSHADE) continue; // FF_NOSHADE doesn't create any wall splits 
+
+				AddDependency(mSector, sec, checkmap);
+				break;
+			}
+		}
+
+		for(unsigned j = 0; j < mSector->e->VertexDependencies.Size(); j++)
+		{
+			int vtindex = int(mSector->e->VertexDependencies[j] - vertexes);
+			for(unsigned k = 0; k < vt_linelists[vtindex].Size(); k++)
+			{
+				int ln = vt_linelists[vtindex][k];
+
+				if (checkmap[numvertexes + numsectors + ln] < i)
+				{
+					checkmap[numvertexes + numsectors + ln] = i;
+					int sdnum1 = lines[ln].sidenum[0];
+					int sdnum2 = lines[ln].sidenum[1];
+					if (sdnum1 != NO_SIDE) mSector->e->SideDependencies.Push(&sides[sdnum1]);
+					if (sdnum2 != NO_SIDE) mSector->e->SideDependencies.Push(&sides[sdnum2]);
+				}
+
+			}
+		}
+		mSector->e->SectorDependencies.ShrinkToFit();
+		mSector->e->SideDependencies.ShrinkToFit();
+		mSector->e->VertexDependencies.ShrinkToFit();
+	}
+
+	delete checkmap;
+	delete vt_linelists;
+}
+
+
+//==========================================================================
+//
+// 
+//
+//==========================================================================
+static void AddToVertex(const sector_t * sec, TArray<int> & list)
+{
+	int secno=sec-sectors;
+
+	for(unsigned i=0;i<list.Size();i++)
+	{
+		if (list[i]==secno) return;
+	}
+	list.Push(secno);
+}
+
+//==========================================================================
+//
+// 
+//
+//==========================================================================
+static void InitVertexData()
+{
+	TArray<int> * vt_sectorlists;
+
+	int i,j,k;
+	unsigned int l;
+
+	vt_sectorlists = new TArray<int>[numvertexes];
+
+
+	for(i=0;i<numlines;i++)
+	{
+		line_t * line = &lines[i];
+
+		for(j=0;j<2;j++)
+		{
+			vertex_t * v = j==0? line->v1 : line->v2;
+
+			for(k=0;k<2;k++)
+			{
+				sector_t * sec = k==0? line->frontsector : line->backsector;
+
+				if (sec)
+				{
+					extsector_t::xfloor &x = sec->e->XFloor;
+
+					AddToVertex(sec, vt_sectorlists[v-vertexes]);
+					if (sec->heightsec) AddToVertex(sec->heightsec, vt_sectorlists[v-vertexes]);
+
+					for(l=0;l<x.ffloors.Size();l++)
+					{
+						F3DFloor * rover = x.ffloors[l];
+						if(!(rover->flags & FF_EXISTS)) continue;
+						if (rover->flags&FF_NOSHADE) continue; // FF_NOSHADE doesn't create any wall splits 
+
+						AddToVertex(rover->model, vt_sectorlists[v-vertexes]);
+					}
+				}
+			}
+		}
+	}
+
+	for(i=0;i<numvertexes;i++)
+	{
+		int cnt = vt_sectorlists[i].Size();
+
+		vertexes[i].dirty = true;
+		vertexes[i].numheights=0;
+		if (cnt>1)
+		{
+			vertexes[i].numsectors= cnt;
+			vertexes[i].sectors=new sector_t*[cnt];
+			vertexes[i].heightlist = new float[cnt*2];
+			for(int j=0;j<cnt;j++)
+			{
+				vertexes[i].sectors[j] = &sectors[vt_sectorlists[i][j]];
+			}
+		}
+		else
+		{
+			vertexes[i].numsectors=0;
+		}
+	}
+
+	delete [] vt_sectorlists;
+}
+
+//==========================================================================
+//
+// Recalculate all heights affectting this vertex.
+//
+//==========================================================================
+void gl_RecalcVertexHeights(vertex_t * v)
+{
+	int i,j,k;
+	float height;
+
+	Printf("Recalculating vertex %d\n", int(v-vertexes));
+	v->numheights=0;
+	for(i=0;i<v->numsectors;i++)
+	{
+		for(j=0;j<2;j++)
+		{
+			if (j==0) height=TO_GL(v->sectors[i]->ceilingplane.ZatPoint(v));
+			else height=TO_GL(v->sectors[i]->floorplane.ZatPoint(v));
+
+			for(k=0;k<v->numheights;k++)
+			{
+				if (height == v->heightlist[k]) break;
+				if (height < v->heightlist[k])
+				{
+					memmove(&v->heightlist[k+1], &v->heightlist[k], sizeof(float) * (v->numheights-k));
+					v->heightlist[k]=height;
+					v->numheights++;
+					break;
+				}
+			}
+			if (k==v->numheights) v->heightlist[v->numheights++]=height;
+		}
+	}
+	if (v->numheights<=2) v->numheights=0;	// is not in need of any special attention
+	v->dirty = false;
+}
+
+
 //=============================================================================
 //
 //
@@ -765,6 +1017,7 @@ void gl_PreprocessLevel()
 
 	static bool modelsdone=false;
 
+
 	LineSpecials[159]=LS_Sector_SetPlaneReflection;
 
 	if (!modelsdone)
@@ -776,7 +1029,7 @@ void gl_PreprocessLevel()
 	R_ResetViewInterpolation ();
 
 
-	// Nasty: I can't rely upon the sidedef assignments because ZDBSP likes to screw them up
+	// Nasty: I can't rely upon the sidedef assignments because older ZDBSPs liked to screw them up
 	// if the sidedefs are compressed and both sides are the same.
 	for(i=0;i<numsegs;i++)
 	{
@@ -801,10 +1054,18 @@ void gl_PreprocessLevel()
 
 	PrepareSegs();
 	PrepareSectorData();
+	InitVertexData();
+	SetupDependencies();
 	for(i=0;i<numsectors;i++) 
 	{
+		sectors[i].dirty = true;
 		sectors[i].sectornum = i;
 		PrepareTransparentDoors(&sectors[i]);
+	}
+
+	for(i=0;i<numsides;i++) 
+	{
+		sides[i].dirty = true;
 	}
 
 	if (GLRenderer != NULL) GLRenderer->SetupLevel();
@@ -834,6 +1095,12 @@ void gl_CleanLevelData()
 		AActor * next = it.Next();
 		mo->Destroy();
 		mo=next;
+	}
+
+	for(int i = 0; i < numvertexes; i++) if (vertexes[i].numsectors > 0)
+	{
+		delete [] vertexes[i].sectors;
+		delete [] vertexes[i].heightlist;
 	}
 
 	if (sides && sides[0].segs)
@@ -901,6 +1168,53 @@ FTextureID gl_GetSpriteFrame(unsigned sprite, int frame, int rot, angle_t ang, b
 
 //==========================================================================
 //
+// Mark sectors dirty
+//
+//==========================================================================
+int DirtyCount;
+
+void sector_t::SetDirty(bool dolines, bool dovertices)
+{
+	Dirty.Clock();
+	if (currentrenderer == 1 && this == &sectors[sectornum])
+	{
+		dirty = true;
+
+		if (dirtyframe[0] != gl_frameCount)
+		{
+			DirtyCount++;
+			dirtyframe[0] = gl_frameCount;
+			for(unsigned i = 0; i < e->SectorDependencies.Size(); i++)
+				e->SectorDependencies[i]->dirty = true;
+		}
+
+		if (dolines)
+		{
+			if (dirtyframe[1] != gl_frameCount)
+			{
+				dirtyframe[1] = gl_frameCount;
+
+				for(unsigned i = 0; i < e->SideDependencies.Size(); i++)
+					e->SideDependencies[i]->dirty = true;
+			}
+		}
+
+		if (dovertices)
+		{
+			if (dirtyframe[2] != gl_frameCount)
+			{
+				dirtyframe[2] = gl_frameCount;
+
+				for(unsigned i = 0; i < e->VertexDependencies.Size(); i++)
+					e->VertexDependencies[i]->dirty = true;
+			}
+		}
+	}
+	Dirty.Unclock();
+}
+
+//==========================================================================
+//
 // dumpgeometry
 //
 //==========================================================================
@@ -939,6 +1253,26 @@ CCMD(dumpgeometry)
 				}
 				Printf("\n");
 			}
+		}
+	}
+}
+
+CCMD(dumpdependencies)
+{
+	for(int i=0;i<numsectors;i++)
+	{
+		Printf(PRINT_LOG, "Dependencies of sector %d\n", i);
+		for(unsigned j = 0; j < sectors[i].e->VertexDependencies.Size(); j++)
+		{
+			Printf(PRINT_LOG,"\tVertex %d\n", int(sectors[i].e->VertexDependencies[j] - vertexes));
+		}
+		for(unsigned j = 0; j < sectors[i].e->SideDependencies.Size(); j++)
+		{
+			Printf(PRINT_LOG,"\tSide %d (Line %d)\n", int(sectors[i].e->SideDependencies[j] - sides), sectors[i].e->SideDependencies[j]->linenum);
+		}
+		for(unsigned j = 0; j < sectors[i].e->SectorDependencies.Size(); j++)
+		{
+			Printf(PRINT_LOG,"\tSector %d\n", int(sectors[i].e->SectorDependencies[j] - sectors));
 		}
 	}
 }

@@ -265,7 +265,6 @@ void GL1Renderer::SetupLevel()
 			vt->vt = vtx;
 		}
 	}
-	gl_InitVertexData();
 	mAngles.Pitch = 0.0f;
 }
 
@@ -277,7 +276,6 @@ void GL1Renderer::SetupLevel()
 
 void GL1Renderer::CleanLevelData()
 {
-	gl_CleanVertexData();
 }
 
 //===========================================================================
