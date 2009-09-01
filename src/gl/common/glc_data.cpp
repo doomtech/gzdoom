@@ -868,7 +868,6 @@ void gl_RecalcVertexHeights(vertex_t * v)
 	int i,j,k;
 	float height;
 
-	Printf("Recalculating vertex %d\n", int(v-vertexes));
 	v->numheights=0;
 	for(i=0;i<v->numsectors;i++)
 	{
