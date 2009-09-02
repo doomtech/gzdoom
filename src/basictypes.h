@@ -32,9 +32,6 @@ typedef uint64_t				QWORD;
 #ifndef USE_WINDOWS_DWORD
 typedef uint32					DWORD;
 #endif
-#ifdef __GNUC__
-typedef uint32					DWORD;
-#endif
 typedef uint32					BITFIELD;
 typedef int						INTBOOL;
 
@@ -63,7 +60,7 @@ union QWORD_UNION
 	QWORD AsOne;
 	struct
 	{
-#ifdef WORDS_BIG_ENDIAN
+#ifdef __BIG_ENDIAN__
 		unsigned int Hi, Lo;
 #else
 		unsigned int Lo, Hi;

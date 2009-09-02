@@ -1,4 +1,26 @@
-﻿August 29, 2009  (Changes by Graf Zahl)
+﻿September 1, 2009
+- Added directory detection to the -file parameter. This obsoletes -dir, so
+  that parameter is now gone.
+- Removed automatic ".wad" appending from FWadCollection::InitMultipleFiles()
+  since it isn't needed and prevented files without extensions from being
+  loaded. D_AddFile() already takes care of adding the extension if the
+  name as-given does not exist.
+- Fixed: Loading single files did not print a newline in the startup text.
+- Fixed: A_JumpIf(InTarget)Inventory jumped if the check amount was greater
+  than the item's max amount and the item was maxed.
+- Fixed: Some dmadds wads used zero-length sprites as placeholders. When you
+  ran dmadds to combine it with the IWAD's sprites, they would be replaced by
+  the IWAD's sprites, so when loading such wads, we should ignore those as
+  valid sprites. (Thanks to entryway for finding this.) See 22ventry's
+  22sprite.wad for an example.
+
+August 31, 2009
+- Basic Mac support: Everything compiles but does not yet link.
+- Replaced the use of autoconf's WORDS_BIGENDIAN with __BIG_ENDIAN__, since
+  latter comes predefined by GCC.
+
+August 29, 2009  (Changes by Graf Zahl)
+- fixed: R_InitColormaps was broken since the resource file code rewrite.
 - fixed: WIF_STAFF2_KICKBACK did not work anymore because it depended on conditions
   that were changed some time ago.
 - fixed: The damage inflictor for a rail attack was the shooter, not the puff.
