@@ -450,7 +450,7 @@ void FSectorRenderData::Validate(area_t in_area)
 void FSectorRenderData::Process(subsector_t *sub, area_t in_area)
 {
 	extsector_t::xfloor &x = mSector->e->XFloor;
-	GLDrawInfo *di = GLRenderer2->mDrawInfo;
+	GLDrawInfo *di = GLRenderer2->mCurrentDrawInfo;
 	int subno = sub - subsectors;
 
 	di->ss_renderflags[subno] |= SSRF_PROCESSED;

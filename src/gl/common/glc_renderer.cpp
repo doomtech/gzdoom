@@ -305,7 +305,9 @@ void GLRendererBase::RenderView (player_t* player)
 	}
 
 	SetFixedColormap (player);
-	RenderMainView(player, FieldOfView * 360.0f / FINEANGLES, ratio, fovratio);
+
+	sector_t * viewsector = RenderViewpoint(player->camera, NULL, FieldOfView * 360.0f / FINEANGLES, ratio, fovratio, true);
+	EndDrawScene(viewsector);
 
 	All.Unclock();
 }

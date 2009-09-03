@@ -199,7 +199,7 @@ void gl_SetupView(fixed_t viewx, fixed_t viewy, fixed_t viewz, angle_t viewangle
 //
 //-----------------------------------------------------------------------------
 
-static void ProcessScene()
+static void gl_ProcessScene()
 {
 	// reset the portal manager
 	GLPortal::StartFrame();
@@ -432,7 +432,7 @@ void gl_DrawScene()
 {
 	static int recursion=0;
 
-	ProcessScene();
+	gl_ProcessScene();
 
 	RenderScene(recursion);
 
@@ -647,7 +647,7 @@ static void gl_DrawBlend(sector_t * viewsector)
 //-----------------------------------------------------------------------------
 
 
-void gl_EndDrawScene(sector_t * viewsector)
+void GL1Renderer::EndDrawScene(sector_t * viewsector)
 {
 	// [BB] HUD models need to be rendered here. Make sure that
 	// gl_DrawPlayerSprites is only called once. Either to draw
@@ -806,17 +806,7 @@ void GL1Renderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 	M_Free(scr);
 }
 
-//-----------------------------------------------------------------------------
-//
-// R_RenderPlayerView - the main rendering function
-//
-//-----------------------------------------------------------------------------
 
-void GL1Renderer::RenderMainView (player_t *player, float fov, float ratio, float fovratio)
-{       
-	sector_t * viewsector = RenderViewpoint(player->camera, NULL, fov, ratio, fovratio, true);
-	gl_EndDrawScene(viewsector);
-}
 
 } // namespace
 
