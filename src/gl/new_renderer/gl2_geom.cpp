@@ -164,7 +164,6 @@ void FSectorRenderData::CreatePlane(FSectorPlaneObject *plane,
 	BasicProps.mPrimitiveType = GL_TRIANGLE_FAN;	// all subsectors are drawn as triangle fans
 	BasicProps.mDesaturation = cm->Desaturate;
 	BasicVertexProps.SetLighting(lightlevel, cm, 0/*rellight*/, additive, tex);
-	if (tex->gl_info.bFullbright) BasicVertexProps.r = BasicVertexProps.g = BasicVertexProps.b = 255;
 	BasicVertexProps.a = (unsigned char)quickertoint(alpha*255);
 
 
@@ -249,8 +248,6 @@ void FSectorRenderData::Validate(area_t in_area)
 		mAreas[2].valid =
 		mSector->dirty = false;
 	}
-
-	if (in_area >= area_above) return;
 
 	FSectorAreaData *area = &mAreas[in_area];
 	if (!area->valid)
@@ -456,6 +453,8 @@ void FSectorRenderData::Process(subsector_t *sub, area_t in_area)
 	di->ss_renderflags[subno] |= SSRF_PROCESSED;
 	if (sub->hacked & 1) di->AddHackedSubsector(sub);
 	if (sub->degenerate) return;
+
+	if (in_area >= area_above) in_area = area_normal;
 
 	Validate(in_area);
 

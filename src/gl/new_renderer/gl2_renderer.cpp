@@ -76,6 +76,7 @@ GL2Renderer::~GL2Renderer()
 	if (mShaders != NULL) delete mShaders;
 	if (mTextures != NULL) delete mTextures;
 	if (mRender2D != NULL) delete mRender2D;
+	if (mRender3D != NULL) delete mRender3D;
 	if (mDefaultMaterial != NULL) delete mDefaultMaterial;
 	if (mSkyDrawer != NULL) delete mSkyDrawer;
 	if (mGlobalDrawInfo != NULL) delete mGlobalDrawInfo;
@@ -93,6 +94,7 @@ void GL2Renderer::Initialize()
 	mShaders = new FShaderContainer;
 	mTextures = new FGLTextureManager;
 	mRender2D = new FPrimitiveBuffer2D;
+	mRender3D = new FPrimitiveBuffer3D;
 	mDefaultMaterial = new FMaterialContainer(NULL);
 	mSkyDrawer = new FSkyDrawer;
 	mGlobalDrawInfo = new GLDrawInfo;
@@ -755,6 +757,26 @@ void GL2Renderer::CollectScene()
 
 //-----------------------------------------------------------------------------
 //
+//
+//-----------------------------------------------------------------------------
+
+void GL2Renderer::RenderScene(int recursion)
+{
+	RenderAll.Clock();
+
+	//if (!gl_no_skyclear) GLPortal::RenderFirstSkyPortal(recursion);
+	
+	mShaders->SetCameraPos(&mCurrentDrawInfo->mViewpoint);
+
+	gl.BlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	gl.DepthFunc(GL_LESS);
+	gl.Enable(GL_ALPHA_TEST);
+	gl.Disable(GL_POLYGON_OFFSET_FILL);	// just in case
+	mCurrentDrawInfo->RenderNormal();
+}
+
+//-----------------------------------------------------------------------------
+//
 // gl_drawscene - this function renders the scene from the current
 // viewpoint, including mirrors and skyboxes and other portals
 // It is assumed that the GLPortal::EndFrame returns with the 
@@ -768,9 +790,9 @@ void GL2Renderer::DrawScene()
 
 	CollectScene();
 
-	/*
 	RenderScene(recursion);
 
+	/*
 	// Handle all portals after rendering the opaque objects but before
 	// doing all translucent stuff
 	recursion++;
