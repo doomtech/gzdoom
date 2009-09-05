@@ -156,6 +156,7 @@ void FSectorRenderData::CreatePlane(FSectorPlaneObject *plane,
 		BasicProps.mAlphaThreshold = 0;
 	}
 
+	plane->mType = FRenderObject::RO_FLAT;
 	plane->mMat = mat;
 	plane->mAlpha = alpha < 1.0 - FLT_EPSILON;
 	plane->mSector = &sectors[sec->sectornum];
@@ -581,7 +582,7 @@ void FSectorRenderData::CreatePlanePrimitives(GLDrawInfo *di, FSectorPlaneObject
 				if (!copied) 
 				{
 					prim->Copy(&ssprim->mPrimitive);
-					copied = true;
+					//copied = true;
 				}
 				else
 				{

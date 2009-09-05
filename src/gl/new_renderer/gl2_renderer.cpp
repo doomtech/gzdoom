@@ -773,6 +773,9 @@ void GL2Renderer::RenderScene(int recursion)
 	gl.Enable(GL_ALPHA_TEST);
 	gl.Disable(GL_POLYGON_OFFSET_FILL);	// just in case
 	mCurrentDrawInfo->RenderNormal();
+
+	gl.PopMatrix();
+	RenderAll.Unclock();
 }
 
 //-----------------------------------------------------------------------------
@@ -805,7 +808,7 @@ void GL2Renderer::DrawScene()
 
 
 
-
+CVAR(Bool, gl_testdraw, true, 0)
 //-----------------------------------------------------------------------------
 //
 //
@@ -816,9 +819,10 @@ void GL2Renderer::ProcessScene()
 
 	StartDrawInfo(mGlobalDrawInfo);
 	DrawScene();
-	EndDrawInfo();
 
 	/*
+	if (gl_testdraw)
+	{
 	// for testing. The sky must be rendered with depth buffer disabled.
 	gl.Disable(GL_DEPTH_TEST);	
 	// Just a quick hack to check the features
@@ -828,8 +832,13 @@ void GL2Renderer::ProcessScene()
 	}
 	else
 	{
-		mSkyDrawer->RenderSky(sky1texture, FNullTextureID(), 0x80ffffff, mSky1Pos, mSky2Pos, 0);
-	}*/
+		mSkyDrawer->RenderSky(sky1texture, FNullTextureID(), 0, mSky1Pos, mSky2Pos, 0);
+	}
+	}
+	*/
+
+	EndDrawInfo();
+
 }
 
 }

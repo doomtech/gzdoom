@@ -171,6 +171,7 @@ public:
 			}
 			}
 		}
+		GLRenderer2->mRender3D->Flush();
 	}
 
 

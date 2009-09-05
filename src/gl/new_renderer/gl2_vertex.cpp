@@ -421,7 +421,7 @@ bool FVertexBuffer3D::Bind()
 	BindBuffer();
 	gl.BufferData(GL_ARRAY_BUFFER, mMaxSize * sizeof(FVertex3D), NULL, GL_STREAM_DRAW);
 
-	glVertexPointer(2,GL_FLOAT, sizeof(FVertex3D), &VT3->x);
+	glVertexPointer(3,GL_FLOAT, sizeof(FVertex3D), &VT3->x);
 	glTexCoordPointer(2,GL_FLOAT, sizeof(FVertex3D), &VT3->u);
 	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(FVertex3D), &VT3->r);
 	gl.VertexAttribPointer(FShaderObject::attrFogColor, 4, GL_UNSIGNED_BYTE, true, sizeof(FVertex3D), &VT3->fr);
@@ -459,11 +459,12 @@ void FPrimitive3D::Draw()
 		{
 			GLRenderer2->mShaders->SetActiveShader(NULL);
 		}
+
+		gl.BlendEquation(mBlendEquation);
+		gl.BlendFunc(mSrcBlend, mDstBlend);
+		gl.AlphaFunc(GL_GEQUAL, mAlphaThreshold);
 	}
 
-	gl.BlendEquation(mBlendEquation);
-	gl.BlendFunc(mSrcBlend, mDstBlend);
-	gl.AlphaFunc(GL_GEQUAL, mAlphaThreshold);
 
 	gl.DrawArrays(mPrimitiveType, mVertexStart, mVertexCount); 
 }

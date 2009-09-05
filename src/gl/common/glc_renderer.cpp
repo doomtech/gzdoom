@@ -188,6 +188,15 @@ void GLRendererBase::SetCameraPos(fixed_t viewx, fixed_t viewy, fixed_t viewz, a
 	GLRenderer->mCameraPos = FVector3(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
 }
 	
+void GLRendererBase::SetCameraPos(const FVector3 &vec, angle_t viewangle)
+{
+	float fviewangle=(float)(viewangle>>ANGLETOFINESHIFT)*360.0f/FINEANGLES;
+
+	GLRenderer->mAngles.Yaw = 270.0f-fviewangle;
+	GLRenderer->mViewVector = FVector2(cos(DEG2RAD(fviewangle)), sin(DEG2RAD(fviewangle)));
+	GLRenderer->mCameraPos = vec;
+}
+	
 //-----------------------------------------------------------------------------
 //
 // Renders one viewpoint in a scene
