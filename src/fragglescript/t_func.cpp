@@ -2365,12 +2365,11 @@ void FParser::SF_SetLineTexture(void)
 			for (i = -1; (i = P_FindLineFromID(tag, i)) >= 0;) 
 			{
 				// bad sidedef, Hexen just SEGV'd here!
-				if(lines[i].sidenum[side] != NO_SIDE)
+				if(lines[i].sidedef[side] != NULL)
 				{
-					side_t * sided = &sides[lines[i].sidenum[side]];
 					if (position >=0 && position <=2)
 					{
-						sided->SetTexture(position, texturenum);
+						lines[i].sidedef[side]->SetTexture(position, texturenum);
 					}
 				}
 			}
@@ -2384,10 +2383,9 @@ void FParser::SF_SetLineTexture(void)
 			// set all sectors with tag 
 			for (i = -1; (i = P_FindLineFromID(tag, i)) >= 0;) 
 			{ 
-				if(lines[i].sidenum[side]!=NO_SIDE)
+				side_t *sided = lines[i].sidedef[side];
+				if(sided != NULL)
 				{ 
-					side_t * sided=&sides[lines[i].sidenum[side]];
-
 					if(sections & 1) sided->SetTexture(side_t::top, picnum);
 					if(sections & 2) sided->SetTexture(side_t::mid, picnum);
 					if(sections & 4) sided->SetTexture(side_t::bottom, picnum);

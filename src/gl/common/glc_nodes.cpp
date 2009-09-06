@@ -330,10 +330,12 @@ bool gl_LoadGLSegs(FileReader * f, wadlump_t * lump)
 	
 					
 					ml->side=LittleShort(ml->side);
-					segs[i].sidedef = &sides[ldef->sidenum[ml->side]];
-					segs[i].frontsector = sides[ldef->sidenum[ml->side]].sector;
-					if (ldef->flags & ML_TWOSIDED && ldef->sidenum[ml->side^1]!=NO_SIDE)
-						segs[i].backsector = sides[ldef->sidenum[ml->side^1]].sector;
+					segs[i].sidedef = ldef->sidedef[ml->side];
+					segs[i].frontsector = ldef->sidedef[ml->side]->sector;
+					if (ldef->flags & ML_TWOSIDED && ldef->sidedef[ml->side^1] != NULL)
+					{
+						segs[i].backsector = ldef->sidedef[ml->side^1]->sector;
+					}
 					else
 					{
 						ldef->flags &= ~ML_TWOSIDED;
@@ -374,10 +376,12 @@ bool gl_LoadGLSegs(FileReader * f, wadlump_t * lump)
 	
 					
 					ml->side=LittleShort(ml->side);
-					segs[i].sidedef = &sides[ldef->sidenum[ml->side]];
-					segs[i].frontsector = sides[ldef->sidenum[ml->side]].sector;
-					if (ldef->flags & ML_TWOSIDED && ldef->sidenum[ml->side^1]!=NO_SIDE)
-						segs[i].backsector = sides[ldef->sidenum[ml->side^1]].sector;
+					segs[i].sidedef = ldef->sidedef[ml->side];
+					segs[i].frontsector = ldef->sidedef[ml->side]->sector;
+					if (ldef->flags & ML_TWOSIDED && ldef->sidedef[ml->side^1] != NULL)
+					{
+						segs[i].backsector = ldef->sidedef[ml->side^1]->sector;
+					}
 					else
 					{
 						ldef->flags &= ~ML_TWOSIDED;
