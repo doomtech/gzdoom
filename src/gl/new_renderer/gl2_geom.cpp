@@ -50,15 +50,12 @@ namespace GLRendererNew
 //
 //===========================================================================
 
-void MakeTextureMatrix(GLSectorPlane &splane, FMaterial *mat, Matrix3x4 &matx)
+void MakeTextureMatrix(GLSectorPlane &splane, Matrix3x4 &matx)
 {
 	matx.MakeIdentity();
-	if (mat != NULL)
-	{
-		matx.Scale(TO_GL(splane.xscale), TO_GL(splane.yscale), 1);
-		matx.Translate(TO_GL(splane.xoffs), TO_GL(splane.yoffs), 0);
-		matx.Rotate(0, 0, 1, -ANGLE_TO_FLOAT(splane.angle));
-	}
+	matx.Scale(TO_GL(splane.xscale), TO_GL(splane.yscale), 1);
+	matx.Translate(TO_GL(splane.xoffs), TO_GL(splane.yoffs), 0);
+	matx.Rotate(0, 0, 1, -ANGLE_TO_FLOAT(splane.angle));
 }
 
 //===========================================================================
@@ -86,7 +83,7 @@ void FSectorRenderData::CreateDynamicPrimitive(FSectorPlaneObject *plane, FVerte
 	GLSectorPlane splane;
 
 	splane.GetFromSector(mSector, !plane->mUpside);
-	MakeTextureMatrix(splane, plane->mMat, matx);
+	MakeTextureMatrix(splane, matx);
 	
 	for(int j=0; j<sub->numlines; j++, vert++)
 	{
@@ -119,13 +116,12 @@ void FSectorRenderData::CreatePlane(FSectorPlaneObject *plane,
 {
 
 	FTexture *tex = TexMan[splane.texture];
-	FMaterial *mat = GLRenderer2->GetMaterial(tex, false, 0);
 	Matrix3x4 matx;
 
 	FPrimitive3D BasicProps;
 	FVertex3D BasicVertexProps;
 
-	MakeTextureMatrix(splane, mat, matx);
+	MakeTextureMatrix(splane, matx);
 	memset(&BasicProps, 0, sizeof(BasicProps));
 	memset(&BasicVertexProps, 0, sizeof(BasicVertexProps));
 	
@@ -157,11 +153,12 @@ void FSectorRenderData::CreatePlane(FSectorPlaneObject *plane,
 	}
 
 	plane->mType = FRenderObject::RO_FLAT;
-	plane->mMat = mat;
+	plane->mMat = GLRenderer2->GetMaterial(tex, false, 0);	// Fixme: probably not the best sorting info...
 	plane->mAlpha = alpha < 1.0 - FLT_EPSILON;
 	plane->mSector = &sectors[sec->sectornum];
 	BasicProps.SetRenderStyle(style, opaque);
-	BasicProps.mMaterial = mat;
+	//BasicProps.mMaterial = mat;
+	BasicProps.mTexId = splane.texture.GetIndex();
 	BasicProps.mPrimitiveType = GL_TRIANGLE_FAN;	// all subsectors are drawn as triangle fans
 	BasicProps.mDesaturation = cm->Desaturate;
 	BasicVertexProps.SetLighting(lightlevel, cm, 0/*rellight*/, additive, tex);
@@ -289,7 +286,7 @@ void FSectorRenderData::Validate(area_t in_area)
 		Colormap = *sec->ColorMap;
 		stack = sec->FloorSkyBox && sec->FloorSkyBox->bAlways;
 		alpha = stack ? sec->FloorSkyBox->PlaneAlpha/65536.0f : 1.0f-sec->GetFloorReflect();
-		if (alpha != 0.0f && sec->GetTexture(sector_t::ceiling) != skyflatnum)
+		if (alpha != 0.0f && sec->GetTexture(sector_t::floor) != skyflatnum)
 		{
 			if (x.ffloors.Size())
 			{
@@ -303,7 +300,7 @@ void FSectorRenderData::Validate(area_t in_area)
 			}
 			splane.GetFromSector(sec, false);
 			if (sec->transdoor) splane.plane.d -= 1;
-			area->mCeiling.mPlaneType = SSRF_RENDERFLOOR;
+			area->mFloor.mPlaneType = SSRF_RENDERFLOOR;
 			CreatePlane(&area->mFloor, in_area, sec, splane, lightlevel, &Colormap, alpha, false, true, !stack);
 		}
 		else area->mFloor.mPrimitiveIndex = -1;
@@ -570,7 +567,7 @@ void FSectorRenderData::CreatePlanePrimitives(GLDrawInfo *di, FSectorPlaneObject
 	*/
 	{
 		// Draw the subsectors belonging to this sector
-		for (int i=0; i<mSector->subsectorcount; i++)
+		for (int i=0; i<mSector->subsectorcount; i++, ssprim++)
 		{
 			subsector_t * sub = mSector->subsectors[i];
 
@@ -582,7 +579,7 @@ void FSectorRenderData::CreatePlanePrimitives(GLDrawInfo *di, FSectorPlaneObject
 				if (!copied) 
 				{
 					prim->Copy(&ssprim->mPrimitive);
-					//copied = true;
+					copied = true;
 				}
 				else
 				{

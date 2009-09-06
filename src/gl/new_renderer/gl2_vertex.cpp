@@ -308,6 +308,29 @@ void FPrimitive3D::SetRenderStyle(FRenderStyle style, bool opaque, bool allowcol
 		&mTextureMode, &mSrcBlend, &mDstBlend, &mBlendEquation);
 }
 
+//----------------------------------------------------------------------------
+//
+// copies an engine primitive to the render list (also translates texture animations)
+//
+//----------------------------------------------------------------------------
+
+void FPrimitive3D::Copy(FPrimitive3D *other)
+{
+	// We must re-get the material every frame to handle animated textures properly
+	FTexture *tex = TexMan.ByIndexTranslated(other->mTexId);
+
+	mPrimitiveType = other->mPrimitiveType;
+	mMaterial = GLRenderer2->GetMaterial(tex, false, 0);
+	mClamp = other->mClamp;
+	mTextureMode = other->mTextureMode;
+	mDesaturation = other->mDesaturation;
+	mAlphaThreshold = other->mAlphaThreshold;
+	mTranslucent = other->mTranslucent;
+	mSrcBlend = other->mSrcBlend;
+	mDstBlend = other->mDstBlend;
+	mBlendEquation = other->mBlendEquation;
+	mCopy = false;
+}
 
 //----------------------------------------------------------------------------
 //
