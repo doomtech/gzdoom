@@ -767,6 +767,7 @@ void GL2Renderer::RenderScene(int recursion)
 	//if (!gl_no_skyclear) GLPortal::RenderFirstSkyPortal(recursion);
 	
 	mShaders->SetCameraPos(&mCurrentDrawInfo->mViewpoint);
+	mShaders->SetFogType(gl_fogmode == 2);
 
 	gl.BlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 	gl.DepthFunc(GL_LESS);

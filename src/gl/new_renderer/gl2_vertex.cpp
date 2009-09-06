@@ -381,6 +381,7 @@ void FVertex3D::SetLighting(int lightlevel, FDynamicColormap *cm, int rellight, 
 	}
 	else
 	{
+		fogdensity *= -(1.442692f / 64000.f);	// * -1/log(2) - can be done here better than in the shader.
 		if (glset.lightmode == 2 && fogcolor == 0)
 		{
 			const float MAXDIST = 256.f;

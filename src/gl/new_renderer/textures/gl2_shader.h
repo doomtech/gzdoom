@@ -269,8 +269,8 @@ public:
 	void SetCameraPos(const FVector3 *vec)
 	{
 		mCameraPos[0] = vec->X;
-		mCameraPos[1] = vec->Y;
-		mCameraPos[2] = vec->Z;
+		mCameraPos[1] = vec->Z;
+		mCameraPos[2] = vec->Y;
 		mCameraPos[3] = 0;
 		if (mActiveShader != NULL) mActiveShader->setCameraPos(mCameraPos);
 	}
