@@ -25,9 +25,20 @@ void DumpCPUInfo(const CPUInfo *cpu)
 #include <mmintrin.h>
 #include <emmintrin.h>
 
+
 #ifdef __GNUC__
+#if defined(__i386__) && defined(__PIC__)
+// %ebx may by the PIC register. */
+#define __cpuid(output, func) \
+	__asm__ __volatile__("xchgl\t%%ebx, %1\n\t" \
+						 "cpuid\n\t" \
+						 "xchgl\t%%ebx, %1\n\t" \
+		: "=a" ((output)[0]), "=r" ((output)[1]), "=c" ((output)[2]), "=d" ((output)[3]) \
+		: "a" (func));
+#else
 #define __cpuid(output, func) __asm__ __volatile__("cpuid" : "=a" ((output)[0]),\
 	"=b" ((output)[1]), "=c" ((output)[2]), "=d" ((output)[3]) : "a" (func));
+#endif
 #endif
 
 void CheckCPUID(CPUInfo *cpu)
@@ -85,9 +96,9 @@ haveid:
 
 	// Get vendor ID
 	__cpuid(foo, 0);
-	cpu->VendorID[0] = foo[1];
-	cpu->VendorID[1] = foo[3];
-	cpu->VendorID[2] = foo[2];
+	cpu->dwVendorID[0] = foo[1];
+	cpu->dwVendorID[1] = foo[3];
+	cpu->dwVendorID[2] = foo[2];
 	if (foo[1] == MAKE_ID('A','u','t','h') &&
 		foo[3] == MAKE_ID('e','n','t','i') &&
 		foo[2] == MAKE_ID('c','A','M','D'))
@@ -151,9 +162,9 @@ haveid:
 				cpu->AMDFamily += (foo[0] >> 20) & 0xFF;
 				cpu->AMDModel |= (foo[0] >> 12) & 0xF0;
 			}
+			cpu->FeatureFlags[3] = foo[3];	// AMD feature flags
 		}
 	}
-
 #endif
 }
 

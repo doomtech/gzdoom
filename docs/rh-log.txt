@@ -1,4 +1,39 @@
-﻿September 2, 2009  (Changes by Graf Zahl)
+September 6, 2009  (Changes by Graf Zahl)
+- Added PinkSilver's SetActorVelocity code submission (with optimizations.)
+
+September 5, 2009
+- Added the frandom decorate function, which is exactly like random except
+  that it works with floating point instead of integers.
+- Split the bounce types completely into separate flags and consolidated
+  the various bounce-related flags spread across the different Actor flags
+  field into a single BounceFlags field.
+- Fixed: P_BounceWall() should calculate the XY velocity using a real
+  square root and not P_AproxDistance(), because the latter can cause
+  them to speed up or slow down.
+
+September 5, 2009  (Changes by Graf Zahl)
+- made menu dimming a mapping option but kept the CVARS as user override.
+
+September 4, 2009
+- Fixed: R_CreatePlayerTranslation() only initialized the first truecolor
+  palette entry.
+- Fixed: D3DPal::Update() used BorderColor == 0 as the condition for skipping
+  an entry. It should be SM14 as in UploadPalette().
+- Fixed: The aliasing of CPUInfo was still wrong. (Yarr! The things I do
+  for you, GCC!) The AMD feature flags weren't stored anywhere, either; not
+  that it really matters.
+- Add an alternate PIC-compliant __cpuid macro in x86.cpp.
+- Fixed: S_LoadSound() did not byte-swap the frequency and length it reads
+  from DMX sounds.
+- Fixed: PNGTexture must not use the FArchive >> operator as a short hand
+  for reading 4-byte integers, because that operator works with little
+  endian numbers--a no-op on Intel processors, but bad joojoo on PowerPCs.
+
+September 3, 2009  (Changes by Graf Zahl)
+- fixed: Weapons must first check if they can be switched and afterwards
+  if they can be fired. These checks were reversed.
+
+September 2, 2009  (Changes by Graf Zahl)
 - fixed: The newly altered WAD code could not load embedded WADs anymore.
 
 September 1, 2009
