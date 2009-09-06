@@ -53,13 +53,13 @@ CVAR (Bool, dumpsections, false, 0)
 
 inline vertex_t *V1(side_t *s)
 {
-	line_t *ln = &lines[s->linenum];
+	line_t *ln = s->linedef;
 	return s == &sides[ln->sidenum[0]]? ln->v1: ln->v2;
 }
 
 inline vertex_t *V2(side_t *s)
 {
-	line_t *ln = &lines[s->linenum];
+	line_t *ln = s->linedef;
 	return s == &sides[ln->sidenum[0]]? ln->v2: ln->v1;
 }
 

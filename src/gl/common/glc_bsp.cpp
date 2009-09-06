@@ -263,6 +263,7 @@ static void DoSubsector(subsector_t * sub)
 		// Due to the way a BSP works such a subsector can never be visible
 		if (!sector->heightsec || sector->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC || in_area!=area_default)
 		{
+			SetupFlat.Clock();
 			if (sector != sub->render_sector)
 			{
 				sector = sub->render_sector;
@@ -270,7 +271,6 @@ static void DoSubsector(subsector_t * sub)
 				// This means we need the heightsec parts and light info of the render sector, not the actual one!
 				fakesector = gl_FakeFlat(sector, &fake, false);
 			}
-			SetupFlat.Clock();
 			GLRenderer->ProcessSector(fakesector, sub);
 			SetupFlat.Unclock();
 		}

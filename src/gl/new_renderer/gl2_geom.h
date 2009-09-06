@@ -32,12 +32,6 @@ struct FRenderObject
 //
 //==========================================================================
 
-struct FSubsectorPrimitive
-{
-	int mSubsector;
-	FPrimitive3D mPrimitive;
-};
-
 struct FSectorPlaneObject : public FRenderObject
 {
 	sector_t *mSector;
@@ -69,7 +63,7 @@ struct FSectorRenderData
 	sector_t *mSector;
 	FSectorAreaData mAreas[3];
 	TArray<FVertex3D> mVertices;
-	TArray<FSubsectorPrimitive> mPrimitives;
+	TArray<FPrimitive3D> mPrimitives;
 
 	void CreatePlanePrimitives(GLDrawInfo *di, FSectorPlaneObject *plane, FPrimitiveBuffer3D *buffer);
 
@@ -83,6 +77,48 @@ struct FSectorRenderData
 	void Init(int sector);
 	void Validate(area_t in_area);
 	void Process(subsector_t *sub, area_t in_area);
+};
+
+//==========================================================================
+//
+// Flats 
+//
+//==========================================================================
+
+struct FWallObject : public FRenderObject
+{
+	seg_t *mSeg;
+	side_t *mSide;
+	int mTier;
+	bool mPolyobj;
+	bool mHackSeg;
+	bool mFogBoundary;
+	bool mLightEffect;		// do not render when a fullbright effect is on
+	int mPrimitiveCount;
+	int mPrimitiveIndex;
+
+};
+
+struct FWallAreaData
+{
+	bool valid;
+	FWallObject mUpper;
+	FWallObject mMiddle;
+	FWallObject mLower;
+	FWallObject mFogBoundary;	// this must be separate because it can overlay mMiddle
+	TArray<FWallObject> m3DFloorParts;
+};
+
+struct FWallRenderData
+{
+	side_t *mSide;
+	FWallAreaData mAreas[3];
+	TArray<FVertex3D> mVertices;
+	TArray<FPrimitive3D> mPrimitives;
+
+	void Init(int sector);
+	void Validate(area_t in_area);
+	void Process(seg_t *seg, area_t in_area);
 };
 
 

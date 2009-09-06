@@ -605,7 +605,7 @@ static void InitVertexData()
 
 static void GetSideVertices(int sdnum, FVector2 *v1, FVector2 *v2)
 {
-	line_t *ln = &lines[sides[sdnum].linenum];
+	line_t *ln = sides[sdnum].linedef;
 	if (ln->sidenum[0] == sdnum) 
 	{
 		v1->X = ln->v1->fx;

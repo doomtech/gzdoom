@@ -505,7 +505,7 @@ CCMD(dumpdependencies)
 		}
 		for(unsigned j = 0; j < sectors[i].e->SideDependencies.Size(); j++)
 		{
-			Printf(PRINT_LOG,"\tSide %d (Line %d)\n", int(sectors[i].e->SideDependencies[j] - sides), sectors[i].e->SideDependencies[j]->linenum);
+			Printf(PRINT_LOG,"\tSide %d (Line %d)\n", int(sectors[i].e->SideDependencies[j] - sides), (sectors[i].e->SideDependencies[j]->linedef-lines));
 		}
 		for(unsigned j = 0; j < sectors[i].e->SectorDependencies.Size(); j++)
 		{

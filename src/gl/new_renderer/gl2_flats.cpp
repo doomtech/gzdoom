@@ -22,7 +22,7 @@
 //
 // ----------------------------------------------------------------------------
 //
-// Geometry data mainenance
+// Flat processing / rendering
 //
 
 #include "gl/gl_include.h"
@@ -170,17 +170,17 @@ void FSectorRenderData::CreatePlane(FSectorPlaneObject *plane,
 	plane->mLightEffect = !splane.texture.Exists();
 	plane->mPrimitiveIndex = mPrimitives.Reserve(sec->subsectorcount);
 
-	FSubsectorPrimitive *prim = &mPrimitives[plane->mPrimitiveIndex];
+	FPrimitive3D *prim = &mPrimitives[plane->mPrimitiveIndex];
 
 	for(int i=0;i<sec->subsectorcount;i++, prim++)
 	{
 		subsector_t *sub = sec->subsectors[i];
 
-		prim->mPrimitive = BasicProps;
-		prim->mPrimitive.mVertexCount = sub->numlines;
-		prim->mPrimitive.mVertexStart = mVertices.Reserve(sub->numlines);
+		*prim = BasicProps;
+		prim->mVertexCount = sub->numlines;
+		prim->mVertexStart = mVertices.Reserve(sub->numlines);
 
-		FVertex3D *vert = &mVertices[prim->mPrimitive.mVertexStart];
+		FVertex3D *vert = &mVertices[prim->mVertexStart];
 		for(int j=0; j<sub->numlines; j++, vert++)
 		{
 			vertex_t *v = segs[sub->firstline + j].v1;
@@ -555,7 +555,7 @@ void FSectorRenderData::CreatePlanePrimitives(GLDrawInfo *di, FSectorPlaneObject
 	FPrimitive3D *prim;
 	FVertex3D *verts;
 	bool copied = false;
-	FSubsectorPrimitive *ssprim = &mPrimitives[plane->mPrimitiveIndex];
+	FPrimitive3D *ssprim = &mPrimitives[plane->mPrimitiveIndex];
 
 	/* don't know yet if it's needed
 	if (sub)
@@ -574,19 +574,19 @@ void FSectorRenderData::CreatePlanePrimitives(GLDrawInfo *di, FSectorPlaneObject
 			// This is just a quick hack to make translucent 3D floors and portals work.
 			if (di->ss_renderflags[sub-subsectors]&renderflags || istrans)
 			{
-				int numverts = ssprim->mPrimitive.mVertexCount;
+				int numverts = ssprim->mVertexCount;
 				int primidx = buffer->NewPrimitive(numverts, prim, verts);
 				if (!copied) 
 				{
-					prim->Copy(&ssprim->mPrimitive);
+					prim->Copy(ssprim);
 					copied = true;
 				}
 				else
 				{
 					prim->mCopy = true;
-					prim->mPrimitiveType = ssprim->mPrimitive.mPrimitiveType;
+					prim->mPrimitiveType = ssprim->mPrimitiveType;
 				}
-				memcpy(verts, &mVertices[ssprim->mPrimitive.mVertexStart], numverts * sizeof(FVertex3D));
+				memcpy(verts, &mVertices[ssprim->mVertexStart], numverts * sizeof(FVertex3D));
 			}
 		}
 
@@ -604,7 +604,7 @@ void FSectorRenderData::CreatePlanePrimitives(GLDrawInfo *di, FSectorPlaneObject
 
 				prim->mCopy = true;
 				prim->mPrimitiveType = GL_TRIANGLE_FAN;
-				CreateDynamicPrimitive(plane, &mVertices[ssprim->mPrimitive.mVertexCount], verts, node->sub);
+				CreateDynamicPrimitive(plane, &mVertices[ssprim->mVertexCount], verts, node->sub);
 				node = node->next;
 			}
 		}

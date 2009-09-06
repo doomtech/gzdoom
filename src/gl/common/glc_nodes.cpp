@@ -140,7 +140,7 @@ int gl_CheckForMissingSegs()
 	for(int i=0;i<numsides;i++)
 	{
 		side_t * side =&sides[i];
-		line_t * line = &lines[side->linenum];
+		line_t * line = side->linedef;
 
 		TVector2<double> lvec(line->dx, line->dy);
 		float linelen = float(lvec.Length());
