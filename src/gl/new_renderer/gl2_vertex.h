@@ -75,6 +75,8 @@ struct FPrimitive3D
 	void Render(int mode, FVertex3D *vstart);
 	void SetRenderStyle(FRenderStyle style, bool opaque, bool allowcolorblending = false);
 	void SetLighting(int lightlevel, FDynamicColormap *cm, int extralight, bool additive, FTexture *tex);
+
+	static void DrawPrimitive(int ptype, FVertex3D *vert, int numverts);
 };
 
 struct FVertex2D

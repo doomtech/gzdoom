@@ -544,7 +544,6 @@ void FSectorRenderData::Process(subsector_t *sub, area_t in_area)
 //
 //
 //===========================================================================
-#define NO_VBO
 
 void FSectorRenderData::CreatePrimitives(GLDrawInfo *di, FSectorPlaneObject *plane)
 {
@@ -591,14 +590,7 @@ void FSectorRenderData::CreatePrimitives(GLDrawInfo *di, FSectorPlaneObject *pla
 				dynvertices.Resize(numverts);
 
 				CreateDynamicPrimitive(plane, &dynvertices[0], node->sub);
-				gl.Begin(GL_TRIANGLE_FAN);
-				for(int i=0;i<numverts;i++)
-				{
-					gl.TexCoord2fv(&dynvertices[i].u);
-					gl.Vertex3fv(&dynvertices[i].x);
-				}
-				gl.End();
-
+				FPrimitive3D::DrawPrimitive(GL_TRIANGLE_FAN, &dynvertices[0], numverts);
 				node = node->next;
 			}
 		}

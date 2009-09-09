@@ -300,6 +300,24 @@ void FPrimitiveBuffer2D::Flush()
 //
 //----------------------------------------------------------------------------
 
+void FPrimitive3D::DrawPrimitive(int ptype, FVertex3D *verts, int numverts)
+{
+	gl.Begin(ptype);
+	for(int i=0;i<numverts;i++)
+	{
+		gl.TexCoord2fv(&verts[i].u);
+		gl.Vertex3fv(&verts[i].x);
+	}
+	gl.End();
+}
+
+
+//----------------------------------------------------------------------------
+//
+//
+//
+//----------------------------------------------------------------------------
+
 void FPrimitive3D::Render(int what, FVertex3D *vert)
 {
 	if (what & PR_TEXTURE)
@@ -331,14 +349,7 @@ void FPrimitive3D::Render(int what, FVertex3D *vert)
 
 	if (what & PR_PRIM)
 	{
-		vert += mVertexStart;
-		gl.Begin(mPrimitiveType);
-		for(int i=0;i<mVertexCount;i++)
-		{
-			gl.TexCoord2fv(&vert[i].u);
-			gl.Vertex3fv(&vert[i].x);
-		}
-		gl.End();
+		DrawPrimitive(mPrimitiveType, vert + mVertexStart, mVertexCount);
 	}
 }
 
