@@ -957,6 +957,7 @@ void FGLTexture::SetupShader(int clampmode, int warped, int &cm, int translation
 		}
 		else 
 		{
+			GLTexture::Unbind(1);
 			usebright = false;
 		}
 

@@ -117,6 +117,8 @@ static inline const char *MakeSaveSig()
 #ifdef unix
 #define HOME_DIR "~/.gzdoom"
 #define GAME_DIR ".gzdoom"
+#elif defined(__APPLE__)
+#define GAME_DIR GAMENAME
 #else
 #define CDROM_DIR "C:\\GZDOOMDAT"
 #endif

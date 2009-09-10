@@ -166,7 +166,7 @@ else( WIN32 )
 	if( NOT SDL_FOUND )
 		message( SEND_ERROR "SDL is required for building." )
 	endif( NOT SDL_FOUND )
-	set( ZDOOM_LIBS "${SDL_LIBRARY}" )
+	set( ZDOOM_LIBS ${ZDOOM_LIBS} "${SDL_LIBRARY}" )
 	include_directories( "${SDL_INCLUDE_DIR}" )
 
 	find_path( FPU_CONTROL_DIR fpu_control.h )
@@ -860,7 +860,7 @@ add_executable( zdoom WIN32
 set_source_files_properties( xlat/parse_xlat.cpp PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/xlat_parser.c" )
 set_source_files_properties( sc_man.cpp PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/sc_man_scanner.h" )
 
-target_link_libraries( zdoom ${ZDOOM_LIBS} bzip2 gme gdtoa dumb lzma )
+target_link_libraries( zdoom ${ZDOOM_LIBS} gme gdtoa dumb lzma )
 include_directories( .
 	g_doom
 	g_heretic

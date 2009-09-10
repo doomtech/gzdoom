@@ -1426,34 +1426,12 @@ static const char *BaseFileSearch (const char *file, const char *ext, bool lookf
 		{
 			if (stricmp (key, "Path") == 0)
 			{
-				const char *dir;
-				FString homepath;
+				FString dir;
 
-				if (*value == '$')
+				dir = NicePath(value);
+				if (dir.IsNotEmpty())
 				{
-					if (stricmp (value + 1, "progdir") == 0)
-					{
-						dir = progdir;
-					}
-					else
-					{
-						dir = getenv (value + 1);
-					}
-				}
-#ifdef unix
-				else if (*value == '~' && (*(value + 1) == 0 || *(value + 1) == '/'))
-				{
-					homepath = GetUserFile (*(value + 1) ? value + 2 : value + 1, true);
-					dir = homepath;
-				}
-#endif
-				else
-				{
-					dir = value;
-				}
-				if (dir != NULL)
-				{
-					mysnprintf (wad, countof(wad), "%s%s%s", dir, dir[strlen (dir) - 1] != '/' ? "/" : "", file);
+					mysnprintf (wad, countof(wad), "%s%s%s", dir.GetChars(), dir[dir.Len() - 1] != '/' ? "/" : "", file);
 					if (DirEntryExists (wad))
 					{
 						return wad;
@@ -1862,7 +1840,7 @@ void D_DoomMain (void)
 		Printf ("%s", GStrings("D_DEVSTR"));
 	}
 
-#ifndef unix
+#if !defined(unix) && !defined(__APPLE__)
 	// We do not need to support -cdrom under Unix, because all the files
 	// that would go to c:\\zdoomdat are already stored in .zdoom inside
 	// the user's home directory.
@@ -1961,29 +1939,27 @@ void D_DoomMain (void)
 	// [RH] Try adding .deh and .bex files on the command line.
 	// If there are none, try adding any in the config file.
 
-	//if (gameinfo.gametype == GAME_Doom)
+	if (!ConsiderPatches ("-deh", ".deh") &&
+		!ConsiderPatches ("-bex", ".bex") &&
+		(gameinfo.gametype == GAME_Doom) &&
+		GameConfig->SetSection ("Doom.DefaultDehacked"))
 	{
-		if (!ConsiderPatches ("-deh", ".deh") &&
-			!ConsiderPatches ("-bex", ".bex") &&
-			(gameinfo.gametype == GAME_Doom) &&
-			GameConfig->SetSection ("Doom.DefaultDehacked"))
-		{
-			const char *key;
-			const char *value;
+		const char *key;
+		const char *value;
 
-			while (GameConfig->NextInSection (key, value))
+		while (GameConfig->NextInSection (key, value))
+		{
+			if (stricmp (key, "Path") == 0 && FileExists (value))
 			{
-				if (stricmp (key, "Path") == 0 && FileExists (value))
-				{
-					Printf ("Applying patch %s\n", value);
-					DoDehPatch (value, true);
-				}
+				Printf ("Applying patch %s\n", value);
+				DoDehPatch (value, true);
 			}
 		}
-
-		DoDehPatch (NULL, true);	// See if there's a patch in a PWAD
-		FinishDehPatch ();			// Create replacements for dehacked pickups
 	}
+
+	DoDehPatch (NULL, true);	// See if there's a patch in a PWAD
+	FinishDehPatch ();			// Create replacements for dehacked pickups
+
 	FActorInfo::StaticSetActorNums ();
 
 
