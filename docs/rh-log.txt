@@ -1,3 +1,48 @@
+September 11, 2009
+- Added warning messages when loading maps that have non-zero values in
+  unused line argument fields, because these maps could potentially break
+  in the future if the argument is later assigned a meaning. (Hopefully
+  all the argument counts in actionspecials.h are accurate. I found a
+  few that were wrong.)
+
+September 10, 2009
+- Fixed: If a damaged actor has negative mass, it needs to have its damage
+  thrust set to maximum instead of 0. See Action Doom's broken glass
+  "CommanderKeens".
+- Changed the SCROLLTYPE define so that any extra bits set cause it to default
+  to 7. This effects action.wad, MAP02, lines 12054 and 12059, which had them
+  at 128, so they no longer scrolled in r832+.
+
+September 9, 2009
+- Look for files in Mac-like places on Macs.
+- Fixed: The non-Windows CreatePath can fail if part of the path already
+  exists, because mkdir will return an error code for trying to recreate
+  an existing directory.
+
+September 8, 2009
+- Because entryway timed it, here is a new version of R_PointToAngle2 that is
+  closer to the original. The old code was shorter but a little slower. The
+  new code is a bit faster than the original with VC++ and about the same
+  with GCC. Interestingly, GCC produces code for Killough's version that
+  performs about the same as the original, but when compiled with VC++,
+  Killough's is notably worse.
+
+September 8, 2009  (Changes by Graf Zahl)
+- moved ENDOOM lump name definition into gameinfo.
+- moved default item drop style into gameinfo.
+- moved default respawn time into gameinfo.
+- moved default inventory max amount into gameinfo.
+- turned Heretic's blocking of the sector for LS_Plat_RaiseAndStayTx0 into
+  a parameter instead of having the game mode decide. 
+
+September 7, 2009
+- Applied vertical SBARINFO inventory bar patch.
+
+September 7, 2009  (Changes by Graf Zahl)
+- moved definition of games' default armor icons into gameinfo definition.
+- fixed: The PNG loader for true color textures overwrote the IDAT size with
+  the IDAT id when reading the image.
+
 September 6, 2009  (Changes by Graf Zahl)
 - fixed: Trying to pick up an object of the Ammo base class caused a crash.
 - changed line_t's sidenum into sidedef pointers.
