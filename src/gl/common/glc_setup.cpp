@@ -731,9 +731,9 @@ static void CreateFlatVBO()
 			}
 		}
 	}
-	gl.GenBuffers(1, &gl_vbo);
+	if (gl_vbo <= 0) gl.GenBuffers(1, &gl_vbo);
 	gl.BindBuffer(GL_ARRAY_BUFFER, gl_vbo);
-	gl.BufferData(GL_ARRAY_BUFFER, vbo_data.Size() * sizeof(FVBOVertex), &vbo_data[0], GL_STATIC_DRAW);
+	gl.BufferData(GL_ARRAY_BUFFER, vbo_data.Size() * sizeof(FVBOVertex), &vbo_data[0], GL_DYNAMIC_DRAW);
 	glVertexPointer(3,GL_FLOAT, sizeof(FVBOVertex), &VTO->x);
 	glTexCoordPointer(2,GL_FLOAT, sizeof(FVBOVertex), &VTO->u);
 	gl.EnableClientState(GL_VERTEX_ARRAY);
@@ -801,7 +801,7 @@ void gl_PreprocessLevel()
 	}
 
 	if (GLRenderer != NULL) GLRenderer->SetupLevel();
-	if (gl.flags&RFL_GL_21)
+	if (gl.flags&RFL_VBO)
 		CreateFlatVBO();
 
 #if 0

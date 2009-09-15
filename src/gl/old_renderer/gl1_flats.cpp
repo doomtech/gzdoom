@@ -182,12 +182,7 @@ void GLFlat::DrawSubsector(subsector_t * sub)
 //
 //
 //==========================================================================
-CVAR(Bool, gl_testvbo, false, 0)
-
-}
-extern TArray<FVBOVertex> vbo_data;
-namespace GLRendererOld
-{
+CVAR(Bool, gl_usevbo, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 void GLFlat::DrawSubsectors(bool istrans)
 {
@@ -199,9 +194,10 @@ void GLFlat::DrawSubsectors(bool istrans)
 	}
 	else
 	{
-		if (gl_testvbo && (gl.flags&RFL_GL_21) && !(renderflags&SSRF_RENDER3DPLANES) && 
+		if (gl_usevbo && (gl.flags&RFL_VBO) && !(renderflags&SSRF_RENDER3DPLANES) && 
 			sector->GetPlaneTexZ(this->ceiling? sector_t::ceiling:sector_t::floor) == sector->vboheight[!ceiling])
 		{
+			//gl.Color3f( 1.f,.5f,.5f);
 			for (int i=0; i<sector->subsectorcount; i++)
 			{
 				subsector_t * sub = sector->subsectors[i];
@@ -214,6 +210,7 @@ void GLFlat::DrawSubsectors(bool istrans)
 		}
 		else
 		{
+			//gl.Color3f( .5f,1.f,.5f); // these are for testing the VBO stuff.
 			// Draw the subsectors belonging to this sector
 			for (int i=0; i<sector->subsectorcount; i++)
 			{
@@ -242,6 +239,7 @@ void GLFlat::DrawSubsectors(bool istrans)
 		}
 	}
 }
+
 
 //==========================================================================
 //
