@@ -1,8 +1,12 @@
 September 15, 2009  (Changes by Graf Zahl)
+- added PinkSilver's A_Respawn enhancement patch.
+- added RandomSpawner update from Gez's experimental build.
 - added thing activation types for BUMPSPECIAL and USESPECIAL. Also added
   a new ClearSpecial flag to the activation type.
 - added MBF's code for dogs jumping down, controlled by the MF6_JUMPDOWN
   flag.
+- fixed: pr_bounce was declared statically in o_mobj.cpp and redeclared externally
+  in p_map.cpp resulting in a CRC conflict.
 - fixed: The Dehacked flags parser fix from May 31 (r1624) was undone by
   yesterday's additions. Changed it so that the parser first checks for 
   the presence of a '-' sign before deciding whether to use strtol or
