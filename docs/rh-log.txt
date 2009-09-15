@@ -1,3 +1,42 @@
+September 15, 2009  (Changes by Graf Zahl)
+- fixed: The Dehacked flags parser fix from May 31 (r1624) was undone by
+  yesterday's additions. Changed it so that the parser first checks for 
+  the presence of a '-' sign before deciding whether to use strtol or
+  strtoul to convert the string into a number.
+
+September 14, 2009  (Changes by Graf Zahl)
+- Added PinkSilver's A_LookEx fix.
+- added resources needed for MBF support.
+- removed unused score items from DECORATE file.
+- Fixed: Argument count for UsePuzzleItem was wrong.
+- Added a few things from Gez's experimental build:
+  * MBF Dehacked emulation but removed the COMPATF_MBFDEHACKED flag because
+    it wouldn't work and is more or less useless anyway.
+  * MBF's dog (definition only, no sprites yet.)
+  * User variables. There's an array of 10. They can be set and checked in
+    both DECORATE and ACS.
+  * Made the tag name changeable but eliminated the redundancy of having
+    both the meta property and the individual actor's one. Having one is
+	fully sufficient. TO BE FIXED: Names are case insensitive but this
+	should better be case sensitive. Unfortunately there's currently nothing
+	better than FName to store a string inside an actor without severely
+	complicating matters. Also bumped savegame version to avoid problems
+	with this change.
+  * MBF grenade and bouncing code.
+  * several compatibility options.
+  * info CCMD to print extended actor information (not fully implemented yet)
+  * summonmbf CCMD.
+  * Beta BFG code pointer (but not the related missiles yet.)
+  * PowerInvisibility enhancements.
+  * ScoreItem with one significant change: Added a score variable that can be
+    checked through ACS and DECORATE. The engine itself will do nothing with it.
+  * Nailgun option for A_Explode.
+  * A_PrintBold and A_Log.
+  * A_SetSpecial.
+  * Beta Lost Soul (added DoomEdNum 9037 to it)
+  * A_Mushroom extensions
+  * Vavoom compatible MAPINFO keynames.
+
 September 11, 2009
 - Added warning messages when loading maps that have non-zero values in
   unused line argument fields, because these maps could potentially break

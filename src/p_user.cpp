@@ -424,11 +424,8 @@ void APlayerPawn::Serialize (FArchive &arc)
 		<< InvFirst
 		<< InvSel
 		<< MorphWeapon
-		<< DamageFade;
-	if (SaveVersion >= 1695)
-	{
-		arc << PlayerFlags;
-	}
+		<< DamageFade
+		<< PlayerFlags;
 }
 
 //===========================================================================
@@ -1653,7 +1650,7 @@ void P_MovePlayer (player_t *player)
 		mo->angle += cmd->ucmd.yaw << 16;
 	}
 
-	onground = (mo->z <= mo->floorz) || (mo->flags2 & MF2_ONMOBJ);
+	onground = (mo->z <= mo->floorz) || (mo->flags2 & MF2_ONMOBJ) || (mo->BounceFlags & BOUNCE_MBF);
 
 	// killough 10/98:
 	//
