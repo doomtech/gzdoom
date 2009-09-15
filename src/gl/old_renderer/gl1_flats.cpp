@@ -184,6 +184,11 @@ void GLFlat::DrawSubsector(subsector_t * sub)
 //==========================================================================
 CVAR(Bool, gl_testvbo, false, 0)
 
+}
+extern TArray<FVBOVertex> vbo_data;
+namespace GLRendererOld
+{
+
 void GLFlat::DrawSubsectors(bool istrans)
 {
 	gl_ApplyShader();

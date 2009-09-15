@@ -694,9 +694,10 @@ static void PrepareSegs()
 //==========================================================================
 unsigned int gl_vbo;
 
+TArray<FVBOVertex> vbo_data;
+
 static void CreateFlatVBO()
 {
-	static TArray<float> data;
 
 	for (int h=0;h<2;h++)
 	{
@@ -710,19 +711,19 @@ static void CreateFlatVBO()
 			{
 				subsector_t *sub = sec->subsectors[j];
 
-				sub->vboindex[h] = data.Size()/5;
+				sub->vboindex[h] = vbo_data.Size();
 
-				for(int k=0; k<sub->numvertices; k++)
+				int idx = vbo_data.Reserve(sub->numvertices);
+				for(int k=0; k<sub->numvertices; k++, idx++)
 				{
-					seg_t *seg = &segs[sub->firstline];
+					seg_t *seg = &segs[sub->firstline+k];
 					vertex_t *vt = seg->v1;
 
-					int idx = data.Reserve(5);
-					data[idx] = vt->fx;
-					data[idx+2] = vt->fy;
-					data[idx+3] = vt->fx/64.f;
-					data[idx+4] = -vt->fy/64.f;
-					data[idx+1] = float( h==0? 
+					vbo_data[idx].x = vt->fx;
+					vbo_data[idx].y = vt->fy;
+					vbo_data[idx].u = vt->fx/64.f;
+					vbo_data[idx].v = -vt->fy/64.f;
+					vbo_data[idx].z = float( h==0? 
 						sec->ceilingplane.ZatPoint(vt->fx, vt->fy) :
 						sec->floorplane.ZatPoint(vt->fx, vt->fy));
 
@@ -732,9 +733,9 @@ static void CreateFlatVBO()
 	}
 	gl.GenBuffers(1, &gl_vbo);
 	gl.BindBuffer(GL_ARRAY_BUFFER, gl_vbo);
-	gl.BufferData(GL_ARRAY_BUFFER, data.Size() * sizeof(float), &data[0], GL_STATIC_DRAW);
-	glVertexPointer(3,GL_FLOAT, 5*sizeof(float), 0);
-	glTexCoordPointer(2,GL_FLOAT, 5*sizeof(float),(void*)(intptr_t)(3*sizeof(float)));
+	gl.BufferData(GL_ARRAY_BUFFER, vbo_data.Size() * sizeof(FVBOVertex), &vbo_data[0], GL_STATIC_DRAW);
+	glVertexPointer(3,GL_FLOAT, sizeof(FVBOVertex), &VTO->x);
+	glTexCoordPointer(2,GL_FLOAT, sizeof(FVBOVertex), &VTO->u);
 	gl.EnableClientState(GL_VERTEX_ARRAY);
 	gl.EnableClientState(GL_TEXTURE_COORD_ARRAY);
 
