@@ -1,3 +1,27 @@
+September 16, 2009  (Changes by Graf Zahl)
+- Fixed: The deprecated flag handler for the old bounce flags needs to clear
+  BOUNCE_MBF and BOUNCE_UseSeeSound, too, when clearing one of these flags.
+- Fixed: When adding the AVOIDMELEE code the code was accidentally changed so that
+  friendly monsters could no longer acquire targets by themselves.
+- Renamed WIF_BOT_MELEE to WIF_MELEEWEAPON because it's no longer a bot only flag.
+- Added MBF's monster_backing feature as an actor flag: AVOIDMELEE.
+- Gez's misc. bugs patch:
+* Moves the dog sound out of the Doom-specific sounds in SNDINFO to address this,
+* Renames the dog actor to MBFHelperDog to prevent name conflicts,
+* Adds APROP_Score to CheckActorProperty,
+* Completes the randomspawner update (the reason I moved the recursion counter out of 
+  special1 was that I found some projectiles had this set to them, for example in 
+  A_LichAttack, but I forgot to add transfer for them),
+* Provides centered sprites for beta plasma balls if this is deemed deserving correction.
+- Added some pieces of MBF's friendly AI.
+- Cleaned up A_LookEx code and merged most of it with the base functions.
+  The major difference was a common piece of code that was repeated 5 times
+  throughout the code so I moved it into a subfunction.
+- Changed P_BlockmapSearch to pass a user parameter to its callback so that
+  A_LookEx does not need to store its info inside the actor itself.
+- fixed: The linetarget CCMD duplicated all of the info CCMD. 
+- fixed: PrintActorInfo crashed due to some incomplete implementation.
+
 September 15, 2009  (Changes by Graf Zahl)
 - added PinkSilver's A_Respawn enhancement patch.
 - added RandomSpawner update from Gez's experimental build.

@@ -798,10 +798,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\p_enemy_a_lookex.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\p_floor.cpp"
 				>
 			</File>

@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
-	Name="wadsrc"
+	Name="wadsrc-lights"
 	ProjectGUID="{31090871-A623-4BBC-A167-DE821CD1240C}"
 	RootNamespace="wadsrc"
 	Keyword="MakeFileProj"
