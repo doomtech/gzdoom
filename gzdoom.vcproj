@@ -6846,10 +6846,6 @@
 				Name="New Renderer"
 				>
 				<File
-					RelativePath=".\src\gl\new_renderer\gl2_flats.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\new_renderer\gl2_renderer.cpp"
 					>
 				</File>
