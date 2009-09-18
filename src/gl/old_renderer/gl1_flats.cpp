@@ -51,6 +51,7 @@
 #include "gl/old_renderer/gl1_texture.h"
 #include "gl/gl_intern.h"
 #include "gl/common/glc_templates.h"
+#include "gl/common/glc_vertexbuffer.h"
 #include "gl/old_renderer/gl1_shader.h"
 #include "gl/old_renderer/gl1_drawinfo.h"
 #include "r_sky.h"
@@ -182,7 +183,6 @@ void GLFlat::DrawSubsector(subsector_t * sub)
 //
 //
 //==========================================================================
-CVAR(Bool, gl_usevbo, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 void GLFlat::DrawSubsectors(bool istrans)
 {
@@ -194,7 +194,7 @@ void GLFlat::DrawSubsectors(bool istrans)
 	}
 	else
 	{
-		if (gl_usevbo && (gl.flags&RFL_VBO) && vboindex >= 0)
+		if (vboindex >= 0)
 		{
 			//gl.Color3f( 1.f,.5f,.5f);
 			int index = vboindex;
@@ -218,8 +218,6 @@ void GLFlat::DrawSubsectors(bool istrans)
 			for (int i=0; i<sector->subsectorcount; i++)
 			{
 				subsector_t * sub = sector->subsectors[i];
-
-				// This is just a quick hack to make translucent 3D floors and portals work.
 				if (gl_drawinfo->ss_renderflags[sub-subsectors]&renderflags || istrans)
 				{
 					DrawSubsector(sub);

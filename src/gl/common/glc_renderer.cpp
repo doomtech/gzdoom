@@ -52,6 +52,7 @@
 #include "gl/common/glc_dynlight.h"
 #include "gl/common/glc_convert.h"
 #include "gl/common/glc_clipper.h"
+#include "gl/common/glc_vertexbuffer.h"
 
 CVAR(Int,gl_nearclip,5,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
@@ -63,6 +64,23 @@ void R_SetupFrame (AActor * camera);
 extern int viewpitch;
 
 area_t			in_area;
+
+
+//-----------------------------------------------------------------------------
+//
+// Initialize
+//
+//-----------------------------------------------------------------------------
+
+void GLRendererBase::Initialize()
+{
+	mVBO = new FVertexBuffer;
+}
+
+GLRendererBase::~GLRendererBase() 
+{
+	if (mVBO != NULL) delete mVBO;
+}
 
 //-----------------------------------------------------------------------------
 //
@@ -252,12 +270,24 @@ sector_t * GLRendererBase::RenderViewpoint (AActor * camera, GL_IRECT * bounds, 
 }
 
 
+//===========================================================================
+// 
+//
+//
+//===========================================================================
+
+void GLRendererBase::SetupLevel()
+{
+	mAngles.Pitch = 0.0f;
+	mVBO->CreateVBO();
+}
+
+
 //-----------------------------------------------------------------------------
 //
 // renders the view
 //
 //-----------------------------------------------------------------------------
-extern unsigned int gl_vbo;
 
 void GLRendererBase::RenderView (player_t* player)
 {
@@ -271,12 +301,7 @@ void GLRendererBase::RenderView (player_t* player)
 		LastCamera=player->camera;
 	}
 
-	//gl.BindBuffer(GL_ARRAY_BUFFER, gl_vbo);
-	//glVertexPointer(3,GL_FLOAT, sizeof(FVBOVertex), &VTO->x);
-	//glTexCoordPointer(2,GL_FLOAT, sizeof(FVBOVertex), &VTO->u);
-	gl.EnableClientState(GL_VERTEX_ARRAY);
-	gl.EnableClientState(GL_TEXTURE_COORD_ARRAY);
-
+	mVBO->BindVBO();
 
 	// reset statistics counters
 	All.Reset();

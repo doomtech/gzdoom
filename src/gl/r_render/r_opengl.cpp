@@ -459,7 +459,18 @@ static void APIENTRY LoadExtensions()
 		gl->flags|=RFL_OCCLUSION_QUERY;
 	}
 
-	if (gl->flags & RFL_VBO)
+	if (gl->flags & RFL_GL_21)
+	{
+		gl->BindBuffer				= (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBuffer");
+		gl->DeleteBuffers			= (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffers");
+		gl->GenBuffers				= (PFNGLGENBUFFERSPROC)wglGetProcAddress("glGenBuffers");
+		gl->BufferData				= (PFNGLBUFFERDATAPROC)wglGetProcAddress("glBufferData");
+		gl->BufferSubData			= (PFNGLBUFFERSUBDATAPROC)wglGetProcAddress("glBufferSubData");
+		gl->MapBuffer				= (PFNGLMAPBUFFERPROC)wglGetProcAddress("glMapBuffer");
+		gl->UnmapBuffer				= (PFNGLUNMAPBUFFERPROC)wglGetProcAddress("glUnmapBuffer");
+		gl->flags |= RFL_VBO;
+	}
+	else if (gl->flags & RFL_VBO)
 	{
 		gl->BindBuffer				= (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBufferARB");
 		gl->DeleteBuffers			= (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffersARB");

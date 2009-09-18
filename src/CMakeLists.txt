@@ -752,6 +752,7 @@ add_executable( zdoom WIN32
 	gl/old_renderer/gl1_skydome.cpp
 	gl/old_renderer/gl1_sprite.cpp
 	gl/old_renderer/gl1_texture.cpp
+	gl/old_renderer/gl1_vertexbuffer.cpp
 	gl/old_renderer/gl1_walls.cpp
 	gl/old_renderer/gl1_walls_draw.cpp
 	gl/old_renderer/gl1_weapon.cpp
