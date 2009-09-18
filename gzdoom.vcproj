@@ -6770,6 +6770,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\gl\common\glc_vertexbuffer.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\gl\common\glc_wipe.cpp"
 					>
 				</File>
@@ -6838,6 +6842,10 @@
 					</File>
 					<File
 						RelativePath=".\src\gl\common\glc_translate.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\common\glc_vertexbuffer.h"
 						>
 					</File>
 				</Filter>

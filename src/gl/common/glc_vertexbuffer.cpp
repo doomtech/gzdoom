@@ -57,6 +57,7 @@
 FVertexBuffer::FVertexBuffer()
 {
 	vbo_id = 0;
+	map = NULL;
 	if (gl.flags&RFL_VBO)
 	{
 		gl.GenBuffers(1, &vbo_id);
@@ -65,6 +66,7 @@ FVertexBuffer::FVertexBuffer()
 	
 FVertexBuffer::~FVertexBuffer()
 {
+	UnmapVBO();
 	if (gl.flags&RFL_VBO)
 	{
 		gl.DeleteBuffers(1, &vbo_id);
@@ -147,7 +149,7 @@ int FVertexBuffer::CreateSectorVertices(sector_t *sec, const secplane_t &plane, 
 int FVertexBuffer::CreateVertices(int h, sector_t *sec, const secplane_t &plane, int floor)
 {
 	// First calculate the vertices for the sector itself
-	sec->vboshadowheight[h] = sec->vboheight[h] = sec->GetPlaneTexZ(h);
+	sec->vboheight[h] = sec->GetPlaneTexZ(h);
 	sec->vboindex[h] = CreateSectorVertices(sec, plane, floor);
 
 	// Next are all sectors using this one as heightsec
@@ -226,13 +228,59 @@ void FVertexBuffer::CreateFlatVBO()
 //
 //==========================================================================
 
+void FVertexBuffer::MapVBO()
+{
+	if (map == NULL)
+	{
+		gl.BindBuffer(GL_ARRAY_BUFFER, vbo_id);
+		map = (FVBOVertex*)gl.MapBufferRange(GL_ARRAY_BUFFER, 0, vbo_shadowdata.Size() * sizeof(FVBOVertex), 
+			GL_MAP_WRITE_BIT|GL_MAP_FLUSH_EXPLICIT_BIT|GL_MAP_UNSYNCHRONIZED_BIT);
+	}
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void FVertexBuffer::UnmapVBO()
+{
+	if (map != NULL)
+	{
+		gl.UnmapBuffer(GL_ARRAY_BUFFER);
+		map = NULL;
+	}
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
 void FVertexBuffer::UpdatePlaneVertices(sector_t *sec, int plane)
 {
+	Printf("Updating plane %d of sector %d\n", plane, sec->sectornum);
+
+	int startvt = sec->vboindex[plane];
+	int countvt = sec->vbocount[plane];
 	secplane_t &splane = sec->GetSecPlane(plane);
-	FVBOVertex *vt = &vbo_shadowdata[sec->vboindex[plane]];
-	for(int i=0; i<sec->vbocount[plane]; i++, vt++)
+	FVBOVertex *vt = &vbo_shadowdata[startvt];
+	for(int i=0; i<countvt; i++, vt++)
 	{
 		vt->z = splane.ZatPoint(vt->x, vt->y);
+	}
+	if (gl.flags & RFL_MAP_BUFFER_RANGE)
+	{
+		MapVBO();
+		if (map == NULL) return;	// Error
+		memcpy(&map[startvt], &vbo_shadowdata[startvt], countvt * sizeof(FVBOVertex));
+		gl.FlushMappedBufferRange(GL_ARRAY_BUFFER, startvt * sizeof(FVBOVertex), countvt * sizeof(FVBOVertex));
+	}
+	else
+	{
+		gl.BufferSubData(GL_ARRAY_BUFFER, startvt * sizeof(FVBOVertex), countvt * sizeof(FVBOVertex), &vbo_shadowdata[startvt]);
 	}
 }
 
@@ -273,6 +321,7 @@ void FVertexBuffer::BindVBO()
 {
 	if (vbo_id > 0)
 	{
+		UnmapVBO();
 		gl.BindBuffer(GL_ARRAY_BUFFER, vbo_id);
 		glVertexPointer(3,GL_FLOAT, sizeof(FVBOVertex), &VTO->x);
 		glTexCoordPointer(2,GL_FLOAT, sizeof(FVBOVertex), &VTO->u);
@@ -281,4 +330,48 @@ void FVertexBuffer::BindVBO()
 	}
 }
 
+//==========================================================================
+//
+//
+//
+//==========================================================================
 
+void FVertexBuffer::CheckPlanes(sector_t *sector)
+{
+	if (sector->GetPlaneTexZ(sector_t::ceiling) != sector->vboheight[sector_t::ceiling])
+	{
+		if (sector->ceilingdata == NULL) // only update if there's no thinker attached
+		{
+			UpdatePlaneVertices(sector, sector_t::ceiling);
+			sector->vboheight[sector_t::ceiling] = sector->GetPlaneTexZ(sector_t::ceiling);
+		}
+	}
+	if (sector->GetPlaneTexZ(sector_t::floor) != sector->vboheight[sector_t::floor])
+	{
+		if (sector->floordata == NULL) // only update if there's no thinker attached
+		{
+			UpdatePlaneVertices(sector, sector_t::floor);
+			sector->vboheight[sector_t::floor] = sector->GetPlaneTexZ(sector_t::floor);
+		}
+	}
+}
+
+//==========================================================================
+//
+// checks the validity of all planes attached to this sector
+// and updates them if possible. Anything moving will not be
+// updated unless it stops.
+//
+//==========================================================================
+
+void FVertexBuffer::CheckUpdate(sector_t *sector)
+{
+	if (vbo_id > 0)
+	{
+		CheckPlanes(sector);
+		sector_t *hs = sector->GetHeightSec();
+		if (hs != NULL) CheckPlanes(hs);
+		for(unsigned i = 0; i < sector->e->XFloor.ffloors.Size(); i++)
+			CheckPlanes(sector->e->XFloor.ffloors[i]->model);
+	}
+}

@@ -363,6 +363,9 @@ static void APIENTRY LoadExtensions()
 	if (CheckExtension("GL_ATI_texture_env_combine3")) gl->flags|=RFL_TEX_ENV_COMBINE4_NV;
 	if (CheckExtension("GL_ARB_texture_non_power_of_two")) gl->flags|=RFL_NPOT_TEXTURE;
 	if (CheckExtension("GL_ARB_vertex_buffer_object")) gl->flags|=RFL_VBO;
+	if (CheckExtension("GL_ARB_map_buffer_range")) gl->flags|=RFL_MAP_BUFFER_RANGE;
+
+	
 
 
 	if (strcmp((const char*)glGetString(GL_VERSION), "2.1") >= 0) gl->flags|=RFL_GL_21;
@@ -435,6 +438,10 @@ static void APIENTRY LoadExtensions()
 		gl->GetUniformiv = (PFNGLGETUNIFORMIVARBPROC)wglGetProcAddress("glGetUniformivARB");
 		gl->GetShaderSource = (PFNGLGETSHADERSOURCEARBPROC)wglGetProcAddress("glGetShaderSourceARB");
 
+		gl->EnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glEnableVertexAttribArrayARB");
+		gl->DisableVertexAttribArray= (PFNGLDISABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glDisableVertexAttribArrayARB");
+		gl->VertexAttribPointer		= (PFNGLVERTEXATTRIBPOINTERPROC)wglGetProcAddress("glVertexAttribPointerARB");
+
 		gl->flags|=RFL_GLSL;
 	}
 
@@ -481,11 +488,10 @@ static void APIENTRY LoadExtensions()
 		gl->UnmapBuffer				= (PFNGLUNMAPBUFFERPROC)wglGetProcAddress("glUnmapBufferARB");
 	}
 
-	if (gl->flags & RFL_GL_21)
+	if (gl->flags & RFL_MAP_BUFFER_RANGE)
 	{
-		gl->EnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glEnableVertexAttribArray");
-		gl->DisableVertexAttribArray= (PFNGLDISABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glDisableVertexAttribArray");
-		gl->VertexAttribPointer		= (PFNGLVERTEXATTRIBPOINTERPROC)wglGetProcAddress("glVertexAttribPointer");
+		gl->MapBufferRange			= (PFNGLMAPBUFFERRANGEPROC)wglGetProcAddress("glMapBufferRange");
+		gl->FlushMappedBufferRange	= (PFNGLFLUSHMAPPEDBUFFERRANGEPROC)wglGetProcAddress("glFlushMappedBufferRange");
 	}
 
 	// [BB] Check for the extensions that are necessary for on the fly texture compression.
