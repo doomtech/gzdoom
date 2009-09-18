@@ -261,8 +261,6 @@ void FVertexBuffer::UnmapVBO()
 
 void FVertexBuffer::UpdatePlaneVertices(sector_t *sec, int plane)
 {
-	Printf("Updating plane %d of sector %d\n", plane, sec->sectornum);
-
 	int startvt = sec->vboindex[plane];
 	int countvt = sec->vbocount[plane];
 	secplane_t &splane = sec->GetSecPlane(plane);
