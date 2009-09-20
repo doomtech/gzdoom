@@ -68,7 +68,7 @@ namespace GLRendererOld
 //
 //==========================================================================
 
-static void DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy, int cm_index, int cm, bool hudModelStep)
+static void DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy, int cm_index, bool hudModelStep)
 {
 	float			fU1,fV1;
 	float			fU2,fV2;
@@ -225,14 +225,13 @@ void gl_DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 
 	PalEntry ThingColor = playermo->fillcolor;
 	vissprite_t vis;
-	int cmap = CM_DEFAULT;
 
 	vis.RenderStyle=playermo->RenderStyle;
 	vis.alpha=playermo->alpha;
 	if (playermo->Inventory) 
 	{
 		playermo->Inventory->AlterWeaponSprite(&vis);
-		if (vis.colormap != NULL)
+		if (vis.colormap != NULL && cm.colormap == CM_DEFAULT)
 		{
 			cmap = CM_INVERT;
 		}
