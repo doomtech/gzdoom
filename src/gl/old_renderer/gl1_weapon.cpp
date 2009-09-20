@@ -233,7 +233,7 @@ void gl_DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 		playermo->Inventory->AlterWeaponSprite(&vis);
 		if (vis.colormap != NULL && cm.colormap == CM_DEFAULT)
 		{
-			cmap = CM_INVERT;
+			cm.colormap = CM_INVERT;
 		}
 	}
 
@@ -264,7 +264,7 @@ void gl_DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 			// set the lighting parameters (only calls glColor and glAlphaFunc)
 			gl_SetSpriteLighting(vis.RenderStyle, playermo, statebright[i]? 255 : lightlevel, 
 				0, &cm, 0xffffff, trans, statebright[i], true);
-			DrawPSprite (player,psp,psp->sx+ofsx, psp->sy+ofsy, cm.colormap, cmap, hudModelStep);
+			DrawPSprite (player,psp,psp->sx+ofsx, psp->sy+ofsy, cm.colormap, hudModelStep);
 		}
 	}
 	gl_EnableBrightmap(false);
