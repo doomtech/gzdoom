@@ -68,7 +68,7 @@ namespace GLRendererOld
 //
 //==========================================================================
 
-static void DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy, int cm_index, bool hudModelStep)
+static void DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy, int cm_index, int cm, bool hudModelStep)
 {
 	float			fU1,fV1;
 	float			fU2,fV2;
@@ -170,7 +170,7 @@ void gl_DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 	P_BobWeapon (player, &player->psprites[ps_weapon], &ofsx, &ofsy);
 
 	// check for fullbright
-	if (player->fixedcolormap==0)
+	if (player->fixedcolormap==NOFIXEDCOLORMAP)
 	{
 		for (i=0, psp=player->psprites; i<=ps_flash; i++,psp++)
 			if (psp->state != NULL) statebright[i] = !!psp->state->GetFullbright();
@@ -225,10 +225,18 @@ void gl_DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 
 	PalEntry ThingColor = playermo->fillcolor;
 	vissprite_t vis;
+	int cmap = CM_DEFAULT;
 
 	vis.RenderStyle=playermo->RenderStyle;
 	vis.alpha=playermo->alpha;
-	if (playermo->Inventory) playermo->Inventory->AlterWeaponSprite(&vis);
+	if (playermo->Inventory) 
+	{
+		playermo->Inventory->AlterWeaponSprite(&vis);
+		if (vis.colormap != NULL)
+		{
+			cmap = CM_INVERT;
+		}
+	}
 
 	// Set the render parameters
 	vis.RenderStyle.CheckFuzz();
@@ -257,7 +265,7 @@ void gl_DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 			// set the lighting parameters (only calls glColor and glAlphaFunc)
 			gl_SetSpriteLighting(vis.RenderStyle, playermo, statebright[i]? 255 : lightlevel, 
 				0, &cm, 0xffffff, trans, statebright[i], true);
-			DrawPSprite (player,psp,psp->sx+ofsx, psp->sy+ofsy, cm.LightColor.a, hudModelStep);
+			DrawPSprite (player,psp,psp->sx+ofsx, psp->sy+ofsy, cm.colormap, cmap, hudModelStep);
 		}
 	}
 	gl_EnableBrightmap(false);
