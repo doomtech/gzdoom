@@ -231,7 +231,7 @@ void gl_DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 	if (playermo->Inventory) 
 	{
 		playermo->Inventory->AlterWeaponSprite(&vis);
-		if (vis.colormap != NULL && cm.colormap == CM_DEFAULT)
+		if (vis.colormap == SpecialColormaps[INVERSECOLORMAP] && cm.colormap == CM_DEFAULT)
 		{
 			cm.colormap = CM_INVERT;
 		}
