@@ -48,6 +48,7 @@
 #include "gl/old_renderer/gl1_shader.h"
 #include "i_system.h"
 #include "doomerrors.h"
+#include "v_palette.h"
 
 CUSTOM_CVAR(Bool, gl_warp_shader, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
 {
@@ -108,6 +109,7 @@ class FShader
 	int camerapos_index;
 	int lightfactor_index;
 	int lightdist_index;
+	int colormapcolor_index;
 
 	int glowbottomcolor_index;
 	int glowtopcolor_index;
@@ -165,6 +167,15 @@ public:
 		{
 			currentlightfactor = fac;
 			gl.Uniform1f(lightfactor_index, fac);
+		}
+	}
+
+	void SetColormapColor(float r, float g, float b, bool invert)
+	{
+		//if (fac != currentlightfactor)
+		{
+			//currentlightfactor = fac;
+			gl.Uniform4f(colormapcolor_index, r,g,b,float(invert));
 		}
 	}
 
@@ -237,6 +248,7 @@ bool FShader::Load(const char * name, const char * vert_prog, const char * frag_
 		camerapos_index = gl.GetUniformLocation(hShader, "camerapos");
 		lightdist_index = gl.GetUniformLocation(hShader, "lightdist");
 		lightfactor_index = gl.GetUniformLocation(hShader, "lightfactor");
+		colormapcolor_index = gl.GetUniformLocation(hShader, "colormapcolor");
 
 		glowbottomcolor_index = gl.GetUniformLocation(hShader, "bottomglowcolor");
 		glowbottomdist_index = gl.GetAttribLocation(hShader, "bottomdistance");
@@ -300,7 +312,7 @@ struct FShaderContainer
 	FName Name;
 	FName TexFileName;
 
-	FShader *shader_cm[6];
+	FShader *shader_cm[2];
 
 	// These are needed twice: Once for normal lighting, once for desaturation.
 	FShader *shader_light[3][2];
@@ -358,11 +370,7 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 
 	static Lighting default_cm[]={
 		{ "Standard",	"shaders_old/main_nofog.vp",	"shaders_old/light/light_norm.fp"		},
-		{ "Inverse",	"shaders_old/main_nofog.vp",	"shaders_old/light/light_inverse.fp"	},
-		{ "Gold",		"shaders_old/main_nofog.vp",	"shaders_old/light/light_gold.fp"		},
-		{ "Red",		"shaders_old/main_nofog.vp",	"shaders_old/light/light_red.fp"		},
-		{ "Green",		"shaders_old/main_nofog.vp",	"shaders_old/light/light_green.fp"		},
-		{ "Blue",		"shaders_old/main_nofog.vp",	"shaders_old/light/light_blue.fp"		},
+		{ "Colormap",	"shaders_old/main_nofog.vp",	"shaders_old/light/light_colormap.fp"	},
 	};
 
 	static Lighting default_light[]={
@@ -376,7 +384,7 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 	Name = ShaderName;
 	TexFileName = ShaderPath;
 
-	for(int i=0;i<6;i++)
+	for(int i=0;i<2;i++)
 	{
 		FString name;
 
@@ -442,7 +450,7 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 //==========================================================================
 FShaderContainer::~FShaderContainer()
 {
-	for(int i=0;i<5;i++)
+	for(int i=0;i<2;i++)
 	{
 		if (shader_cm[i]!=NULL)
 		{
@@ -598,21 +606,21 @@ GLShader *GLShader::Find(unsigned int warp)
 void GLShader::Bind(int cm, int lightmode, float Speed)
 {
 	FShader *sh=NULL;
-	switch(cm)
+
+	if (cm >= CM_FIRSTSPECIALCOLORMAP && cm < CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size())
 	{
-	case CM_INVERT:
-	case CM_GOLDMAP:
-	case CM_REDMAP:
-	case CM_GREENMAP:
-	case CM_BLUEMAP:
 		// these are never used with any kind of lighting or fog
-		sh = container->shader_cm[cm-CM_INVERT+1];
+		sh = container->shader_cm[1];
 		// [BB] If there was a problem when loading the shader, sh is NULL here.
 		if( sh )
+		{
+			FSpecialColormap *map = &SpecialColormaps[cm - CM_FIRSTSPECIALCOLORMAP];
 			sh->Bind(Speed);
-		break;
-
-	default:
+			sh->SetColormapColor(map->Colorize[0], map->Colorize[1], map->Colorize[2], map->Inverted);
+		}
+	}
+	else
+	{
 		bool desat = cm>=CM_DESAT1 && cm<=CM_DESAT31;
 		sh = container->shader_light[lightmode][desat];
 		// [BB] If there was a problem when loading the shader, sh is NULL here.
@@ -627,7 +635,6 @@ void GLShader::Bind(int cm, int lightmode, float Speed)
 		else
 		{
 		}
-		break;
 	}
 }
 
