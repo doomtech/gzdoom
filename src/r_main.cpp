@@ -142,6 +142,7 @@ int 			validcount = 1; 	// increment every time a check is made
 FDynamicColormap*basecolormap;		// [RH] colormap currently drawing with
 int				fixedlightlev;
 lighttable_t	*fixedcolormap;
+FSpecialColormap *realfixedcolormap;
 float			WallTMapScale;
 float			WallTMapScale2;
 
@@ -1207,6 +1208,7 @@ void R_SetupFrame (AActor *actor)
 		}
 	}
 
+	realfixedcolormap = NULL;
 	fixedcolormap = NULL;
 	fixedlightlev = -1;
 
@@ -1214,7 +1216,18 @@ void R_SetupFrame (AActor *actor)
 	{
 		if (player->fixedcolormap >= 0 && player->fixedcolormap < (int)SpecialColormaps.Size())
 		{
-			fixedcolormap = SpecialColormaps[player->fixedcolormap].Colormap;
+			realfixedcolormap = &SpecialColormaps[player->fixedcolormap];
+			if (RenderTarget == screen && (DFrameBuffer *)screen->Accel2D)
+			{
+				// Render everything fullbright. The copy to video memory will
+				// apply the special colormap, so it won't be restricted to the
+				// palette.
+				fixedcolormap = realcolormaps;
+			}
+			else
+			{
+				fixedcolormap = SpecialColormaps[player->fixedcolormap].Colormap;
+			}
 		}
 		else if (player->fixedlightlevel >= 0 && player->fixedlightlevel < NUMCOLORMAPS)
 		{

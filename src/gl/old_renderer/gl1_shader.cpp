@@ -109,7 +109,8 @@ class FShader
 	int camerapos_index;
 	int lightfactor_index;
 	int lightdist_index;
-	int colormapcolor_index;
+	int colormapstart_index;
+	int colormaprange_index;
 
 	int glowbottomcolor_index;
 	int glowtopcolor_index;
@@ -170,12 +171,13 @@ public:
 		}
 	}
 
-	void SetColormapColor(float r, float g, float b, bool invert)
+	void SetColormapColor(float r, float g, float b, float r1, float g1, float b1)
 	{
 		//if (fac != currentlightfactor)
 		{
 			//currentlightfactor = fac;
-			gl.Uniform4f(colormapcolor_index, r,g,b,float(invert));
+			gl.Uniform4f(colormapstart_index, r,g,b,0);
+			gl.Uniform4f(colormaprange_index, r1-r,g1-g,b1-b,0);
 		}
 	}
 
@@ -248,7 +250,8 @@ bool FShader::Load(const char * name, const char * vert_prog, const char * frag_
 		camerapos_index = gl.GetUniformLocation(hShader, "camerapos");
 		lightdist_index = gl.GetUniformLocation(hShader, "lightdist");
 		lightfactor_index = gl.GetUniformLocation(hShader, "lightfactor");
-		colormapcolor_index = gl.GetUniformLocation(hShader, "colormapcolor");
+		colormapstart_index = gl.GetUniformLocation(hShader, "colormapstart");
+		colormaprange_index = gl.GetUniformLocation(hShader, "colormaprange");
 
 		glowbottomcolor_index = gl.GetUniformLocation(hShader, "bottomglowcolor");
 		glowbottomdist_index = gl.GetAttribLocation(hShader, "bottomdistance");
@@ -616,7 +619,8 @@ void GLShader::Bind(int cm, int lightmode, float Speed)
 		{
 			FSpecialColormap *map = &SpecialColormaps[cm - CM_FIRSTSPECIALCOLORMAP];
 			sh->Bind(Speed);
-			sh->SetColormapColor(map->Colorize[0], map->Colorize[1], map->Colorize[2], map->Inverted);
+			sh->SetColormapColor(map->ColorizeStart[0], map->ColorizeStart[1], map->ColorizeStart[2],
+				map->ColorizeEnd[0], map->ColorizeEnd[1], map->ColorizeEnd[2]);
 		}
 	}
 	else

@@ -35,6 +35,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>
 #ifdef _WIN32
 #include <io.h>
 #else
@@ -66,27 +67,26 @@ BYTE DesaturateColormap[31][256];
 
 struct FSpecialColormapParameters
 {
-	float Colorize[3];
-	bool Inverted;
+	float Start[3], End[3];
 };
 
 static FSpecialColormapParameters SpecialColormapParms[] =
 {
 	// Doom invulnerability is an inverted grayscale.
 	// Strife uses it when firing the Sigil
-	{ {    1,    1,   1 }, true },
+	{ {    1,    1,   1 }, { 0, 0, 0 } },
 
 	// Heretic invulnerability is a golden shade.
-	{ {  1.5, 0.75,   0 }, false },
+	{ { 0, 0, 0 }, {  1.5, 0.75,   0 }, },
 
 	// [BC] Build the Doomsphere colormap. It is red!
-	{ {  1.5,    0,   0 }, false },
+	{ { 0, 0, 0 }, {  1.5,    0,   0 } },
 
 	// [BC] Build the Guardsphere colormap. It's a greenish-white kind of thing.
-	{ { 1.25,  1.5,   1 }, false },
+	{ { 0, 0, 0 }, { 1.25,  1.5,   1 } },
 
 	// Build a blue colormap.
-	{ {    0,    0, 1.5 }, false },
+	{{ 0, 0, 0 },  {    0,    0, 1.5 } },
 };
 
 static void FreeSpecialLights();
@@ -361,14 +361,25 @@ static bool FixBuildPalette (BYTE *opal, int lump, bool blood)
 	return true;
 }
 
-int AddSpecialColormap(double r, double g, double b, bool inv)
+int AddSpecialColormap(float r1, float g1, float b1, float r2, float g2, float b2)
 {
+	// Clamp these in range for the hardware shader.
+	r1 = clamp(r1, 0.0f, 2.0f);
+	g1 = clamp(g1, 0.0f, 2.0f);
+	b1 = clamp(b1, 0.0f, 2.0f);
+	r2 = clamp(r2, 0.0f, 2.0f);
+	g2 = clamp(g2, 0.0f, 2.0f);
+	b2 = clamp(b2, 0.0f, 2.0f);
+
 	for(unsigned i=0; i<SpecialColormaps.Size(); i++)
 	{
-		if (SpecialColormaps[i].Colorize[0] == r &&
-			SpecialColormaps[i].Colorize[1] == g &&
-			SpecialColormaps[i].Colorize[2] == b &&
-			SpecialColormaps[i].Inverted == inv)
+		// Avoid precision issues here when trying to find a proper match.
+		if (fabs(SpecialColormaps[i].ColorizeStart[0]- r1) < FLT_EPSILON &&
+			fabs(SpecialColormaps[i].ColorizeStart[1]- g1) < FLT_EPSILON &&
+			fabs(SpecialColormaps[i].ColorizeStart[2]- b1) < FLT_EPSILON &&
+			fabs(SpecialColormaps[i].ColorizeEnd[0]- r2) < FLT_EPSILON &&
+			fabs(SpecialColormaps[i].ColorizeEnd[1]- g2) < FLT_EPSILON &&
+			fabs(SpecialColormaps[i].ColorizeEnd[2]- b2) < FLT_EPSILON)
 		{
 			return i;	// The map already exists
 		}
@@ -376,34 +387,38 @@ int AddSpecialColormap(double r, double g, double b, bool inv)
 
 	FSpecialColormap *cm = &SpecialColormaps[SpecialColormaps.Reserve(1)];
 
-	cm->Colorize[0] = float(r);
-	cm->Colorize[1] = float(g);
-	cm->Colorize[2] = float(b);
-	cm->Inverted = inv;
+	cm->ColorizeStart[0] = float(r1);
+	cm->ColorizeStart[1] = float(g1);
+	cm->ColorizeStart[2] = float(b1);
+	cm->ColorizeEnd[0] = float(r2);
+	cm->ColorizeEnd[1] = float(g2);
+	cm->ColorizeEnd[2] = float(b2);
+
+	r2 -= r1;
+	g2 -= g1;
+	b2 -= b1;
+	r1 *= 255;
+	g1 *= 255;
+	b1 *= 255;
 
 	for (int c = 0; c < 256; c++)
 	{
 		double intensity = (GPalette.BaseColors[c].r * 77 +
 							GPalette.BaseColors[c].g * 143 +
 							GPalette.BaseColors[c].b * 37) / 256.0;
-		if (inv)
-		{
-			intensity = 255 - intensity;
-		}
 
-		PalEntry pe = PalEntry(	MIN(255, int(intensity*r)), 
-								MIN(255, int(intensity*g)), 
-								MIN(255, int(intensity*b)));
+		PalEntry pe = PalEntry(	MIN(255, int(r1 + intensity*r2)), 
+								MIN(255, int(g1 + intensity*g2)), 
+								MIN(255, int(b1 + intensity*b2)));
 
 		cm->Colormap[c] = ColorMatcher.Pick(pe);
 
 		// This table is used by the texture composition code
 		for(int i = 0;i < 256; i++)
 		{
-			intensity = inv? 255-i : i;
-			cm->GrayscaleToColor[i] = PalEntry(	MIN(255, int(intensity*r)), 
-												MIN(255, int(intensity*g)), 
-												MIN(255, int(intensity*b)));
+			cm->GrayscaleToColor[i] = PalEntry(	MIN(255, int(r1 + i*r2)), 
+												MIN(255, int(g1 + i*g2)), 
+												MIN(255, int(b1 + i*b2)));
 		}
 	}
 	return SpecialColormaps.Size() - 1;
@@ -456,8 +471,9 @@ void InitPalette ()
 
 	for (int i = 0; i < countof(SpecialColormapParms); ++i)
 	{
-		AddSpecialColormap(SpecialColormapParms[i].Colorize[0], SpecialColormapParms[i].Colorize[1],
-			SpecialColormapParms[i].Colorize[2], SpecialColormapParms[i].Inverted);
+		AddSpecialColormap(SpecialColormapParms[i].Start[0], SpecialColormapParms[i].Start[1],
+			SpecialColormapParms[i].Start[2], SpecialColormapParms[i].End[0],
+			SpecialColormapParms[i].End[1], SpecialColormapParms[i].End[2]);
 	}
 	// desaturated colormaps
 	for(int m = 0; m < 31; m++)

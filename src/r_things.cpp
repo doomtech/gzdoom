@@ -1648,9 +1648,9 @@ void R_DrawPSprite (pspdef_t* psp, int pspnum, AActor *owner, fixed_t sx, fixed_
 			}
 		}
 
-		if (fixedcolormap != NULL)
+		if (realfixedcolormap != NULL)
 		{ // fixed color
-			vis->colormap = fixedcolormap;
+			vis->colormap = realfixedcolormap->Colormap;
 		}
 		else
 		{
@@ -1823,10 +1823,6 @@ void R_DrawRemainingPlayerSprites()
 			{
 				// Yuck! There needs to be a better way to store colormaps in the vissprite... :(
 				ptrdiff_t specialmap = (vis->colormap - SpecialColormaps[0].Colormap) / sizeof(FSpecialColormap);
-				if (SpecialColormaps[specialmap].Inverted)
-				{
-					vis->RenderStyle.Flags ^= STYLEF_InvertSource;
-				}
 				special = &SpecialColormaps[specialmap];
 			}
 			else if (colormap->Color == PalEntry(255,255,255) &&

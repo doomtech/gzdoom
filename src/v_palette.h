@@ -97,8 +97,8 @@ enum
 
 struct FSpecialColormap
 {
-	float Colorize[3];
-	bool Inverted;
+	float ColorizeStart[3];
+	float ColorizeEnd[3];
 	BYTE Colormap[256];
 	PalEntry GrayscaleToColor[256];
 };
@@ -106,24 +106,25 @@ struct FSpecialColormap
 extern TArray<FSpecialColormap> SpecialColormaps;
 
 // some utility functions to store special colormaps in powerup blends
-#define SPECIALCOLORMAP_MASK 0x00ff0000
+#define SPECIALCOLORMAP_MASK 0x00b60000
 
 inline int MakeSpecialColormap(int index)
 {
+	assert(index >= 0 && index < 65536);
 	return index | SPECIALCOLORMAP_MASK;
 }
 
 inline bool IsSpecialColormap(int map)
 {
-	return (map & SPECIALCOLORMAP_MASK) == SPECIALCOLORMAP_MASK;
+	return (map & 0xFFFF0000) == SPECIALCOLORMAP_MASK;
 }
 
 inline int GetSpecialColormap(int blend)
 {
-	return IsSpecialColormap(blend)? blend & ~SPECIALCOLORMAP_MASK : NOFIXEDCOLORMAP;
+	return IsSpecialColormap(blend) ? blend & 0xFFFF : NOFIXEDCOLORMAP;
 }
 
-int AddSpecialColormap(double r, double g, double b, bool inv);
+int AddSpecialColormap(float r1, float g1, float b1, float r2, float g2, float b2);
 
 
 
@@ -151,7 +152,7 @@ void V_SetBlend (int blendr, int blendg, int blendb, int blenda);
 // V_ForceBlend()
 //
 // Normally, V_SetBlend() does nothing if the new blend is the
-// same as the old. This function will performing the blending
+// same as the old. This function will perform the blending
 // even if the blend hasn't changed.
 void V_ForceBlend (int blendr, int blendg, int blendb, int blenda);
 
