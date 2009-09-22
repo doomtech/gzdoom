@@ -7,7 +7,7 @@
 #endif
 namespace GLRendererOld
 {
-	class GLTexture;
+	class FHardwareTexture;
 }
 
 extern long gl_frameMS;
@@ -104,8 +104,8 @@ private:
 	class Wiper_Crossfade;		friend class Wiper_Crossfade;
 
 	Wiper *ScreenWipe;
-	GLRendererOld::GLTexture *wipestartscreen;
-	GLRendererOld::GLTexture *wipeendscreen;
+	GLRendererOld::FHardwareTexture *wipestartscreen;
+	GLRendererOld::FHardwareTexture *wipeendscreen;
 
 public:
 	AActor * LastCamera;

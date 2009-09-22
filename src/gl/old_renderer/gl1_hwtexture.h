@@ -22,7 +22,7 @@ enum
 	GLT_CLAMPY=2
 };
 
-class GLTexture
+class FHardwareTexture
 {
 	friend void gl_RenderTextureView(FCanvasTexture *Texture, AActor * Viewpoint, int FOV);
 
@@ -61,8 +61,8 @@ private:
 	unsigned * GetTexID(int cm, int translation);
 
 public:
-	GLTexture(int w, int h, bool mip, bool wrap);
-	~GLTexture();
+	FHardwareTexture(int w, int h, bool mip, bool wrap);
+	~FHardwareTexture();
 
 	static void Unbind(int texunit);
 

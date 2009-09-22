@@ -723,8 +723,8 @@ void GL1Renderer::RenderTextureView(FCanvasTexture *Texture, AActor * Viewpoint,
 
 	gl_fixedcolormap=CM_DEFAULT;
 	bounds.left=bounds.top=0;
-	bounds.width=GLTexture::GetTexDimension(gltex->GetWidth(FGLTexture::GLUSE_TEXTURE));
-	bounds.height=GLTexture::GetTexDimension(gltex->GetHeight(FGLTexture::GLUSE_TEXTURE));
+	bounds.width=FHardwareTexture::GetTexDimension(gltex->GetWidth(FGLTexture::GLUSE_TEXTURE));
+	bounds.height=FHardwareTexture::GetTexDimension(gltex->GetHeight(FGLTexture::GLUSE_TEXTURE));
 
 	gl.Flush();
 	RenderViewpoint(Viewpoint, &bounds, FOV, (float)width/height, (float)width/height, false);

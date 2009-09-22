@@ -55,7 +55,7 @@ public:
 class WorldTextureInfo
 {
 protected:
-	GLTexture * gltexture;
+	FHardwareTexture * gltexture;
 	float scalex;
 	float scaley;
 
@@ -85,7 +85,7 @@ public:
 class PatchTextureInfo
 {
 protected:
-	GLTexture * glpatch;
+	FHardwareTexture * glpatch;
 
 	void Clean(bool all)
 	{
@@ -108,6 +108,7 @@ public:
 	float GetU(float upix) const { return glpatch->GetU(upix); }
 	float GetV(float vpix) const { return glpatch->GetV(vpix); }
 };
+
 
 
 //===========================================================================
@@ -239,6 +240,7 @@ public:
 	}
 
 };
+
 
 void gl_EnableTexture(bool on);
 

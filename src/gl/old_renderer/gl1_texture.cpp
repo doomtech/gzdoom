@@ -2,7 +2,7 @@
 ** gltexture.cpp
 ** The texture classes for hardware rendering
 ** (Even though they are named 'gl' there is nothing hardware dependent
-**  in this file. That is all encapsulated in the GLTexture class.)
+**  in this file. That is all encapsulated in the FHardwareTexture class.)
 **
 **---------------------------------------------------------------------------
 ** Copyright 2004-2005 Christoph Oelckers
@@ -804,7 +804,7 @@ const WorldTextureInfo * FGLTexture::GetWorldTextureInfo()
 {
 
 	if (tex->UseType==FTexture::TEX_Null) return NULL;		// Cannot register a NULL texture!
-	if (!gltexture) gltexture=new GLTexture(Width[GLUSE_TEXTURE], Height[GLUSE_TEXTURE], true, true);
+	if (!gltexture) gltexture=new FHardwareTexture(Width[GLUSE_TEXTURE], Height[GLUSE_TEXTURE], true, true);
 	if (gltexture) return (WorldTextureInfo*)this; 	
 	return NULL;
 }
@@ -821,7 +821,7 @@ const PatchTextureInfo * FGLTexture::GetPatchTextureInfo()
 	if (tex->UseType==FTexture::TEX_Null) return NULL;		// Cannot register a NULL texture!
 	if (!glpatch) 
 	{
-		glpatch=new GLTexture(Width[GLUSE_PATCH], Height[GLUSE_PATCH], false, false);
+		glpatch=new FHardwareTexture(Width[GLUSE_PATCH], Height[GLUSE_PATCH], false, false);
 	}
 	if (glpatch) return (PatchTextureInfo*)this; 	
 	return NULL;
@@ -855,7 +855,7 @@ void FGLTexture::SetupShader(int clampmode, int warped, int &cm, int translation
 		}
 		else 
 		{
-			GLTexture::Unbind(1);
+			FHardwareTexture::Unbind(1);
 			usebright = false;
 		}
 
@@ -907,10 +907,6 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 				GetWorldTextureInfo();
 			}
 		}
-
-		if (cm > 0)
-			__asm nop
-
 
 		// Bind it to the system.
 		// clamping in x-direction may cause problems when rendering segs
