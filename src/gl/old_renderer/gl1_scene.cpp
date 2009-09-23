@@ -284,6 +284,10 @@ static void RenderScene(int recursion)
 	// First pass: empty background with sector light only
 
 	// Part 1: solid geometry. This is set up so that there are no transparent parts
+
+	// remove any remaining texture bindings and shaders whick may get in the way.
+	gl_DisableShader();
+	gl_EnableBrightmap(false);
 	gl_EnableTexture(false);
 	gl_drawinfo->drawlists[GLDL_LIGHT].Draw(GLPASS_BASE);
 	gl_EnableTexture(true);
@@ -716,15 +720,15 @@ void GL1Renderer::ProcessScene()
 void GL1Renderer::RenderTextureView(FCanvasTexture *Texture, AActor * Viewpoint, int FOV)
 {
 	GL_IRECT bounds;
-	FGLTexture * gltex = FGLTexture::ValidateTexture(Texture);
+	FMaterial * gltex = FMaterial::ValidateTexture(Texture);
 
-	int width = gltex->TextureWidth(FGLTexture::GLUSE_TEXTURE);
-	int height = gltex->TextureHeight(FGLTexture::GLUSE_TEXTURE);
+	int width = gltex->TextureWidth(GLUSE_TEXTURE);
+	int height = gltex->TextureHeight(GLUSE_TEXTURE);
 
 	gl_fixedcolormap=CM_DEFAULT;
 	bounds.left=bounds.top=0;
-	bounds.width=FHardwareTexture::GetTexDimension(gltex->GetWidth(FGLTexture::GLUSE_TEXTURE));
-	bounds.height=FHardwareTexture::GetTexDimension(gltex->GetHeight(FGLTexture::GLUSE_TEXTURE));
+	bounds.width=FHardwareTexture::GetTexDimension(gltex->GetWidth(GLUSE_TEXTURE));
+	bounds.height=FHardwareTexture::GetTexDimension(gltex->GetHeight(GLUSE_TEXTURE));
 
 	gl.Flush();
 	RenderViewpoint(Viewpoint, &bounds, FOV, (float)width/height, (float)width/height, false);

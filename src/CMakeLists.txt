@@ -740,6 +740,7 @@ add_executable( zdoom WIN32
 	gl/common/glc_texture.cpp
 	gl/common/glc_translate.cpp
 	gl/common/glc_wipe.cpp
+	gl/common/glc_vertexbuffer.cpp
 	gl/old_renderer/gl1_decal.cpp
 	gl/old_renderer/gl1_drawinfo.cpp
 	gl/old_renderer/gl1_flats.cpp
@@ -752,21 +753,10 @@ add_executable( zdoom WIN32
 	gl/old_renderer/gl1_skydome.cpp
 	gl/old_renderer/gl1_sprite.cpp
 	gl/old_renderer/gl1_texture.cpp
-	gl/old_renderer/gl1_vertexbuffer.cpp
 	gl/old_renderer/gl1_walls.cpp
 	gl/old_renderer/gl1_walls_draw.cpp
 	gl/old_renderer/gl1_weapon.cpp
 	gl/old_renderer/gl1_vertex.cpp
-	gl/new_renderer/gl2_renderer.cpp
-	gl/new_renderer/gl2_vertex.cpp
-	gl/new_renderer/gl2_skydraw.cpp	
-	gl/new_renderer/gl2_walls.cpp	
-	gl/new_renderer/textures/gl2_bitmap.cpp
-	gl/new_renderer/textures/gl2_texture.cpp
-	gl/new_renderer/textures/gl2_material.cpp
-	gl/new_renderer/textures/gl2_hwtexture.cpp
-#	gl/new_renderer/textures/gl2_hirestex.cpp
-	gl/new_renderer/textures/gl2_shader.cpp
 	gl/gl_framebuffer.cpp
 	gl/gl_light.cpp
 	gl/gl_menu.cpp

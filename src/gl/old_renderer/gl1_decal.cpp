@@ -96,7 +96,7 @@ void GLWall::DrawDecal(DBaseDecal *actor, seg_t *seg, sector_t *frontSector, sec
 	*/
 
 
-	FGLTexture * tex=FGLTexture::ValidateTexture(decalTile, false);
+	FMaterial * tex=FMaterial::ValidateTexture(decalTile, false);
 	if (!tex) return;
 	
 	switch (actor->RenderFlags & RF_RELMASK)
@@ -207,10 +207,10 @@ void GLWall::DrawDecal(DBaseDecal *actor, seg_t *seg, sector_t *frontSector, sec
 	a = TO_GL(actor->Alpha);
 	
 	// now clip the decal to the actual polygon
-	float decalwidth = tex->TextureWidth(FGLTexture::GLUSE_PATCH)  * TO_GL(actor->ScaleX);
-	float decalheight= tex->TextureHeight(FGLTexture::GLUSE_PATCH) * TO_GL(actor->ScaleY);
-	float decallefto = tex->GetLeftOffset(FGLTexture::GLUSE_PATCH) * TO_GL(actor->ScaleX);
-	float decaltopo  = tex->GetTopOffset(FGLTexture::GLUSE_PATCH)  * TO_GL(actor->ScaleY);
+	float decalwidth = tex->TextureWidth(GLUSE_PATCH)  * TO_GL(actor->ScaleX);
+	float decalheight= tex->TextureHeight(GLUSE_PATCH) * TO_GL(actor->ScaleY);
+	float decallefto = tex->GetLeftOffset(GLUSE_PATCH) * TO_GL(actor->ScaleX);
+	float decaltopo  = tex->GetTopOffset(GLUSE_PATCH)  * TO_GL(actor->ScaleY);
 
 	
 	float leftedge = glseg.fracleft * side->TexelLength;

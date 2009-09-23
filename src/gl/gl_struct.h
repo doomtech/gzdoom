@@ -87,7 +87,7 @@ struct GLSkyInfo
 {
 	float x_offset[2];
 	float y_offset;		// doubleskies don't have a y-offset
-	GLRendererOld::FGLTexture * texture[2];
+	GLRendererOld::FMaterial * texture[2];
 	FTextureID skytexno1;
 	bool mirrored;
 	bool doublesky;

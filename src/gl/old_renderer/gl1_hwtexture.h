@@ -65,6 +65,7 @@ public:
 	~FHardwareTexture();
 
 	static void Unbind(int texunit);
+	static void UnbindAll();
 
 	unsigned int Bind(int texunit, int cm, int translation=0, int clampmode = -1);
 	unsigned int CreateTexture(unsigned char * buffer, int w, int h,bool wrap, int texunit, int cm, int translation=0);

@@ -57,7 +57,6 @@
 #include "gl/common/glc_translate.h"
 #include "gl/gl_framebuffer.h"
 #include "gl/old_renderer/gl1_renderer.h"
-#include "gl/new_renderer/gl2_renderer.h"
 
 IMPLEMENT_CLASS(OpenGLFrameBuffer)
 EXTERN_CVAR (Float, vid_brightness)
@@ -66,8 +65,6 @@ EXTERN_CVAR (Float, vid_contrast)
 void gl_SetupMenu();
 
 GLRendererBase *GLRenderer;
-
-CVAR(Bool, gl_testnewrenderer, false, 0)
 
 //==========================================================================
 //
@@ -78,14 +75,7 @@ CVAR(Bool, gl_testnewrenderer, false, 0)
 OpenGLFrameBuffer::OpenGLFrameBuffer(int width, int height, int bits, int refreshHz, bool fullscreen) : 
 	Super(width, height, bits, refreshHz, fullscreen) 
 {
-	if (!gl_testnewrenderer)
-	{
-		GLRenderer = new GLRendererOld::GL1Renderer;
-	}
-	else
-	{
-		GLRenderer = new GLRendererNew::GL2Renderer;
-	}
+	GLRenderer = new GLRendererOld::GL1Renderer;
 	memcpy (SourcePalette, GPalette.BaseColors, sizeof(PalEntry)*256);
 	UpdatePalette ();
 	ScreenshotBuffer = NULL;

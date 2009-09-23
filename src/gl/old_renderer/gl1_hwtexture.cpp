@@ -333,6 +333,13 @@ void FHardwareTexture::Unbind(int texunit)
 	}
 }
 
+void FHardwareTexture::UnbindAll()
+{
+	for(int texunit = 0; texunit < 16; texunit++)
+	{
+		Unbind(texunit);
+	}
+}
 
 //===========================================================================
 // 

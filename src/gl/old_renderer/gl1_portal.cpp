@@ -755,12 +755,12 @@ void GLHorizonPortal::DrawContents()
 	PortalAll.Clock();
 
 	GLSectorPlane * sp=&origin->plane;
-	FGLTexture * gltexture;
+	FMaterial * gltexture;
 	PalEntry color;
 	float z;
 	player_t * player=&players[consoleplayer];
 
-	gltexture=FGLTexture::ValidateTexture(sp->texture);
+	gltexture=FMaterial::ValidateTexture(sp->texture, true);
 	if (!gltexture) 
 	{
 		ClearScreen();

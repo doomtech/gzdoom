@@ -3,12 +3,6 @@
 
 #include "doomtype.h"
 
-class FGLTextureBase
-{
-public:
-	virtual ~FGLTextureBase() {}
-};
-
 struct FloatRect
 {
 	float left,top;
@@ -40,6 +34,11 @@ class FArchive;
 // Texture IDs
 class FTextureManager;
 class FTerrainTypeArray;
+namespace GLRendererOld
+{
+	class FGLTexture;
+	class FMaterial;
+}
 
 class FTextureID
 {
@@ -271,7 +270,8 @@ public:
 
 	struct MiscGLInfo
 	{
-		FGLTextureBase *RenderTexture;
+		GLRendererOld::FMaterial *Material;
+		GLRendererOld::FGLTexture *SystemTexture;
 		FTexture *Brightmap;
 		PalEntry GlowColor;
 		PalEntry FloorSkyColor;

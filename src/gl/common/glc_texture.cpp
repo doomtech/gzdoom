@@ -49,6 +49,7 @@
 #include "v_palette.h"
 #include "gl/common/glc_renderer.h"
 #include "gl/common/glc_texture.h"
+#include "gl/old_renderer/gl1_texture.h"
 
 //==========================================================================
 //
@@ -242,16 +243,23 @@ FTexture::MiscGLInfo::MiscGLInfo() throw()
 	areacount = 0;
 	mIsTransparent = -1;
 
-	RenderTexture = NULL;
+	Material = NULL;
+	SystemTexture = NULL;
 	Brightmap = NULL;
 }
 
 FTexture::MiscGLInfo::~MiscGLInfo()
 {
-	if (RenderTexture != NULL) delete RenderTexture;
+	if (Material != NULL) delete Material;
+	Material = NULL;
+
+	if (SystemTexture != NULL) delete SystemTexture;
+	SystemTexture = NULL;
+
 	if (Brightmap != NULL) delete Brightmap;
-	if (areas != NULL) delete [] areas;
 	Brightmap = NULL;
+
+	if (areas != NULL) delete [] areas;
 	areas = NULL;
 }
 

@@ -56,7 +56,7 @@ int GetCeilingLight (const sector_t *sec);
 
 namespace GLRendererOld
 {
-class FGLTexture;
+class FMaterial;
 struct GLDrawList;
 
 
@@ -99,7 +99,7 @@ public:
 	sector_t * sector;
 	subsector_t * sub;	// only used for translucent planes
 	float z; // the z position of the flat (height)
-	FGLTexture *gltexture;
+	FMaterial *gltexture;
 
 	FColormap Colormap;	// light and fog
 	ERenderStyle renderstyle;
@@ -157,7 +157,7 @@ public:
 	float x1,y1,z1;
 	float x2,y2,z2;
 
-	FGLTexture *gltexture;
+	FMaterial *gltexture;
 	float trans;
 	AActor * actor;
 	particle_t * particle;

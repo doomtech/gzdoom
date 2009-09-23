@@ -77,7 +77,7 @@ namespace GLRendererOld
 
 GL1Renderer::~GL1Renderer()
 {
-	FGLTexture::DeleteAll();
+	FMaterial::DeleteAll();
 	gl_ClearShaders();
 }
 
@@ -174,7 +174,7 @@ void GL1Renderer::ProcessSector(sector_t *fakesector, subsector_t *sub)
 
 void GL1Renderer::FlushTextures()
 {
-	FGLTexture::FlushAll();
+	FMaterial::FlushAll();
 }
 
 //===========================================================================
@@ -185,7 +185,7 @@ void GL1Renderer::FlushTextures()
 
 void GL1Renderer::PrecacheTexture(FTexture *tex)
 {
-	FGLTexture * gltex = FGLTexture::ValidateTexture(tex);
+	FMaterial * gltex = FMaterial::ValidateTexture(tex);
 	if (gltex) 
 	{
 		if (tex->UseType==FTexture::TEX_Sprite) 
@@ -207,7 +207,7 @@ void GL1Renderer::PrecacheTexture(FTexture *tex)
 
 void GL1Renderer::UncacheTexture(FTexture *tex)
 {
-	FGLTexture * gltex = FGLTexture::ValidateTexture(tex);
+	FMaterial * gltex = FMaterial::ValidateTexture(tex);
 	if (gltex) gltex->Clean(true); 
 }
 
@@ -219,10 +219,10 @@ void GL1Renderer::UncacheTexture(FTexture *tex)
 
 unsigned char *GL1Renderer::GetTextureBuffer(FTexture *tex, int &w, int &h)
 {
-	FGLTexture * gltex = FGLTexture::ValidateTexture(tex);
+	FMaterial * gltex = FMaterial::ValidateTexture(tex);
 	if (gltex)
 	{
-		return gltex->CreateTexBuffer(FGLTexture::GLUSE_TEXTURE, CM_DEFAULT, 0, w, h);
+		return gltex->CreateTexBuffer(GLUSE_TEXTURE, CM_DEFAULT, 0, w, h);
 	}
 	return NULL;
 }
@@ -299,7 +299,7 @@ void GL1Renderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 	float ox, oy, cx, cy, r, g, b;
 	float light = 1.f;
 
-	FGLTexture * gltex = FGLTexture::ValidateTexture(img);
+	FMaterial * gltex = FMaterial::ValidateTexture(img);
 
 	const PatchTextureInfo * pti;
 
@@ -471,7 +471,7 @@ void GL1Renderer::FlatFill (int left, int top, int right, int bottom, FTexture *
 {
 	float fU1,fU2,fV1,fV2;
 
-	FGLTexture *gltexture=FGLTexture::ValidateTexture(src);
+	FMaterial *gltexture=FMaterial::ValidateTexture(src);
 	
 	if (!gltexture) return;
 

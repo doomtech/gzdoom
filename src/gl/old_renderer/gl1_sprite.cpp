@@ -499,14 +499,14 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 		bool mirror;
 		FTextureID patch = gl_GetSpriteFrame(thing->sprite, thing->frame, -1, ang - thing->angle, &mirror);
 		if (!patch.isValid()) return;
-		gltexture=FGLTexture::ValidateTexture(patch, false);
+		gltexture=FMaterial::ValidateTexture(patch, false);
 		if (!gltexture) return;
 
 		const PatchTextureInfo * pti = gltexture->GetPatchTextureInfo();
 	
 		vt=pti->GetVT();
 		vb=pti->GetVB();
-		gltexture->GetRect(&r, FGLTexture::GLUSE_PATCH);
+		gltexture->GetRect(&r, GLUSE_PATCH);
 		if (mirror)
 		{
 			r.left=-r.width-r.left;	// mirror the sprite's x-offset
@@ -807,14 +807,14 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 
 		if (lump != NULL)
 		{
-			gltexture=FGLTexture::ValidateTexture(lump);
+			gltexture=FMaterial::ValidateTexture(lump);
 			translation = 0;
 			const PatchTextureInfo * pti = gltexture->GetPatchTextureInfo();
 
 			vt=0.0f;
 			vb=pti->GetVB();
 			FloatRect r;
-			gltexture->GetRect(&r, FGLTexture::GLUSE_PATCH);
+			gltexture->GetRect(&r, GLUSE_PATCH);
 			ul=pti->GetUR();
 			ur=0.0f;
 		}

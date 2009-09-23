@@ -32,7 +32,7 @@ public:
 	float ztop[2],zbottom[2];
 	texcoord uplft, uprgt, lolft, lorgt;
 	float alpha;
-	FGLTexture *gltexture;
+	FMaterial *gltexture;
 
 	FColormap Colormap;
 	ERenderStyle RenderStyle;

@@ -54,10 +54,10 @@ class GL1Renderer : public GLRendererBase
 
 extern DWORD gl_fixedcolormap;
 
-class FGLTexture;
+class FMaterial;
 
 
-void gl_SetPlaneTextureRotation(const GLSectorPlane * secplane, FGLTexture * gltexture);
+void gl_SetPlaneTextureRotation(const GLSectorPlane * secplane, FMaterial * gltexture);
 void gl_ClearShaders();
 void gl_EnableShader(bool on);
 
@@ -69,7 +69,7 @@ void gl_SetCamera(float x, float y, float z);
 void gl_SetGlowParams(float *topcolors, float topheight, float *bottomcolors, float bottomheight);
 void gl_SetGlowPosition(float topdist, float bottomdist);
 
-void gl_SetTextureShader(int warped, int cm, bool usebright, float warptime);
+void gl_SetTextureShader(int shadereffect, int cm, float warptime);
 
 void gl_ApplyShader();
 

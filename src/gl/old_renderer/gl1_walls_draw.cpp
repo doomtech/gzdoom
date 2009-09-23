@@ -256,7 +256,7 @@ void GLWall::RenderMirrorSurface()
 	gl.DepthFunc(GL_LEQUAL);
 	gl_SetFog(lightlevel, extralight*gl_weaponlight, &Colormap, true);
 
-	FGLTexture * pat=FGLTexture::ValidateTexture(mirrortexture);
+	FMaterial * pat=FMaterial::ValidateTexture(mirrortexture);
 	pat->BindPatch(Colormap.colormap, 0);
 
 	flags &= ~GLWF_GLOW;

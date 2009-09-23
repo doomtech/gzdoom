@@ -792,7 +792,7 @@ static GLDrawList * sortinfo;
 static int __cdecl dicmp (const void *a, const void *b)
 {
 	const GLDrawItem * di[2];
-	FGLTexture * tx[2];
+	FMaterial * tx[2];
 	int lights[2];
 	//colormap_t cm[2];
 	di[0]=(const GLDrawItem *)a;
@@ -994,11 +994,11 @@ void GLDrawInfo::DrawFloodedPlane(wallseg * ws, float planez, sector_t * sec, bo
 	GLSectorPlane plane;
 	int lightlevel;
 	FColormap Colormap;
-	FGLTexture * gltexture;
+	FMaterial * gltexture;
 
 	plane.GetFromSector(sec, ceiling);
 
-	gltexture=FGLTexture::ValidateTexture(plane.texture);
+	gltexture=FMaterial::ValidateTexture(plane.texture, true);
 	if (!gltexture) return;
 
 	if (gl_fixedcolormap) 
