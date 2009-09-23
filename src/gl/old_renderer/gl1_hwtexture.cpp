@@ -56,9 +56,6 @@ extern int TexFormat[];
 EXTERN_CVAR(Bool, gl_clamp_per_texture)
 
 
-namespace GLRendererOld
-{
-
 //===========================================================================
 // 
 //	Static texture data
@@ -380,6 +377,4 @@ void FHardwareTexture::SetTextureClamp(int newclampmode)
 		gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, newclampmode&GLT_CLAMPY? GL_CLAMP_TO_EDGE : GL_REPEAT);
 	}
 	clampmode = newclampmode;
-}
-
 }

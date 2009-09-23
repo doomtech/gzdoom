@@ -51,8 +51,6 @@ static float   avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "tab_anorms.h"
 };
 
-using namespace GLRendererOld;
-
 //===========================================================================
 //
 // UnpackVector

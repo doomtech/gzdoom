@@ -44,9 +44,6 @@
 #include "gl/common/glc_translate.h"
 #include "gl/old_renderer/gl1_bitmap.h"
 
-namespace GLRendererOld
-{
-
 //===========================================================================
 // 
 // multi-format pixel copy with colormap application
@@ -351,7 +348,4 @@ void FGLBitmap::CopyPixelData(int originx, int originy, const BYTE * patch, int 
 			}
 		}
 	}
-}
-
-
 }

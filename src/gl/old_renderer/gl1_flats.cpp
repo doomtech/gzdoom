@@ -61,9 +61,6 @@
 
 EXTERN_CVAR (Bool, gl_lights_checkside);
 
-namespace GLRendererOld
-{
-
 //==========================================================================
 //
 // Sets the texture matrix according to the plane's texture positioning
@@ -716,6 +713,3 @@ void GLFlat::ProcessSector(sector_t * frontsector, subsector_t * sub)
 	}
 }
 
-
-
-} // namespace

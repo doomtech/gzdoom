@@ -71,10 +71,6 @@
 
 EXTERN_CVAR(Bool, gl_render_segs)
 
-namespace GLRendererOld
-{
-
-
 GL1Renderer::~GL1Renderer()
 {
 	FMaterial::DeleteAll();
@@ -112,7 +108,7 @@ void GL1Renderer::Begin2D()
 
 void GL1Renderer::ProcessWall(seg_t *seg, sector_t *sector, sector_t *backsector, subsector_t *polysub)
 {
-	GLRendererOld::GLWall wall;
+	GLWall wall;
 	wall.Process(seg, sector, backsector, polysub, false); //gl_render_segs);
 	rendered_lines++;
 }
@@ -125,7 +121,7 @@ void GL1Renderer::ProcessWall(seg_t *seg, sector_t *sector, sector_t *backsector
 
 void GL1Renderer::ProcessLowerMiniseg(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 {
-	GLRendererOld::GLWall wall;
+	GLWall wall;
 	wall.ProcessLowerMiniseg(seg, frontsector, backsector);
 	rendered_lines++;
 }
@@ -539,4 +535,3 @@ void GL1Renderer::Clear(int left, int top, int right, int bottom, int palcolor, 
 }
 
 
-}

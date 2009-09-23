@@ -50,9 +50,6 @@
 #include "gl/old_renderer/gl1_renderstruct.h"
 #include "gl/old_renderer/gl1_drawinfo.h"
 
-namespace GLRendererOld
-{
-
 struct DecalVertex
 {
 	float x,y,z;
@@ -371,5 +368,3 @@ void GLWall::DoDrawDecals(DBaseDecal * decal, seg_t * seg)
 	}
 }
 
-
-}

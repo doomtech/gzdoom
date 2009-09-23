@@ -12,9 +12,6 @@ EXTERN_CVAR(Bool, gl_brightmap_shader)
 struct FRemapTable;
 
 
-namespace GLRendererOld
-{
-
 // Two intermediate classes which wrap the low level textures.
 // These ones are returned by the Bind* functions to ensure
 // that the coordinate functions aren't used without the texture
@@ -247,7 +244,5 @@ public:
 
 
 void gl_EnableTexture(bool on);
-
-}
 
 #endif

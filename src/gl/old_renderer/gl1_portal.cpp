@@ -73,9 +73,6 @@ EXTERN_CVAR(Bool, gl_portals)
 EXTERN_CVAR(Bool, gl_noquery)
 EXTERN_CVAR(Int, r_mirror_recursions)
 
-namespace GLRendererOld
-{
-
 TArray<GLPortal *> GLPortal::portals;
 int GLPortal::recursion;
 int GLPortal::MirrorFlag;
@@ -861,7 +858,5 @@ void GLHorizonPortal::DrawContents()
 	gl.MatrixMode(GL_MODELVIEW);
 
 	PortalAll.Unclock();
-
-}
 
 }

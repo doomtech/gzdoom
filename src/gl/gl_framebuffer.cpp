@@ -75,7 +75,7 @@ GLRendererBase *GLRenderer;
 OpenGLFrameBuffer::OpenGLFrameBuffer(int width, int height, int bits, int refreshHz, bool fullscreen) : 
 	Super(width, height, bits, refreshHz, fullscreen) 
 {
-	GLRenderer = new GLRendererOld::GL1Renderer;
+	GLRenderer = new GL1Renderer;
 	memcpy (SourcePalette, GPalette.BaseColors, sizeof(PalEntry)*256);
 	UpdatePalette ();
 	ScreenshotBuffer = NULL;

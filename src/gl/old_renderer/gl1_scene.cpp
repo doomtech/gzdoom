@@ -81,17 +81,13 @@ extern TexFilter_s TexFilter[];
 
 
 // Externals from gl_weapon.cpp
-namespace GLRendererOld
-{
-	extern UniqueList<GLSkyInfo> UniqueSkies;
-	extern UniqueList<GLHorizonInfo> UniqueHorizons;
-	extern UniqueList<GLSectorStackInfo> UniqueStacks;
-	extern UniqueList<secplane_t> UniquePlaneMirrors;
+extern UniqueList<GLSkyInfo> UniqueSkies;
+extern UniqueList<GLHorizonInfo> UniqueHorizons;
+extern UniqueList<GLSectorStackInfo> UniqueStacks;
+extern UniqueList<secplane_t> UniquePlaneMirrors;
 
-	extern void gl_DrawPlayerSprites (sector_t *, bool);
-	extern void gl_DrawTargeterSprites();
-}
-using namespace GLRendererOld;
+extern void gl_DrawPlayerSprites (sector_t *, bool);
+extern void gl_DrawTargeterSprites();
 
 
 
@@ -104,9 +100,6 @@ int gl_spriteindex;
 
 
 
-
-namespace GLRendererOld
-{
 
 DWORD			gl_fixedcolormap;
 
@@ -810,11 +803,6 @@ void GL1Renderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 	M_CreatePNG (file, scr + ((height-1) * width * 3), NULL, SS_RGB, width, height, -width*3);
 	M_Free(scr);
 }
-
-
-
-} // namespace
-
 
 
 ADD_STAT(lightstats)

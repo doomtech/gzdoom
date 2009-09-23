@@ -66,12 +66,6 @@ EXTERN_CVAR (Bool, r_stretchsky)
 
 extern int skyfog;
 
-namespace GLRendererOld
-{
-
-
-
-
 // The texture offset to be applied to the texture coordinates in SkyVertex().
 static angle_t maxSideAngle = ANGLE_180 / 3;
 static int rows, columns;	
@@ -602,4 +596,3 @@ void GLSkyPortal::DrawContents()
 	gl.PopMatrix();
 }
 
-} // namespace

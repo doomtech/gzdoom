@@ -47,9 +47,6 @@
 
 #define MAX_QPATH 64
 
-using namespace GLRendererOld;
-
-
 static void UnpackVector(unsigned short packed, float & nx, float & ny, float & nz)
 {
 	// decode the lat/lng normal to a 3 float normal

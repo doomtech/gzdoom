@@ -5,10 +5,8 @@
 #include "win32iface.h"
 #include "win32gliface.h"
 #endif
-namespace GLRendererOld
-{
-	class FHardwareTexture;
-}
+
+class FHardwareTexture;
 
 extern long gl_frameMS;
 extern long gl_frameCount;
@@ -104,8 +102,8 @@ private:
 	class Wiper_Crossfade;		friend class Wiper_Crossfade;
 
 	Wiper *ScreenWipe;
-	GLRendererOld::FHardwareTexture *wipestartscreen;
-	GLRendererOld::FHardwareTexture *wipeendscreen;
+	FHardwareTexture *wipestartscreen;
+	FHardwareTexture *wipeendscreen;
 
 public:
 	AActor * LastCamera;

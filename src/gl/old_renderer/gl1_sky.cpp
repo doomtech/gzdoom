@@ -54,9 +54,6 @@ EXTERN_CVAR(Bool, gl_notexturefill);
 CVAR(Bool,gl_noskyboxes, false, 0)
 extern int skyfog;
 
-namespace GLRendererOld
-{
-
 enum
 {
 	NoSkyDraw = 89
@@ -335,6 +332,3 @@ void GLWall::SkyBottom(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,ver
 		}
 	}
 }
-
-
-} // namespace

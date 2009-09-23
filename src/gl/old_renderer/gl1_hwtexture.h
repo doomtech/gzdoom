@@ -11,9 +11,6 @@
 class FCanvasTexture;
 class AActor;
 
-namespace GLRendererOld
-{
-
 void gl_RenderTextureView(FCanvasTexture *Texture, AActor * Viewpoint, int FOV);
 
 enum
@@ -89,7 +86,5 @@ public:
 	float FixToTexV(int v) { return (float)v/(float)FRACUNIT/(float)texheight; }
 
 };
-
-}
 
 #endif

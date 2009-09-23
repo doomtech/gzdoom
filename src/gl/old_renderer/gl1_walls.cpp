@@ -65,10 +65,6 @@ EXTERN_CVAR(Bool, gl_render_segs)
 EXTERN_CVAR(Bool, gl_seamless)
 EXTERN_CVAR(Bool, gl_fakecontrast)
 
-namespace GLRendererOld
-{
-
-
 UniqueList<GLSkyInfo> UniqueSkies;
 UniqueList<GLHorizonInfo> UniqueHorizons;
 UniqueList<GLSectorStackInfo> UniqueStacks;
@@ -1764,5 +1760,3 @@ void GLWall::ProcessLowerMiniseg(seg_t *seg, sector_t * frontsector, sector_t * 
 		}
 	}
 }
-
-} // namespace

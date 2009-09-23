@@ -5,9 +5,6 @@
 #include "gl/old_renderer/gl1_values.h"
 
 
-namespace GLRendererOld
-{
-
 void ModifyPalette(PalEntry * pout, PalEntry * pin, int cm, int count);
 
 class FGLBitmap : public FBitmap
@@ -33,9 +30,5 @@ public:
 	virtual void CopyPixelData(int originx, int originy, const BYTE * patch, int srcwidth, int srcheight, 
 								int step_x, int step_y, int rotate, PalEntry * palette, FCopyInfo *inf = NULL);
 };
-
-
-}
-
 
 #endif

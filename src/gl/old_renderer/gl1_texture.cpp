@@ -70,9 +70,6 @@ EXTERN_CVAR(Int, gl_lightmode)
 EXTERN_CVAR(Bool, gl_precache)
 EXTERN_CVAR(Bool, gl_texture_usehires)
 
-namespace GLRendererOld
-{
-
 //===========================================================================
 //
 // The GL texture maintenance class
@@ -853,7 +850,4 @@ void FMaterial::DeleteAll()
 	}
 	mMaterials.Clear();
 	mMaterials.ShrinkToFit();
-}
-
-
 }

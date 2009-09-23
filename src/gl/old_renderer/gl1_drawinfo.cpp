@@ -53,10 +53,6 @@
 #include "gl/common/glc_templates.h"
 #include "gl/old_renderer/gl1_drawinfo.h"
 
-namespace GLRendererOld
-{
-
-
 GLDrawInfo * gl_drawinfo;
 extern FreeList<gl_subsectorrendernode> SSR_List;
 
@@ -1168,5 +1164,3 @@ void GLDrawInfo::FloodLowerGap(seg_t * seg)
 	ClearFloodStencil(&ws);
 }
 
-
-} // namespace

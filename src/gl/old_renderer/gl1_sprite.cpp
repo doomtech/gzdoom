@@ -71,9 +71,6 @@ extern TArray<spriteframe_t> SpriteFrames;
 extern TArray<PalEntry> BloodTranslationColors;
 
 
-namespace GLRendererOld
-{
-
 void gl_SetRenderStyle(FRenderStyle style, bool drawopaque, bool allowcolorblending)
 {
 	int tm, sb, db, be;
@@ -849,8 +846,6 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 	PutSprite(hw_styleflags != STYLEHW_Solid);
 	rendered_sprites++;
 }
-
-} // namespace
 
 
 

@@ -5,10 +5,8 @@
 // One wall segment in the draw list
 //
 //==========================================================================
-namespace GLRendererOld
-{
 
-	struct GLHorizonInfo;
+struct GLHorizonInfo;
 
 class GLWall
 {
@@ -157,6 +155,4 @@ public:
 
 };
 
-
-}
 #endif

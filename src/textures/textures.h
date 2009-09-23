@@ -34,11 +34,8 @@ class FArchive;
 // Texture IDs
 class FTextureManager;
 class FTerrainTypeArray;
-namespace GLRendererOld
-{
-	class FGLTexture;
-	class FMaterial;
-}
+class FGLTexture;
+class FMaterial;
 
 class FTextureID
 {
@@ -270,8 +267,8 @@ public:
 
 	struct MiscGLInfo
 	{
-		GLRendererOld::FMaterial *Material;
-		GLRendererOld::FGLTexture *SystemTexture;
+		FMaterial *Material;
+		FGLTexture *SystemTexture;
 		FTexture *Brightmap;
 		PalEntry GlowColor;
 		PalEntry FloorSkyColor;

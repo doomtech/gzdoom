@@ -59,9 +59,6 @@ EXTERN_CVAR (Bool, r_drawplayersprites)
 EXTERN_CVAR(Float, transsouls)
 
 
-namespace GLRendererOld
-{
-
 //==========================================================================
 //
 // R_DrawPSprite
@@ -300,6 +297,4 @@ void gl_DrawTargeterSprites()
 	// The Targeter's sprites are always drawn normally.
 	for (i=ps_targetcenter, psp = &player->psprites[ps_targetcenter]; i<NUMPSPRITES; i++,psp++)
 		if (psp->state) DrawPSprite (player,psp,psp->sx, psp->sy, CM_DEFAULT, false);
-}
-
 }

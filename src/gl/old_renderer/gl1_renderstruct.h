@@ -54,8 +54,6 @@ int GetFloorLight (const sector_t *sec);
 int GetCeilingLight (const sector_t *sec);
 
 
-namespace GLRendererOld
-{
 class FMaterial;
 struct GLDrawList;
 
@@ -177,9 +175,5 @@ public:
 	// Lines start-end and fdiv must intersect.
 	double CalcIntersectionVertex(GLWall * w2);
 };
-
-
-}
-
 
 #endif

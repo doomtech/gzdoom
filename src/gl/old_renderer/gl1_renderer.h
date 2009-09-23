@@ -6,9 +6,6 @@
 
 struct GL_IRECT;
 
-namespace GLRendererOld
-{
-
 class GL1Renderer : public GLRendererBase
 {
 	~GL1Renderer();
@@ -78,7 +75,5 @@ void gl_DrawScene();
 void gl_EndDrawScene();
 sector_t * gl_RenderView (AActor * camera, GL_IRECT * bounds, float fov, float ratio, bool mainview);
 void gl_SetRenderStyle(FRenderStyle style, bool drawopaque, bool allowcolorblending);
-
-}
 
 #endif

@@ -60,9 +60,6 @@
 
 EXTERN_CVAR(Bool, gl_seamless)
 
-namespace GLRendererOld
-{
-
 //==========================================================================
 //
 // Sets up the texture coordinates for one light to be rendered
@@ -460,6 +457,3 @@ void GLWall::Draw(int pass)
 		}
 	}
 }
-
-
-} // namespace

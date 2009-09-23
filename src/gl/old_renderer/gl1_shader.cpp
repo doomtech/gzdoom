@@ -79,9 +79,6 @@ CUSTOM_CVAR(Bool, gl_glow_shader, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOIN
 extern long gl_frameMS;
 extern PalEntry gl_CurrentFogColor;
 
-namespace GLRendererOld
-{
-
 bool gl_fogenabled;
 bool gl_textureenabled;
 bool gl_glowenabled;
@@ -815,6 +812,4 @@ void gl_DisableShader()
 void gl_ClearShaders()
 {
 	GLShader::Clear();
-}
-
 }
