@@ -73,7 +73,7 @@ EXTERN_CVAR(Bool, gl_render_segs)
 
 GL1Renderer::~GL1Renderer()
 {
-	FMaterial::DeleteAll();
+	FMaterial::FlushAll();
 	gl_ClearShaders();
 }
 

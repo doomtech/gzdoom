@@ -846,6 +846,7 @@ void FMaterial::DeleteAll()
 {
 	for(int i=mMaterials.Size()-1;i>=0;i--)
 	{
+		mMaterials[i]->tex->gl_info.Material = NULL;
 		delete mMaterials[i];
 	}
 	mMaterials.Clear();
