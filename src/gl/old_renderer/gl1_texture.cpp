@@ -429,14 +429,17 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 		// Bind it to the system.
 		if (!gltexture->Bind(texunit, cm, translation, clampmode))
 		{
-			if (tex->bHasCanvas) return NULL;
-
+			
 			int w,h;
 
 			// Create this texture
-			unsigned char * buffer = CreateTexBuffer(GLUSE_TEXTURE, cm, translation, w, h, true, warp);
-
-			tex->ProcessData(buffer, w, h, false);
+			unsigned char * buffer = NULL;
+			
+			if (!tex->bHasCanvas)
+			{
+				buffer = CreateTexBuffer(GLUSE_TEXTURE, cm, translation, w, h, true, warp);
+				tex->ProcessData(buffer, w, h, false);
+			}
 			if (!gltexture->CreateTexture(buffer, w, h, true, texunit, cm, translation)) 
 			{
 				// could not create texture
@@ -477,7 +480,7 @@ const PatchTextureInfo * FGLTexture::BindPatch(int texunit, int cm, int translat
 			GetPatchTextureInfo();
 		}
 
-		// Bind it to the system. For multitexturing this
+		// Bind it to the system. 
 		if (!glpatch->Bind(texunit, cm, translation, -1))
 		{
 			int w, h;

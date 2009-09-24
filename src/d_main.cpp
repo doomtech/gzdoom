@@ -1586,11 +1586,9 @@ void D_MultiExec (DArgs *list, bool usePullin)
 // D_DoomMain
 //
 //==========================================================================
-extern "C" long _crtBreakAlloc;      /* Break on this allocation */
 
 void D_DoomMain (void)
 {
-	_crtBreakAlloc = 178675;
 	int p, flags;
 	char *v;
 	const char *wad;
