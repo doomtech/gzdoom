@@ -686,6 +686,7 @@ void gl_SetShaderLight(float level, float olight)
 
 	gl_lightfactor = (olight/level);
 	gl_lightfactor = 1.f + (gl_lightfactor - 1.f) * FACTOR;
+	if (gl_lightfactor == 1.f) gl_lightdist = 0.f;	// save some code in the shader
 }
 
 //==========================================================================

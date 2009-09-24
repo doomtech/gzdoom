@@ -64,16 +64,16 @@ vec4 getLightColor(float fogdist, float fogfactor)
 	//
 	if (fogenabled > 0)
 	{
-		#ifdef NO_SM4
+		#ifndef NO_SM4
 			// special lighting mode 'Doom' not available on older cards for performance reasons.
-			if (lightfactor != 1.0 && fogdist < lightdist) 
+			if (fogdist < lightdist) 
 			{
 				color.rgb *= lightfactor - (fogdist / lightdist) * (lightfactor - 1.0);
 			}
 		#endif
 		
 		//color = vec4(color.rgb * (1.0 - fogfactor), color.a);
-		color = vec4(mix(vec4(0.0, 0.0, 0.0, 1.0), color, fogfactor).rgb, color.a);
+		color.rgb = mix(vec3(0.0, 0.0, 0.0), color.rgb, fogfactor);
 	}
 	#endif
 	

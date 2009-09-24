@@ -364,8 +364,8 @@ static void APIENTRY LoadExtensions()
 	if (CheckExtension("GL_NV_texture_env_combine4")) gl->flags|=RFL_TEX_ENV_COMBINE4_NV;
 	if (CheckExtension("GL_ATI_texture_env_combine3")) gl->flags|=RFL_TEX_ENV_COMBINE4_NV;
 	if (CheckExtension("GL_ARB_texture_non_power_of_two")) gl->flags|=RFL_NPOT_TEXTURE;
-	if (CheckExtension("GL_ARB_vertex_buffer_object")) gl->flags|=RFL_VBO;
-	if (CheckExtension("GL_ARB_map_buffer_range")) gl->flags|=RFL_MAP_BUFFER_RANGE;
+	if (CheckExtension("GL_ARB_texture_compression")) gl->flags|=RFL_TEXTURE_COMPRESSION;
+	if (CheckExtension("GL_EXT_texture_compression_s3tc")) gl->flags|=RFL_TEXTURE_COMPRESSION_S3TC;
 
 	if (strcmp((const char*)glGetString(GL_VERSION), "2.1") >= 0) gl->flags|=RFL_GL_21;
 	if (strcmp((const char*)glGetString(GL_VERSION), "3.0") >= 0) gl->flags|=RFL_GL_30;
@@ -489,7 +489,7 @@ static void APIENTRY LoadExtensions()
 		gl->UnmapBuffer				= (PFNGLUNMAPBUFFERPROC)wglGetProcAddress("glUnmapBuffer");
 		gl->flags |= RFL_VBO;
 	}
-	else if (gl->flags & RFL_VBO)
+	else if (CheckExtension("GL_ARB_vertex_buffer_object"))
 	{
 		gl->BindBuffer				= (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBufferARB");
 		gl->DeleteBuffers			= (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffersARB");
@@ -498,23 +498,16 @@ static void APIENTRY LoadExtensions()
 		gl->BufferSubData			= (PFNGLBUFFERSUBDATAPROC)wglGetProcAddress("glBufferSubDataARB");
 		gl->MapBuffer				= (PFNGLMAPBUFFERPROC)wglGetProcAddress("glMapBufferARB");
 		gl->UnmapBuffer				= (PFNGLUNMAPBUFFERPROC)wglGetProcAddress("glUnmapBufferARB");
+		gl->flags|=RFL_VBO;
 	}
 
-	if (gl->flags & RFL_MAP_BUFFER_RANGE)
+	if (CheckExtension("GL_ARB_map_buffer_range")) 
 	{
 		gl->MapBufferRange			= (PFNGLMAPBUFFERRANGEPROC)wglGetProcAddress("glMapBufferRange");
 		gl->FlushMappedBufferRange	= (PFNGLFLUSHMAPPEDBUFFERRANGEPROC)wglGetProcAddress("glFlushMappedBufferRange");
+		gl->flags|=RFL_MAP_BUFFER_RANGE;
 	}
 
-	// [BB] Check for the extensions that are necessary for on the fly texture compression.
-	if (CheckExtension("GL_ARB_texture_compression"))
-	{
-		gl->flags|=RFL_TEXTURE_COMPRESSION;
-	}
-	if (CheckExtension("GL_EXT_texture_compression_s3tc"))
-	{
-		gl->flags|=RFL_TEXTURE_COMPRESSION_S3TC;
-	}
 
 	gl->ActiveTexture = (PFNGLACTIVETEXTUREPROC)wglGetProcAddress("glActiveTextureARB");
 	gl->MultiTexCoord2f = (PFNGLMULTITEXCOORD2FPROC) wglGetProcAddress("glMultiTexCoord2fARB");
