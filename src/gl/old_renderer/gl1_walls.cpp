@@ -49,6 +49,7 @@
 #include "gl/old_renderer/gl1_renderstruct.h"
 #include "gl/old_renderer/gl1_drawinfo.h"
 #include "gl/old_renderer/gl1_portal.h"
+#include "gl/old_renderer/gl1_shader.h"
 #include "gl/gl_lights.h"
 #include "gl/common/glc_glow.h"
 #include "gl/common/glc_data.h"
@@ -79,7 +80,7 @@ UniqueList<secplane_t> UniquePlaneMirrors;
 void GLWall::CheckGlowing()
 {
 	bottomglowheight = topglowheight = 0;
-	if (!gl_isFullbright(Colormap.LightColor, lightlevel) && gl_glow_shader)
+	if (!gl_isFullbright(Colormap.LightColor, lightlevel) && gl_GlowActive())
 	{
 		FTexture *tex = TexMan[topflat];
 		if (tex != NULL && tex->isGlowing())
@@ -188,7 +189,7 @@ void GLWall::PutWall(bool translucent)
 		list = list_indices[light][masked][!!(flags&GLWF_FOGGY)];
 		if (list == GLDL_LIGHT)
 		{
-			if (gltexture->tex->gl_info.Brightmap && gl_brightmap_shader) list = GLDL_LIGHTBRIGHT;
+			if (gltexture->tex->gl_info.Brightmap && gl_BrightmapsActive()) list = GLDL_LIGHTBRIGHT;
 			if (flags & GLWF_GLOW) list = GLDL_LIGHTBRIGHT;
 		}
 		gl_drawinfo->drawlists[list].AddWall(this);

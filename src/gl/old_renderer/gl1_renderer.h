@@ -66,8 +66,7 @@ void gl_SetCamera(float x, float y, float z);
 void gl_SetGlowParams(float *topcolors, float topheight, float *bottomcolors, float bottomheight);
 void gl_SetGlowPosition(float topdist, float bottomdist);
 
-void gl_SetTextureShader(int shadereffect, int cm, float warptime);
-
+int gl_SetupShader(bool cameratexture, int &shaderindex, int &cm, float warptime);
 void gl_ApplyShader();
 
 void gl_SetupView(fixed_t viewx, fixed_t viewy, fixed_t viewz, angle_t viewangle, bool mirror, bool planemirror);

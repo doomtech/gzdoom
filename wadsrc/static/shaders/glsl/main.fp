@@ -64,10 +64,13 @@ vec4 getLightColor(float fogdist, float fogfactor)
 	//
 	if (fogenabled > 0)
 	{
-		if (lightfactor != 1.0 && fogdist < lightdist) 
-		{
-			color.rgb *= lightfactor - (fogdist / lightdist) * (lightfactor - 1.0);
-		}
+		#ifdef NO_SM4
+			// special lighting mode 'Doom' not available on older cards for performance reasons.
+			if (lightfactor != 1.0 && fogdist < lightdist) 
+			{
+				color.rgb *= lightfactor - (fogdist / lightdist) * (lightfactor - 1.0);
+			}
+		#endif
 		
 		//color = vec4(color.rgb * (1.0 - fogfactor), color.a);
 		color = vec4(mix(vec4(0.0, 0.0, 0.0, 1.0), color, fogfactor).rgb, color.a);
@@ -138,14 +141,18 @@ void main()
 	{
 		const float LOG2E = 1.442692;	// = 1/log(2)
 		//if (abs(fogenabled) == 1) 
-		if (fogenabled == 1 || fogenabled == -1) 
-		{
+		#ifndef NO_SM4
+			if (fogenabled == 1 || fogenabled == -1) 
+			{
+				fogdist = fogcoord;
+			}
+			else 
+			{
+				fogdist = max(16.0, distance(pixelpos, camerapos));
+			}
+		#else
 			fogdist = fogcoord;
-		}
-		else 
-		{
-			fogdist = max(16.0, distance(pixelpos, camerapos));
-		}
+		#endif
 		fogfactor = exp2 ( -gl_Fog.density * fogdist * LOG2E);
 	}
 	#endif
@@ -153,8 +160,7 @@ void main()
 	vec4 frag = getLightColor(fogdist, fogfactor);
 	frag = Process(frag);
 	#ifndef NO_FOG
-		//if (abs(fogenabled) == 2) 
-		if (fogenabled == 2 || fogenabled == -2) 
+		if (fogenabled < 0) 
 		{
 			frag = applyFog(frag, fogfactor);
 		}

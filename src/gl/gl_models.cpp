@@ -583,7 +583,7 @@ void gl_RenderModel(GLSprite * spr, int cm)
 	Matrix3x4 ModelToWorld;
 	Matrix3x4 *mat;
 
-	if (gl_fogmode != 2 || !gl_fog_shader)
+	if (gl_fogmode != 2)
 	{
 		// Model space => World space
 		gl.Translatef(spr->x, spr->z, spr->y );

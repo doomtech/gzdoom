@@ -313,7 +313,7 @@ int OpenGLFrameBuffer::GetPageCount()
 //
 //==========================================================================
 
-void OpenGLFrameBuffer::PrecacheTexture(FTexture *tex, bool cache)
+void OpenGLFrameBuffer::PrecacheTexture(FTexture *tex, int cache)
 {
 	if (tex != NULL)
 	{

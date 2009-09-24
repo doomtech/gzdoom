@@ -38,6 +38,7 @@
 #include "gl/gl_include.h"
 #include "tarray.h"
 #include "doomtype.h"
+#include "m_argv.h"
 #include "gl/gl_intern.h"
 
 #ifndef unix
@@ -349,6 +350,7 @@ static void APIENTRY LoadExtensions()
 	// This loads any function pointers and flags that require a vaild render context to
 	// initialize properly
 
+	gl->shadermodel = 0;	// assume no shader support
 	gl->vendorstring=(char*)glGetString(GL_VENDOR);
 
 	// First try the regular function
@@ -364,9 +366,6 @@ static void APIENTRY LoadExtensions()
 	if (CheckExtension("GL_ARB_texture_non_power_of_two")) gl->flags|=RFL_NPOT_TEXTURE;
 	if (CheckExtension("GL_ARB_vertex_buffer_object")) gl->flags|=RFL_VBO;
 	if (CheckExtension("GL_ARB_map_buffer_range")) gl->flags|=RFL_MAP_BUFFER_RANGE;
-
-	
-
 
 	if (strcmp((const char*)glGetString(GL_VERSION), "2.1") >= 0) gl->flags|=RFL_GL_21;
 	if (strcmp((const char*)glGetString(GL_VERSION), "3.0") >= 0) gl->flags|=RFL_GL_30;
@@ -442,7 +441,20 @@ static void APIENTRY LoadExtensions()
 		gl->DisableVertexAttribArray= (PFNGLDISABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glDisableVertexAttribArrayARB");
 		gl->VertexAttribPointer		= (PFNGLVERTEXATTRIBPOINTERPROC)wglGetProcAddress("glVertexAttribPointerARB");
 
-		gl->flags|=RFL_GLSL;
+		// Rules:
+		// SM4 will always use shaders. No option to switch them off is needed here.
+		// SM3 has shaders optional but they are off by default (they will have a performance impact
+		// SM2 only uses shaders for colormaps on camera textures and has no option to use them in general.
+		//     On SM2 cards the shaders will be too slow and show visual bugs (at least on GF 6800.)
+		if (strcmp((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION), "1.3") >= 0) gl->shadermodel = 4;
+		else if (CheckExtension("GL_NV_GPU_SHADER4")) gl->shadermodel = 4;	// for pre-3.0 drivers that support GF8xxx.
+		else if (CheckExtension("GL_NV_VERTEX_PROGRAM3")) gl->shadermodel = 3;
+		else if (!strstr(gl->vendorstring, "NVIDIA")) gl->shadermodel = 3;
+		else gl->shadermodel = 2;	// Only for older NVidia cards which had notoriously bad shader support.
+
+		// Command line overrides for testing and problem cases.
+		if (Args->CheckParm("-sm2") && gl->shadermodel > 2) gl->shadermodel = 2;
+		else if (Args->CheckParm("-sm3") && gl->shadermodel > 3) gl->shadermodel = 3;
 	}
 
 	if (CheckExtension("GL_ARB_occlusion_query"))
@@ -520,6 +532,7 @@ static void APIENTRY PrintStartupLog()
 	Printf ("GL_VENDOR: %s\n", glGetString(GL_VENDOR));
 	Printf ("GL_RENDERER: %s\n", glGetString(GL_RENDERER));
 	Printf ("GL_VERSION: %s\n", glGetString(GL_VERSION));
+	Printf ("GL_SHADING_LANGUAGE_VERSION: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	Printf ("GL_EXTENSIONS: %s\n", glGetString(GL_EXTENSIONS));
 #ifndef unix
 	Printf ("WGL_EXTENSIONS: %s\n", wgl_extensions);

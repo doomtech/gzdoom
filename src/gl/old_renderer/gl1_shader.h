@@ -25,6 +25,10 @@ inline void gl_EnableGlow(bool on)
 	gl_glowenabled = on;
 }
 
+bool gl_BrightmapsActive();
+bool gl_GlowActive();
+bool gl_ExtFogActive();
+
 void gl_ApplyShader();
 void gl_DisableShader();
 void gl_ClearShaders();

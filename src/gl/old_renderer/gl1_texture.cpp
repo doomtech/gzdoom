@@ -65,7 +65,6 @@
 #include "gl/common/glc_texture.h"
 
 EXTERN_CVAR(Bool, gl_render_precise)
-EXTERN_CVAR(Int, gl_fogmode)
 EXTERN_CVAR(Int, gl_lightmode)
 EXTERN_CVAR(Bool, gl_precache)
 EXTERN_CVAR(Bool, gl_texture_usehires)
@@ -430,6 +429,8 @@ const WorldTextureInfo * FGLTexture::Bind(int texunit, int cm, int clampmode, in
 		// Bind it to the system.
 		if (!gltexture->Bind(texunit, cm, translation, clampmode))
 		{
+			if (tex->bHasCanvas) return NULL;
+
 			int w,h;
 
 			// Create this texture
@@ -546,7 +547,7 @@ FMaterial::FMaterial(FTexture * tx)
 
 	// set default shader. Can be warp or brightmap
 	mShaderIndex = tx->bWarped;
-	if (!tx->bWarped) 
+	if (!tx->bWarped && gl.shadermodel > 2) 
 	{
 		tx->CreateDefaultBrightmap();
 		if (tx->gl_info.Brightmap != NULL)
@@ -584,26 +585,6 @@ FMaterial::~FMaterial()
 
 //===========================================================================
 // 
-//	Checks if a shader needs to be used for this texture
-//
-//===========================================================================
-
-void FMaterial::SetupShader(int shaderindex, int &cm)
-{
-	if (gl.flags & RFL_GLSL)
-	{
-		bool usecmshader = (tex->bHasCanvas || gl_colormap_shader) && 
-			cm > CM_DEFAULT && cm < CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size() && 
-			cm != CM_SHADE && gl_texturemode != TM_MASK;
-
-		float warptime = tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 1.f;
-		gl_SetTextureShader(shaderindex, usecmshader? cm : CM_DEFAULT, warptime);
-		if (usecmshader) cm = CM_DEFAULT;
-	}
-}
-
-//===========================================================================
-// 
 //	Binds a texture to the renderer
 //
 //===========================================================================
@@ -612,23 +593,9 @@ const WorldTextureInfo * FMaterial::Bind(int cm, int clampmode, int translation)
 {
 	int usebright = false;
 	int shaderindex = mShaderIndex;
-	int softwarewarp = 0;
 	int maxbound = 0;
 
-	// fixme: move into shader class
-	if (shaderindex == 3 &&
-		(translation == TRANSLATION(TRANSLATION_Standard, 7) || 
-			cm >= CM_SHADE || !gl_brightmap_shader || 
-			!gl_brightmapenabled ||	!(gl.flags & RFL_GLSL)))
-	{
-		shaderindex = 0;
-	}
-	else if ((shaderindex == 1 || shaderindex == 2) && (!gl_warp_shader || !(gl.flags & RFL_GLSL)))
-	{
-		shaderindex = 0;
-		softwarewarp = mShaderIndex;
-	}
-	SetupShader(shaderindex, cm);
+	int softwarewarp = gl_SetupShader(tex->bHasCanvas, shaderindex, cm, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 1.f);
 
 	const WorldTextureInfo *inf = mTextures[0]->Bind(0, cm, clampmode, translation, softwarewarp);
 	if (inf != NULL && shaderindex > 0)
@@ -659,23 +626,9 @@ const PatchTextureInfo * FMaterial::BindPatch(int cm, int translation)
 {
 	int usebright = false;
 	int shaderindex = mShaderIndex;
-	int softwarewarp = 0;
 	int maxbound = 0;
 
-	// fixme: move into shader class
-	if (shaderindex == 3 &&
-		(translation == TRANSLATION(TRANSLATION_Standard, 7) || 
-			cm >= CM_SHADE || !gl_brightmap_shader || 
-			!gl_brightmapenabled ||	!(gl.flags & RFL_GLSL)))
-	{
-		shaderindex = 0;
-	}
-	else if ((shaderindex == 1 || shaderindex == 2) && (!gl_warp_shader || !(gl.flags & RFL_GLSL)))
-	{
-		shaderindex = 0;
-		softwarewarp = mShaderIndex;
-	}
-	SetupShader(shaderindex, cm);
+	int softwarewarp = gl_SetupShader(tex->bHasCanvas, shaderindex, cm, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 1.f);
 
 	const PatchTextureInfo *inf = mTextures[0]->BindPatch(0, cm, translation, softwarewarp);
 	if (inf != NULL && shaderindex > 0)

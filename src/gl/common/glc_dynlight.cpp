@@ -1031,10 +1031,12 @@ FInternalLightAssociation::FInternalLightAssociation(FLightAssociation * asso)
 }
 
 
-inline TArray<FInternalLightAssociation *> * gl_GetActorLights(AActor * actor)
+inline TDeletingArray<FInternalLightAssociation *> * gl_GetActorLights(AActor * actor)
 {
-	return (TArray<FInternalLightAssociation *>*)actor->lightassociations;
+	return (TDeletingArray<FInternalLightAssociation *>*)actor->lightassociations;
 }
+
+TDeletingArray< TDeletingArray<FInternalLightAssociation *> * > AssoDeleter;
 
 void gl_InitializeActorLights()
 {
@@ -1051,9 +1053,11 @@ void gl_InitializeActorLights()
 
 				if (!defaults->lightassociations)
 				{
-					defaults->lightassociations = new TArray<FInternalLightAssociation*>;
+					TDeletingArray<FInternalLightAssociation*> *p =new TDeletingArray<FInternalLightAssociation*>;
+					defaults->lightassociations = p;
+					AssoDeleter.Push(p);
 				}
-				TArray<FInternalLightAssociation *> * lights = gl_GetActorLights(defaults);
+				TDeletingArray<FInternalLightAssociation *> * lights = gl_GetActorLights(defaults);
 				if (iasso->Light()==NULL)
 				{
 					// The definition was not valid.

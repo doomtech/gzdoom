@@ -273,7 +273,7 @@ void FTexture::CreateDefaultBrightmap()
 	if (!gl_info.bBrightmapChecked)
 	{
 		// Check for brightmaps
-		if ((gl.flags & RFL_GLSL) && UseBasePalette() && HasGlobalBrightmap &&
+		if (UseBasePalette() && HasGlobalBrightmap &&
 			UseType != TEX_Decal && UseType != TEX_MiscPatch && UseType != TEX_FontChar &&
 			gl_info.Brightmap == NULL && bWarped == 0
 			) 

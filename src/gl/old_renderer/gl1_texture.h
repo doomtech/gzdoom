@@ -7,7 +7,6 @@
 #include "i_system.h"
 
 EXTERN_CVAR(Bool, gl_precache)
-EXTERN_CVAR(Bool, gl_brightmap_shader)
 
 struct FRemapTable;
 

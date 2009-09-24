@@ -66,7 +66,7 @@ public:
 	void FlatFill (int left, int top, int right, int bottom, FTexture *src, bool local_origin=false);
 	void DrawRemainingPlayerSprites();
 
-	void PrecacheTexture(FTexture *tex, bool cache);
+	void PrecacheTexture(FTexture *tex, int cache);
 
 	FNativePalette *CreatePalette(FRemapTable *remap);
 

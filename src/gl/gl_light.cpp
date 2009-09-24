@@ -51,6 +51,7 @@
 #include "gl/gl_functions.h"
 #include "gl/old_renderer/gl1_drawinfo.h"
 #include "gl/old_renderer/gl1_portal.h"
+#include "gl/old_renderer/gl1_shader.h"
 #include "g_level.h"
 
 
@@ -99,14 +100,14 @@ CUSTOM_CVAR(Int,gl_fogmode,1,CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
 	if (self>2) self=2;
 	if (self<0) self=0;
-	if (self == 2 && !(gl.flags & RFL_GLSL)) self = 1;	// mode 2 requires GLSL
+	if (self == 2 && !gl_ExtFogActive()) self = 1;	// mode 2 requires SM4
 }
 
 CUSTOM_CVAR(Int, gl_lightmode, 3 ,CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
 	if (self>4) self=4;
 	if (self<0) self=0;
-	if (self == 2 && !(gl.flags & RFL_GLSL)) self = 3;	// mode 2 requires GLSL
+	if (self == 2 && !gl_ExtFogActive()) self = 3;	// mode 2 requires SM4
 	glset.lightmode = self;
 }
 
@@ -240,7 +241,7 @@ void gl_SetFog(int lightlevel, int rellight, const FColormap *cmap, bool isaddit
 	}
 	else
 	{
-		if ((glset.lightmode == 2 && gl_fog_shader) && fogcolor == 0)
+		if (glset.lightmode == 2 && fogcolor == 0)
 		{
 			float light = gl_CalcLightLevel(lightlevel, rellight, false);
 			gl_SetShaderLight(light, lightlevel);

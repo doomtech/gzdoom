@@ -6,7 +6,6 @@ enum RenderFlags
 	RFL_NPOT_TEXTURE=1,
 	RFL_NOSTENCIL=2,
 	RFL_FRAGMENT_PROGRAM=4,
-	RFL_GLSL=8,
 	RFL_OCCLUSION_QUERY=16,
 	RFL_TEX_ENV_COMBINE4_NV=32,
 	RFL_TEX_ENV_COMBINE3_ATI=64,
@@ -42,6 +41,7 @@ enum TexMode
 struct RenderContext
 {
 	unsigned int flags;
+	unsigned int shadermodel;
 	int max_texturesize;
 	char * vendorstring;
 
