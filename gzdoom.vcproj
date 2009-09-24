@@ -6564,10 +6564,6 @@
 				Name="Old Renderer"
 				>
 				<File
-					RelativePath=".\src\gl\old_renderer\gl1_bitmap.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\old_renderer\gl1_decal.cpp"
 					>
 				</File>
@@ -6577,10 +6573,6 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\old_renderer\gl1_flats.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\old_renderer\gl1_hwtexture.cpp"
 					>
 				</File>
 				<File
@@ -6612,10 +6604,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\old_renderer\gl1_texture.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\old_renderer\gl1_vertex.cpp"
 					>
 				</File>
@@ -6635,15 +6623,7 @@
 					Name="Includes"
 					>
 					<File
-						RelativePath=".\src\gl\old_renderer\gl1_bitmap.h"
-						>
-					</File>
-					<File
 						RelativePath=".\src\gl\old_renderer\gl1_drawinfo.h"
-						>
-					</File>
-					<File
-						RelativePath=".\src\gl\old_renderer\gl1_hwtexture.h"
 						>
 					</File>
 					<File
@@ -6660,10 +6640,6 @@
 					</File>
 					<File
 						RelativePath=".\src\gl\old_renderer\gl1_shader.h"
-						>
-					</File>
-					<File
-						RelativePath=".\src\gl\old_renderer\gl1_texture.h"
 						>
 					</File>
 					<File
@@ -6738,14 +6714,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\common\glc_hirestex.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\common\glc_hqresize.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\common\glc_light.cpp"
 					>
 				</File>
@@ -6767,10 +6735,6 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\common\glc_setup.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\common\glc_texture.cpp"
 					>
 				</File>
 				<File
@@ -6845,10 +6809,6 @@
 						>
 					</File>
 					<File
-						RelativePath=".\src\gl\common\glc_texture.h"
-						>
-					</File>
-					<File
 						RelativePath=".\src\gl\common\glc_translate.h"
 						>
 					</File>
@@ -6857,6 +6817,54 @@
 						>
 					</File>
 				</Filter>
+			</Filter>
+			<Filter
+				Name="Textures"
+				>
+				<File
+					RelativePath=".\src\gl\textures\gl_bitmap.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\textures\gl_bitmap.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\textures\gl_hirestex.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\textures\gl_hqresize.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\textures\gl_hwtexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\textures\gl_hwtexture.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\textures\gl_material.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\textures\gl_material.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\textures\gl_skyboxtexture.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\textures\gl_texture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\textures\gl_texture.h"
+					>
+				</File>
 			</Filter>
 		</Filter>
 		<Filter

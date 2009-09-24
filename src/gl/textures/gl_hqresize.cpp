@@ -35,7 +35,7 @@
 */
 
 #include "gl/common/glc_renderer.h"
-#include "gl/common/glc_texture.h"
+#include "gl/textures/gl_texture.h"
 #include "c_cvars.h"
 
 CUSTOM_CVAR(Int, gl_texture_hqresize, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
