@@ -10,6 +10,7 @@ class FCanvasTexture;
 class FVertexBuffer;
 class OpenGLFrameBuffer;
 struct FDrawInfo;
+struct pspdef_t;
 
 enum SectorRenderFlags
 {
@@ -92,6 +93,10 @@ public:
 	void RenderTranslucent();
 	void DrawScene();
 	void DrawBlend(sector_t * viewsector);
+
+	void DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy, int cm_index, bool hudModelStep);
+	void DrawPlayerSprites(sector_t * viewsector, bool hudModelStep);
+	void DrawTargeterSprites();
 
 	void Begin2D();
 	void ClearBorders();

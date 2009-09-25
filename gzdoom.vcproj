@@ -6551,10 +6551,6 @@
 					RelativePath=".\src\gl\old_renderer\gl1_shader.cpp"
 					>
 				</File>
-				<File
-					RelativePath=".\src\gl\old_renderer\gl1_weapon.cpp"
-					>
-				</File>
 				<Filter
 					Name="Includes"
 					>
@@ -6568,10 +6564,6 @@
 					</File>
 					<File
 						RelativePath=".\src\gl\old_renderer\gl1_shader.h"
-						>
-					</File>
-					<File
-						RelativePath=".\src\gl\old_renderer\gl1_values.h"
 						>
 					</File>
 				</Filter>
@@ -6867,6 +6859,10 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\scene\gl_walls_draw.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\scene\gl_weapon.cpp"
 					>
 				</File>
 			</Filter>

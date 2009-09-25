@@ -55,6 +55,7 @@
 #include "r_sky.h"
 #include "g_level.h"
 #include "doomstat.h"
+#include "gl/common/glc_convert.h"
 
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/textures/gl_material.h"

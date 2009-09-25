@@ -56,6 +56,7 @@
 #include "gl/gl_functions.h"
 #include "vectors.h"
 #include "r_sky.h"
+#include "gl/common/glc_convert.h"
 
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/scene/gl_portal.h"

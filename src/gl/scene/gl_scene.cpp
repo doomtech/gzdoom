@@ -61,6 +61,7 @@
 #include "gl/gl_functions.h"
 #include "gl/old_renderer/gl1_shader.h"
 #include "gl/gl_framebuffer.h"
+#include "gl/common/glc_convert.h"
 
 #include "gl/models/gl_models.h"
 #include "gl/scene/gl_drawinfo.h"
@@ -76,11 +77,6 @@ CVAR(Bool, gl_texture, true, 0)
 CVAR(Bool, gl_no_skyclear, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Float, gl_mask_threshold, 0.5f,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_forcemultipass, false, 0)
-
-
-
-extern void gl_DrawPlayerSprites (sector_t *, bool);
-extern void gl_DrawTargeterSprites();
 
 extern int viewpitch;
  
@@ -681,14 +677,14 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 void FGLRenderer::EndDrawScene(sector_t * viewsector)
 {
 	// [BB] HUD models need to be rendered here. Make sure that
-	// gl_DrawPlayerSprites is only called once. Either to draw
+	// DrawPlayerSprites is only called once. Either to draw
 	// HUD models or to draw the weapon sprites.
 	const bool renderHUDModel = gl_IsHUDModelForPlayerAvailable( players[consoleplayer].camera->player );
 	if ( renderHUDModel )
 	{
 		// [BB] The HUD model should be drawn over everything else already drawn.
 		gl.Clear(GL_DEPTH_BUFFER_BIT);
-		gl_DrawPlayerSprites (viewsector, true);
+		DrawPlayerSprites (viewsector, true);
 	}
 
 	gl.Disable(GL_STENCIL_TEST);
@@ -701,9 +697,9 @@ void FGLRenderer::EndDrawScene(sector_t * viewsector)
 	// [BB] Only draw the sprites if we didn't render a HUD model before.
 	if ( renderHUDModel == false )
 	{
-		gl_DrawPlayerSprites (viewsector, false);
+		DrawPlayerSprites (viewsector, false);
 	}
-	gl_DrawTargeterSprites();
+	DrawTargeterSprites();
 	DrawBlend(viewsector);
 
 	// Restore standard rendering state

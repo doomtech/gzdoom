@@ -45,6 +45,7 @@
 #include "gl/gl_intern.h"
 #include "gl/old_renderer/gl1_shader.h"
 #include "gl/common/glc_data.h"
+#include "gl/common/glc_convert.h"
 
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/scene/gl_portal.h"
@@ -67,6 +68,7 @@ EXTERN_CVAR (Bool, r_stretchsky)
 extern int skyfog;
 
 // The texture offset to be applied to the texture coordinates in SkyVertex().
+
 static angle_t maxSideAngle = ANGLE_180 / 3;
 static int rows, columns;	
 static fixed_t scale = 10000 << FRACBITS;
