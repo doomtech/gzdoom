@@ -47,8 +47,6 @@
 #include "gl/gl_framebuffer.h"
 #include "gl/common/glc_clock.h"
 #include "gl/old_renderer/gl1_renderer.h"
-#include "gl/old_renderer/gl1_drawinfo.h"
-#include "gl/old_renderer/gl1_portal.h"
 #include "gl/common/glc_clipper.h"
 #include "gl/common/glc_glow.h"
 #include "gl/gl_functions.h"
@@ -58,6 +56,8 @@
 #include "gl/common/glc_geometric.h"
 #include "gl/old_renderer/gl1_shader.h"
 
+#include "gl/scene/gl_drawinfo.h"
+#include "gl/scene/gl_portal.h"
 #include "gl/textures/gl_material.h"
 
 //-----------------------------------------------------------------------------
@@ -217,7 +217,7 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 					return false;
 				}
 			}
-			GLDrawInfo::StartDrawInfo(NULL);
+			FDrawInfo::StartDrawInfo(NULL);
 		}
 		else
 		{
@@ -240,7 +240,7 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 	{
 		if (NeedDepthBuffer())
 		{
-			GLDrawInfo::StartDrawInfo(NULL);
+			FDrawInfo::StartDrawInfo(NULL);
 		}
 		else
 		{
@@ -310,7 +310,7 @@ void GLPortal::End(bool usestencil)
 	if (clipsave) gl.Enable (GL_CLIP_PLANE0+renderdepth-1);
 	if (usestencil)
 	{
-		if (needdepth) GLDrawInfo::EndDrawInfo();
+		if (needdepth) FDrawInfo::EndDrawInfo();
 
 		// Restore the old view
 		viewx=savedviewx;
@@ -360,7 +360,7 @@ void GLPortal::End(bool usestencil)
 	{
 		if (needdepth) 
 		{
-			GLDrawInfo::EndDrawInfo();
+			FDrawInfo::EndDrawInfo();
 			gl.Clear(GL_DEPTH_BUFFER_BIT);
 		}
 		else

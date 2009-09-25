@@ -47,8 +47,6 @@
 #include "gl/gl_struct.h"
 #include "gl/old_renderer/gl1_renderer.h"
 #include "gl/old_renderer/gl1_renderstruct.h"
-#include "gl/old_renderer/gl1_drawinfo.h"
-#include "gl/old_renderer/gl1_portal.h"
 #include "gl/old_renderer/gl1_shader.h"
 #include "gl/gl_lights.h"
 #include "gl/common/glc_glow.h"
@@ -59,6 +57,8 @@
 #include "vectors.h"
 #include "r_sky.h"
 
+#include "gl/scene/gl_drawinfo.h"
+#include "gl/scene/gl_portal.h"
 #include "gl/textures/gl_material.h"
 
 EXTERN_CVAR(Bool,gl_mirrors)

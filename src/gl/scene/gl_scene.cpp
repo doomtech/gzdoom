@@ -52,8 +52,6 @@
 #include "gl/gl_struct.h"
 #include "gl/old_renderer/gl1_renderer.h"
 #include "gl/old_renderer/gl1_renderstruct.h"
-#include "gl/old_renderer/gl1_drawinfo.h"
-#include "gl/old_renderer/gl1_portal.h"
 #include "gl/common/glc_clipper.h"
 #include "gl/gl_lights.h"
 #include "gl/common/glc_data.h"
@@ -64,6 +62,8 @@
 #include "gl/gl_framebuffer.h"
 
 #include "gl/models/gl_models.h"
+#include "gl/scene/gl_drawinfo.h"
+#include "gl/scene/gl_portal.h"
 #include "gl/textures/gl_material.h"
 
 //==========================================================================
@@ -689,12 +689,12 @@ void GL1Renderer::EndDrawScene(sector_t * viewsector)
 // R_RenderView - renders one view - either the screen or a camera texture
 //
 //-----------------------------------------------------------------------------
-static GLDrawInfo GlobalDrawInfo;
+static FDrawInfo GlobalDrawInfo;
 
 
 void GL1Renderer::ProcessScene()
 {
-	GLDrawInfo::StartDrawInfo(&GlobalDrawInfo);
+	FDrawInfo::StartDrawInfo(&GlobalDrawInfo);
 	iter_dlightf = iter_dlight = draw_dlight = draw_dlightf = 0;
 	UniqueSkies.Clear();
 	UniqueHorizons.Clear();
@@ -702,7 +702,7 @@ void GL1Renderer::ProcessScene()
 	UniquePlaneMirrors.Clear();
 
 	gl_DrawScene();
-	GLDrawInfo::EndDrawInfo();
+	FDrawInfo::EndDrawInfo();
 
 }
 

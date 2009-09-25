@@ -57,8 +57,8 @@
 #include "gl/gl_framebuffer.h"
 #include "gl/common/glc_translate.h"
 #include "vectors.h"
-#include "gl/old_renderer/gl1_drawinfo.h"
 
+#include "gl/scene/gl_drawinfo.h"
 #include "gl/textures/gl_texture.h"
 #include "gl/textures/gl_material.h"
 
@@ -533,5 +533,3 @@ void GL1Renderer::Clear(int left, int top, int right, int bottom, int palcolor, 
 	
 	gl.Disable(GL_SCISSOR_TEST);
 }
-
-
