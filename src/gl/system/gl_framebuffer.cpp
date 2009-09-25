@@ -86,12 +86,10 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(int width, int height, int bits, int refres
 
 	InitializeState();
 	gl_GenerateGlobalBrightmapFromColormap();
-	gl_InitSpecialTextures();
 }
 
 OpenGLFrameBuffer::~OpenGLFrameBuffer()
 {
-	gl_FreeSpecialTextures();
 	delete GLRenderer;
 	GLRenderer = NULL;
 }

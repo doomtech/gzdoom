@@ -50,7 +50,7 @@
 #include "r_bsp.h"
 #include "r_plane.h"
 #include "v_palette.h"
-#include "gl/data/gl_data.h"
+//#include "gl/data/gl_data.h"
 #include "gl/gl_functions.h"
 
 // MACROS ------------------------------------------------------------------

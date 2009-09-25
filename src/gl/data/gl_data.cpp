@@ -80,29 +80,6 @@ CUSTOM_CVAR(Bool, gl_nocoloredspritelighting, false, 0)
 
 void gl_CreateSections();
 
-FTexture *glpart2;
-FTexture *glpart;
-FTexture *mirrortexture;
-FTexture *gllight;
-
-void gl_FreeSpecialTextures()
-{
-	if (glpart2) delete glpart2;
-	if (glpart) delete glpart;
-	if (mirrortexture) delete mirrortexture;
-	if (gllight) delete gllight;
-	
-	glpart = glpart2 = gllight = mirrortexture = NULL;
-}
-
-void gl_InitSpecialTextures()
-{
-	glpart2 = FTexture::CreateTexture(Wads.GetNumForFullName("glstuff/glpart2.png"), FTexture::TEX_MiscPatch);
-	glpart = FTexture::CreateTexture(Wads.GetNumForFullName("glstuff/glpart.png"), FTexture::TEX_MiscPatch);
-	mirrortexture = FTexture::CreateTexture(Wads.GetNumForFullName("glstuff/mirror.png"), FTexture::TEX_MiscPatch);
-	gllight = FTexture::CreateTexture(Wads.GetNumForFullName("glstuff/gllight.png"), FTexture::TEX_MiscPatch);
-}
-
 //-----------------------------------------------------------------------------
 //
 // Adjust sprite offsets for GL rendering (IWAD resources only)

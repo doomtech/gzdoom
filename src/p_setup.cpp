@@ -66,7 +66,7 @@
 #include "md5.h"
 #include "compatibility.h"
 
-#include "gl/data/gl_data.h"
+#include "gl/gl_functions.h"
 
 #include "fragglescript/t_fs.h"
 

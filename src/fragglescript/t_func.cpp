@@ -66,7 +66,7 @@
 #include "v_palette.h"
 #include "v_font.h"
 
-#include "gl/data/gl_data.h"
+#include "gl/gl_functions.h"
 
 static FRandom pr_script("FScript");
 

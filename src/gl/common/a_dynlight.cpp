@@ -48,6 +48,8 @@
 #include "gl/common/glc_dynlight.h"
 #include "gl/common/glc_templates.h"
 
+#include "gl/data/gl_data.h"
+
 EXTERN_CVAR (Float, gl_lights_size);
 EXTERN_CVAR (Bool, gl_lights_additive);
 
