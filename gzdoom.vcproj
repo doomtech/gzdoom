@@ -6489,24 +6489,12 @@
 			Name="GL Renderer"
 			>
 			<File
-				RelativePath=".\src\gl\gl_framebuffer.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\gl\gl_light.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gl\gl_menu.cpp"
 				>
 			</File>
 			<Filter
 				Name="GL Header"
 				>
-				<File
-					RelativePath=".\src\gl\gl_framebuffer.h"
-					>
-				</File>
 				<File
 					RelativePath=".\src\gl\gl_functions.h"
 					>
@@ -6529,14 +6517,26 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="API"
+				Name="System"
 				>
 				<File
-					RelativePath=".\src\gl\r_render\r_opengl.cpp"
+					RelativePath=".\src\gl\system\gl_framebuffer.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\r_render\r_render.h"
+					RelativePath=".\src\gl\system\gl_framebuffer.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\system\gl_interface.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\system\gl_interface.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\system\gl_menu.cpp"
 					>
 				</File>
 			</Filter>
@@ -6611,10 +6611,6 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\common\glc_light.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\common\glc_renderer.cpp"
 					>
 				</File>
 				<File

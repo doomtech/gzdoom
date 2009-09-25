@@ -40,7 +40,7 @@
 
 
 #include "gl/gl_include.h"
-#include "gl/common/glc_data.h"
+#include "gl/data/gl_data.h"
 #include "c_dispatch.h"
 #include "p_local.h"
 
