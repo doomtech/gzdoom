@@ -34,7 +34,7 @@
 **
 */
 
-#include "gl/common/glc_renderer.h"
+#include "gl/renderer/gl_renderer.h"
 #include "gl/textures/gl_texture.h"
 #include "c_cvars.h"
 
