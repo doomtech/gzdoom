@@ -58,10 +58,7 @@
 #include "gl/common/glc_clock.h"
 
 #include "gl/data/gl_data.h"
-
-// common function that's still in an unprocessed file
-void gl_SetFogParams(int _fogdensity, PalEntry _outsidefogcolor, int _outsidefogdensity, int _skyfog);
-void gl_InitModels();
+#include "gl/models/gl_models.h"
 
 GLRenderSettings glset;
 long gl_frameMS;
