@@ -49,7 +49,6 @@
 #include "w_wad.h"
 #include "gl/gl_intern.h"
 #include "gl/gl_functions.h"
-#include "gl/old_renderer/gl1_shader.h"
 #include "vectors.h"
 
 #include "gl/system/gl_framebuffer.h"
@@ -58,6 +57,7 @@
 #include "gl/data/gl_data.h"
 #include "gl/data/gl_vertexbuffer.h"
 #include "gl/scene/gl_drawinfo.h"
+#include "gl/shaders/gl_shader.h"
 #include "gl/textures/gl_texture.h"
 #include "gl/textures/gl_translate.h"
 #include "gl/textures/gl_material.h"
