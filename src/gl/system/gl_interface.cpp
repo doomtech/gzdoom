@@ -35,11 +35,11 @@
 **---------------------------------------------------------------------------
 **
 */
-#include "gl/gl_include.h"
+#include "gl/system/gl_system.h"
 #include "tarray.h"
 #include "doomtype.h"
 #include "m_argv.h"
-#include "gl/gl_intern.h"
+#include "gl/system/gl_cvars.h"
 
 #ifndef unix
 static void CollectExtensions(HDC);
