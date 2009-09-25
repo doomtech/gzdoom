@@ -52,12 +52,12 @@
 #include "templates.h"
 #include "gl/common/glc_clock.h"
 #include "gl/common/glc_templates.h"
-#include "gl/common/glc_data.h"
-#include "gl/common/glc_translate.h"
 #include "gl/gl_framebuffer.h"
 #include "gl/old_renderer/gl1_renderer.h"
 
+#include "gl/data/gl_data.h"
 #include "gl/textures/gl_texture.h"
+#include "gl/textures/gl_translate.h"
 
 IMPLEMENT_CLASS(OpenGLFrameBuffer)
 EXTERN_CVAR (Float, vid_brightness)

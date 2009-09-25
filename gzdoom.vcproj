@@ -6559,10 +6559,6 @@
 						>
 					</File>
 					<File
-						RelativePath=".\src\gl\old_renderer\gl1_renderstruct.h"
-						>
-					</File>
-					<File
 						RelativePath=".\src\gl\old_renderer\gl1_shader.h"
 						>
 					</File>
@@ -6594,14 +6590,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath=".\src\gl\common\glc_bsp.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\common\glc_clipper.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\common\glc_clock.cpp"
 					>
 				</File>
@@ -6610,15 +6598,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\common\glc_data.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\common\glc_dynlight.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\common\glc_fakeflat.cpp"
 					>
 				</File>
 				<File
@@ -6634,27 +6614,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\common\glc_nodes.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\common\glc_renderer.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\common\glc_sections.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\common\glc_setup.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\common\glc_translate.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\common\glc_vertexbuffer.cpp"
 					>
 				</File>
 				<File
@@ -6665,10 +6625,6 @@
 					Name="Includes"
 					>
 					<File
-						RelativePath=".\src\gl\common\glc_clipper.h"
-						>
-					</File>
-					<File
 						RelativePath=".\src\gl\common\glc_clock.h"
 						>
 					</File>
@@ -6678,10 +6634,6 @@
 					</File>
 					<File
 						RelativePath=".\src\gl\common\glc_cycler.h"
-						>
-					</File>
-					<File
-						RelativePath=".\src\gl\common\glc_data.h"
 						>
 					</File>
 					<File
@@ -6701,27 +6653,11 @@
 						>
 					</File>
 					<File
-						RelativePath=".\src\gl\common\glc_sections.h"
-						>
-					</File>
-					<File
-						RelativePath=".\src\gl\common\glc_skyboxtexture.h"
-						>
-					</File>
-					<File
 						RelativePath=".\src\gl\common\glc_structs.h"
 						>
 					</File>
 					<File
 						RelativePath=".\src\gl\common\glc_templates.h"
-						>
-					</File>
-					<File
-						RelativePath=".\src\gl\common\glc_translate.h"
-						>
-					</File>
-					<File
-						RelativePath=".\src\gl\common\glc_vertexbuffer.h"
 						>
 					</File>
 				</Filter>
@@ -6773,6 +6709,14 @@
 					RelativePath=".\src\gl\textures\gl_texture.h"
 					>
 				</File>
+				<File
+					RelativePath=".\src\gl\textures\gl_translate.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\textures\gl_translate.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Models"
@@ -6802,6 +6746,18 @@
 				Name="Scene"
 				>
 				<File
+					RelativePath=".\src\gl\scene\gl_bsp.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\scene\gl_clipper.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\scene\gl_clipper.h"
+					>
+				</File>
+				<File
 					RelativePath=".\src\gl\scene\gl_decal.cpp"
 					>
 				</File>
@@ -6811,6 +6767,10 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\scene\gl_drawinfo.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\scene\gl_fakeflat.cpp"
 					>
 				</File>
 				<File
@@ -6863,6 +6823,42 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\scene\gl_weapon.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Data"
+				>
+				<File
+					RelativePath=".\src\gl\data\gl_data.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\data\gl_data.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\data\gl_nodes.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\data\gl_sections.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\data\gl_sections.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\data\gl_setup.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\data\gl_vertexbuffer.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\data\gl_vertexbuffer.h"
 					>
 				</File>
 			</Filter>
