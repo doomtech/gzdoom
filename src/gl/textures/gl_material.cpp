@@ -53,10 +53,10 @@
 #include "colormatcher.h"
 
 #include "gl/gl_intern.h"
-#include "gl/old_renderer/gl1_renderer.h"
 #include "gl/old_renderer/gl1_shader.h"
 
 #include "gl/system/gl_framebuffer.h"
+#include "gl/renderer/gl_lightdata.h"
 #include "gl/data/gl_data.h"
 #include "gl/textures/gl_texture.h"
 #include "gl/textures/gl_translate.h"

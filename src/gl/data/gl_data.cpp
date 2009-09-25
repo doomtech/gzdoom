@@ -55,6 +55,7 @@
 #include "gl/common/glc_glow.h"
 
 #include "gl/renderer/gl_renderer.h"
+#include "gl/renderer/gl_lightdata.h"
 #include "gl/data/gl_data.h"
 #include "gl/models/gl_models.h"
 #include "gl/utility/gl_clock.h"

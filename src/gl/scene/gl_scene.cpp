@@ -50,12 +50,12 @@
 #include "r_main.h"
 #include "r_things.h"
 #include "sbar.h"
-#include "gl/old_renderer/gl1_renderer.h"
 #include "gl/gl_lights.h"
 #include "gl/gl_functions.h"
 #include "gl/old_renderer/gl1_shader.h"
 
 #include "gl/system/gl_framebuffer.h"
+#include "gl/renderer/gl_lightdata.h"
 #include "gl/data/gl_data.h"
 #include "gl/data/gl_vertexbuffer.h"
 #include "gl/models/gl_models.h"

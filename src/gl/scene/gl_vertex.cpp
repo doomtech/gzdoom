@@ -40,11 +40,13 @@
 
 
 #include "gl/gl_include.h"
-#include "gl/old_renderer/gl1_renderer.h"
 #include "gl/gl_lights.h"
 #include "gl/common/glc_glow.h"
 #include "gl/gl_functions.h"
+#include "gl/old_renderer/gl1_shader.h"
 
+#include "gl/renderer/gl_renderer.h"
+#include "gl/renderer/gl_lightdata.h"
 #include "gl/data/gl_data.h"
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/scene/gl_portal.h"
