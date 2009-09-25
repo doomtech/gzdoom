@@ -67,12 +67,6 @@ EXTERN_CVAR(Bool, gl_render_segs)
 EXTERN_CVAR(Bool, gl_seamless)
 EXTERN_CVAR(Bool, gl_fakecontrast)
 
-UniqueList<GLSkyInfo> UniqueSkies;
-UniqueList<GLHorizonInfo> UniqueHorizons;
-UniqueList<GLSectorStackInfo> UniqueStacks;
-UniqueList<secplane_t> UniquePlaneMirrors;
-
-
 //==========================================================================
 //
 // Checks whether a wall should glow

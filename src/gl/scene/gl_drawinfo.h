@@ -161,6 +161,12 @@ struct FDrawInfo
 	FDrawInfo * next;
 	GLDrawList drawlists[GLDL_TYPES];
 
+	FDrawInfo()
+	{
+		temporary = false;
+		next = NULL;
+	}
+
 	~FDrawInfo();
 	void ClearBuffers();
 

@@ -38,6 +38,7 @@
 
 #include "tarray.h"
 #include "gl/common/glc_renderer.h"
+#include "gl/common/glc_templates.h"
 #include "gl/gl_intern.h"
 #include "gl/old_renderer/gl1_renderstruct.h"
 
@@ -47,6 +48,11 @@ struct skycube_t
 {
 	int textures[6];
 };
+
+extern UniqueList<GLSkyInfo> UniqueSkies;
+extern UniqueList<GLHorizonInfo> UniqueHorizons;
+extern UniqueList<GLSectorStackInfo> UniqueStacks;
+extern UniqueList<secplane_t> UniquePlaneMirrors;
 
 class GLPortal
 {
@@ -116,6 +122,7 @@ public:
 	}
 
 
+	static void BeginScene();
 	static void StartFrame();
 	static bool RenderFirstSkyPortal(int recursion);
 	static void EndFrame();

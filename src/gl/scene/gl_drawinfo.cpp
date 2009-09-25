@@ -55,7 +55,6 @@
 #include "gl/textures/gl_material.h"
 
 FDrawInfo * gl_drawinfo;
-extern FreeList<gl_subsectorrendernode> SSR_List;
 
 //==========================================================================
 //

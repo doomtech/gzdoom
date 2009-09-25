@@ -712,7 +712,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 	// end of light calculation
 
 	actor=thing;
-	index = gl_spriteindex++;
+	index = GLRenderer->gl_spriteindex++;
 	particle=NULL;
 	
 	const bool drawWithXYBillboard = ( !(actor->renderflags & RF_FORCEYBILLBOARD)

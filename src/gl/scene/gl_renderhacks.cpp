@@ -62,7 +62,7 @@ CVAR(Bool, gl_notexturefill, false, 0);
 FreeList<gl_subsectorrendernode> SSR_List;
 
 // profiling data
-static int totalupper, totallower, totalsectors;
+static int totalupper, totallower;
 static int lowershcount, uppershcount;
 static glcycle_t totalms, showtotalms;
 static glcycle_t totalssms;
