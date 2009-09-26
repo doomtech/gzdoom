@@ -664,6 +664,7 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 	if (player)
 	{
 		AInventory * in;
+		float maxinvalpha = 0.5f;
 
 		for(in=player->mo->Inventory;in;in=in->Inventory)
 		{
@@ -671,6 +672,7 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 			if (color.a != 0)
 			{
 				DBaseStatusBar::AddBlend (color.r/255.f, color.g/255.f, color.b/255.f, color.a/255.f, blend);
+				if (color.a/255.f > 0.5f) maxinvalpha = color.a/255.f;
 			}
 		}
 		if (player->bonuscount)
@@ -707,7 +709,7 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 		}
 
 		// translucency may not go below 50%!
-		if (blend[3]>0.5f) blend[3]=0.5f;
+		if (blend[3] > maxinvalpha) blend[3] = maxinvalpha;
 	}
 	
 	if (players[consoleplayer].camera != NULL)
