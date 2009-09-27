@@ -1,3 +1,41 @@
+September 27, 2009  (Changes by Graf Zahl)
+- Fixed: G_QueueBody was not notifying the translation that it was changed.
+- Fixed: The multitexture composition code was missing a NULL pointer check.
+- fixed: The changes for new colormap handling in FMultipatchtexture were incomplete.
+  Some code was still checking Blend.r instead of the full variable for colormap indices.
+
+September 26, 2009
+- Fixed: R_DrawPSprite() did not initialize the colormap for the targeter
+  vissprites.
+- Added a check for SPAC_AnyCross to P_TestActivateLine() before the "monster"
+  activation checks. They are actually non-player checks and interfered with
+  SPAC_AnyCross.
+- idclev and hxvisit are no longer considered cheats, however, they are still
+  invalid for net games. hxvisit was erroneously accepted for net games
+  before, which it shouldn't have, since it's basically idclev for Hexen.
+
+September 24, 2009
+- Fixed: "give health" without an amount would set your health to IDDQD health
+  instead of the player class's maximum.
+- Fixed: A_CStaffCheck() assumed the player's max health was 100 instead
+  of getting checking for the true maximum.
+- Changed P_XYMovement() to not call P_SlideMove() if the act of being
+  blocked changed the actor's velocity. I'm not entirely happy with this,
+  but it gets push-activated force fields to work.
+- Fixed: FMultiPatchTexture::CopyTrueColorPixels() should clear the buffer
+  first before drawing into it if the copy op passed to it is OP_OVERWRITE.
+  FTexture::FillBuffer() sets this to erase whatever texture might have been
+  in the space it is going into.
+
+September 22, 2009
+- Added a technique to try and minimize input lag with vsync enabled: Two
+  surfaces are alternately locked for read-only access each frame, forcing
+  the driver to stop buffering more than one frame at a time. The input lag
+  on my system doesn't seem to be as bad as it once was (I can no longer
+  see it obviously with my naked eye), but turning antilag on "feels"
+  slightly more responsive. The cvar d3d_antilag turns this technique on and
+  off. See <http://www.xyzw.de/c120.html> for more details.
+
 September 22, 2009  (Changes by Graf Zahl)
 - Added a check to Dehacked code which tries to set the blend color.
   It must set it to 0 if the alpha is 0 to avoid problems with special
