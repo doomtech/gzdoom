@@ -508,20 +508,22 @@ static void APIENTRY LoadExtensions()
 		gl->flags|=RFL_MAP_BUFFER_RANGE;
 	}
 
-	if (CheckExtension("GL_ARB_FRAMEBUFFER_OBJECT"))
+	if (CheckExtension("GL_ARB_framebuffer_object"))
 	{
 		gl->GenFramebuffers			= (PFNGLGENFRAMEBUFFERSPROC)wglGetProcAddress("glGenFramebuffers");
+		gl->DeleteFramebuffers		= (PFNGLDELETEFRAMEBUFFERSPROC)wglGetProcAddress("glDeleteFramebuffers");
 		gl->BindFramebuffer			= (PFNGLBINDFRAMEBUFFERPROC)wglGetProcAddress("glBindFramebuffer");
 		gl->FramebufferTexture2D	= (PFNGLFRAMEBUFFERTEXTURE2DPROC)wglGetProcAddress("glFramebufferTexture2D");
 		gl->GenRenderbuffers		= (PFNGLGENRENDERBUFFERSPROC)wglGetProcAddress("glGenRenderbuffers");
+		gl->DeleteRenderbuffers		= (PFNGLDELETERENDERBUFFERSPROC)wglGetProcAddress("glDeleteRenderbuffers");
 		gl->BindRenderbuffer		= (PFNGLBINDRENDERBUFFERPROC)wglGetProcAddress("glBindRenderbuffer");
 		gl->RenderbufferStorage		= (PFNGLRENDERBUFFERSTORAGEPROC)wglGetProcAddress("glRenderbufferStorage");
 		gl->FramebufferRenderbuffer	= (PFNGLFRAMEBUFFERRENDERBUFFERPROC)wglGetProcAddress("glFramebufferRenderbuffer");
 
 		gl->flags|=RFL_FRAMEBUFFER;
 	}
-	else if (CheckExtension("GL_EXT_FRAMEBUFFER_OBJECT") && 
-			 CheckExtension("GL_EXT_PACKED_DEPTH_STENCIL"))
+	else if (CheckExtension("GL_EXT_framebuffer_object") && 
+			 CheckExtension("GL_EXT_packed_depth_stencil"))
 	{
 		gl->GenFramebuffers			= (PFNGLGENFRAMEBUFFERSPROC)wglGetProcAddress("glGenFramebuffersEXT");
 		gl->BindFramebuffer			= (PFNGLBINDFRAMEBUFFERPROC)wglGetProcAddress("glBindFramebufferEXT");

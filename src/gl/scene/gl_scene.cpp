@@ -226,9 +226,9 @@ void FGLRenderer::SetCameraPos(fixed_t viewx, fixed_t viewy, fixed_t viewz, angl
 {
 	float fviewangle=(float)(viewangle>>ANGLETOFINESHIFT)*360.0f/FINEANGLES;
 
-	GLRenderer->mAngles.Yaw = 270.0f-fviewangle;
-	GLRenderer->mViewVector = FVector2(cos(DEG2RAD(fviewangle)), sin(DEG2RAD(fviewangle)));
-	GLRenderer->mCameraPos = FVector3(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
+	mAngles.Yaw = 270.0f-fviewangle;
+	mViewVector = FVector2(cos(DEG2RAD(fviewangle)), sin(DEG2RAD(fviewangle)));
+	mCameraPos = FVector3(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
 }
 	
 
@@ -981,33 +981,4 @@ void FGLRenderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 	M_CreatePNG (file, scr + ((height-1) * width * 3), NULL, SS_RGB, width, height, -width*3);
 	M_Free(scr);
 }
-
-//-----------------------------------------------------------------------------
-//
-// R_RenderTextureView - renders camera textures
-//
-//-----------------------------------------------------------------------------
-extern TexFilter_s TexFilter[];
-
-void FGLRenderer::RenderTextureView(FCanvasTexture *Texture, AActor * Viewpoint, int FOV)
-{
-	GL_IRECT bounds;
-	FMaterial * gltex = FMaterial::ValidateTexture(Texture);
-
-	int width = gltex->TextureWidth(GLUSE_TEXTURE);
-	int height = gltex->TextureHeight(GLUSE_TEXTURE);
-
-	gl_fixedcolormap=CM_DEFAULT;
-	bounds.left=bounds.top=0;
-	bounds.width=FHardwareTexture::GetTexDimension(gltex->GetWidth(GLUSE_TEXTURE));
-	bounds.height=FHardwareTexture::GetTexDimension(gltex->GetHeight(GLUSE_TEXTURE));
-
-	gl.Flush();
-	RenderViewpoint(Viewpoint, &bounds, FOV, (float)width/height, (float)width/height, false);
-	gl.Flush();
-	gltex->Bind(CM_DEFAULT, 0, 0);
-	gl.CopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, bounds.width, bounds.height);
-	gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, TexFilter[gl_texture_filter].magfilter);
-}
-
 

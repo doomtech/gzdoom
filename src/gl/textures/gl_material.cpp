@@ -734,6 +734,22 @@ fixed_t FMaterial::TextureAdjustWidth(ETexUse i) const
 	else return mTextures[0]->Width[i];
 }
 
+//===========================================================================
+//
+//
+//
+//===========================================================================
+
+void FMaterial::BindToFrameBuffer()
+{
+	if (mTextures[0]->gltexture == NULL)
+	{
+		// must create the hardware texture first
+		mTextures[0]->Bind(0, CM_DEFAULT, 0, 0, false);
+		FHardwareTexture::Unbind(0);
+	}
+	mTextures[0]->gltexture->BindToFrameBuffer();
+}
 
 //===========================================================================
 //
