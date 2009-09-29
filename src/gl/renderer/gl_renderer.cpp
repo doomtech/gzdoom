@@ -56,6 +56,7 @@
 #include "gl/renderer/gl_lightdata.h"
 #include "gl/data/gl_data.h"
 #include "gl/data/gl_vertexbuffer.h"
+#include "gl/dynlights/gl_lightbuffer.h"
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/shaders/gl_shader.h"
 #include "gl/textures/gl_texture.h"
@@ -89,6 +90,7 @@ void FGLRenderer::Initialize()
 
 	mVBO = new FVertexBuffer;
 	mFBID = 0;
+	if (gl.flags & RFL_TEXTUREBUFFER) mLightBuffer = new FLightBuffer;
 	GlobalDrawInfo = new FDrawInfo;
 	SetupLevel();
 	gl_InitShaders();
@@ -101,6 +103,7 @@ FGLRenderer::~FGLRenderer()
 	gl_ClearShaders();
 	if (GlobalDrawInfo != NULL) delete GlobalDrawInfo;
 	if (mVBO != NULL) delete mVBO;
+	if (mLightBuffer != NULL) delete mLightBuffer;
 	if (glpart2) delete glpart2;
 	if (glpart) delete glpart;
 	if (mirrortexture) delete mirrortexture;

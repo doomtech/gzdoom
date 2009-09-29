@@ -1,3 +1,14 @@
+#ifdef DYNLIGHT
+#version 120
+#extension GL_EXT_gpu_shader4 : enable
+uniform int lightend;
+uniform int lightstart;
+uniform samplerBuffer lightPositions;
+uniform samplerBuffer lightRGB;
+
+#endif
+
+
 
 varying float fogcoord;
 uniform int fogenabled;
@@ -16,6 +27,7 @@ uniform int texturemode;
 uniform sampler2D tex;
 
 vec4 Process(vec4 color);
+
 
 //===========================================================================
 //
@@ -132,6 +144,11 @@ void main()
 {
 	float fogdist = 0.0;
 	float fogfactor = 0.0;
+	
+	#ifdef DYNLIGHT
+		vec4 dynlight = vec4(0.0,0.0,0.0,0.0);
+		vec4 addlight = vec4(0.0,0.0,0.0,0.0);
+	#endif
 
 	#ifndef NO_FOG
 	//
@@ -156,9 +173,44 @@ void main()
 		fogfactor = exp2 ( -gl_Fog.density * fogdist * LOG2E);
 	}
 	#endif
+	
+	
+	#ifdef DYNLIGHT
+	for(int i=lightstart; i<lightend; i++)
+	{
+		vec4 lightpos = texelFetchBuffer(lightPosition, i);
+		vec4 lightcolor = texelFetchBuffer(lightRGB, i);
+		
+		lightcolor.rgb *= max(lightpos.a - distance(pixelpos, lightpos.rgb),0.0) / lightpos.a;
+		
+		if (lightcolor.a == 0.0)
+		{
+			dynlight += lightcolor;
+		}
+		else if (lightcolor.a == 1.0)
+		{
+			addlight += lightcolor;
+		}
+		else
+		{	
+			dynlight -= lightcolor;
+		}
+	}
+	#endif
 		
 	vec4 frag = getLightColor(fogdist, fogfactor);
+	
+	#ifdef DYNLIGHT
+		frag += dynlight;
+		frag = clamp(frag, 0.0, 1.2);
+	#endif
+	
 	frag = Process(frag);
+
+	#ifdef DYNLIGHT
+		frag += addlight;
+	#endif
+
 	#ifndef NO_FOG
 		if (fogenabled < 0) 
 		{
