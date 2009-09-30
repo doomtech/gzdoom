@@ -248,6 +248,7 @@ class GLFlat
 public:
 	friend struct GLDrawList;
 
+	static TArray<int> dynlightdata;
 	sector_t * sector;
 	subsector_t * sub;	// only used for translucent planes
 	float z; // the z position of the flat (height)
@@ -266,7 +267,7 @@ public:
 	int vboindex;
 	int vboheight;
 
-	int firstdynlight, lastdynlight;
+	int dynlightindex;
 
 	void DrawSubsector(subsector_t * sub);
 	void DrawSubsectorLights(subsector_t * sub, int pass);
@@ -277,6 +278,8 @@ public:
 	void SetFrom3DFloor(F3DFloor *rover, bool top, bool underside);
 	void ProcessSector(sector_t * frontsector, subsector_t * sub);
 	void Draw(int pass);
+	void CollectSubsectorLights(subsector_t *sub);
+	void CollectLights();
 };
 
 

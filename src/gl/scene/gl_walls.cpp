@@ -62,12 +62,6 @@
 #include "gl/utility/gl_templates.h"
 #include "gl/shaders/gl_shader.h"
 
-EXTERN_CVAR(Bool,gl_mirrors)
-EXTERN_CVAR(Bool,gl_mirror_envmap)
-EXTERN_CVAR(Bool, gl_render_segs)
-EXTERN_CVAR(Bool, gl_seamless)
-EXTERN_CVAR(Bool, gl_dynlight_shader)
-EXTERN_CVAR(Bool, gl_fakecontrast)
 
 //==========================================================================
 //
@@ -1552,7 +1546,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 	glseg.y2= TO_GL(v2->y);
 	Colormap=frontsector->ColorMap;
 	flags = (!gl_isBlack(Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE)? GLWF_FOGGY : 0;
-	firstdynlight = lastdynlight = gl_dynlight_shader? -1 : 0;
+	firstdynlight = lastdynlight = (gl_dynlight_shader && gl_lights && GLRenderer->mLightCount)? -1 : 0;
 
 
 
