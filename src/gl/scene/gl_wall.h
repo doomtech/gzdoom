@@ -125,6 +125,8 @@ public:
 	float topglowheight;
 	float bottomglowheight;
 
+	int firstdynlight, lastdynlight;
+
 	union
 	{
 		// it's either one of them but never more!
@@ -196,6 +198,8 @@ private:
 					  fixed_t fch1, fixed_t fch2, fixed_t ffh1, fixed_t ffh2,
 					  fixed_t bch1, fixed_t bch2, fixed_t bfh1, fixed_t bfh2);
 
+	void CollectLights();
+
 	void DrawDecal(DBaseDecal *actor, seg_t *seg, sector_t *frontSector, sector_t *backSector);
 	void DoDrawDecals(DBaseDecal * decal, seg_t * seg);
 	void ProcessOneDecal(seg_t *seg, DBaseDecal * decal, float leftxfrac,float rightxfrac);
@@ -261,6 +265,8 @@ public:
 	BYTE renderflags;
 	int vboindex;
 	int vboheight;
+
+	int firstdynlight, lastdynlight;
 
 	void DrawSubsector(subsector_t * sub);
 	void DrawSubsectorLights(subsector_t * sub, int pass);

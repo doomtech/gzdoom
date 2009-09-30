@@ -50,12 +50,15 @@
 #include "gl/system/gl_cvars.h"
 #include "gl/renderer/gl_lightdata.h"
 #include "gl/data/gl_data.h"
+#include "gl/dynlights/gl_dynlight.h"
 #include "gl/dynlights/gl_glow.h"
+#include "gl/dynlights/gl_lightbuffer.h"
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/scene/gl_portal.h"
 #include "gl/textures/gl_material.h"
 #include "gl/utility/gl_clock.h"
 #include "gl/utility/gl_convert.h"
+#include "gl/utility/gl_geometric.h"
 #include "gl/utility/gl_templates.h"
 #include "gl/shaders/gl_shader.h"
 
@@ -63,6 +66,7 @@ EXTERN_CVAR(Bool,gl_mirrors)
 EXTERN_CVAR(Bool,gl_mirror_envmap)
 EXTERN_CVAR(Bool, gl_render_segs)
 EXTERN_CVAR(Bool, gl_seamless)
+EXTERN_CVAR(Bool, gl_dynlight_shader)
 EXTERN_CVAR(Bool, gl_fakecontrast)
 
 //==========================================================================
@@ -1405,6 +1409,66 @@ void GLWall::DoFFloorBlocks(seg_t * seg,sector_t * frontsector,sector_t * backse
 	}
 }
 
+//==========================================================================
+//
+// 
+//
+//==========================================================================
+
+void GLWall::CollectLights()
+{
+	FLightNode *node;
+	if (lastdynlight == -1)
+	{
+		float vtx[]={glseg.x1,zbottom[0],glseg.y1, glseg.x1,ztop[0],glseg.y1, glseg.x2,ztop[1],glseg.y2, glseg.x2,zbottom[1],glseg.y2};
+		Plane p;
+
+		p.Init(vtx,4);
+
+		firstdynlight = GLRenderer->mLightBuffer->GetLightIndex();
+		for(int i=0; i<2; i++)
+		{
+			if (!seg->bPolySeg)
+			{
+				// Iterate through all dynamic lights which touch this wall and render them
+				if (seg->sidedef)
+				{
+					node = seg->sidedef->lighthead[i];
+				}
+				else node = NULL;
+			}
+			else if (sub)
+			{
+				// To avoid constant rechecking for polyobjects use the subsector's lightlist instead
+				node = sub->lighthead[i];
+			}
+			else node = NULL;
+
+			while (node != NULL)
+			{
+				if (!(node->lightsource->flags2&MF2_DORMANT))
+				{
+					float x = TO_GL(node->lightsource->x);
+					float y = TO_GL(node->lightsource->y);
+					float z = TO_GL(node->lightsource->z);
+
+					// on the back side
+					if (gl_lights_checkside && !p.PointOnSide(x, z, y))
+					{
+						iter_dlight++;
+						GLRenderer->mLightBuffer->AddLight(node->lightsource, !!(flags&GLWF_FOGGY));
+					}
+				}
+				node = node->nextLight;
+			}
+		}
+		lastdynlight = GLRenderer->mLightBuffer->GetLightIndex();
+		if (lastdynlight == firstdynlight)
+		{
+			firstdynlight = lastdynlight = 0;
+		}
+	}
+}
 
 
 //==========================================================================
@@ -1488,6 +1552,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 	glseg.y2= TO_GL(v2->y);
 	Colormap=frontsector->ColorMap;
 	flags = (!gl_isBlack(Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE)? GLWF_FOGGY : 0;
+	firstdynlight = lastdynlight = gl_dynlight_shader? -1 : 0;
 
 
 
@@ -1553,6 +1618,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 		gltexture=FMaterial::ValidateTexture(seg->sidedef->GetTexture(side_t::mid), true);
 		if (!gltexture) return;
 
+		if (firstdynlight == -1) CollectLights();
 		DoTexture(RENDERWALL_M1S,seg,(seg->linedef->flags & ML_DONTPEGBOTTOM)>0,
 						  realfront->GetPlaneTexZ(sector_t::ceiling),realfront->GetPlaneTexZ(sector_t::floor),	// must come from the original!
 						  fch1,fch2,ffh1,ffh2,0);
@@ -1607,6 +1673,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 				gltexture=FMaterial::ValidateTexture(seg->sidedef->GetTexture(side_t::top), true);
 				if (gltexture) 
 				{
+					if (firstdynlight == -1) CollectLights();
 					DoTexture(RENDERWALL_TOP,seg,(seg->linedef->flags & (ML_DONTPEGTOP))==0,
 						realfront->GetPlaneTexZ(sector_t::ceiling),realback->GetPlaneTexZ(sector_t::ceiling),
 						fch1,fch2,bch1a,bch2a,0);
@@ -1619,6 +1686,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 					gltexture=FMaterial::ValidateTexture(frontsector->GetTexture(sector_t::ceiling), true);
 					if (gltexture)
 					{
+						if (firstdynlight == -1) CollectLights();
 						DoTexture(RENDERWALL_TOP,seg,(seg->linedef->flags & (ML_DONTPEGTOP))==0,
 							realfront->GetPlaneTexZ(sector_t::ceiling),realback->GetPlaneTexZ(sector_t::ceiling),
 							fch1,fch2,bch1a,bch2a,0);
@@ -1643,11 +1711,13 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 		gltexture=FMaterial::ValidateTexture(seg->sidedef->GetTexture(side_t::mid), true);
 		if (gltexture || drawfogboundary)
 		{
+			if (firstdynlight == -1) CollectLights();
 			DoMidTexture(seg, drawfogboundary, realfront, realback, fch1, fch2, ffh1, ffh2, bch1, bch2, bfh1, bfh2);
 		}
 
 		if (backsector->e->XFloor.ffloors.Size() || frontsector->e->XFloor.ffloors.Size()) 
 		{
+			if (firstdynlight == -1) CollectLights();
 			DoFFloorBlocks(seg,frontsector,backsector, fch1, fch2, ffh1, ffh2, bch1, bch2, bfh1, bfh2);
 		}
 		
@@ -1669,6 +1739,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 				gltexture=FMaterial::ValidateTexture(seg->sidedef->GetTexture(side_t::bottom), true);
 				if (gltexture) 
 				{
+					if (firstdynlight == -1) CollectLights();
 					DoTexture(RENDERWALL_BOTTOM,seg,(seg->linedef->flags & ML_DONTPEGBOTTOM)>0,
 						realback->GetPlaneTexZ(sector_t::floor),realfront->GetPlaneTexZ(sector_t::floor),
 						bfh1,bfh2,ffh1,ffh2,
@@ -1687,6 +1758,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 					gltexture=FMaterial::ValidateTexture(frontsector->GetTexture(sector_t::floor), true);
 					if (gltexture)
 					{
+						if (firstdynlight == -1) CollectLights();
 						DoTexture(RENDERWALL_BOTTOM,seg,(seg->linedef->flags & ML_DONTPEGBOTTOM)>0,
 							realback->GetPlaneTexZ(sector_t::floor),realfront->GetPlaneTexZ(sector_t::floor),
 							bfh1,bfh2,ffh1,ffh2, realfront->GetPlaneTexZ(sector_t::floor)-realfront->GetPlaneTexZ(sector_t::ceiling));

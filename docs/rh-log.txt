@@ -1,4 +1,21 @@
+September 30, 2009  (Changes by Graf Zahl)
+- Fixed: Coordinate handling for multipatch texture compositing was not correct
+  for true color. Instead of using a clipping rectangle on the destination it
+  tried to alter the source offsets which produced incorrect results for
+  mirrored or rotated patches.
+
+September 29, 2009
+- Fixed: Alt+F4 no longer quit the program.
+
+September 28, 2009  (Changes by Graf Zahl)
+- Added BHS's death special flags submission.
+- Added Gez's A_Blast submission.
+
 September 27, 2009  (Changes by Graf Zahl)
+- Fixed: Floor and ceiling huggers' velocity was wrong when used with
+  P_SpawnPlayerMissile.
+- Fixed: When hitting a voodoo doll the real player needs to be checked for 
+  invulnerability.
 - Fixed: G_QueueBody was not notifying the translation that it was changed.
 - Fixed: The multitexture composition code was missing a NULL pointer check.
 - fixed: The changes for new colormap handling in FMultipatchtexture were incomplete.
