@@ -1419,7 +1419,7 @@ void GLWall::CollectLights()
 
 		p.Init(vtx,4);
 
-		firstdynlight = GLRenderer->mLightBuffer->GetLightIndex();
+		firstdynlight = gl_drawinfo->mDynLights->GetLightIndex();
 		for(int i=0; i<2; i++)
 		{
 			if (!seg->bPolySeg)
@@ -1450,13 +1450,13 @@ void GLWall::CollectLights()
 					if (gl_lights_checkside && !p.PointOnSide(x, z, y))
 					{
 						iter_dlight++;
-						GLRenderer->mLightBuffer->AddLight(node->lightsource, !!(flags&GLWF_FOGGY));
+						gl_drawinfo->mDynLights->AddLight(node->lightsource/*, !!(flags&GLWF_FOGGY)*/);
 					}
 				}
 				node = node->nextLight;
 			}
 		}
-		lastdynlight = GLRenderer->mLightBuffer->GetLightIndex();
+		lastdynlight = gl_drawinfo->mDynLights->GetLightIndex();
 		if (lastdynlight == firstdynlight)
 		{
 			firstdynlight = lastdynlight = 0;

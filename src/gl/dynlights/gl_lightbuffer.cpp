@@ -67,11 +67,9 @@ FLightBuffer::FLightBuffer()
 {
 	gl.GenBuffers(1, &mIDbuf_RGB);
 	gl.BindBuffer(GL_TEXTURE_BUFFER, mIDbuf_RGB);
-	gl.BufferData(GL_TEXTURE_BUFFER, sizeof(FLightRGB) * MAX_DYNLIGHTS, NULL, GL_DYNAMIC_DRAW);
 
 	gl.GenBuffers(1, &mIDbuf_Position);
 	gl.BindBuffer(GL_TEXTURE_BUFFER, mIDbuf_Position);
-	gl.BufferData(GL_TEXTURE_BUFFER, sizeof(FLightPosition) * MAX_DYNLIGHTS, NULL, GL_DYNAMIC_DRAW);
 
 	gl.GenTextures(1, &mIDtex_RGB);
 	gl.BindTexture(GL_TEXTURE_BUFFER, mIDtex_RGB);
@@ -101,7 +99,7 @@ FLightBuffer::~FLightBuffer()
 
 }
 
-
+/*
 //==========================================================================
 //
 //
@@ -139,6 +137,7 @@ void FLightBuffer::UnmapBuffer()
 	gl.UnmapBuffer(GL_TEXTURE_BUFFER);
 	mp_Position = NULL;
 }
+*/
 
 
 //==========================================================================
@@ -157,6 +156,7 @@ void FLightBuffer::BindTextures(int texunit1, int texunit2)
 }
 
 
+/*
 //==========================================================================
 //
 //
@@ -180,4 +180,115 @@ void FLightBuffer::AddLight(ADynamicLight *light, bool foggy)
 	mp_Position[mIndex].Distance = (light->GetRadius() * gl_lights_size);
 	mIndex++; 
 }
+*/
+
+
+//==========================================================================
+//
+// This collects all currently actove
+//
+//==========================================================================
+
+void FLightBuffer::CollectLightSources()
+{
+
+	if (gl_dynlight_shader && gl_lights && GLRenderer->mLightCount && gl_fixedcolormap == CM_DEFAULT)
+	{
+		TArray<FLightRGB> pLights(100);
+		TArray<FLightPosition> pPos(100);
+		TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
+
+		// Check if there's some lights. If not some code can be skipped.
+		ADynamicLight *light;
+
+		while ((light = it.Next()) != NULL)
+		{
+			if (!(light->flags2 & MF2_DORMANT))
+			{
+				FLightRGB rgb;
+				FLightPosition pos;
+
+				rgb.R = light->GetRed();
+				rgb.G = light->GetGreen();
+				rgb.B = light->GetBlue();
+				rgb.Type = (light->flags4 & MF4_SUBTRACTIVE)? 128 : (light->flags4 & MF4_ADDITIVE || foggy)? 255:0;
+				pos.X = TO_GL(light->x);
+				pos.Y = TO_GL(light->y); 
+				pos.Z =  TO_GL(light->z);
+				pos.Distance = (light->GetRadius() * gl_lights_size);
+				light->bufferindex = pPos.Size();
+				pLights.Push(rgb);
+				pPos.Push(pos);
+			}
+			else light->bufferindex = -1;
+		}
+
+		gl.BindBuffer(GL_TEXTURE_BUFFER, mIDbuf_RGB);
+		gl.BufferData(GL_TEXTURE_BUFFER, pLights.Size() * sizeof (FLightRGB), &pLights[0], GL_STREAM_DRAW);
+
+		gl.BindBuffer(GL_TEXTURE_BUFFER, mIDbuf_Position);
+		gl.BufferData(GL_TEXTURE_BUFFER, pPos.Size() * sizeof (FLightPosition), &pPos[0], GL_STREAM_DRAW);
+
+	}
+}
+
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FLightIndexBuffer::FLightIndexBuffer()
+{
+	gl.GenBuffers(1, &mIDBuffer);
+	gl.BindBuffer(GL_TEXTURE_BUFFER, mIDBuffer);
+
+	gl.GenTextures(1, &mIDTexture);
+	gl.BindTexture(GL_TEXTURE_BUFFER, mIDTexture);
+	gl.TexBufferARB(GL_TEXTURE_BUFFER, GL_R16UI, mIDBuffer);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FLightIndexBuffer::~FLightIndexBuffer()
+{
+	gl.BindBuffer(GL_TEXTURE_BUFFER, 0);
+	gl.DeleteBuffers(1, &mIDBuffer);
+
+	gl.BindTexture(GL_TEXTURE_BUFFER, 0);
+	gl.DeleteTextures(1, &mIDTexture);
+}
+
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void FLightIndexBuffer::AddLight(ADynamicLight *light)
+{
+	if (light->bufferindex >= 0)
+	{
+		mBuffer.Push(light->bufferindex);
+	}
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void FLightIndexBuffer::SendBuffer()
+{
+	gl.BindBuffer(GL_TEXTURE_BUFFER, mIDBuffer);
+	gl.BufferData(GL_TEXTURE_BUFFER, mBuffer.Size() * sizeof (short), &mBuffer[0], GL_STREAM_DRAW);
+}
+
 

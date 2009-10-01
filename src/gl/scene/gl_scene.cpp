@@ -57,6 +57,7 @@
 #include "gl/data/gl_data.h"
 #include "gl/data/gl_vertexbuffer.h"
 #include "gl/dynlights/gl_dynlight.h"
+#include "gl/dynlights/gl_lightbuffer.h"
 #include "gl/models/gl_models.h"
 #include "gl/scene/gl_clipper.h"
 #include "gl/scene/gl_drawinfo.h"
@@ -306,9 +307,11 @@ void FGLRenderer::CreateScene()
 	gl_drawinfo->HandleMissingTextures();	// Missing upper/lower textures
 	gl_drawinfo->HandleHackedSubsectors();	// open sector hacks for deep water
 	gl_drawinfo->ProcessSectorStacks();		// merge visplanes of sector stacks
+	gl_drawinfo->CollectFlatLights();		// can only be done after processing the render hacks.
 
 	GLRenderer->mVBO->UnmapVBO ();
 	ProcessAll.Unclock();
+
 }
 
 //-----------------------------------------------------------------------------
@@ -789,7 +792,7 @@ void FGLRenderer::EndDrawScene(sector_t * viewsector)
 
 void FGLRenderer::ProcessScene()
 {
-	FDrawInfo::StartDrawInfo(GlobalDrawInfo);
+	FDrawInfo::StartDrawInfo();
 	iter_dlightf = iter_dlight = draw_dlight = draw_dlightf = 0;
 	GLPortal::BeginScene();
 
@@ -849,11 +852,6 @@ void FGLRenderer::SetFixedColormap (player_t *player)
 
 sector_t * FGLRenderer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, float fov, float ratio, float fovratio, bool mainview)
 {       
-	TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
-
-	// Check if there's some lights. If not some code can be skipped.
-	mLightCount = (it.Next()!=NULL);
-
 	sector_t * retval;
 	R_SetupFrame (camera);
 	SetViewArea();
@@ -896,7 +894,7 @@ sector_t * FGLRenderer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, flo
 }
 
 
-///-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 //
 // renders the view
 //
@@ -947,6 +945,7 @@ void FGLRenderer::RenderView (player_t* player)
 	}
 
 	SetFixedColormap (player);
+	if (GLRenderer->mLightBuffer != NULL) GLRenderer->mLightBuffer->CollectLightSources();
 
 	sector_t * viewsector = RenderViewpoint(player->camera, NULL, FieldOfView * 360.0f / FINEANGLES, ratio, fovratio, true);
 	EndDrawScene(viewsector);
@@ -970,6 +969,8 @@ void FGLRenderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 	bounds.height=height;
 	gl.Flush();
 	SetFixedColormap(player);
+	if (GLRenderer->mLightBuffer != NULL) GLRenderer->mLightBuffer->CollectLightSources();
+
 	sector_t *viewsector = RenderViewpoint(players[consoleplayer].camera, &bounds, 
 								FieldOfView * 360.0f / FINEANGLES, 1.6f, 1.6f, true);
 	gl.Disable(GL_STENCIL_TEST);

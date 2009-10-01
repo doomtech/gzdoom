@@ -3,7 +3,7 @@
 
 class ADynamicLight;
 
-const int MAX_DYNLIGHTS = 20000;	// should hopefully be enough
+const int MAX_DYNLIGHTS = 40000;	// should hopefully be enough
 
 struct FLightRGB
 {
@@ -23,23 +23,40 @@ class FLightBuffer
 	unsigned int mIDtex_RGB;
 	unsigned int mIDtex_Position;
 
-	FLightRGB * mp_RGB;
-	FLightPosition *mp_Position;
-
-	int mIndex;
-
 public:
 	FLightBuffer();
 	~FLightBuffer();
-	void MapBuffer();
-	void UnmapBuffer();
+	//void MapBuffer();
+	//void UnmapBuffer();
 	void BindTextures(int uniloc1, int uniloc2);
-	void AddLight(ADynamicLight *light, bool foggy);
+	//void AddLight(ADynamicLight *light, bool foggy);
+	void CollectLightSources();
+};
 
-	int GetLightIndex() const
+class FLightIndexBuffer
+{
+	unsigned int mIDBuffer;
+	unsigned int mIDTexture;
+
+	TArray<unsigned short> mBuffer;
+
+public:
+
+	FLightIndexBuffer();
+	~FLightIndexBuffer();
+	void AddLight(ADynamicLight *light);
+	void SendBuffer();
+
+	void ClearBuffer()
 	{
-		return mIndex;
+		mBuffer.Clear();
 	}
+
+	int GetLightIndex()
+	{
+		return mBuffer.Size();
+	}
+
 };
 
 

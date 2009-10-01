@@ -116,6 +116,7 @@ void GLFlat::DrawSubsectorLights(subsector_t * sub, int pass)
 			node=node->nextLight;
 			continue;
 		}
+		iter_dlightf++;
 
 		// we must do the side check here because gl_SetupLight needs the correct plane orientation
 		// which we don't have for Legacy-style 3D-floors
@@ -353,7 +354,7 @@ void GLFlat::CollectSubsectorLights(subsector_t *sub)
 {
 	Plane p;
 
-	int firstdynlight = GLRenderer->mLightBuffer->GetLightIndex();
+	int firstdynlight = gl_drawinfo->mDynLights->GetLightIndex();
 	for(int i=0;i<2;i++)
 	{
 		FLightNode * node = sub->lighthead[i];
@@ -388,12 +389,12 @@ void GLFlat::CollectSubsectorLights(subsector_t *sub)
 			if (dist < radius)
 			{
 				iter_dlightf++;
-				GLRenderer->mLightBuffer->AddLight(node->lightsource, foggy);
+				gl_drawinfo->mDynLights->AddLight(node->lightsource/*, foggy*/);
 			}
 			node = node->nextLight;
 		}
 	}
-	int lastdynlight = GLRenderer->mLightBuffer->GetLightIndex();
+	int lastdynlight = gl_drawinfo->mDynLights->GetLightIndex();
 
 	dynlightdata.Reserve(2);
 	if (lastdynlight > firstdynlight)
@@ -417,7 +418,7 @@ void GLFlat::CollectSubsectorLights(subsector_t *sub)
 
 void GLFlat::CollectLights()
 {
-	if (gl_dynlight_shader && gl_lights && GLRenderer->mLightCount)
+	//if (gl_dynlight_shader && gl_lights && GLRenderer->mLightCount) already done by the calling code
 	{
 		dynlightindex = dynlightdata.Size();
 		if (sub)

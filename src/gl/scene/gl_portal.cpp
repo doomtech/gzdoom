@@ -237,7 +237,7 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 					return false;
 				}
 			}
-			FDrawInfo::StartDrawInfo(NULL);
+			FDrawInfo::StartDrawInfo();
 		}
 		else
 		{
@@ -260,7 +260,7 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 	{
 		if (NeedDepthBuffer())
 		{
-			FDrawInfo::StartDrawInfo(NULL);
+			FDrawInfo::StartDrawInfo();
 		}
 		else
 		{

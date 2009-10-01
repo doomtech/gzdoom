@@ -50,7 +50,6 @@ public:
 	bool mLightCount;
 	float mCurrentFoV;
 	AActor *mViewActor;
-	FDrawInfo *GlobalDrawInfo;
 	FLightBuffer *mLightBuffer;
 	int gl_spriteindex;
 	unsigned int mFBID;
@@ -81,7 +80,6 @@ public:
 		mCameraPos = FVector3(0,0,0);
 		mVBO = NULL;
 		gl_spriteindex = 0;
-		GlobalDrawInfo = NULL;
 		mLightBuffer = NULL;
 		glpart2 = glpart = gllight = mirrortexture = NULL;
 	}

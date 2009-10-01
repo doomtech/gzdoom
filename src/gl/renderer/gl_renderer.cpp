@@ -91,7 +91,6 @@ void FGLRenderer::Initialize()
 	mVBO = new FVertexBuffer;
 	mFBID = 0;
 	if (gl.flags & RFL_TEXTUREBUFFER) mLightBuffer = new FLightBuffer;
-	GlobalDrawInfo = new FDrawInfo;
 	SetupLevel();
 	gl_InitShaders();
 	gl_InitFog();
@@ -101,7 +100,6 @@ FGLRenderer::~FGLRenderer()
 {
 	FMaterial::FlushAll();
 	gl_ClearShaders();
-	if (GlobalDrawInfo != NULL) delete GlobalDrawInfo;
 	if (mVBO != NULL) delete mVBO;
 	if (mLightBuffer != NULL) delete mLightBuffer;
 	if (glpart2) delete glpart2;
