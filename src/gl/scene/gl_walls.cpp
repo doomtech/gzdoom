@@ -253,6 +253,7 @@ void GLWall::PutWall(bool translucent)
 
 void GLWall::Put3DWall(lightlist_t * lightlist, bool translucent)
 {
+#ifndef OPTIMIZE_SPLIT
 	bool fadewall = (!translucent && lightlist->caster && (lightlist->caster->flags&FF_FADEWALLS) && 
 		!gl_isBlack((*lightlist->p_extra_colormap)->Fade)) && gl_isBlack(Colormap.FadeColor);
 
@@ -276,6 +277,11 @@ void GLWall::Put3DWall(lightlist_t * lightlist, bool translucent)
 		alpha = 1.0;
 		gltexture = tex;
 	}
+#else
+	lightlevel=*lightlist->p_lightlevel;
+	Colormap.CopyLightColor(*lightlist->p_extra_colormap);
+	gl_drawinfo->AddSplitWall(this);
+#endif
 }
 
 //==========================================================================
@@ -288,8 +294,6 @@ void GLWall::Put3DWall(lightlist_t * lightlist, bool translucent)
 void GLWall::SplitWall(sector_t * frontsector, bool translucent)
 {
 	GLWall copyWall1,copyWall2;
-	fixed_t lightbottomleft;
-	fixed_t lightbottomright;
 	float maplightbottomleft;
 	float maplightbottomright;
 	unsigned int i;
@@ -299,6 +303,8 @@ void GLWall::SplitWall(sector_t * frontsector, bool translucent)
 	{
 		return;
 	}
+	SetupWall.Unclock();
+	::SplitWall.Clock();
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
@@ -309,51 +315,27 @@ void GLWall::SplitWall(sector_t * frontsector, bool translucent)
 
 	if (lightlist.Size()>1)
 	{
-		// It's too bad that I still have to do some of the calculations here
-		// in fixed point. The conversion introduces a needless inaccuracy here.
-
-		#ifndef FLOAT_ENGINE
-			fixed_t x1 = TO_MAP(glseg.x1);
-			fixed_t y1 = TO_MAP(glseg.y1);
-			fixed_t x2 = TO_MAP(glseg.x2);
-			fixed_t y2 = TO_MAP(glseg.y2);
-		#endif
-
 		for(i=0;i<lightlist.Size()-1;i++)
 		{
-			#ifndef FLOAT_ENGINE
-				if (i<lightlist.Size()-1) 
+			if (i<lightlist.Size()-1) 
+			{
+				secplane_t &p = lightlist[i+1].plane;
+				if (p.a | p.b)
 				{
-					secplane_t &p = lightlist[i+1].plane;
-					if (p.a | p.b)
-					{
-						lightbottomleft = p.ZatPoint(x1,y1);
-						lightbottomright= p.ZatPoint(x2,y2);
-					}
-					else
-					{
-						lightbottomleft =
-						lightbottomright= p.ZatPoint(x2,y2);
-					}
+					maplightbottomleft = p.ZatPoint(glseg.x1,glseg.y1);
+					maplightbottomright= p.ZatPoint(glseg.x2,glseg.y2);
 				}
-				else 
+				else
 				{
-					lightbottomright = lightbottomleft = -32000*FRACUNIT;
+					maplightbottomleft =
+					maplightbottomright= p.ZatPoint(glseg.x2,glseg.y2);
 				}
 
-				maplightbottomleft=TO_GL(lightbottomleft);
-				maplightbottomright=TO_GL(lightbottomright);
-			#else
-				if (i<lightlist.Size()-1) 
-				{
-					maplightbottomleft = lightlist[i+1].plane.ZatPoint(glseg.x1,glseg.y1);
-					maplightbottomright= lightlist[i+1].plane.ZatPoint(glseg.x2,glseg.y2);
-				}
-				else 
-				{
-					maplightbottomright = maplightbottomleft = -32000;
-				}
-			#endif
+			}
+			else 
+			{
+				maplightbottomright = maplightbottomleft = -32000;
+			}
 
 			// The light is completely above the wall!
 			if (maplightbottomleft>=ztop[0] && maplightbottomright>=ztop[1])
@@ -394,6 +376,9 @@ void GLWall::SplitWall(sector_t * frontsector, bool translucent)
 					copyWall1.uprgt.v = copyWall2.uplft.v = uplft.v + coeff * (uprgt.v-uplft.v);
 					copyWall1.lorgt.u = copyWall2.lolft.u = lolft.u + coeff * (lorgt.u-lolft.u);
 					copyWall1.lorgt.v = copyWall2.lolft.v = lolft.v + coeff * (lorgt.v-lolft.v);
+
+					::SplitWall.Unclock();
+					SetupWall.Clock();
 
 					copyWall1.SplitWall(frontsector, translucent);
 					copyWall2.SplitWall(frontsector, translucent);
@@ -436,6 +421,9 @@ void GLWall::SplitWall(sector_t * frontsector, bool translucent)
 					copyWall1.lorgt.u = copyWall2.lolft.u = lolft.u + coeff * (lorgt.u-lolft.u);
 					copyWall1.lorgt.v = copyWall2.lolft.v = lolft.v + coeff * (lorgt.v-lolft.v);
 
+					::SplitWall.Unclock();
+					SetupWall.Clock();
+
 					copyWall1.SplitWall(frontsector, translucent);
 					copyWall2.SplitWall(frontsector, translucent);
 					return;
@@ -453,6 +441,10 @@ void GLWall::SplitWall(sector_t * frontsector, bool translucent)
 
 				lightlevel=ll;
 				Colormap=lc;
+
+				::SplitWall.Unclock();
+				SetupWall.Clock();
+
 				return;
 			}
 
@@ -461,6 +453,8 @@ void GLWall::SplitWall(sector_t * frontsector, bool translucent)
 			{
 				copyWall1=*this;
 
+				copyWall1.flags |= GLWF_NOSPLITLOWER;
+				flags |= GLWF_NOSPLITUPPER;
 				ztop[0]=copyWall1.zbottom[0]=maplightbottomleft;
 				ztop[1]=copyWall1.zbottom[1]=maplightbottomright;
 				uplft.v=copyWall1.lolft.v=copyWall1.uplft.v+ 
@@ -469,7 +463,12 @@ void GLWall::SplitWall(sector_t * frontsector, bool translucent)
 					(maplightbottomright-copyWall1.ztop[1])*(copyWall1.lorgt.v-copyWall1.uprgt.v)/(zbottom[1]-copyWall1.ztop[1]);
 				copyWall1.Put3DWall(&lightlist[i], translucent);
 			}
-			if (ztop[0]==zbottom[0] && ztop[1]==zbottom[1]) return;
+			if (ztop[0]==zbottom[0] && ztop[1]==zbottom[1]) 
+			{
+				::SplitWall.Unclock();
+				SetupWall.Clock();
+				return;
+			}
 		}
 	}
 
@@ -481,6 +480,9 @@ void GLWall::SplitWall(sector_t * frontsector, bool translucent)
 
 	lightlevel=ll;
 	Colormap=lc;
+	flags &= ~GLWF_NOSPLITUPPER;
+	::SplitWall.Unclock();
+	SetupWall.Clock();
 }
 
 
@@ -737,8 +739,16 @@ void GLWall::DoTexture(int _type,seg_t * seg,int peg,
 
 	// Add this wall to the render list
 	sector_t * sec = sub? sub->sector : seg->frontsector;
+
+#ifndef OPTIMIZE_SPLIT
 	if (sec->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) PutWall(false);
 	else SplitWall(sec, false);
+#else
+	if (sec->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) numwalls = 1;
+	else numwalls = 0;
+	PutWall(false);
+#endif
+
 	glseg=glsave;
 }
 
@@ -1009,8 +1019,14 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 				// Draw the stuff
 				//
 				//
+#ifndef OPTIMIZE_SPLIT
 				if (realfront->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) split.PutWall(translucent);
 				else split.SplitWall(realfront, translucent);
+#else
+				if (realfront->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) numwalls = 1;
+				else numwalls = 0;
+				split.PutWall(translucent);
+#endif
 
 				t=1;
 			}
@@ -1023,12 +1039,18 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 			// Draw the stuff without splitting
 			//
 			//
+#ifndef OPTIMIZE_SPLIT
 			if (realfront->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) PutWall(translucent);
 			else SplitWall(realfront, translucent);
+#else
+			if (realfront->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) numwalls = 1;
+			else numwalls = 0;
+			PutWall(translucent);
+#endif
 		}
 		alpha=1.0f;
 	}
-	// restore some values that have been altered in this function!
+	// restore some values that have been altered in this function
 	glseg=glsave;
 	flags&=~(GLT_CLAMPX|GLT_CLAMPY);
 }
@@ -1133,8 +1155,16 @@ void GLWall::BuildFFBlock(seg_t * seg, F3DFloor * rover,
 	}
 	
 	sector_t * sec = sub? sub->sector : seg->frontsector;
+
+#ifndef OPTIMIZE_SPLIT
 	if (sec->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) PutWall(translucent);
 	else SplitWall(sec, translucent);
+#else
+	if (sec->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) numwalls = 1;
+	else numwalls = 0;
+	split.PutWall(translucent);
+#endif
+
 	alpha=1.0f;
 	lightlevel = savelight;
 	Colormap = savecolor;

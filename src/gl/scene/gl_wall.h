@@ -98,6 +98,8 @@ public:
 		GLWF_FOGGY=8,
 		GLWF_GLOW=16,		// illuminated by glowing flats
 		GLWF_NOSHADER=32,	// cannot be drawn with shaders.
+		GLWF_NOSPLITUPPER=64,
+		GLWF_NOSPLITLOWER=128,
 	};
 
 	friend struct GLDrawList;
@@ -126,6 +128,7 @@ public:
 	float bottomglowheight;
 
 	int firstdynlight, lastdynlight;
+	int firstwall, numwalls;	// splitting info.
 
 	union
 	{

@@ -10,7 +10,7 @@
 #include "gl/utility/gl_clock.h"
 
 
-glcycle_t RenderWall,SetupWall,ClipWall;
+glcycle_t RenderWall,SetupWall,ClipWall,SplitWall;
 glcycle_t RenderFlat,SetupFlat;
 glcycle_t RenderSprite,SetupSprite;
 glcycle_t All, Finish, PortalAll;
@@ -83,6 +83,7 @@ void ResetProfilingData()
 	ProcessAll.Reset();
 	RenderWall.Reset();
 	SetupWall.Reset();
+	SplitWall.Reset();
 	ClipWall.Reset();
 	RenderFlat.Reset();
 	SetupFlat.Reset();
@@ -105,11 +106,11 @@ ADD_STAT(rendertimes)
 	int t=I_MSTime();
 	if (t-lasttime>1000) 
 	{
-		buff.Format("W: Render=%2.2f, Setup=%2.2f, Clip=%2.2f\n"
+		buff.Format("W: Render=%2.2f, Split = %2.2f, Setup=%2.2f, Clip=%2.2f\n"
 			"F: Render=%2.2f, Setup=%2.2f\n"
 			"S: Render=%2.2f, Setup=%2.2f\n"
 			"All: All=%2.2f, Render=%2.2f, Setup=%2.2f, Portal=%2.2f, Finish=%2.2f\n",
-		RenderWall.TimeMS(), SetupWall.TimeMS(), ClipWall.TimeMS(), RenderFlat.TimeMS(), SetupFlat.TimeMS(),
+		RenderWall.TimeMS(), SplitWall.TimeMS(), SetupWall.TimeMS(), ClipWall.TimeMS(), RenderFlat.TimeMS(), SetupFlat.TimeMS(),
 		RenderSprite.TimeMS(), SetupSprite.TimeMS(), All.TimeMS() + Finish.TimeMS(), RenderAll.TimeMS(),
 		ProcessAll.TimeMS(), PortalAll.TimeMS(), Finish.TimeMS());
 		lasttime=t;
