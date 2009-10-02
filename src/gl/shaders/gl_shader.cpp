@@ -321,7 +321,7 @@ struct FShaderContainer
 	FName Name;
 	FName TexFileName;
 
-	enum { NUM_SHADERS = 4 };
+	enum { NUM_SHADERS = 8 };
 
 	FShader *shader[NUM_SHADERS];
 	FShader *shader_cm;	// the shader for fullscreen colormaps
@@ -344,14 +344,22 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 		"#define NO_GLOW\n#define NO_DESATURATE\n",
 		"#define NO_DESATURATE\n",
 		"#define NO_GLOW\n",
-		"\n"
+		"\n",
+		"#define NO_GLOW\n#define NO_DESATURATE\n#define DYNLIGHT\n",
+		"#define NO_DESATURATE\n#define DYNLIGHT\n",
+		"#define NO_GLOW\n#define DYNLIGHT\n",
+		"\n#define DYNLIGHT\n"
 	};
 
 	const char * shaderdesc[] = {
 		"::default",
 		"::glow",
 		"::desaturate",
-		"::glow+desaturate"
+		"::glow+desaturate",
+		"::default+dynlight",
+		"::glow+dynlight",
+		"::desaturate+dynlight",
+		"::glow+desaturate+dynlight",
 	};
 
 	FString name;
@@ -396,6 +404,11 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 				shader[i] = NULL;
 				Printf("Unable to load shader %s:\n%s\n", name.GetChars(), err.GetMessage());
 				I_Error("");
+			}
+			if (i==3 && !(gl.flags & RFL_TEXTUREBUFFER))
+			{
+				shader[4] = shader[5] = shader[6] = shader[7] = 0;
+				break;
 			}
 		}
 	}

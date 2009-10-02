@@ -3,7 +3,7 @@
 #extension GL_EXT_gpu_shader4 : enable
 uniform int lightend;
 uniform int lightstart;
-uniform samplerBuffer lightIndex;
+uniform usamplerBuffer lightIndex;
 uniform samplerBuffer lightPositions;
 uniform samplerBuffer lightRGB;
 
@@ -179,8 +179,8 @@ void main()
 	#ifdef DYNLIGHT
 	for(int i=lightstart; i<lightend; i++)
 	{
-		int lightidx = texelFetchBuffer(lightIndex, i);
-		vec4 lightpos = texelFetchBuffer(lightPosition, lightidx);
+		int lightidx = int(texelFetchBuffer(lightIndex, i).r);
+		vec4 lightpos = texelFetchBuffer(lightPositions, lightidx);
 		vec4 lightcolor = texelFetchBuffer(lightRGB, lightidx);
 		
 		lightcolor.rgb *= max(lightpos.a - distance(pixelpos, lightpos.rgb),0.0) / lightpos.a;
