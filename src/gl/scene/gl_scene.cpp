@@ -534,6 +534,15 @@ void FGLRenderer::DrawScene()
 	static int recursion=0;
 
 	CreateScene();
+	if (gl_dynlight_shader)
+	{
+		if (gl_drawinfo->mDynLights != NULL)
+		{
+			gl_drawinfo->mDynLights->SendBuffer();
+			gl_drawinfo->mDynLights->BindTexture(GL_TEXTURE13);
+			GLRenderer->mLightBuffer->BindTextures(GL_TEXTURE14, GL_TEXTURE15);
+		}
+	}
 	RenderScene(recursion);
 
 	// Handle all portals after rendering the opaque objects but before
@@ -541,6 +550,16 @@ void FGLRenderer::DrawScene()
 	recursion++;
 	GLPortal::EndFrame();
 	recursion--;
+
+	// the textures need to be rebound here after processing the portals
+	if (gl_dynlight_shader)
+	{
+		if (gl_drawinfo->mDynLights != NULL)
+		{
+			gl_drawinfo->mDynLights->BindTexture(GL_TEXTURE13);
+			GLRenderer->mLightBuffer->BindTextures(GL_TEXTURE14, GL_TEXTURE15);
+		}
+	}
 
 	RenderTranslucent();
 }
@@ -947,6 +966,11 @@ void FGLRenderer::RenderView (player_t* player)
 	}
 
 	SetFixedColormap (player);
+
+	// Check if there's some lights. If not some code can be skipped.
+	TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
+	GLRenderer->mLightCount = ((it.Next()) != NULL);
+
 	if (GLRenderer->mLightBuffer != NULL) GLRenderer->mLightBuffer->CollectLightSources();
 
 	sector_t * viewsector = RenderViewpoint(player->camera, NULL, FieldOfView * 360.0f / FINEANGLES, ratio, fovratio, true);
@@ -971,6 +995,10 @@ void FGLRenderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 	bounds.height=height;
 	gl.Flush();
 	SetFixedColormap(player);
+
+	// Check if there's some lights. If not some code can be skipped.
+	TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
+	GLRenderer->mLightCount = ((it.Next()) != NULL);
 	if (GLRenderer->mLightBuffer != NULL) GLRenderer->mLightBuffer->CollectLightSources();
 
 	sector_t *viewsector = RenderViewpoint(players[consoleplayer].camera, &bounds, 

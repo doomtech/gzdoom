@@ -99,47 +99,6 @@ FLightBuffer::~FLightBuffer()
 
 }
 
-/*
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void FLightBuffer::MapBuffer()
-{
-	gl.BindBuffer(GL_TEXTURE_BUFFER, mIDbuf_RGB);
-	mp_RGB = (FLightRGB*)gl.MapBufferRange(GL_TEXTURE_BUFFER, 0, sizeof(FLightRGB) * MAX_DYNLIGHTS, 
-			GL_MAP_WRITE_BIT|GL_MAP_FLUSH_EXPLICIT_BIT|GL_MAP_UNSYNCHRONIZED_BIT);
-
-	gl.BindBuffer(GL_TEXTURE_BUFFER, mIDbuf_Position);
-	mp_Position = (FLightPosition*)gl.MapBufferRange(GL_TEXTURE_BUFFER, 0, sizeof(FLightPosition) * MAX_DYNLIGHTS, 
-			GL_MAP_WRITE_BIT|GL_MAP_FLUSH_EXPLICIT_BIT|GL_MAP_UNSYNCHRONIZED_BIT);
-
-	mIndex = 0;
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void FLightBuffer::UnmapBuffer()
-{
-	gl.BindBuffer(GL_TEXTURE_BUFFER, mIDbuf_RGB);
-	gl.FlushMappedBufferRange(GL_TEXTURE_BUFFER, 0, mIndex * sizeof(FLightRGB));
-	gl.UnmapBuffer(GL_TEXTURE_BUFFER);
-	mp_RGB = NULL;
-
-	gl.BindBuffer(GL_TEXTURE_BUFFER, mIDbuf_Position);
-	gl.FlushMappedBufferRange(GL_TEXTURE_BUFFER, 0, mIndex * sizeof(FLightPosition));
-	gl.UnmapBuffer(GL_TEXTURE_BUFFER);
-	mp_Position = NULL;
-}
-*/
-
-
 //==========================================================================
 //
 //
@@ -148,39 +107,12 @@ void FLightBuffer::UnmapBuffer()
 
 void FLightBuffer::BindTextures(int texunit1, int texunit2)
 {
-	gl.ActiveTexture(GL_TEXTURE14);
+	gl.ActiveTexture(texunit1);
 	gl.BindTexture(GL_TEXTURE_BUFFER, mIDtex_RGB);
-	gl.ActiveTexture(GL_TEXTURE15);
+	gl.ActiveTexture(texunit2);
 	gl.BindTexture(GL_TEXTURE_BUFFER, mIDtex_Position);
 	gl.ActiveTexture(GL_TEXTURE0);
 }
-
-
-/*
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void FLightBuffer::AddLight(ADynamicLight *light, bool foggy)
-{
-	if (mIndex >= MAX_DYNLIGHTS) 
-	{
-		return;
-	}
-	assert(mp_RGB != NULL && mp_Position != NULL);
-	mp_RGB[mIndex].R = light->GetRed();
-	mp_RGB[mIndex].G = light->GetGreen();
-	mp_RGB[mIndex].B = light->GetBlue();
-	mp_RGB[mIndex].Type = (light->flags4 & MF4_SUBTRACTIVE)? 128 : (light->flags4 & MF4_ADDITIVE || foggy)? 255:0;
-	mp_Position[mIndex].X = TO_GL(light->x);
-	mp_Position[mIndex].Y = TO_GL(light->y); 
-	mp_Position[mIndex].Z =  TO_GL(light->z);
-	mp_Position[mIndex].Distance = (light->GetRadius() * gl_lights_size);
-	mIndex++; 
-}
-*/
 
 
 //==========================================================================
@@ -191,7 +123,6 @@ void FLightBuffer::AddLight(ADynamicLight *light, bool foggy)
 
 void FLightBuffer::CollectLightSources()
 {
-
 	if (gl_dynlight_shader && gl_lights && GLRenderer->mLightCount && gl_fixedcolormap == CM_DEFAULT)
 	{
 		TArray<FLightRGB> pLights(100);
@@ -229,12 +160,6 @@ void FLightBuffer::CollectLightSources()
 		gl.BindBuffer(GL_TEXTURE_BUFFER, mIDbuf_Position);
 		gl.BufferData(GL_TEXTURE_BUFFER, pPos.Size() * sizeof (FLightPosition), &pPos[0], GL_STREAM_DRAW);
 
-	}
-	else
-	{
-		// Check if there's some lights. If not some code can be skipped.
-		TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
-		GLRenderer->mLightCount = ((it.Next()) != NULL);
 	}
 }
 
@@ -295,6 +220,20 @@ void FLightIndexBuffer::SendBuffer()
 {
 	gl.BindBuffer(GL_TEXTURE_BUFFER, mIDBuffer);
 	gl.BufferData(GL_TEXTURE_BUFFER, mBuffer.Size() * sizeof (short), &mBuffer[0], GL_STREAM_DRAW);
+	gl.BindBuffer(GL_TEXTURE_BUFFER, 0);
 }
 
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void FLightIndexBuffer::BindTexture(int texunit1)
+{
+	gl.ActiveTexture(texunit1);
+	gl.BindTexture(GL_TEXTURE_BUFFER, mIDTexture);
+	gl.ActiveTexture(GL_TEXTURE0);
+}
 

@@ -46,6 +46,7 @@ public:
 	~FLightIndexBuffer();
 	void AddLight(ADynamicLight *light);
 	void SendBuffer();
+	void BindTexture(int loc1);
 
 	void ClearBuffer()
 	{

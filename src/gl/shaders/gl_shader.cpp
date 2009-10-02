@@ -269,15 +269,20 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		glowtopcolor_index = gl.GetUniformLocation(hShader, "topglowcolor");
 		glowtopdist_index = gl.GetAttribLocation(hShader, "topdistance");
 
-		int texture2_index = gl.GetUniformLocation(hShader, "texture2");
 
-		if (texture2_index > 0)
-		{
-			gl.UseProgram(hShader);
-			gl.Uniform1i(texture2_index, 1);
-			gl.UseProgram(0);
-		}
+		gl.UseProgram(hShader);
 
+		int texture_index = gl.GetUniformLocation(hShader, "texture2");
+		if (texture_index > 0) gl.Uniform1i(texture_index, 1);
+
+		texture_index = gl.GetUniformLocation(hShader, "lightIndex");
+		if (texture_index > 0) gl.Uniform1i(texture_index, 13);
+		texture_index = gl.GetUniformLocation(hShader, "lightRGB");
+		if (texture_index > 0) gl.Uniform1i(texture_index, 14);
+		texture_index = gl.GetUniformLocation(hShader, "lightPositions");
+		if (texture_index > 0) gl.Uniform1i(texture_index, 15);
+
+		gl.UseProgram(0);
 		return !!linked;
 	}
 	return false;

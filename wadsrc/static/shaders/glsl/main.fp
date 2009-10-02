@@ -205,14 +205,14 @@ void main()
 		}
 		else
 		{
-			frag = clamp(frag + dynlight, 0.0, 1.2);
+			frag.rgb = clamp(frag.rgb + dynlight.rgb, 0.0, 2.0);
 		}
 	#endif
 		
 	frag = Process(frag);
 
 	#ifdef DYNLIGHT
-		frag += addlight;
+		frag.rgb += addlight.rgb;
 	#endif
 
 	#ifndef NO_FOG
