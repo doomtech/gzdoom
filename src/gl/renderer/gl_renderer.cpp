@@ -143,19 +143,6 @@ void FGLRenderer::Begin2D()
 //
 //===========================================================================
 
-void FGLRenderer::ProcessWall(seg_t *seg, sector_t *sector, sector_t *backsector, subsector_t *polysub)
-{
-	GLWall wall;
-	wall.Process(seg, sector, backsector, polysub, false); //gl_render_segs);
-	rendered_lines++;
-}
-
-//===========================================================================
-// 
-//
-//
-//===========================================================================
-
 void FGLRenderer::ProcessLowerMiniseg(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 {
 	GLWall wall;

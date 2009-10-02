@@ -158,7 +158,7 @@ void GLWall::PutWall(bool translucent)
 
 		if (!gl_fixedcolormap)
 		{
-			if (gl_lights)
+			if (gl_lights && !gl_dynlight_shader)
 			{
 				if (!seg->bPolySeg)
 				{
@@ -1470,7 +1470,7 @@ void GLWall::CollectLights()
 // 
 //
 //==========================================================================
-void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, subsector_t * polysub, bool render_segs)
+void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, subsector_t * polysub)
 {
 	vertex_t * v1, * v2;
 	fixed_t fch1;
@@ -1516,21 +1516,6 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 	glseg.fracleft=0;
 	glseg.fracright=1;
 
-	if (render_segs)
-	{
-		if (abs(v1->x-v2->x) > abs(v1->y-v2->y))
-		{
-			glseg.fracleft = float(seg->v1->x - v1->x)/float(v2->x-v1->x);
-			glseg.fracright = float(seg->v2->x - v1->x)/float(v2->x-v1->x);
-		}
-		else
-		{
-			glseg.fracleft = float(seg->v1->y - v1->y)/float(v2->y-v1->y);
-			glseg.fracright = float(seg->v2->y - v1->y)/float(v2->y-v1->y);
-		}
-		v1=seg->v1;
-		v2=seg->v2;
-	}
 	if (gl_seamless)
 	{
 		if (v1->dirty) gl_RecalcVertexHeights(v1);
@@ -1547,8 +1532,6 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 	Colormap=frontsector->ColorMap;
 	flags = (!gl_isBlack(Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE)? GLWF_FOGGY : 0;
 	firstdynlight = lastdynlight = (gl_dynlight_shader && gl_lights && GLRenderer->mLightCount)? -1 : 0;
-
-
 
 	lightlevel = seg->sidedef->GetLightLevel(true, frontsector->lightlevel);
 
@@ -1610,12 +1593,13 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 		
 		// normal texture
 		gltexture=FMaterial::ValidateTexture(seg->sidedef->GetTexture(side_t::mid), true);
-		if (!gltexture) return;
-
-		if (firstdynlight == -1) CollectLights();
-		DoTexture(RENDERWALL_M1S,seg,(seg->linedef->flags & ML_DONTPEGBOTTOM)>0,
-						  realfront->GetPlaneTexZ(sector_t::ceiling),realfront->GetPlaneTexZ(sector_t::floor),	// must come from the original!
-						  fch1,fch2,ffh1,ffh2,0);
+		if (gltexture) 
+		{
+			if (firstdynlight == -1) CollectLights();
+			DoTexture(RENDERWALL_M1S,seg,(seg->linedef->flags & ML_DONTPEGBOTTOM)>0,
+							  realfront->GetPlaneTexZ(sector_t::ceiling),realfront->GetPlaneTexZ(sector_t::floor),	// must come from the original!
+							  fch1,fch2,ffh1,ffh2,0);
+		}
 	}
 	else // two sided
 	{

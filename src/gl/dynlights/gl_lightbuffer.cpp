@@ -198,7 +198,6 @@ void FLightBuffer::CollectLightSources()
 		TArray<FLightPosition> pPos(100);
 		TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
 
-		// Check if there's some lights. If not some code can be skipped.
 		ADynamicLight *light;
 
 		while ((light = it.Next()) != NULL)
@@ -222,6 +221,7 @@ void FLightBuffer::CollectLightSources()
 			}
 			else light->bufferindex = -1;
 		}
+		GLRenderer->mLightCount = pPos.Size();
 
 		gl.BindBuffer(GL_TEXTURE_BUFFER, mIDbuf_RGB);
 		gl.BufferData(GL_TEXTURE_BUFFER, pLights.Size() * sizeof (FLightRGB), &pLights[0], GL_STREAM_DRAW);
@@ -229,6 +229,12 @@ void FLightBuffer::CollectLightSources()
 		gl.BindBuffer(GL_TEXTURE_BUFFER, mIDbuf_Position);
 		gl.BufferData(GL_TEXTURE_BUFFER, pPos.Size() * sizeof (FLightPosition), &pPos[0], GL_STREAM_DRAW);
 
+	}
+	else
+	{
+		// Check if there's some lights. If not some code can be skipped.
+		TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
+		GLRenderer->mLightCount = ((it.Next()) != NULL);
 	}
 }
 
