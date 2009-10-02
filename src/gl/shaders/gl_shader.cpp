@@ -66,6 +66,7 @@ extern PalEntry gl_CurrentFogColor;
 bool gl_fogenabled;
 bool gl_textureenabled;
 bool gl_glowenabled;
+bool gl_lightsenabled;
 int gl_texturemode;
 int gl_brightmapenabled;
 static float gl_lightfactor;
@@ -93,6 +94,7 @@ class FShader
 	int lightdist_index;
 	int colormapstart_index;
 	int colormaprange_index;
+	int lightrange_index;
 
 	int glowbottomcolor_index;
 	int glowtopcolor_index;
@@ -180,6 +182,11 @@ public:
 		gl.VertexAttrib1f(glowbottomdist_index, bottomdist);
 	}
 
+	void SetLightRange(int start, int end, int forceadd)
+	{
+		gl.Uniform3i(lightrange_index, start, end, forceadd);
+	}
+
 	bool Bind(float Speed);
 
 };
@@ -255,6 +262,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		lightfactor_index = gl.GetUniformLocation(hShader, "lightfactor");
 		colormapstart_index = gl.GetUniformLocation(hShader, "colormapstart");
 		colormaprange_index = gl.GetUniformLocation(hShader, "colormaprange");
+		lightrange_index = gl.GetUniformLocation(hShader, "lightrange");
 
 		glowbottomcolor_index = gl.GetUniformLocation(hShader, "bottomglowcolor");
 		glowbottomdist_index = gl.GetAttribLocation(hShader, "bottomdistance");
@@ -504,7 +512,7 @@ public:
 	static void Clear();
 	static GLShader *Find(const char * shn);
 	static GLShader *Find(unsigned int warp);
-	void Bind(int cm, bool glowing, float Speed);
+	void Bind(int cm, bool glowing, float Speed, bool lights);
 	static void Unbind();
 
 };
@@ -566,7 +574,7 @@ GLShader *GLShader::Find(unsigned int warp)
 }
 
 
-void GLShader::Bind(int cm, bool glowing, float Speed)
+void GLShader::Bind(int cm, bool glowing, float Speed, bool lights)
 {
 	FShader *sh=NULL;
 
@@ -586,7 +594,7 @@ void GLShader::Bind(int cm, bool glowing, float Speed)
 	else
 	{
 		bool desat = cm>=CM_DESAT1 && cm<=CM_DESAT31;
-		sh = container->shader[glowing + 2*desat];
+		sh = container->shader[glowing + 2*desat + 4*lights];
 		// [BB] If there was a problem when loading the shader, sh is NULL here.
 		if( sh )
 		{
@@ -718,6 +726,18 @@ void gl_SetCamera(float x, float y, float z)
 
 //==========================================================================
 //
+// Dynamic light stuff
+//
+//==========================================================================
+
+void gl_SetLightRange(int first, int last, int forceadd)
+{
+	if (gl_activeShader) gl_activeShader->SetLightRange(first, last, forceadd);
+}
+
+
+//==========================================================================
+//
 // Glow stuff
 //
 //==========================================================================
@@ -829,7 +849,8 @@ void gl_ApplyShader()
 			gl_effectstate != 0 ||	// special shaders
 			(gl_fogenabled && gl_fogmode != 0) || // fog requires a shader
 			(gl_textureenabled && gl_colormapstate) ||	// colormap
-			(gl_glowenabled)		// glow requires a shader
+			gl_glowenabled ||		// glow requires a shader
+			gl_lightsenabled
 			);
 		break;
 
@@ -844,7 +865,7 @@ void gl_ApplyShader()
 
 		if (shd != NULL)
 		{
-			shd->Bind(gl_colormapstate, gl_glowenabled, gl_warptime);
+			shd->Bind(gl_colormapstate, gl_glowenabled, gl_warptime, gl_lightsenabled);
 
 			if (gl_activeShader)
 			{

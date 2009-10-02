@@ -281,7 +281,7 @@ public:
 	void SetFrom3DFloor(F3DFloor *rover, bool top, bool underside);
 	void ProcessSector(sector_t * frontsector, subsector_t * sub);
 	void Draw(int pass);
-	void CollectSubsectorLights(subsector_t *sub);
+	bool CollectSubsectorLights(subsector_t *sub);
 	void CollectLights();
 };
 

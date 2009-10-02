@@ -1,8 +1,7 @@
 #ifdef DYNLIGHT
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
-uniform int lightend;
-uniform int lightstart;
+uniform ivec3 lightrange;
 uniform usamplerBuffer lightIndex;
 uniform samplerBuffer lightPositions;
 uniform samplerBuffer lightRGB;
@@ -175,38 +174,41 @@ void main()
 	}
 	#endif
 	
-	
-	#ifdef DYNLIGHT
-	for(int i=lightstart; i<lightend; i++)
-	{
-		int lightidx = int(texelFetchBuffer(lightIndex, i).r);
-		vec4 lightpos = texelFetchBuffer(lightPositions, lightidx);
-		vec4 lightcolor = texelFetchBuffer(lightRGB, lightidx);
-		
-		lightcolor.rgb *= max(lightpos.a - distance(pixelpos, lightpos.rgb),0.0) / lightpos.a;
-		
-		if (lightcolor.a == 0.0)
-		{
-			dynlight += lightcolor;
-		}
-		else if (lightcolor.a == 1.0)
-		{
-			addlight += lightcolor;
-		}
-		else
-		{	
-			dynlight -= lightcolor;
-		}
-	}
-	#endif
-		
 	vec4 frag = getLightColor(fogdist, fogfactor);
 	
-	#ifdef DYNLIGHT
-		frag += dynlight;
-		frag = clamp(frag, 0.0, 1.2);
-	#endif
 	
+	#ifdef DYNLIGHT
+		for(int i=lightrange.x; i<lightrange.y; i++)
+		{
+			int lightidx = int(texelFetchBuffer(lightIndex, i).r);
+			vec4 lightpos = texelFetchBuffer(lightPositions, lightidx);
+			vec4 lightcolor = texelFetchBuffer(lightRGB, lightidx);
+			
+			lightcolor.rgb *= max(lightpos.a - distance(pixelpos, lightpos.rgb),0.0) / lightpos.a;
+			
+			if (lightcolor.a == 1.0)
+			{
+				addlight += lightcolor;
+			}
+			else if (lightcolor.a == 0.0)
+			{
+				dynlight += lightcolor;
+			}
+			else
+			{	
+				dynlight -= lightcolor;
+			}
+		}
+		if (lightrange.z != 0)
+		{
+			addlight += dynlight;
+		}
+		else
+		{
+			frag = clamp(frag + dynlight, 0.0, 1.2);
+		}
+	#endif
+		
 	frag = Process(frag);
 
 	#ifdef DYNLIGHT

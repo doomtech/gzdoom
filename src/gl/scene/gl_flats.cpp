@@ -350,7 +350,7 @@ void GLFlat::Draw(int pass)
 //
 //==========================================================================
 
-void GLFlat::CollectSubsectorLights(subsector_t *sub)
+bool GLFlat::CollectSubsectorLights(subsector_t *sub)
 {
 	Plane p;
 
@@ -396,17 +396,18 @@ void GLFlat::CollectSubsectorLights(subsector_t *sub)
 	}
 	int lastdynlight = gl_drawinfo->mDynLights->GetLightIndex();
 
-	dynlightdata.Reserve(2);
+	int dynlightindex = dynlightdata.Reserve(2);
 	if (lastdynlight > firstdynlight)
 	{
-		int dynlightindex = dynlightdata.Size();
 		dynlightdata[dynlightindex] = firstdynlight;
 		dynlightdata[dynlightindex+1] = lastdynlight;
+		return true;
 	}
 	else
 	{
 		dynlightdata[dynlightindex] = -1;
 		dynlightdata[dynlightindex+1] = -1;
+		return false;
 	}
 }
 
@@ -418,13 +419,14 @@ void GLFlat::CollectSubsectorLights(subsector_t *sub)
 
 void GLFlat::CollectLights()
 {
+	bool haslights = false;
 	//if (gl_dynlight_shader && gl_lights && GLRenderer->mLightCount) already done by the calling code
 	{
 		dynlightindex = dynlightdata.Size();
 		if (sub)
 		{
 			// This represents a single subsector
-			CollectSubsectorLights(sub);
+			haslights |= CollectSubsectorLights(sub);
 		}
 		else
 		{
@@ -433,7 +435,7 @@ void GLFlat::CollectLights()
 				subsector_t * sub = sector->subsectors[i];
 				if (gl_drawinfo->ss_renderflags[sub-subsectors]&renderflags)
 				{
-					CollectSubsectorLights(sub);
+					haslights |= CollectSubsectorLights(sub);
 				}
 			}
 
@@ -446,12 +448,13 @@ void GLFlat::CollectLights()
 
 				while (node)
 				{
-					CollectSubsectorLights(sub);
+					haslights |= CollectSubsectorLights(sub);
 					node = node->next;
 				}
 			}
 		}
 	}
+	if (!haslights) dynlightindex = -1;	// we got no lights so save ourselves some work
 }
 
 

@@ -373,77 +373,79 @@ void FGLRenderer::RenderScene(int recursion)
 	gl_drawinfo->drawlists[GLDL_LIGHTFOGMASKED].Draw(gl_texture? GLPASS_PLAIN : GLPASS_BASE_MASKED);
 
 	// And now the multipass stuff
-
-	// First pass: empty background with sector light only
-
-	// Part 1: solid geometry. This is set up so that there are no transparent parts
-
-	// remove any remaining texture bindings and shaders whick may get in the way.
-	gl_DisableShader();
-	gl_EnableBrightmap(false);
-	gl_EnableTexture(false);
-	gl_drawinfo->drawlists[GLDL_LIGHT].Draw(GLPASS_BASE);
-	gl_EnableTexture(true);
-
-	// Part 2: masked geometry. This is set up so that only pixels with alpha>0.5 will show
-	// This creates a blank surface that only fills the nontransparent parts of the texture
-	gl_SetTextureMode(TM_MASK);
-	gl_EnableBrightmap(true);
-	gl_drawinfo->drawlists[GLDL_LIGHTBRIGHT].Draw(GLPASS_BASE_MASKED);
-	gl_drawinfo->drawlists[GLDL_LIGHTMASKED].Draw(GLPASS_BASE_MASKED);
-	gl_EnableBrightmap(false);
-	gl_SetTextureMode(TM_MODULATE);
-
-
-	// second pass: draw lights (on fogged surfaces they are added to the textures!)
-	gl.DepthMask(false);
-	if (gl_lights && mLightCount && !gl_fixedcolormap)
+	if (!gl_dynlight_shader)
 	{
-		if (gl_SetupLightTexture())
+		// First pass: empty background with sector light only
+
+		// Part 1: solid geometry. This is set up so that there are no transparent parts
+
+		// remove any remaining texture bindings and shaders whick may get in the way.
+		gl_DisableShader();
+		gl_EnableBrightmap(false);
+		gl_EnableTexture(false);
+		gl_drawinfo->drawlists[GLDL_LIGHT].Draw(GLPASS_BASE);
+		gl_EnableTexture(true);
+
+		// Part 2: masked geometry. This is set up so that only pixels with alpha>0.5 will show
+		// This creates a blank surface that only fills the nontransparent parts of the texture
+		gl_SetTextureMode(TM_MASK);
+		gl_EnableBrightmap(true);
+		gl_drawinfo->drawlists[GLDL_LIGHTBRIGHT].Draw(GLPASS_BASE_MASKED);
+		gl_drawinfo->drawlists[GLDL_LIGHTMASKED].Draw(GLPASS_BASE_MASKED);
+		gl_EnableBrightmap(false);
+		gl_SetTextureMode(TM_MODULATE);
+
+
+		// second pass: draw lights (on fogged surfaces they are added to the textures!)
+		gl.DepthMask(false);
+		if (gl_lights && mLightCount && !gl_fixedcolormap)
+		{
+			if (gl_SetupLightTexture())
+			{
+				gl.BlendFunc(GL_ONE, GL_ONE);
+				gl.DepthFunc(GL_EQUAL);
+				for(int i=GLDL_FIRSTLIGHT; i<=GLDL_LASTLIGHT; i++)
+				{
+					gl_drawinfo->drawlists[i].Draw(GLPASS_LIGHT);
+				}
+				gl.BlendEquation(GL_FUNC_ADD);
+			}
+			else gl_lights=false;
+		}
+
+		// third pass: modulated texture
+		gl.Color3f(1.0f, 1.0f, 1.0f);
+		gl.BlendFunc(GL_DST_COLOR, GL_ZERO);
+		gl_EnableFog(false);
+		gl.DepthFunc(GL_LEQUAL);
+		if (gl_texture) 
+		{
+			gl.Disable(GL_ALPHA_TEST);
+			gl_drawinfo->drawlists[GLDL_LIGHT].Sort();
+			gl_drawinfo->drawlists[GLDL_LIGHT].Draw(GLPASS_TEXTURE);
+			gl.Enable(GL_ALPHA_TEST);
+			gl_drawinfo->drawlists[GLDL_LIGHTBRIGHT].Sort();
+			gl_drawinfo->drawlists[GLDL_LIGHTBRIGHT].Draw(GLPASS_TEXTURE);
+			gl_drawinfo->drawlists[GLDL_LIGHTMASKED].Sort();
+			gl_drawinfo->drawlists[GLDL_LIGHTMASKED].Draw(GLPASS_TEXTURE);
+		}
+
+		// fourth pass: additive lights
+		gl_EnableFog(true);
+		if (gl_lights && mLightCount && !gl_fixedcolormap)
 		{
 			gl.BlendFunc(GL_ONE, GL_ONE);
 			gl.DepthFunc(GL_EQUAL);
-			for(int i=GLDL_FIRSTLIGHT; i<=GLDL_LASTLIGHT; i++)
+			if (gl_SetupLightTexture())
 			{
-				gl_drawinfo->drawlists[i].Draw(GLPASS_LIGHT);
+				for(int i=0; i<GLDL_TRANSLUCENT; i++)
+				{
+					gl_drawinfo->drawlists[i].Draw(GLPASS_LIGHT_ADDITIVE);
+				}
+				gl.BlendEquation(GL_FUNC_ADD);
 			}
-			gl.BlendEquation(GL_FUNC_ADD);
+			else gl_lights=false;
 		}
-		else gl_lights=false;
-	}
-
-	// third pass: modulated texture
-	gl.Color3f(1.0f, 1.0f, 1.0f);
-	gl.BlendFunc(GL_DST_COLOR, GL_ZERO);
-	gl_EnableFog(false);
-	gl.DepthFunc(GL_LEQUAL);
-	if (gl_texture) 
-	{
-		gl.Disable(GL_ALPHA_TEST);
-		gl_drawinfo->drawlists[GLDL_LIGHT].Sort();
-		gl_drawinfo->drawlists[GLDL_LIGHT].Draw(GLPASS_TEXTURE);
-		gl.Enable(GL_ALPHA_TEST);
-		gl_drawinfo->drawlists[GLDL_LIGHTBRIGHT].Sort();
-		gl_drawinfo->drawlists[GLDL_LIGHTBRIGHT].Draw(GLPASS_TEXTURE);
-		gl_drawinfo->drawlists[GLDL_LIGHTMASKED].Sort();
-		gl_drawinfo->drawlists[GLDL_LIGHTMASKED].Draw(GLPASS_TEXTURE);
-	}
-
-	// fourth pass: additive lights
-	gl_EnableFog(true);
-	if (gl_lights && mLightCount && !gl_fixedcolormap)
-	{
-		gl.BlendFunc(GL_ONE, GL_ONE);
-		gl.DepthFunc(GL_EQUAL);
-		if (gl_SetupLightTexture())
-		{
-			for(int i=0; i<GLDL_TRANSLUCENT; i++)
-			{
-				gl_drawinfo->drawlists[i].Draw(GLPASS_LIGHT_ADDITIVE);
-			}
-			gl.BlendEquation(GL_FUNC_ADD);
-		}
-		else gl_lights=false;
 	}
 
 	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
