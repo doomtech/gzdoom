@@ -140,7 +140,8 @@ static int gl_SetSpriteLight(AActor *self, fixed_t x, fixed_t y, fixed_t z, subs
 	g = clamp<float>(result[1]+g, 0, 1.0f) * ThingColor.g/255.f;
 	b = clamp<float>(result[2]+b, 0, 1.0f) * ThingColor.b/255.f;
 	gl.Color4f(r, g, b, alpha);
-	return clamp<int>(lightlevel + quickertoint(result[0]*77 + result[1]*143 + result[2]*36), 0, 255);
+	int addlight = quickertoint(result[0]*77 + result[1]*143 + result[2]*36);
+	return clamp<int>(lightlevel + addlight , 0, 255);
 }
 
 int gl_SetSpriteLight(AActor * thing, int lightlevel, int rellight, FColormap * cm,

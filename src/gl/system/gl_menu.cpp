@@ -89,7 +89,8 @@ static value_t SpriteclipModes[]=
 static value_t FilterModes[] =
 {
 	{ 0.0, "None" },
-	{ 1.0, "None (mipmapped)" },
+	{ 1.0, "None (nearest mipmap)" },
+	{ 5.0, "None (linear mipmap)" },
 	{ 2.0, "Linear" },
 	{ 3.0, "Bilinear" },
 	{ 4.0, "Trilinear" },
@@ -226,6 +227,7 @@ menuitem_t GLTextureItems[] = {
 	{ discrete, "Resize sprites",			{&gl_texture_hqresize_sprites},	{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Resize fonts",				{&gl_texture_hqresize_fonts},	{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Precache GL textures",		{&gl_precache},					{2.0}, {0.0}, {0.0}, {YesNo} },
+	{ discrete, "Create camera textures offscreen",	{&gl_usefb},			{2.0}, {0.0}, {0.0}, {OnOff} },
 };
 
 menuitem_t GLLightItems[] = {

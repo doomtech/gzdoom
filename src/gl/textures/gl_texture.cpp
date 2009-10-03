@@ -101,6 +101,7 @@ TexFilter_s TexFilter[]={
 	{GL_LINEAR,						GL_LINEAR,		false},
 	{GL_LINEAR_MIPMAP_NEAREST,		GL_LINEAR,		true},
 	{GL_LINEAR_MIPMAP_LINEAR,		GL_LINEAR,		true},
+	{GL_NEAREST_MIPMAP_LINEAR,		GL_NEAREST,		true},
 };
 
 int TexFormat[]={
