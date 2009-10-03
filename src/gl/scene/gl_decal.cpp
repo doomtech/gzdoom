@@ -46,6 +46,7 @@
 #include "gl/data/gl_data.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_lightdata.h"
+#include "gl/renderer/gl_renderstate.h"
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/shaders/gl_shader.h"
 #include "gl/textures/gl_texture.h"
@@ -350,7 +351,7 @@ void GLWall::DrawDecal(DBaseDecal *actor, seg_t *seg, sector_t *frontSector, sec
 	if (actor->RenderStyle.SrcAlpha == STYLEALPHA_One) gl.AlphaFunc(GL_GEQUAL, 0.5f);
 	else gl.AlphaFunc(GL_GREATER, 0.f);
 
-	gl_ApplyShader();
+	gl_RenderState.Apply();
 	gl.Begin(GL_TRIANGLE_FAN);
 	for(i=0;i<4;i++)
 	{

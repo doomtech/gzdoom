@@ -48,6 +48,7 @@
 #include "gl/system/gl_cvars.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_lightdata.h"
+#include "gl/renderer/gl_renderstate.h"
 #include "gl/data/gl_data.h"
 #include "gl/data/gl_vertexbuffer.h"
 #include "gl/dynlights/gl_dynlight.h"
@@ -106,7 +107,7 @@ void GLFlat::DrawSubsectorLights(subsector_t * sub, int pass)
 	int k, v;
 
 	FLightNode * node = sub->lighthead[pass==GLPASS_LIGHT_ADDITIVE];
-	gl_DisableShader();
+	gl_RenderState.Apply(true);
 	while (node)
 	{
 		ADynamicLight * light = node->lightsource;
@@ -186,9 +187,9 @@ void GLFlat::DrawSubsector(subsector_t * sub)
 void GLFlat::DrawSubsectors(bool istrans)
 {
 #ifdef TESTING
-	gl_EnableLights(true);
+	gl_RenderState.EnableLights(true);
 #endif
-	gl_ApplyShader();
+	gl_RenderState.Apply();
 	if (sub)
 	{
 		// This represents a single subsector
@@ -242,7 +243,7 @@ void GLFlat::DrawSubsectors(bool istrans)
 		}
 	}
 #ifdef TESTING
-	gl_EnableLights(false);
+	gl_RenderState.EnableLights(false);
 #endif
 }
 
@@ -334,14 +335,14 @@ void GLFlat::Draw(int pass)
 
 		else 
 		{
-			if (foggy) gl_EnableBrightmap(false);
+			if (foggy) gl_RenderState.EnableBrightmap(false);
 			gltexture->Bind(Colormap.colormap);
 			gl_SetPlaneTextureRotation(&plane, gltexture);
 		}
 
 		DrawSubsectors(true);
 
-		gl_EnableBrightmap(true);
+		gl_RenderState.EnableBrightmap(true);
 		if (!gltexture)	gl_EnableTexture(true);
 		else gl.PopMatrix();
 		if (renderstyle==STYLE_Add) gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

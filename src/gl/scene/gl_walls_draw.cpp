@@ -47,6 +47,7 @@
 
 #include "gl/system/gl_cvars.h"
 #include "gl/renderer/gl_lightdata.h"
+#include "gl/renderer/gl_renderstate.h"
 #include "gl/data/gl_data.h"
 #include "gl/dynlights/gl_dynlight.h"
 #include "gl/dynlights/gl_glow.h"
@@ -139,8 +140,7 @@ void GLWall::RenderWall(int textured, float * color2, ADynamicLight * light)
 		glowing = false;
 	}
 
-	if (!(flags & GLWF_NOSHADER)) gl_ApplyShader();
-	else gl_DisableShader();
+	gl_RenderState.Apply(!!(flags & GLWF_NOSHADER));
 
 	if (glowing)
 	{
@@ -216,7 +216,7 @@ void GLWall::RenderFogBoundary()
 		float fc[4]={Colormap.FadeColor.r/255.0f,Colormap.FadeColor.g/255.0f,Colormap.FadeColor.b/255.0f,fogd2};
 
 		gl_EnableTexture(false);
-		gl_EnableFog(false);
+		gl_RenderState.EnableFog(false);
 		gl.AlphaFunc(GL_GREATER,0);
 		gl.DepthFunc(GL_LEQUAL);
 		gl.Color4f(fc[0],fc[1],fc[2], fogd1);
@@ -225,7 +225,7 @@ void GLWall::RenderFogBoundary()
 		RenderWall(4,fc);
 
 		gl.DepthFunc(GL_LESS);
-		gl_EnableFog(true);
+		gl_RenderState.EnableFog(true);
 		gl.AlphaFunc(GL_GEQUAL,0.5f);
 		gl_EnableTexture(true);
 	}
@@ -305,8 +305,8 @@ void GLWall::RenderTranslucentWall()
 	int extra;
 	if (gltexture) 
 	{
-		if (flags&GLWF_FOGGY) gl_EnableBrightmap(false);
-		gl_EnableGlow(!!(flags & GLWF_GLOW));
+		if (flags&GLWF_FOGGY) gl_RenderState.EnableBrightmap(false);
+		gl_RenderState.EnableGlow(!!(flags & GLWF_GLOW));
 		gltexture->Bind(Colormap.colormap, flags, 0);
 		extra = (extralight * gl_weaponlight);
 	}
@@ -330,8 +330,8 @@ void GLWall::RenderTranslucentWall()
 	{
 		gl_EnableTexture(true);
 	}
-	gl_EnableBrightmap(true);
-	gl_EnableGlow(false);
+	gl_RenderState.EnableBrightmap(true);
+	gl_RenderState.EnableGlow(false);
 }
 
 //==========================================================================
@@ -375,7 +375,7 @@ void GLWall::Draw(int pass)
 			if (type!=RENDERWALL_M2SNF) gl_SetFog(lightlevel, rel, &Colormap, false);
 			else gl_SetFog(255, 0, NULL, false);
 		}
-		gl_EnableGlow(!!(flags & GLWF_GLOW));
+		gl_RenderState.EnableGlow(!!(flags & GLWF_GLOW));
 
 		// fall through
 	case GLPASS_TEXTURE:		// modulated texture
@@ -384,7 +384,7 @@ void GLWall::Draw(int pass)
 			gltexture->Bind(Colormap.colormap, flags, 0);
 		}
 		RenderWall((pass!=GLPASS_BASE) + 2*(pass!=GLPASS_TEXTURE), NULL);
-		gl_EnableGlow(false);
+		gl_RenderState.EnableGlow(false);
 		break;
 
 	case GLPASS_LIGHT:

@@ -48,6 +48,7 @@
 #include "gl/system/gl_framebuffer.h"
 #include "gl/system/gl_cvars.h"
 #include "gl/renderer/gl_lightdata.h"
+#include "gl/renderer/gl_renderstate.h"
 #include "gl/data/gl_data.h"
 #include "gl/dynlights/gl_glow.h"
 #include "gl/scene/gl_drawinfo.h"
@@ -119,7 +120,7 @@ void GLSprite::Draw(int pass)
 		if (!gl_isBlack(Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE || 
 			RenderStyle.BlendOp != STYLEOP_Add)
 		{
-			gl_EnableBrightmap(false);
+			gl_RenderState.EnableBrightmap(false);
 		}
 
 		gl_SetRenderStyle(RenderStyle, false, 
@@ -212,7 +213,7 @@ void GLSprite::Draw(int pass)
 		const bool drawWithXYBillboard = ( !(actor && actor->renderflags & RF_FORCEYBILLBOARD)
 		                                   && GLRenderer->mViewActor != NULL
 		                                   && (gl_billboard_mode == 1 || (actor && actor->renderflags & RF_FORCEXYBILLBOARD )) );
-		gl_ApplyShader();
+		gl_RenderState.Apply();
 		gl.Begin(GL_TRIANGLE_STRIP);
 		if ( drawWithXYBillboard )
 		{
@@ -276,7 +277,7 @@ void GLSprite::Draw(int pass)
 
 	if (pass==GLPASS_TRANSLUCENT)
 	{
-		gl_EnableBrightmap(true);
+		gl_RenderState.EnableBrightmap(true);
 		gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		gl.BlendEquation(GL_FUNC_ADD);
 		gl_SetTextureMode(TM_MODULATE);

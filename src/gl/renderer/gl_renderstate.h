@@ -8,17 +8,19 @@ class FRenderState
 	bool mFogEnabled;
 	bool mGlowEnabled;
 	bool mLightEnabled;
+	bool mBrightmapEnabled;
 
-	float glowtopparms[4], glowbottomparms[4];
+
+	bool ffFogEnabled;
 
 public:
 	FRenderState()
 	{
-		mFogEnabled = mGlowEnabled = mLightEnabled = false;
+		mBrightmapEnabled = mFogEnabled = mGlowEnabled = mLightEnabled = false;
+		ffFogEnabled = false;
 	}
 
-	void Begin(int primtype, bool forcenoshader = false);
-	void End();
+	void Apply(bool forcenoshader = false);
 
 	void EnableFog(bool on)
 	{
@@ -33,6 +35,11 @@ public:
 	void EnableLight(bool on)
 	{
 		mLightEnabled = on;
+	}
+
+	void EnableBrightmap(bool on)
+	{
+		mBrightmapEnabled = on;
 	}
 
 	bool isFogEnabled()
@@ -50,12 +57,10 @@ public:
 		return mLightEnabled;
 	}
 
-	void SetGlowParams(float *top, float *bottom)
+	bool isBrightmapEnabled()
 	{
-		memcpy(glowtopparms, top, sizeof(glowtopparms));
-		memcpy(glowbottomparms, bottom, sizeof(glowbottomparms));
+		return mBrightmapEnabled;
 	}
-
 
 };
 

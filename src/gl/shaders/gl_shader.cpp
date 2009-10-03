@@ -47,6 +47,7 @@
 #include "doomerrors.h"
 #include "v_palette.h"
 
+#include "gl/renderer/gl_renderstate.h"
 #include "gl/system/gl_cvars.h"
 #include "gl/shaders/gl_shader.h"
 #include "gl/textures/gl_material.h"
@@ -63,12 +64,8 @@ CVAR(Bool, gl_glow_shader, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
 extern long gl_frameMS;
 extern PalEntry gl_CurrentFogColor;
 
-bool gl_fogenabled;
 bool gl_textureenabled;
-bool gl_glowenabled;
-bool gl_lightsenabled;
 int gl_texturemode;
-int gl_brightmapenabled;
 static float gl_lightfactor;
 static float gl_lightdist;
 static float gl_camerapos[3];
@@ -653,26 +650,6 @@ void gl_EnableTexture(bool on)
 
 //==========================================================================
 //
-// enable/disable fog
-//
-//==========================================================================
-
-void gl_EnableFog(bool on)
-{
-	if (on) 
-	{
-		if (!gl_fogenabled) gl.Enable(GL_FOG);
-	}
-	else 
-	{
-		if (gl_fogenabled) gl.Disable(GL_FOG);
-	}
-	gl_fogenabled=on;
-}
-
-
-//==========================================================================
-//
 // set texture mode
 //
 //==========================================================================
@@ -773,7 +750,7 @@ int gl_SetupShader(bool cameratexture, int &shaderindex, int &cm, float warptime
 	if (shaderindex == 3)
 	{
 		// Brightmap should not be used.
-		if (!gl_brightmapenabled || cm >= CM_FIRSTSPECIALCOLORMAP)
+		if (!gl_RenderState.isBrightmapEnabled() || cm >= CM_FIRSTSPECIALCOLORMAP)
 		{
 			shaderindex = 0;
 		}
@@ -842,9 +819,9 @@ void gl_ApplyShader()
 	case 3:
 		useshaders = (
 			gl_effectstate != 0 ||	// special shaders
-			(gl_fogenabled && (gl_fogmode == 2 || gl_fog_shader) && gl_fogmode != 0) || // fog requires a shader
+			(gl_RenderState.isFogEnabled() && (gl_fogmode == 2 || gl_fog_shader) && gl_fogmode != 0) || // fog requires a shader
 			(gl_textureenabled && (gl_effectstate != 0 || gl_colormapstate)) ||		// colormap
-			(gl_glowenabled)		// glow requires a shader
+			(gl_RenderState.isGlowEnabled())		// glow requires a shader
 			);
 		break;
 
@@ -852,10 +829,10 @@ void gl_ApplyShader()
 		// useshaders = true;
 		useshaders = (
 			gl_effectstate != 0 ||	// special shaders
-			(gl_fogenabled && gl_fogmode != 0) || // fog requires a shader
+			(gl_RenderState.isFogEnabled() && gl_fogmode != 0) || // fog requires a shader
 			(gl_textureenabled && gl_colormapstate) ||	// colormap
-			gl_glowenabled ||		// glow requires a shader
-			gl_lightsenabled
+			gl_RenderState.isGlowEnabled() ||		// glow requires a shader
+			gl_RenderState.isLightEnabled()
 			);
 		break;
 
@@ -870,14 +847,14 @@ void gl_ApplyShader()
 
 		if (shd != NULL)
 		{
-			shd->Bind(gl_colormapstate, gl_glowenabled, gl_warptime, gl_lightsenabled);
+			shd->Bind(gl_colormapstate, gl_RenderState.isGlowEnabled(), gl_warptime, gl_RenderState.isLightEnabled());
 
 			if (gl_activeShader)
 			{
 				gl_activeShader->SetTextureMode(gl_texturemode);
 
 				int fogset = 0;
-				if (gl_fogenabled)
+				if (gl_RenderState.isFogEnabled())
 				{
 					if ((gl_CurrentFogColor & 0xffffff) == 0)
 					{

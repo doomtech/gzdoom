@@ -47,21 +47,20 @@
 FRenderState gl_RenderState;
 
 
-void FRenderState::Begin(int primtype, bool forcenoshader)
+void FRenderState::Apply(bool forcenoshader)
 {
 	if (!forcenoshader)
 	{
 		gl_ApplyShader();
-		if (mGlowEnabled) gl_SetGlowParams(glowtopparms, glowtopparms[3], glowbottomparms, glowbottomparms[3]);
 	}
 	else
 	{
 		gl_DisableShader();
+		if (mFogEnabled != ffFogEnabled)
+		{
+			if ((ffFogEnabled = mFogEnabled)) gl.Enable(GL_FOG);
+			else gl.Disable(GL_FOG);
+		}
 	}
-	gl.Begin(primtype);
 }
 
-void FRenderState::End()
-{
-	gl.End();
-}
