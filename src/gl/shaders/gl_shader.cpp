@@ -806,7 +806,7 @@ int gl_SetupShader(bool cameratexture, int &shaderindex, int &cm, float warptime
 //
 //==========================================================================
 
-void gl_ApplyShader()
+bool gl_ApplyShader()
 {
 	bool useshaders = false;
 
@@ -870,13 +870,11 @@ void gl_ApplyShader()
 				gl_activeShader->SetCameraPos(gl_camerapos[0], gl_camerapos[1], gl_camerapos[2]);
 				gl_activeShader->SetLightFactor(gl_lightfactor);
 				gl_activeShader->SetLightDist(gl_lightdist);
+				return true;
 			}
 		}
 	}
-	else
-	{
-		GLShader::Unbind();
-	}
+	return false;
 }
 
 void gl_InitShaders()

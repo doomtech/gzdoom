@@ -49,11 +49,7 @@ FRenderState gl_RenderState;
 
 void FRenderState::Apply(bool forcenoshader)
 {
-	if (!forcenoshader)
-	{
-		gl_ApplyShader();
-	}
-	else
+	if (forcenoshader || !gl_ApplyShader())
 	{
 		gl_DisableShader();
 		if (mFogEnabled != ffFogEnabled)

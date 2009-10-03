@@ -17,7 +17,7 @@ bool gl_BrightmapsActive();
 bool gl_GlowActive();
 bool gl_ExtFogActive();
 
-void gl_ApplyShader();
+bool gl_ApplyShader();
 void gl_DisableShader();
 void gl_ClearShaders();
 void gl_InitShaders();
