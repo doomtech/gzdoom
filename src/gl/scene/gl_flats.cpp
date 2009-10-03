@@ -185,6 +185,9 @@ void GLFlat::DrawSubsector(subsector_t * sub)
 
 void GLFlat::DrawSubsectors(bool istrans)
 {
+#ifdef TESTING
+	gl_EnableLights(true);
+#endif
 	gl_ApplyShader();
 	if (sub)
 	{
@@ -238,6 +241,9 @@ void GLFlat::DrawSubsectors(bool istrans)
 			}
 		}
 	}
+#ifdef TESTING
+	gl_EnableLights(false);
+#endif
 }
 
 
@@ -421,6 +427,7 @@ void GLFlat::CollectLights()
 {
 	bool haslights = false;
 	//if (gl_dynlight_shader && gl_lights && GLRenderer->mLightCount) already done by the calling code
+	if (gl_drawinfo->mDynLights != NULL)
 	{
 		dynlightindex = dynlightdata.Size();
 		if (sub)

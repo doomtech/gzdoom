@@ -1447,7 +1447,7 @@ void GLWall::DoFFloorBlocks(seg_t * seg,sector_t * frontsector,sector_t * backse
 void GLWall::CollectLights()
 {
 	FLightNode *node;
-	if (lastdynlight == -1)
+	if (lastdynlight == -1 && gl_drawinfo->mDynLights != NULL)
 	{
 		float vtx[]={glseg.x1,zbottom[0],glseg.y1, glseg.x1,ztop[0],glseg.y1, glseg.x2,ztop[1],glseg.y2, glseg.x2,zbottom[1],glseg.y2};
 		Plane p;

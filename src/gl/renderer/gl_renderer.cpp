@@ -81,6 +81,10 @@ EXTERN_CVAR(Bool, gl_render_segs)
 //
 //-----------------------------------------------------------------------------
 
+#ifdef TESTING
+unsigned int idbuffer, idtexture;
+#endif
+
 void FGLRenderer::Initialize()
 {
 	glpart2 = FTexture::CreateTexture(Wads.GetNumForFullName("glstuff/glpart2.png"), FTexture::TEX_MiscPatch);
@@ -90,10 +94,60 @@ void FGLRenderer::Initialize()
 
 	mVBO = new FVertexBuffer;
 	mFBID = 0;
-	if (gl.flags & RFL_TEXTUREBUFFER) mLightBuffer = new FLightBuffer;
+	//if (gl.flags & RFL_TEXTUREBUFFER) mLightBuffer = new FLightBuffer;
 	SetupLevel();
 	gl_InitShaders();
 	gl_InitFog();
+
+#ifdef TESTING
+	gl.GenBuffers(1, &idbuffer);
+	gl.BindBuffer(GL_TEXTURE_BUFFER, idbuffer);
+	static unsigned char testdata[] = {
+		255,255,255,0,
+		255,  0,  0,0,
+		  0,255,  0,0,
+		  0,  0,255,0,
+		255,255,  0,0,
+		  0,255,255,0,
+		255,  0,255,0,
+		255,255,255,0,
+		255,  0,  0,0,
+		  0,255,  0,0,
+		  0,  0,255,0,
+		255,255,  0,0,
+		  0,255,255,0,
+		255,  0,255,0,
+		255,255,255,0,
+		255,  0,  0,0,
+		  0,255,  0,0,
+		  0,  0,255,0,
+		255,255,  0,0,
+		  0,255,255,0,
+		255,  0,255,0,
+		255,255,255,0,
+		255,  0,  0,0,
+		  0,255,  0,0,
+		  0,  0,255,0,
+		255,255,  0,0,
+		  0,255,255,0,
+		255,  0,255,0,
+		128, 64,  0,0,
+		 64, 32,  0,0,
+		  0,128,255,0,
+		  0, 64,128,0,
+	};
+	gl.BufferData(GL_TEXTURE_BUFFER, 128, &testdata[0], GL_STREAM_DRAW);
+
+	gl.GenTextures(1, &idtexture);
+	gl.BindTexture(GL_TEXTURE_BUFFER, idtexture);
+	gl.TexBufferARB(GL_TEXTURE_BUFFER, GL_RGBA8, idbuffer);
+
+	gl.ActiveTexture(GL_TEXTURE14);
+	gl.BindTexture(GL_TEXTURE_BUFFER, idtexture);
+
+	gl.ActiveTexture(GL_TEXTURE0);
+	gl.BindTexture(GL_TEXTURE_2D, 0);
+#endif
 }
 
 FGLRenderer::~FGLRenderer() 

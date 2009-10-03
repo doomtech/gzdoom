@@ -1,3 +1,33 @@
+#ifdef DYNLIGHT_TEST
+
+#version 120
+#extension GL_EXT_gpu_shader4 : enable
+uniform samplerBuffer lightRGB;
+uniform sampler2D tex;
+
+
+void main()
+{
+	int index = int(clamp(gl_TexCoord[0].s, 0, 32.0));
+	vec4 light = texelFetchBuffer(lightRGB, index);
+	vec4 texel = texture2D(tex, gl_TexCoord[0].st);
+
+	gl_FragColor = texel*2.0 + light/20.0;
+}
+
+vec4 desaturate(vec4 texel)
+{
+	return texel;
+}
+
+vec4 getTexel(vec2 st)
+{
+	return texture2D(tex, st);
+}
+
+#else
+
+
 #ifdef DYNLIGHT
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
@@ -225,3 +255,4 @@ void main()
 }
 
 
+#endif // DYNLIGHT test

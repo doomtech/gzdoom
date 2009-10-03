@@ -904,8 +904,8 @@ static FDrawInfoList di_list;
 FDrawInfo::FDrawInfo()
 {
 	next = NULL;
-	if (gl.flags & RFL_TEXTUREBUFFER) mDynLights = new FLightIndexBuffer;
-	else mDynLights = NULL;
+	/*if (gl.flags & RFL_TEXTUREBUFFER) mDynLights = new FLightIndexBuffer;
+	else*/ mDynLights = NULL;
 }
 
 FDrawInfo::~FDrawInfo()
