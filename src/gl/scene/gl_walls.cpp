@@ -933,9 +933,14 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 	// 
 	if (drawfogboundary)
 	{
+		flags |= GLWF_NOSPLITUPPER|GLWF_NOSPLITLOWER;
 		type=RENDERWALL_FOGBOUNDARY;
 		PutWall(true);
-		if (!gltexture) return;
+		if (!gltexture) 
+		{
+			flags &= ~(GLWF_NOSPLITUPPER|GLWF_NOSPLITLOWER);
+			return;
+		}
 		type=RENDERWALL_M2SNF;
 	}
 	else type=RENDERWALL_M2S;
@@ -1052,7 +1057,7 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 	}
 	// restore some values that have been altered in this function
 	glseg=glsave;
-	flags&=~(GLT_CLAMPX|GLT_CLAMPY);
+	flags&=~(GLT_CLAMPX|GLT_CLAMPY|GLWF_NOSPLITUPPER|GLWF_NOSPLITLOWER);
 }
 
 

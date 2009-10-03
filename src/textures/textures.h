@@ -270,6 +270,7 @@ public:
 		FMaterial *Material;
 		FGLTexture *SystemTexture;
 		FTexture *Brightmap;
+		FTexture *DecalTexture;					// This is needed for decals of UseType TEX_MiscPatch-
 		PalEntry GlowColor;
 		PalEntry FloorSkyColor;
 		PalEntry CeilingSkyColor;
