@@ -145,7 +145,7 @@ void GLWall::RenderWall(int textured, float * color2, ADynamicLight * light)
 	if (glowing)
 	{
 		// must be done after gl_ApplyShader!
-		gl_SetGlowParams(topglowcolor, topglowheight, bottomglowcolor, bottomglowheight);
+		gl_SetGlowParams(topglowcolor, topglowcolor[3], bottomglowcolor, bottomglowcolor[3]);
 	}
 
 	// the rest of the code is identical for textured rendering and lights
