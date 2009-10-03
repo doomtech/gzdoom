@@ -157,7 +157,7 @@ void gl_ParseVavoomSkybox(FScanner &sc)
 
 inline const PClass * GetRealType(const PClass * ti)
 {
-	FActorInfo *rep = ti->ActorInfo->GetReplacement();
+	FActorInfo *rep = ti->ActorInfo->GetReplacement(false);
 	if (rep != ti->ActorInfo && rep != NULL && rep->Class->IsDescendantOf(RUNTIME_CLASS(ADehackedPickup)))
 	{
 		return rep->Class;
