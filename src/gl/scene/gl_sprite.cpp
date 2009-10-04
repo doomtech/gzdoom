@@ -134,7 +134,7 @@ void GLSprite::Draw(int pass)
 		}
 		else
 		{
-			gl.AlphaFunc(GL_GEQUAL,trans/2.f);
+			gl.AlphaFunc(GL_GEQUAL,trans*gl_mask_sprite_threshold);
 		}
 
 		if (RenderStyle.BlendOp == STYLEOP_Fuzz)
@@ -158,7 +158,7 @@ void GLSprite::Draw(int pass)
 				minalpha*=factor;
 			}
 
-			gl.AlphaFunc(GL_GEQUAL,minalpha);
+			gl.AlphaFunc(GL_GEQUAL,minalpha*gl_mask_sprite_threshold);
 			gl.Color4f(0.2f,0.2f,0.2f,fuzzalpha);
 			additivefog = true;
 		}
@@ -289,7 +289,7 @@ void GLSprite::Draw(int pass)
 		}
 		else
 		{
-			gl.AlphaFunc(GL_GEQUAL,0.5f);
+			gl.AlphaFunc(GL_GEQUAL,gl_mask_sprite_threshold);
 		}
 
 		if (!gl_sprite_blend && hw_styleflags != STYLEHW_Solid && actor && !(actor->velx|actor->vely))

@@ -6489,24 +6489,12 @@
 			Name="GL Renderer"
 			>
 			<Filter
-				Name="GL Header"
-				>
-				<File
-					RelativePath=".\src\gl\gl_functions.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_include.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\gl_intern.h"
-					>
-				</File>
-			</Filter>
-			<Filter
 				Name="System"
 				>
+				<File
+					RelativePath=".\src\gl\system\gl_cvars.h"
+					>
+				</File>
 				<File
 					RelativePath=".\src\gl\system\gl_framebuffer.cpp"
 					>
@@ -6525,6 +6513,10 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\system\gl_menu.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\system\gl_system.h"
 					>
 				</File>
 				<File
@@ -6845,6 +6837,14 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\renderer\gl_renderer.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\renderer\gl_renderstate.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\renderer\gl_renderstate.h"
 					>
 				</File>
 			</Filter>

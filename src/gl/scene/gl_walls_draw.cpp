@@ -265,7 +265,7 @@ void GLWall::RenderMirrorSurface()
 
 	// Restore the defaults for the translucent pass
 	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	gl.AlphaFunc(GL_GEQUAL,0.5f);
+	gl.AlphaFunc(GL_GEQUAL,0.5f*gl_mask_sprite_threshold);
 	gl.DepthFunc(GL_LESS);
 
 	// This is drawn in the translucent pass which is done after the decal pass
@@ -298,7 +298,7 @@ void GLWall::RenderTranslucentWall()
 	// and until that changes I won't fix this code for the new blending modes!
 	bool isadditive = RenderStyle == STYLE_Add;
 
-	if (!transparent) gl.AlphaFunc(GL_GEQUAL,0.5f*fabs(alpha));
+	if (!transparent) gl.AlphaFunc(GL_GEQUAL,gl_mask_threshold*fabs(alpha));
 	else gl.Disable(GL_ALPHA_TEST);
 	if (isadditive) gl.BlendFunc(GL_SRC_ALPHA,GL_ONE);
 

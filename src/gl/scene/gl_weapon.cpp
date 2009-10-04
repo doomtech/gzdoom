@@ -289,7 +289,7 @@ void FGLRenderer::DrawTargeterSprites()
 
 	gl_RenderState.EnableBrightmap(false);
 	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	gl.AlphaFunc(GL_GEQUAL,0.5f);
+	gl.AlphaFunc(GL_GEQUAL,gl_mask_sprite_threshold);
 	gl.BlendEquation(GL_FUNC_ADD);
 	gl.Color3f(1.0f,1.0f,1.0f);
 	gl_SetTextureMode(TM_MODULATE);

@@ -77,6 +77,7 @@
 CVAR(Bool, gl_texture, true, 0)
 CVAR(Bool, gl_no_skyclear, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Float, gl_mask_threshold, 0.5f,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR(Float, gl_mask_sprite_threshold, 0.5f,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_forcemultipass, false, 0)
 CVAR(Int,gl_nearclip,5,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
@@ -478,9 +479,10 @@ void FGLRenderer::RenderScene(int recursion)
 	{
 		gl.DepthMask(false);							// don't write to Z-buffer!
 		gl_RenderState.EnableFog(true);
-		gl.AlphaFunc(GL_GEQUAL,0.5f);
+		gl.Disable(GL_ALPHA_TEST);
 		gl.BlendFunc(GL_ONE,GL_ZERO);
 		gl_drawinfo->DrawUnhandledMissingTextures();
+		gl.Enable(GL_ALPHA_TEST);
 	}
 	gl.DepthMask(true);
 
@@ -506,7 +508,7 @@ void FGLRenderer::RenderTranslucent()
 	gl_SetCamera(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
 
 	// final pass: translucent stuff
-	gl.AlphaFunc(GL_GEQUAL,0.5f);
+	gl.AlphaFunc(GL_GEQUAL,gl_mask_sprite_threshold);
 	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	gl_RenderState.EnableBrightmap(true);
