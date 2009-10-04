@@ -330,7 +330,7 @@ void FGLRenderer::RenderScene(int recursion)
 
 	if (!gl_no_skyclear) GLPortal::RenderFirstSkyPortal(recursion);
 
-	gl_SetCamera(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
+	gl_RenderState.SetCameraPos(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
 
 	gl_RenderState.EnableFog(true);
 	gl.BlendFunc(GL_ONE,GL_ZERO);
@@ -345,7 +345,7 @@ void FGLRenderer::RenderScene(int recursion)
 
 	gl.Disable(GL_POLYGON_OFFSET_FILL);	// just in case
 
-	gl_EnableTexture(gl_texture);
+	gl_RenderState.EnableTexture(gl_texture);
 	gl_RenderState.EnableBrightmap(true);
 	gl_drawinfo->drawlists[GLDL_PLAIN].Sort();
 	gl_drawinfo->drawlists[GLDL_PLAIN].Draw(gl_texture? GLPASS_PLAIN : GLPASS_BASE);
@@ -361,8 +361,8 @@ void FGLRenderer::RenderScene(int recursion)
 	// Part 2: masked geometry. This is set up so that only pixels with alpha>0.5 will show
 	if (!gl_texture) 
 	{
-		gl_EnableTexture(true);
-		gl_SetTextureMode(TM_MASK);
+		gl_RenderState.EnableTexture(true);
+		gl_RenderState.SetTextureMode(TM_MASK);
 	}
 	gl.AlphaFunc(GL_GEQUAL,gl_mask_threshold);
 	gl_RenderState.EnableBrightmap(true);
@@ -382,20 +382,20 @@ void FGLRenderer::RenderScene(int recursion)
 		// Part 1: solid geometry. This is set up so that there are no transparent parts
 
 		// remove any remaining texture bindings and shaders whick may get in the way.
-		gl_EnableTexture(false);
+		gl_RenderState.EnableTexture(false);
 		gl_RenderState.EnableBrightmap(false);
 		gl_RenderState.Apply(true);
 		gl_drawinfo->drawlists[GLDL_LIGHT].Draw(GLPASS_BASE);
-		gl_EnableTexture(true);
+		gl_RenderState.EnableTexture(true);
 
 		// Part 2: masked geometry. This is set up so that only pixels with alpha>0.5 will show
 		// This creates a blank surface that only fills the nontransparent parts of the texture
-		gl_SetTextureMode(TM_MASK);
+		gl_RenderState.SetTextureMode(TM_MASK);
 		gl_RenderState.EnableBrightmap(true);
 		gl_drawinfo->drawlists[GLDL_LIGHTBRIGHT].Draw(GLPASS_BASE_MASKED);
 		gl_drawinfo->drawlists[GLDL_LIGHTMASKED].Draw(GLPASS_BASE_MASKED);
 		gl_RenderState.EnableBrightmap(false);
-		gl_SetTextureMode(TM_MODULATE);
+		gl_RenderState.SetTextureMode(TM_MODULATE);
 
 
 		// second pass: draw lights (on fogged surfaces they are added to the textures!)
@@ -463,7 +463,7 @@ void FGLRenderer::RenderScene(int recursion)
 		gl_drawinfo->drawlists[i].Draw(GLPASS_DECALS);
 	}
 
-	gl_SetTextureMode(TM_MODULATE);
+	gl_RenderState.SetTextureMode(TM_MODULATE);
 
 	gl.DepthMask(true);
 
@@ -505,7 +505,7 @@ void FGLRenderer::RenderTranslucent()
 	RenderAll.Clock();
 
 	gl.DepthMask(false);
-	gl_SetCamera(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
+	gl_RenderState.SetCameraPos(TO_GL(viewx), TO_GL(viewy), TO_GL(viewz));
 
 	// final pass: translucent stuff
 	gl.AlphaFunc(GL_GEQUAL,gl_mask_sprite_threshold);
@@ -671,7 +671,7 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 		if (extra_red || extra_green || extra_blue)
 		{
 			gl.Disable(GL_ALPHA_TEST);
-			gl_EnableTexture(false);
+			gl_RenderState.EnableTexture(false);
 			gl.BlendFunc(GL_DST_COLOR,GL_ZERO);
 			gl.Color4f(extra_red, extra_green, extra_blue, 1.0f);
 			gl_RenderState.Apply(true);
@@ -750,7 +750,7 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 	{
 		gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		gl.Disable(GL_ALPHA_TEST);
-		gl_EnableTexture(false);
+		gl_RenderState.EnableTexture(false);
 		gl.Color4fv(blend);
 		gl_RenderState.Apply(true);
 		gl.Begin(GL_TRIANGLE_STRIP);
@@ -802,7 +802,7 @@ void FGLRenderer::EndDrawScene(sector_t * viewsector)
 	// Restore standard rendering state
 	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	gl.Color3f(1.0f,1.0f,1.0f);
-	gl_EnableTexture(true);
+	gl_RenderState.EnableTexture(true);
 	gl.Enable(GL_ALPHA_TEST);
 	gl.Disable(GL_SCISSOR_TEST);
 }

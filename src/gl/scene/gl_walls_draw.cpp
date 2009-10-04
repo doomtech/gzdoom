@@ -153,14 +153,14 @@ void GLWall::RenderWall(int textured, float * color2, ADynamicLight * light)
 	gl.Begin(GL_TRIANGLE_FAN);
 
 	// lower left corner
-	if (glowing) gl_SetGlowPosition(zceil[0] - zbottom[0], zbottom[0] - zfloor[0]);
+	if (glowing) gl.VertexAttrib2f(VATTR_GLOWDISTANCE, zceil[0] - zbottom[0], zbottom[0] - zfloor[0]);
 	if (textured&1) gl.TexCoord2f(tcs[0].u,tcs[0].v);
 	gl.Vertex3f(glseg.x1,zbottom[0],glseg.y1);
 
 	if (split && glseg.fracleft==0) SplitLeftEdge(tcs, glowing);
 
 	// upper left corner
-	if (glowing) gl_SetGlowPosition(zceil[0] - ztop[0], ztop[0] - zfloor[0]);
+	if (glowing) gl.VertexAttrib2f(VATTR_GLOWDISTANCE, zceil[0] - ztop[0], ztop[0] - zfloor[0]);
 	if (textured&1) gl.TexCoord2f(tcs[1].u,tcs[1].v);
 	gl.Vertex3f(glseg.x1,ztop[0],glseg.y1);
 
@@ -170,14 +170,14 @@ void GLWall::RenderWall(int textured, float * color2, ADynamicLight * light)
 	if (color2) gl.Color4fv(color2);
 
 	// upper right corner
-	if (glowing) gl_SetGlowPosition(zceil[1] - ztop[1], ztop[1] - zfloor[1]);
+	if (glowing) gl.VertexAttrib2f(VATTR_GLOWDISTANCE, zceil[1] - ztop[1], ztop[1] - zfloor[1]);
 	if (textured&1) gl.TexCoord2f(tcs[2].u,tcs[2].v);
 	gl.Vertex3f(glseg.x2,ztop[1],glseg.y2);
 
 	if (split && glseg.fracright==1) SplitRightEdge(tcs, glowing);
 
 	// lower right corner
-	if (glowing) gl_SetGlowPosition(zceil[1] - zbottom[1], zbottom[1] - zfloor[1]);
+	if (glowing) gl.VertexAttrib2f(VATTR_GLOWDISTANCE, zceil[1] - zbottom[1], zbottom[1] - zfloor[1]);
 	if (textured&1) gl.TexCoord2f(tcs[3].u,tcs[3].v); 
 	gl.Vertex3f(glseg.x2,zbottom[1],glseg.y2);
 
@@ -215,7 +215,7 @@ void GLWall::RenderFogBoundary()
 		gl_ModifyColor(Colormap.FadeColor.r, Colormap.FadeColor.g, Colormap.FadeColor.b, Colormap.colormap);
 		float fc[4]={Colormap.FadeColor.r/255.0f,Colormap.FadeColor.g/255.0f,Colormap.FadeColor.b/255.0f,fogd2};
 
-		gl_EnableTexture(false);
+		gl_RenderState.EnableTexture(false);
 		gl_RenderState.EnableFog(false);
 		gl.AlphaFunc(GL_GREATER,0);
 		gl.DepthFunc(GL_LEQUAL);
@@ -227,7 +227,7 @@ void GLWall::RenderFogBoundary()
 		gl.DepthFunc(GL_LESS);
 		gl_RenderState.EnableFog(true);
 		gl.AlphaFunc(GL_GEQUAL,0.5f);
-		gl_EnableTexture(true);
+		gl_RenderState.EnableTexture(true);
 	}
 }
 
@@ -312,7 +312,7 @@ void GLWall::RenderTranslucentWall()
 	}
 	else 
 	{
-		gl_EnableTexture(false);
+		gl_RenderState.EnableTexture(false);
 		extra = 0;
 	}
 
@@ -328,7 +328,7 @@ void GLWall::RenderTranslucentWall()
 
 	if (!gltexture)	
 	{
-		gl_EnableTexture(true);
+		gl_RenderState.EnableTexture(true);
 	}
 	gl_RenderState.EnableBrightmap(true);
 	gl_RenderState.EnableGlow(false);

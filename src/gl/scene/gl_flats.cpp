@@ -331,7 +331,7 @@ void GLFlat::Draw(int pass)
 		gl_SetColor(lightlevel, rel, &Colormap, alpha);
 		gl_SetFog(lightlevel, rel, &Colormap, false);
 		gl.AlphaFunc(GL_GEQUAL,gl_mask_threshold*(alpha));
-		if (!gltexture)	gl_EnableTexture(false);
+		if (!gltexture)	gl_RenderState.EnableTexture(false);
 
 		else 
 		{
@@ -343,7 +343,7 @@ void GLFlat::Draw(int pass)
 		DrawSubsectors(true);
 
 		gl_RenderState.EnableBrightmap(true);
-		if (!gltexture)	gl_EnableTexture(true);
+		if (!gltexture)	gl_RenderState.EnableTexture(true);
 		else gl.PopMatrix();
 		if (renderstyle==STYLE_Add) gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		break;

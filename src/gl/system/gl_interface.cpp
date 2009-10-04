@@ -367,6 +367,7 @@ static void APIENTRY LoadExtensions()
 		gl->ValidateProgram = (PFNGLVALIDATEPROGRAMPROC)wglGetProcAddress("glValidateProgram");
 
 		gl->VertexAttrib1f = (PFNGLVERTEXATTRIB1FPROC)wglGetProcAddress("glVertexAttrib1f");
+		gl->VertexAttrib2f = (PFNGLVERTEXATTRIB2FPROC)wglGetProcAddress("glVertexAttrib2f");
 		gl->VertexAttrib4f = (PFNGLVERTEXATTRIB4FPROC)wglGetProcAddress("glVertexAttrib4f");
 		gl->VertexAttrib2fv = (PFNGLVERTEXATTRIB4FVPROC)wglGetProcAddress("glVertexAttrib2fv");
 		gl->VertexAttrib3fv = (PFNGLVERTEXATTRIB4FVPROC)wglGetProcAddress("glVertexAttrib3fv");

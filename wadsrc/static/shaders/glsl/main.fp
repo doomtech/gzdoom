@@ -44,14 +44,12 @@ varying float fogcoord;
 uniform int fogenabled;
 uniform vec3 camerapos;
 varying vec3 pixelpos;
-uniform float lightfactor;
-uniform float lightdist;
+uniform vec2 lightparms;
 uniform float desaturation_factor;
 
 uniform vec4 topglowcolor;
 uniform vec4 bottomglowcolor;
-varying float topdist;
-varying float bottomdist;
+varying vec2 glowdist;
 
 uniform int texturemode;
 uniform sampler2D tex;
@@ -89,13 +87,13 @@ vec4 getLightColor(float fogdist, float fogfactor)
 	//
 	// handle glowing walls
 	//
-	if (topglowcolor.a > 0.0 && topdist < topglowcolor.a)
+	if (topglowcolor.a > 0.0 && glowdist.x < topglowcolor.a)
 	{
-		color.rgb += desaturate(topglowcolor * (1.0 - topdist / topglowcolor.a)).rgb;
+		color.rgb += desaturate(topglowcolor * (1.0 - glowdist.x / topglowcolor.a)).rgb;
 	}
-	if (bottomglowcolor.a > 0.0 && bottomdist < bottomglowcolor.a)
+	if (bottomglowcolor.a > 0.0 && glowdist.y < bottomglowcolor.a)
 	{
-		color.rgb += desaturate(bottomglowcolor * (1.0 - bottomdist / bottomglowcolor.a)).rgb;
+		color.rgb += desaturate(bottomglowcolor * (1.0 - glowdist.y / bottomglowcolor.a)).rgb;
 	}
 	color = min(color, 1.0);
 	#endif
@@ -108,9 +106,9 @@ vec4 getLightColor(float fogdist, float fogfactor)
 	{
 		#ifndef NO_SM4
 			// special lighting mode 'Doom' not available on older cards for performance reasons.
-			if (fogdist < lightdist) 
+			if (fogdist < lightparms.y) 
 			{
-				color.rgb *= lightfactor - (fogdist / lightdist) * (lightfactor - 1.0);
+				color.rgb *= lightparms.x - (fogdist / lightparms.y) * (lightparms.x - 1.0);
 			}
 		#endif
 		

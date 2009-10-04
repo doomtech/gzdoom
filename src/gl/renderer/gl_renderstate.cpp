@@ -45,6 +45,7 @@
 
 
 FRenderState gl_RenderState;
+int FStateAttr::ChangeCounter;
 
 
 void FRenderState::Apply(bool forcenoshader)
@@ -52,6 +53,15 @@ void FRenderState::Apply(bool forcenoshader)
 	if (forcenoshader || !gl_ApplyShader())
 	{
 		gl_DisableShader();
+		if (mTextureMode != ffTextureMode)
+		{
+			gl.SetTextureMode((ffTextureMode = mTextureMode));
+		}
+		if (mTextureEnabled != ffTextureEnabled)
+		{
+			if ((ffTextureEnabled = mTextureEnabled)) gl.Enable(GL_TEXTURE_2D);
+			else gl.Disable(GL_TEXTURE_2D);
+		}
 		if (mFogEnabled != ffFogEnabled)
 		{
 			if ((ffFogEnabled = mFogEnabled)) gl.Enable(GL_FOG);

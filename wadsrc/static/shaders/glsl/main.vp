@@ -3,10 +3,8 @@
 	varying vec3 pixelpos;
 #endif
 #ifndef NO_GLOW
-	varying float topdist;
-	varying float bottomdist;
-	attribute float topdistance;
-	attribute float bottomdistance;
+	varying vec2 glowdist;
+	attribute vec2 glowdistance;
 #endif
 
 
@@ -21,8 +19,7 @@ void main()
 	#endif
 	
 	#ifndef NO_GLOW
-		topdist = topdistance;
-		bottomdist = bottomdistance;
+		glowdist = glowdistance;
 	#endif
 
 	gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;

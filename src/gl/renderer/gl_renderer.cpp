@@ -179,12 +179,12 @@ void FGLRenderer::SetupLevel()
 void FGLRenderer::SetPaused()
 {
 	gl_DisableShader();
-	gl_SetTextureMode(-1);
+	gl_RenderState.SetTextureMode(-1);	// something invalid
 }
 
 void FGLRenderer::UnsetPaused()
 {
-	gl_SetTextureMode(TM_MODULATE);
+	gl_RenderState.SetTextureMode(TM_MODULATE);
 }
 
 void FGLRenderer::Begin2D()
@@ -356,7 +356,7 @@ void FGLRenderer::ClearBorders()
 	gl.Ortho(0.0, width * 1.0, 0.0, trueHeight, -1.0, 1.0);
 	gl.MatrixMode(GL_MODELVIEW);
 	gl.Color3f(0.f, 0.f, 0.f);
-	gl_EnableTexture(false);
+	gl_RenderState.EnableTexture(false);
 	gl_RenderState.Apply(true);
 
 	gl.Begin(GL_QUADS);
@@ -373,7 +373,7 @@ void FGLRenderer::ClearBorders()
 	gl.Vertex2i(width, trueHeight);
 	gl.End();
 
-	gl_EnableTexture(true);
+	gl_RenderState.EnableTexture(true);
 
 	gl.Viewport(0, (trueHeight - height) / 2, width, height); 
 }
@@ -486,7 +486,7 @@ void FGLRenderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 	
 	gl.Scissor(0, 0, screen->GetWidth(), screen->GetHeight());
 	gl.Disable(GL_SCISSOR_TEST);
-	gl_SetTextureMode(TM_MODULATE);
+	gl_RenderState.SetTextureMode(TM_MODULATE);
 	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	gl.BlendEquation(GL_FUNC_ADD);
 }
@@ -499,14 +499,14 @@ void FGLRenderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 void FGLRenderer::DrawLine(int x1, int y1, int x2, int y2, int palcolor, uint32 color)
 {
 	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[palcolor];
-	gl_EnableTexture(false);
+	gl_RenderState.EnableTexture(false);
 	gl_RenderState.Apply(true);
 	gl.Color3ub(p.r, p.g, p.b);
 	gl.Begin(GL_LINES);
 	gl.Vertex2i(x1, y1);
 	gl.Vertex2i(x2, y2);
 	gl.End();
-	gl_EnableTexture(true);
+	gl_RenderState.EnableTexture(true);
 }
 
 //==========================================================================
@@ -517,13 +517,13 @@ void FGLRenderer::DrawLine(int x1, int y1, int x2, int y2, int palcolor, uint32 
 void FGLRenderer::DrawPixel(int x1, int y1, int palcolor, uint32 color)
 {
 	PalEntry p = color? (PalEntry)color : GPalette.BaseColors[palcolor];
-	gl_EnableTexture(false);
+	gl_RenderState.EnableTexture(false);
 	gl_RenderState.Apply(true);
 	gl.Color3ub(p.r, p.g, p.b);
 	gl.Begin(GL_POINTS);
 	gl.Vertex2i(x1, y1);
 	gl.End();
-	gl_EnableTexture(true);
+	gl_RenderState.EnableTexture(true);
 }
 
 //===========================================================================
@@ -536,7 +536,7 @@ void FGLRenderer::Dim(PalEntry color, float damount, int x1, int y1, int w, int 
 {
 	float r, g, b;
 	
-	gl_EnableTexture(false);
+	gl_RenderState.EnableTexture(false);
 	gl_RenderState.Apply(true);
 	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	gl.AlphaFunc(GL_GREATER,0);
@@ -553,7 +553,7 @@ void FGLRenderer::Dim(PalEntry color, float damount, int x1, int y1, int w, int 
 	gl.Vertex2i(x1 + w, y1);
 	gl.End();
 	
-	gl_EnableTexture(true);
+	gl_RenderState.EnableTexture(true);
 }
 
 //==========================================================================

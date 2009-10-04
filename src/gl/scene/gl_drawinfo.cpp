@@ -973,7 +973,7 @@ void FDrawInfo::SetupFloodStencil(wallseg * ws)
 	gl.StencilFunc(GL_EQUAL,recursion,~0);		// create stencil
 	gl.StencilOp(GL_KEEP,GL_KEEP,GL_INCR);		// increment stencil of valid pixels
 	gl.ColorMask(0,0,0,0);						// don't write to the graphics buffer
-	gl_EnableTexture(false);
+	gl_RenderState.EnableTexture(false);
 	gl.Color3f(1,1,1);
 	gl.Enable(GL_DEPTH_TEST);
 	gl.DepthMask(true);
@@ -990,7 +990,7 @@ void FDrawInfo::SetupFloodStencil(wallseg * ws)
 	gl.StencilOp(GL_KEEP,GL_KEEP,GL_KEEP);		// this stage doesn't modify the stencil
 
 	gl.ColorMask(1,1,1,1);						// don't write to the graphics buffer
-	gl_EnableTexture(true);
+	gl_RenderState.EnableTexture(true);
 	gl.Disable(GL_DEPTH_TEST);
 	gl.DepthMask(false);
 }
@@ -1000,7 +1000,7 @@ void FDrawInfo::ClearFloodStencil(wallseg * ws)
 	int recursion = GLPortal::GetRecursion();
 
 	gl.StencilOp(GL_KEEP,GL_KEEP,GL_DECR);
-	gl_EnableTexture(false);
+	gl_RenderState.EnableTexture(false);
 	gl.ColorMask(0,0,0,0);						// don't write to the graphics buffer
 	gl.Color3f(1,1,1);
 
@@ -1015,7 +1015,7 @@ void FDrawInfo::ClearFloodStencil(wallseg * ws)
 	// restore old stencil op.
 	gl.StencilOp(GL_KEEP,GL_KEEP,GL_KEEP);
 	gl.StencilFunc(GL_EQUAL,recursion,~0);
-	gl_EnableTexture(true);
+	gl_RenderState.EnableTexture(true);
 	gl.ColorMask(1,1,1,1);
 	gl.Enable(GL_DEPTH_TEST);
 	gl.DepthMask(true);

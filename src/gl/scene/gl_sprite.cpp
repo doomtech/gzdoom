@@ -87,7 +87,7 @@ void gl_SetRenderStyle(FRenderStyle style, bool drawopaque, bool allowcolorblend
 	gl_GetRenderStyle(style, drawopaque, allowcolorblending, &tm, &sb, &db, &be);
 	gl.BlendEquation(be);
 	gl.BlendFunc(sb, db);
-	gl_SetTextureMode(tm);
+	gl_RenderState.SetTextureMode(tm);
 }
 
 //==========================================================================
@@ -205,7 +205,7 @@ void GLSprite::Draw(int pass)
 	gl_SetFog(foglevel, rel, &Colormap, additivefog);
 
 	if (gltexture) gltexture->BindPatch(Colormap.colormap,translation);
-	else if (!modelframe) gl_EnableTexture(false);
+	else if (!modelframe) gl_RenderState.EnableTexture(false);
 
 	if (!modelframe)
 	{
@@ -280,7 +280,7 @@ void GLSprite::Draw(int pass)
 		gl_RenderState.EnableBrightmap(true);
 		gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		gl.BlendEquation(GL_FUNC_ADD);
-		gl_SetTextureMode(TM_MODULATE);
+		gl_RenderState.SetTextureMode(TM_MODULATE);
 
 		// [BB] Restore the alpha test after drawing a smooth particle.
 		if (hw_styleflags == STYLEHW_NoAlphaTest)
@@ -299,7 +299,7 @@ void GLSprite::Draw(int pass)
 		}
 	}
 
-	if (!gltexture) gl_EnableTexture(true);
+	gl_RenderState.EnableTexture(true);
 }
 
 

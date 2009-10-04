@@ -374,6 +374,39 @@ void gl_InitFog()
 
 //==========================================================================
 //
+// Lighting stuff 
+//
+//==========================================================================
+
+void gl_SetShaderLight(float level, float olight)
+{
+#if 1 //ndef _DEBUG
+	const float MAXDIST = 256.f;
+	const float THRESHOLD = 96.f;
+	const float FACTOR = 0.75f;
+#else
+	const float MAXDIST = 256.f;
+	const float THRESHOLD = 96.f;
+	const float FACTOR = 2.75f;
+#endif
+
+	float lightdist, lightfactor;
+		
+	if (olight < THRESHOLD)
+	{
+		lightdist = olight * MAXDIST / THRESHOLD;
+		olight = THRESHOLD;
+	}
+	else lightdist = MAXDIST;
+
+	lightfactor = 1.f + ((olight/level) - 1.f) * FACTOR;
+	if (lightfactor == 1.f) lightdist = 0.f;	// save some code in the shader
+	gl_RenderState.SetLightParms(lightfactor, lightdist);
+}
+
+
+//==========================================================================
+//
 // Sets the fog for the current polygon
 //
 //==========================================================================
