@@ -37,7 +37,6 @@ struct FStateVec3 : public FStateAttr
 	}
 };
 
-
 class FRenderState
 {
 	bool mTextureEnabled;
@@ -49,6 +48,8 @@ class FRenderState
 	float mLightParms[2];
 
 	FStateVec3 mCameraPos;
+	PalEntry mFogColor;
+	float mFogDensity;
 
 	int mEffectState;
 	int mColormapState;
@@ -58,14 +59,23 @@ class FRenderState
 	bool ffTextureEnabled;
 	bool ffFogEnabled;
 	int ffTextureMode;
+	PalEntry ffFogColor;
+	float ffFogDensity;
 
 	bool ApplyShader();
 
 public:
 	FRenderState()
 	{
+		Reset();
+	}
+
+	void Reset()
+	{
 		mTextureEnabled = mBrightmapEnabled = mFogEnabled = mGlowEnabled = mLightEnabled = false;
 		ffTextureEnabled = ffFogEnabled = false;
+		mFogColor.d = ffFogColor.d = -1;
+		mFogDensity = ffFogDensity = 0;
 		mTextureMode = ffTextureMode = -1;
 	}
 
@@ -107,24 +117,17 @@ public:
 		mCameraPos.Set(x,y,z);
 	}
 
+	void SetFog(PalEntry c, float d)
+	{
+		mFogColor = c;
+		mFogDensity = d;
+	}
+
 	void SetLightParms(float f, float d)
 	{
 		mLightParms[0] = f;
 		mLightParms[1] = d;
 	}
-
-	// get state
-
-	int getTextureMode()
-	{
-		return mTextureMode;
-	}
-
-	bool isBrightmapEnabled()
-	{
-		return mBrightmapEnabled;
-	}
-
 };
 
 extern FRenderState gl_RenderState;

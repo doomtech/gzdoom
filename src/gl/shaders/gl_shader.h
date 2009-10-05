@@ -49,6 +49,7 @@ class FShader
 	int colormapstart_index;
 	int colormaprange_index;
 	int lightrange_index;
+	int fogcolor_index;
 
 	int glowbottomcolor_index;
 	int glowtopcolor_index;
@@ -57,6 +58,9 @@ class FShader
 	int currenttexturemode;
 	float currentlightfactor;
 	float currentlightdist;
+
+	PalEntry currentfogcolor;
+	float currentfogdensity;
 
 	FStateVec3 currentcamerapos;
 

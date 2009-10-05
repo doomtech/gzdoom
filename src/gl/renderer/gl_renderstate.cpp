@@ -44,10 +44,9 @@
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/renderer/gl_colormap.h"
 
-extern PalEntry gl_CurrentFogColor;
-
 FRenderState gl_RenderState;
 int FStateAttr::ChangeCounter;
+
 
 
 //==========================================================================
@@ -58,31 +57,29 @@ int FStateAttr::ChangeCounter;
 
 int FRenderState::SetupShader(bool cameratexture, int &shaderindex, int &cm, float warptime)
 {
-	bool usecmshader = false;
+	bool usecmshader;
 	int softwarewarp = 0;
 
 	// fixme: move this check into shader class
 	if (shaderindex == 3)
 	{
 		// Brightmap should not be used.
-		if (!gl_RenderState.isBrightmapEnabled() || cm >= CM_FIRSTSPECIALCOLORMAP)
+		if (!mBrightmapEnabled || cm >= CM_FIRSTSPECIALCOLORMAP)
 		{
 			shaderindex = 0;
 		}
 	}
 
-	// selectively disable shader features depending on available feature set.
-	switch (gl.shadermodel)
+	if (gl.shadermodel == 4)
 	{
-	case 4:
 		usecmshader = cm > CM_DEFAULT && cm < CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size() && 
-			gl_RenderState.getTextureMode() != TM_MASK;
-		break;
-
-	case 3:
+			mTextureMode != TM_MASK;
+	}
+	else if (gl.shadermodel == 3)
+	{
 		usecmshader = (cameratexture || gl_colormap_shader) && 
 			cm > CM_DEFAULT && cm < CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size() && 
-			gl_RenderState.getTextureMode() != TM_MASK;
+			mTextureMode != TM_MASK;
 
 		if (!gl_brightmap_shader && shaderindex >= 3) 
 		{
@@ -93,18 +90,12 @@ int FRenderState::SetupShader(bool cameratexture, int &shaderindex, int &cm, flo
 			softwarewarp = shaderindex;
 			shaderindex = 0;
 		}
-		break;
-
-	case 2:
-		usecmshader = !!(cameratexture);
+	}
+	else
+	{
+		usecmshader = (gl.shadermodel == 2 && cameratexture);
 		softwarewarp = shaderindex < 3? shaderindex : 0;
 		shaderindex = 0;
-		break;
-
-	default:
-		softwarewarp = shaderindex < 3? shaderindex : 0;
-		shaderindex = 0;
-		return softwarewarp;
 	}
 
 	mEffectState = shaderindex;
@@ -169,7 +160,7 @@ bool FRenderState::ApplyShader()
 				int fogset = 0;
 				if (mFogEnabled)
 				{
-					if ((gl_CurrentFogColor & 0xffffff) == 0)
+					if ((mFogColor & 0xffffff) == 0)
 					{
 						fogset = gl_fogmode;
 					}
@@ -197,6 +188,19 @@ bool FRenderState::ApplyShader()
 					activeShader->currentlightdist = mLightParms[1];
 					activeShader->currentlightfactor = mLightParms[0];
 					gl.Uniform2fv(activeShader->lightparms_index, 1, mLightParms);
+				}
+				if (mFogColor != activeShader->currentfogcolor ||
+					mFogDensity != activeShader->currentfogdensity)
+				{
+					const float LOG2E = 1.442692f;	// = 1/log(2)
+
+					activeShader->currentfogcolor = mFogColor;
+					activeShader->currentfogdensity = mFogDensity;
+
+					// premultiply the density with as much as possible here to reduce shader
+					// exection time.
+					gl.Uniform4f (activeShader->fogcolor_index, mFogColor.r/255.f, mFogColor.g/255.f, 
+									mFogColor.b/255.f, mFogDensity * (-LOG2E / 64000.f));
 				}
 				return true;
 			}
@@ -228,8 +232,25 @@ void FRenderState::Apply(bool forcenoshader)
 		}
 		if (mFogEnabled != ffFogEnabled)
 		{
-			if ((ffFogEnabled = mFogEnabled)) gl.Enable(GL_FOG);
+			if ((ffFogEnabled = mFogEnabled)) 
+			{
+				gl.Enable(GL_FOG);
+			}
 			else gl.Disable(GL_FOG);
+		}
+		if (mFogEnabled)
+		{
+			if (ffFogColor != mFogColor)
+			{
+				ffFogColor = mFogColor;
+				GLfloat FogColor[4]={mFogColor.r/255.0f,mFogColor.g/255.0f,mFogColor.b/255.0f,0.0f};
+				gl.Fogfv(GL_FOG_COLOR, FogColor);
+			}
+			if (ffFogDensity != mFogDensity)
+			{
+				gl.Fogf(GL_FOG_DENSITY, mFogDensity/64000.f);
+				ffFogDensity=mFogDensity;
+			}
 		}
 	}
 }

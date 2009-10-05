@@ -187,7 +187,7 @@ void GLFlat::DrawSubsector(subsector_t * sub)
 void GLFlat::DrawSubsectors(bool istrans)
 {
 #ifdef TESTING
-	gl_RenderState.EnableLights(true);
+	gl_RenderState.EnableLight(true);
 #endif
 	gl_RenderState.Apply();
 	if (sub)
@@ -243,7 +243,7 @@ void GLFlat::DrawSubsectors(bool istrans)
 		}
 	}
 #ifdef TESTING
-	gl_RenderState.EnableLights(false);
+	gl_RenderState.EnableLight(false);
 #endif
 }
 

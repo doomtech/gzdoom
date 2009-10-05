@@ -71,8 +71,6 @@
 // Renderer interface
 //
 //===========================================================================
-void gl_InitFog();
-
 
 EXTERN_CVAR(Bool, gl_render_segs)
 
@@ -98,7 +96,6 @@ void FGLRenderer::Initialize()
 	//if (gl.flags & RFL_TEXTUREBUFFER) mLightBuffer = new FLightBuffer;
 	SetupLevel();
 	gl_InitShaders();
-	gl_InitFog();
 
 #ifdef TESTING
 	gl.GenBuffers(1, &idbuffer);

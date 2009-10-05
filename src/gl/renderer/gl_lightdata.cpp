@@ -328,10 +328,7 @@ float gl_GetFogDensity(int lightlevel, PalEntry fogcolor)
 		// case 1: black fog
 		density=distfogtable[glset.lightmode!=0][lightlevel];
 	}
-	else if (outsidefogcolor.a!=0xff && 
-			fogcolor.r==outsidefogcolor.r && 
-			fogcolor.g==outsidefogcolor.g &&
-			fogcolor.b==outsidefogcolor.b) 
+	else if (outsidefogcolor.a!=0xff && (fogcolor.d & 0xffffff) == (outsidefogcolor.d & 0xffffff))
 	{
 		// case 2. outsidefogdensity has already been set as needed
 		density=outsidefogdensity;
@@ -347,28 +344,6 @@ float gl_GetFogDensity(int lightlevel, PalEntry fogcolor)
 		density=clamp<int>(255-lightlevel,30,255);
 	}
 	return density;
-}
-
-
-
-PalEntry gl_CurrentFogColor=-1;
-static float gl_CurrentFogDensity=-1;
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void gl_InitFog()
-{
-	gl_CurrentFogColor=-1;
-	gl_CurrentFogDensity=-1;
-	gl.Enable(GL_FOG);
-	gl.Disable(GL_FOG);
-	gl.Hint(GL_FOG_HINT, GL_FASTEST);
-	gl.Fogi(GL_FOG_MODE, GL_EXP);
-
 }
 
 
@@ -440,9 +415,8 @@ void gl_SetFog(int lightlevel, int rellight, const FColormap *cmap, bool isaddit
 	// no fog in enhanced vision modes!
 	if (fogdensity==0 || gl_fogmode == 0)
 	{
-		gl_CurrentFogColor=-1;
-		gl_CurrentFogDensity=-1;
 		gl_RenderState.EnableFog(false);
+		gl_RenderState.SetFog(0,0);
 	}
 	else
 	{
@@ -463,23 +437,11 @@ void gl_SetFog(int lightlevel, int rellight, const FColormap *cmap, bool isaddit
 			fogcolor=0;
 		}
 		// Handle desaturation
-		gl_ModifyColor(fogcolor.r, fogcolor.g, fogcolor.b, cmap->colormap);
+		if (cmap->colormap != CM_DEFAULT)
+			gl_ModifyColor(fogcolor.r, fogcolor.g, fogcolor.b, cmap->colormap);
 
-		gl_RenderState.EnableFog((int)fogcolor!=-1);
-		if (fogcolor!=gl_CurrentFogColor)
-		{
-			if ((int)fogcolor!=-1)
-			{
-				GLfloat FogColor[4]={fogcolor.r/255.0f,fogcolor.g/255.0f,fogcolor.b/255.0f,0.0f};
-				gl.Fogfv(GL_FOG_COLOR, FogColor);
-			}
-			gl_CurrentFogColor=fogcolor;
-		}
-		if (fogdensity!=gl_CurrentFogDensity)
-		{
-			gl.Fogf(GL_FOG_DENSITY, fogdensity/64000.f);
-			gl_CurrentFogDensity=fogdensity;
-		}
+		gl_RenderState.EnableFog(true);
+		gl_RenderState.SetFog(fogcolor, fogdensity);
 	}
 }
 

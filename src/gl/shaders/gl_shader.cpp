@@ -157,6 +157,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		colormapstart_index = gl.GetUniformLocation(hShader, "colormapstart");
 		colormaprange_index = gl.GetUniformLocation(hShader, "colormaprange");
 		lightrange_index = gl.GetUniformLocation(hShader, "lightrange");
+		fogcolor_index = gl.GetUniformLocation(hShader, "fogcolor");
 
 		glowbottomcolor_index = gl.GetUniformLocation(hShader, "bottomglowcolor");
 		glowtopcolor_index = gl.GetUniformLocation(hShader, "topglowcolor");

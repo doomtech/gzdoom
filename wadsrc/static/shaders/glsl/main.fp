@@ -40,10 +40,10 @@ uniform samplerBuffer lightRGB;
 
 
 
-varying float fogcoord;
 uniform int fogenabled;
+uniform vec4 fogcolor;
 uniform vec3 camerapos;
-varying vec3 pixelpos;
+varying vec4 pixelpos;
 uniform vec2 lightparms;
 uniform float desaturation_factor;
 
@@ -157,7 +157,7 @@ vec4 getTexel(vec2 st)
 #ifndef NO_FOG
 vec4 applyFog(vec4 frag, float fogfactor)
 {
-	return vec4(mix(gl_Fog.color, frag, fogfactor).rgb, frag.a);
+	return vec4(mix(fogcolor.rgb, frag.rgb, fogfactor), frag.a);
 }
 #endif
 
@@ -184,21 +184,19 @@ void main()
 	//
 	if (fogenabled != 0)
 	{
-		const float LOG2E = 1.442692;	// = 1/log(2)
-		//if (abs(fogenabled) == 1) 
 		#ifndef NO_SM4
 			if (fogenabled == 1 || fogenabled == -1) 
 			{
-				fogdist = fogcoord;
+				fogdist = pixelpos.w;
 			}
 			else 
 			{
-				fogdist = max(16.0, distance(pixelpos, camerapos));
+				fogdist = max(16.0, distance(pixelpos.xyz, camerapos));
 			}
 		#else
-			fogdist = fogcoord;
+			fogdist = pixelpos.w;
 		#endif
-		fogfactor = exp2 ( -gl_Fog.density * fogdist * LOG2E);
+		fogfactor = exp2 (fogcolor.a * fogdist);
 	}
 	#endif
 	
@@ -212,7 +210,7 @@ void main()
 			vec4 lightpos = texelFetchBuffer(lightPositions, lightidx);
 			vec4 lightcolor = texelFetchBuffer(lightRGB, lightidx);
 			
-			lightcolor.rgb *= max(lightpos.a - distance(pixelpos, lightpos.rgb),0.0) / lightpos.a;
+			lightcolor.rgb *= max(lightpos.w - distance(pixelpos.xyz, lightpos.xyz),0.0) / lightpos.w;
 			
 			if (lightcolor.a == 1.0)
 			{

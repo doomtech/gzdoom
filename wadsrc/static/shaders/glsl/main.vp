@@ -1,6 +1,5 @@
 #ifndef NO_FOG
-	varying float fogcoord;
-	varying vec3 pixelpos;
+	varying vec4 pixelpos;
 #endif
 #ifndef NO_GLOW
 	varying vec2 glowdist;
@@ -14,8 +13,8 @@ void main()
 
 	#ifndef NO_FOG
 		vec4 eyeCoordPos = gl_ModelViewMatrix * gl_Vertex;
-		fogcoord = -eyeCoordPos.z/eyeCoordPos.w;
-		pixelpos = gl_Vertex.xyz;
+		pixelpos.xyz = gl_Vertex.xyz;
+		pixelpos.w = -eyeCoordPos.z/eyeCoordPos.w;
 	#endif
 	
 	#ifndef NO_GLOW
