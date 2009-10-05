@@ -435,7 +435,8 @@ void GLWall::SplitWall(sector_t * frontsector, bool translucent)
 				int ll=lightlevel;
 				FColormap lc=Colormap;
 
-				Put3DWall(&lightlist[i], translucent);
+				if (i > 0) Put3DWall(&lightlist[i], translucent);
+				else PutWall(translucent);	// uppermost section does not alter light at all.
 
 				lightlevel=ll;
 				Colormap=lc;
@@ -1515,7 +1516,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
-	if (seg->linedef-lines==308)
+	if (seg->linedef-lines==14)
 		__asm nop
 #endif
 #endif
