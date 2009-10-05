@@ -62,117 +62,30 @@ CVAR(Bool, gl_glow_shader, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
 
 
 extern long gl_frameMS;
-extern PalEntry gl_CurrentFogColor;
-
-static int gl_effectstate;
-static int gl_colormapstate;
-static bool gl_brightmapstate;
-static float gl_warptime;
-
-class FShader
-{
-	friend class GLShader;
-	friend class FRenderState;
-
-	GLhandleARB hShader;
-	GLhandleARB hVertProg;
-	GLhandleARB hFragProg;
-
-	int timer_index;
-	int desaturation_index;
-	int fogenabled_index;
-	int texturemode_index;
-	int camerapos_index;
-	int lightparms_index;
-	int colormapstart_index;
-	int colormaprange_index;
-	int lightrange_index;
-
-	int glowbottomcolor_index;
-	int glowtopcolor_index;
-
-	int currentfogenabled;
-	int currenttexturemode;
-	float currentlightfactor;
-	float currentlightdist;
-
-	FStateVec3 currentcamerapos;
-
-public:
-	FShader()
-	{
-		hShader = hVertProg = hFragProg = NULL;
-		currentfogenabled = currenttexturemode = 0;
-		currentlightfactor = currentlightdist = 0.0f;
-	}
-
-	~FShader();
-
-	bool Load(const char * name, const char * vert_prog_lump, const char * fragprog, const char * fragprog2, const char *defines);
-
-	void SetFogEnabled(int on)
-	{
-		if (on != currentfogenabled)
-		{
-			currentfogenabled = on;
-			gl.Uniform1i(fogenabled_index, on); 
-		}
-	}
-
-	void SetTextureMode(int mode)
-	{
-		if (mode != currenttexturemode)
-		{
-			currenttexturemode = mode;
-			gl.Uniform1i(texturemode_index, mode); 
-		}
-	}
-
-	void SetLightParms(float *parms)
-	{
-		if (parms[0] != currentlightfactor || parms[1] != currentlightdist)
-		{
-			currentlightdist = parms[1];
-			currentlightfactor = parms[0];
-			gl.Uniform2fv(lightparms_index, 1, parms);
-		}
-	}
-
-	void SetColormapColor(float r, float g, float b, float r1, float g1, float b1)
-	{
-		//if (fac != currentlightfactor)
-		{
-			//currentlightfactor = fac;
-			gl.Uniform4f(colormapstart_index, r,g,b,0);
-			gl.Uniform4f(colormaprange_index, r1-r,g1-g,b1-b,0);
-		}
-	}
-
-	void SetCameraPos(FStateVec3 *campos)
-	{
-		if (currentcamerapos.Update(campos))
-		{
-			gl.Uniform3fv(camerapos_index, 1, campos->vec); 
-		}
-	}
-
-	void SetGlowParams(float *topcolors, float topheight, float *bottomcolors, float bottomheight)
-	{
-		gl.Uniform4f(glowtopcolor_index, topcolors[0], topcolors[1], topcolors[2], topheight);
-		gl.Uniform4f(glowbottomcolor_index, bottomcolors[0], bottomcolors[1], bottomcolors[2], bottomheight);
-	}
-
-	void SetLightRange(int start, int end, int forceadd)
-	{
-		gl.Uniform3i(lightrange_index, start, end, forceadd);
-	}
-
-	bool Bind(float Speed);
-
-};
-
 
 static FShader *gl_activeShader;
+
+
+void FShader::SetColormapColor(float r, float g, float b, float r1, float g1, float b1)
+{
+	//if (fac != currentlightfactor)
+	{
+		//currentlightfactor = fac;
+		gl.Uniform4f(colormapstart_index, r,g,b,0);
+		gl.Uniform4f(colormaprange_index, r1-r,g1-g,b1-b,0);
+	}
+}
+
+void FShader::SetGlowParams(float *topcolors, float topheight, float *bottomcolors, float bottomheight)
+{
+	gl.Uniform4f(glowtopcolor_index, topcolors[0], topcolors[1], topcolors[2], topheight);
+	gl.Uniform4f(glowbottomcolor_index, bottomcolors[0], bottomcolors[1], bottomcolors[2], bottomheight);
+}
+
+void FShader::SetLightRange(int start, int end, int forceadd)
+{
+	gl.Uniform3i(lightrange_index, start, end, forceadd);
+}
 
 //==========================================================================
 //
@@ -484,22 +397,6 @@ static FShaderContainer * GetShader(const char * n,const char * fn)
 //
 //==========================================================================
 
-class GLShader
-{
-	FName Name;
-	FShaderContainer *container;
-
-public:
-
-	static void Initialize();
-	static void Clear();
-	static GLShader *Find(const char * shn);
-	static GLShader *Find(unsigned int warp);
-	void Bind(int cm, bool glowing, float Speed, bool lights);
-	static void Unbind();
-
-};
-
 static TArray<GLShader *> AllShaders;
 
 void GLShader::Initialize()
@@ -557,7 +454,7 @@ GLShader *GLShader::Find(unsigned int warp)
 }
 
 
-void GLShader::Bind(int cm, bool glowing, float Speed, bool lights)
+FShader *GLShader::Bind(int cm, bool glowing, float Speed, bool lights)
 {
 	FShader *sh=NULL;
 
@@ -588,6 +485,7 @@ void GLShader::Bind(int cm, bool glowing, float Speed, bool lights)
 			}
 		}
 	}
+	return sh;
 }
 
 void GLShader::Unbind()
@@ -625,144 +523,9 @@ void gl_SetGlowParams(float *topcolors, float topheight, float *bottomcolors, fl
 
 //==========================================================================
 //
-// Set texture shader info
+//
 //
 //==========================================================================
-
-int gl_SetupShader(bool cameratexture, int &shaderindex, int &cm, float warptime)
-{
-	bool usecmshader = false;
-	int softwarewarp = 0;
-
-	// fixme: move this check into shader class
-	if (shaderindex == 3)
-	{
-		// Brightmap should not be used.
-		if (!gl_RenderState.isBrightmapEnabled() || cm >= CM_FIRSTSPECIALCOLORMAP)
-		{
-			shaderindex = 0;
-		}
-	}
-
-	// selectively disable shader features depending on available feature set.
-	switch (gl.shadermodel)
-	{
-	case 4:
-		usecmshader = cm > CM_DEFAULT && cm < CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size() && 
-			gl_RenderState.getTextureMode() != TM_MASK;
-		break;
-
-	case 3:
-		usecmshader = (cameratexture || gl_colormap_shader) && 
-			cm > CM_DEFAULT && cm < CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size() && 
-			gl_RenderState.getTextureMode() != TM_MASK;
-
-		if (!gl_brightmap_shader && shaderindex >= 3) 
-		{
-			shaderindex = 0;
-		}
-		else if (!gl_warp_shader && shaderindex < 3)
-		{
-			softwarewarp = shaderindex;
-			shaderindex = 0;
-		}
-		break;
-
-	case 2:
-		usecmshader = !!(cameratexture);
-		softwarewarp = shaderindex < 3? shaderindex : 0;
-		shaderindex = 0;
-		break;
-
-	default:
-		softwarewarp = shaderindex < 3? shaderindex : 0;
-		shaderindex = 0;
-		return softwarewarp;
-	}
-
-	gl_effectstate = shaderindex;
-	gl_colormapstate = usecmshader? cm : CM_DEFAULT;
-	if (usecmshader) cm = CM_DEFAULT;
-	gl_warptime = warptime;
-	return softwarewarp;
-}
-
-
-//==========================================================================
-//
-// Apply shader settings
-//
-//==========================================================================
-
-bool gl_ApplyShader()
-{
-	bool useshaders = false;
-
-	switch (gl.shadermodel)
-	{
-	case 2:
-		useshaders = (gl_RenderState.isTextureEnabled() && gl_colormapstate != CM_DEFAULT);
-		break;
-
-	case 3:
-		useshaders = (
-			gl_effectstate != 0 ||	// special shaders
-			(gl_RenderState.isFogEnabled() && (gl_fogmode == 2 || gl_fog_shader) && gl_fogmode != 0) || // fog requires a shader
-			(gl_RenderState.isTextureEnabled() && (gl_effectstate != 0 || gl_colormapstate)) ||		// colormap
-			(gl_RenderState.isGlowEnabled())		// glow requires a shader
-			);
-		break;
-
-	case 4:
-		// useshaders = true;
-		useshaders = (
-			gl_effectstate != 0 ||	// special shaders
-			(gl_RenderState.isFogEnabled() && gl_fogmode != 0) || // fog requires a shader
-			(gl_RenderState.isTextureEnabled()&& gl_colormapstate) ||	// colormap
-			gl_RenderState.isGlowEnabled() ||		// glow requires a shader
-			gl_RenderState.isLightEnabled()
-			);
-		break;
-
-	default:
-		break;
-	}
-
-	if (useshaders)
-	{
-		// we need a shader
-		GLShader *shd = GLShader::Find(gl_RenderState.isTextureEnabled()? gl_effectstate : 4);
-
-		if (shd != NULL)
-		{
-			shd->Bind(gl_colormapstate, gl_RenderState.isGlowEnabled(), gl_warptime, gl_RenderState.isLightEnabled());
-
-			if (gl_activeShader)
-			{
-				gl_activeShader->SetTextureMode(gl_RenderState.getTextureMode());
-
-				int fogset = 0;
-				if (gl_RenderState.isFogEnabled())
-				{
-					if ((gl_CurrentFogColor & 0xffffff) == 0)
-					{
-						fogset = gl_fogmode;
-					}
-					else
-					{
-						fogset = -gl_fogmode;
-					}
-				}
-
-				gl_activeShader->SetFogEnabled(fogset);
-				gl_activeShader->SetCameraPos(gl_RenderState.getCameraPos());
-				gl_activeShader->SetLightParms(gl_RenderState.getLightParms());
-				return true;
-			}
-		}
-	}
-	return false;
-}
 
 void gl_InitShaders()
 {

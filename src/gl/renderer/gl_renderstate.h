@@ -50,10 +50,16 @@ class FRenderState
 
 	FStateVec3 mCameraPos;
 
+	int mEffectState;
+	int mColormapState;
+	float mWarpTime;
+
 
 	bool ffTextureEnabled;
 	bool ffFogEnabled;
 	int ffTextureMode;
+
+	bool ApplyShader();
 
 public:
 	FRenderState()
@@ -63,6 +69,7 @@ public:
 		mTextureMode = ffTextureMode = -1;
 	}
 
+	int SetupShader(bool cameratexture, int &shaderindex, int &cm, float warptime);
 	void Apply(bool forcenoshader = false);
 
 	void SetTextureMode(int mode)
@@ -111,36 +118,6 @@ public:
 	int getTextureMode()
 	{
 		return mTextureMode;
-	}
-
-	FStateVec3 *getCameraPos()
-	{
-		return &mCameraPos;
-	}
-
-	float *getLightParms()
-	{
-		return mLightParms;
-	}
-
-	bool isTextureEnabled()
-	{
-		return mTextureEnabled;
-	}
-
-	bool isFogEnabled()
-	{
-		return mFogEnabled;
-	}
-
-	bool isGlowEnabled()
-	{
-		return mGlowEnabled;
-	}
-
-	bool isLightEnabled()
-	{
-		return mLightEnabled;
 	}
 
 	bool isBrightmapEnabled()

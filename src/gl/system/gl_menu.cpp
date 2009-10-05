@@ -30,11 +30,6 @@ CVAR(Bool, gl_render_segs, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_seamless, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_fakecontrast, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
 
-EXTERN_CVAR(Bool, gl_warp_shader)
-EXTERN_CVAR(Bool, gl_fog_shader)
-EXTERN_CVAR(Bool, gl_colormap_shader)
-EXTERN_CVAR(Bool, gl_brightmap_shader)
-EXTERN_CVAR(Bool, gl_glow_shader)
 
 CUSTOM_CVAR(Bool, gl_render_precise, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 {

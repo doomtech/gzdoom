@@ -39,18 +39,182 @@
 */
 
 #include "gl/system/gl_system.h"
+#include "gl/system/gl_cvars.h"
 #include "gl/shaders/gl_shader.h"
 #include "gl/renderer/gl_renderstate.h"
+#include "gl/renderer/gl_colormap.h"
 
-
+extern PalEntry gl_CurrentFogColor;
 
 FRenderState gl_RenderState;
 int FStateAttr::ChangeCounter;
 
 
+//==========================================================================
+//
+// Set texture shader info
+//
+//==========================================================================
+
+int FRenderState::SetupShader(bool cameratexture, int &shaderindex, int &cm, float warptime)
+{
+	bool usecmshader = false;
+	int softwarewarp = 0;
+
+	// fixme: move this check into shader class
+	if (shaderindex == 3)
+	{
+		// Brightmap should not be used.
+		if (!gl_RenderState.isBrightmapEnabled() || cm >= CM_FIRSTSPECIALCOLORMAP)
+		{
+			shaderindex = 0;
+		}
+	}
+
+	// selectively disable shader features depending on available feature set.
+	switch (gl.shadermodel)
+	{
+	case 4:
+		usecmshader = cm > CM_DEFAULT && cm < CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size() && 
+			gl_RenderState.getTextureMode() != TM_MASK;
+		break;
+
+	case 3:
+		usecmshader = (cameratexture || gl_colormap_shader) && 
+			cm > CM_DEFAULT && cm < CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size() && 
+			gl_RenderState.getTextureMode() != TM_MASK;
+
+		if (!gl_brightmap_shader && shaderindex >= 3) 
+		{
+			shaderindex = 0;
+		}
+		else if (!gl_warp_shader && shaderindex < 3)
+		{
+			softwarewarp = shaderindex;
+			shaderindex = 0;
+		}
+		break;
+
+	case 2:
+		usecmshader = !!(cameratexture);
+		softwarewarp = shaderindex < 3? shaderindex : 0;
+		shaderindex = 0;
+		break;
+
+	default:
+		softwarewarp = shaderindex < 3? shaderindex : 0;
+		shaderindex = 0;
+		return softwarewarp;
+	}
+
+	mEffectState = shaderindex;
+	mColormapState = usecmshader? cm : CM_DEFAULT;
+	if (usecmshader) cm = CM_DEFAULT;
+	mWarpTime = warptime;
+	return softwarewarp;
+}
+
+
+//==========================================================================
+//
+// Apply shader settings
+//
+//==========================================================================
+
+bool FRenderState::ApplyShader()
+{
+	bool useshaders = false;
+
+	switch (gl.shadermodel)
+	{
+	case 2:
+		useshaders = (mTextureEnabled && mColormapState != CM_DEFAULT);
+		break;
+
+	case 3:
+		useshaders = (
+			mEffectState != 0 ||	// special shaders
+			(mFogEnabled && (gl_fogmode == 2 || gl_fog_shader) && gl_fogmode != 0) || // fog requires a shader
+			(mTextureEnabled && (mEffectState != 0 || mColormapState)) ||		// colormap
+			mGlowEnabled		// glow requires a shader
+			);
+		break;
+
+	case 4:
+		// useshaders = true;
+		useshaders = (
+			mEffectState != 0 ||	// special shaders
+			(mFogEnabled && gl_fogmode != 0) || // fog requires a shader
+			(mTextureEnabled && mColormapState) ||	// colormap
+			mGlowEnabled ||		// glow requires a shader
+			mLightEnabled
+			);
+		break;
+
+	default:
+		break;
+	}
+
+	if (useshaders)
+	{
+		// we need a shader
+		GLShader *shd = GLShader::Find(mTextureEnabled? mEffectState : 4);
+
+		if (shd != NULL)
+		{
+			FShader *activeShader = shd->Bind(mColormapState, mGlowEnabled, mWarpTime, mLightEnabled);
+
+			if (activeShader)
+			{
+				int fogset = 0;
+				if (mFogEnabled)
+				{
+					if ((gl_CurrentFogColor & 0xffffff) == 0)
+					{
+						fogset = gl_fogmode;
+					}
+					else
+					{
+						fogset = -gl_fogmode;
+					}
+				}
+
+				if (fogset != activeShader->currentfogenabled)
+				{
+					gl.Uniform1i(activeShader->fogenabled_index, (activeShader->currentfogenabled = fogset)); 
+				}
+				if (mTextureMode != activeShader->currenttexturemode)
+				{
+					gl.Uniform1i(activeShader->texturemode_index, (activeShader->currenttexturemode = mTextureMode)); 
+				}
+				if (activeShader->currentcamerapos.Update(&mCameraPos))
+				{
+					gl.Uniform3fv(activeShader->camerapos_index, 1, mCameraPos.vec); 
+				}
+				if (mLightParms[0] != activeShader->currentlightfactor || 
+					mLightParms[1] != activeShader->currentlightdist)
+				{
+					activeShader->currentlightdist = mLightParms[1];
+					activeShader->currentlightfactor = mLightParms[0];
+					gl.Uniform2fv(activeShader->lightparms_index, 1, mLightParms);
+				}
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+
+//==========================================================================
+//
+// Apply State
+//
+//==========================================================================
+
 void FRenderState::Apply(bool forcenoshader)
 {
-	if (forcenoshader || !gl_ApplyShader())
+	if (forcenoshader || !ApplyShader())
 	{
 		gl_DisableShader();
 		if (mTextureMode != ffTextureMode)
