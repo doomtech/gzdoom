@@ -53,7 +53,6 @@
 #include "gl/utility/gl_templates.h"
 
 EXTERN_CVAR(Bool, gl_seamless)
-extern long gl_frameMS;
 extern int vertexcount;
 
 //==========================================================================

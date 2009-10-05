@@ -9,10 +9,11 @@
 
 void main()
 {
+	vec4 eyeCoordPos = gl_ModelViewMatrix * gl_Vertex;
+
 	gl_FrontColor = gl_Color;
 
 	#ifndef NO_FOG
-		vec4 eyeCoordPos = gl_ModelViewMatrix * gl_Vertex;
 		pixelpos.xyz = gl_Vertex.xyz;
 		pixelpos.w = -eyeCoordPos.z/eyeCoordPos.w;
 	#endif
@@ -23,4 +24,7 @@ void main()
 
 	gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 	gl_Position = ftransform();
+    #ifdef __GLSL_CG_DATA_TYPES
+		gl_ClipVertex = eyeCoordPos;
+	#endif
 }
