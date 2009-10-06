@@ -44,6 +44,7 @@ class FRenderState
 	bool mGlowEnabled;
 	bool mLightEnabled;
 	bool mBrightmapEnabled;
+	bool mFogboundaryEnabled;
 	int mTextureMode;
 	float mLightParms[2];
 
@@ -72,7 +73,7 @@ public:
 
 	void Reset()
 	{
-		mTextureEnabled = mBrightmapEnabled = mFogEnabled = mGlowEnabled = mLightEnabled = false;
+		mFogboundaryEnabled = mTextureEnabled = mBrightmapEnabled = mFogEnabled = mGlowEnabled = mLightEnabled = false;
 		ffTextureEnabled = ffFogEnabled = false;
 		mFogColor.d = ffFogColor.d = -1;
 		mFogDensity = ffFogDensity = 0;
@@ -95,6 +96,11 @@ public:
 	void EnableFog(bool on)
 	{
 		mFogEnabled = on;
+	}
+
+	void EnableFogboundary(bool on)
+	{
+		mFogboundaryEnabled = on;
 	}
 
 	void EnableGlow(bool on)

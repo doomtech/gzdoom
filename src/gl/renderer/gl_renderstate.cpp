@@ -46,6 +46,7 @@
 
 FRenderState gl_RenderState;
 int FStateAttr::ChangeCounter;
+extern FShader *FogboundaryShader;
 
 
 
@@ -115,96 +116,105 @@ int FRenderState::SetupShader(bool cameratexture, int &shaderindex, int &cm, flo
 bool FRenderState::ApplyShader()
 {
 	bool useshaders = false;
+	FShader *activeShader = NULL;
 
-	switch (gl.shadermodel)
+
+	if (mFogboundaryEnabled)	// the fog boundary shader is special
 	{
-	case 2:
-		useshaders = (mTextureEnabled && mColormapState != CM_DEFAULT);
-		break;
-
-	case 3:
-		useshaders = (
-			mEffectState != 0 ||	// special shaders
-			(mFogEnabled && (gl_fogmode == 2 || gl_fog_shader) && gl_fogmode != 0) || // fog requires a shader
-			(mTextureEnabled && (mEffectState != 0 || mColormapState)) ||		// colormap
-			mGlowEnabled		// glow requires a shader
-			);
-		break;
-
-	case 4:
-		// useshaders = true;
-		useshaders = (
-			mEffectState != 0 ||	// special shaders
-			(mFogEnabled && gl_fogmode != 0) || // fog requires a shader
-			(mTextureEnabled && mColormapState) ||	// colormap
-			mGlowEnabled ||		// glow requires a shader
-			mLightEnabled
-			);
-		break;
-
-	default:
-		break;
+		FogboundaryShader->Bind(0);
+		activeShader = FogboundaryShader;
 	}
-
-	if (useshaders)
+	else
 	{
-		// we need a shader
-		GLShader *shd = GLShader::Find(mTextureEnabled? mEffectState : 4);
-
-		if (shd != NULL)
+		switch (gl.shadermodel)
 		{
-			FShader *activeShader = shd->Bind(mColormapState, mGlowEnabled, mWarpTime, mLightEnabled);
+		case 2:
+			useshaders = (mTextureEnabled && mColormapState != CM_DEFAULT);
+			break;
 
-			if (activeShader)
+		case 3:
+			useshaders = (
+				mEffectState != 0 ||	// special shaders
+				(mFogEnabled && (gl_fogmode == 2 || gl_fog_shader) && gl_fogmode != 0) || // fog requires a shader
+				(mTextureEnabled && (mEffectState != 0 || mColormapState)) ||		// colormap
+				mGlowEnabled		// glow requires a shader
+				);
+			break;
+
+		case 4:
+			// useshaders = true;
+			useshaders = (
+				mEffectState != 0 ||	// special shaders
+				(mFogEnabled && gl_fogmode != 0) || // fog requires a shader
+				(mTextureEnabled && mColormapState) ||	// colormap
+				mGlowEnabled ||		// glow requires a shader
+				mLightEnabled
+				);
+			break;
+
+		default:
+			break;
+		}
+
+		if (useshaders)
+		{
+			// we need a shader
+			GLShader *shd = GLShader::Find(mTextureEnabled? mEffectState : 4);
+
+			if (shd != NULL)
 			{
-				int fogset = 0;
-				if (mFogEnabled)
-				{
-					if ((mFogColor & 0xffffff) == 0)
-					{
-						fogset = gl_fogmode;
-					}
-					else
-					{
-						fogset = -gl_fogmode;
-					}
-				}
-
-				if (fogset != activeShader->currentfogenabled)
-				{
-					gl.Uniform1i(activeShader->fogenabled_index, (activeShader->currentfogenabled = fogset)); 
-				}
-				if (mTextureMode != activeShader->currenttexturemode)
-				{
-					gl.Uniform1i(activeShader->texturemode_index, (activeShader->currenttexturemode = mTextureMode)); 
-				}
-				if (activeShader->currentcamerapos.Update(&mCameraPos))
-				{
-					gl.Uniform3fv(activeShader->camerapos_index, 1, mCameraPos.vec); 
-				}
-				if (mLightParms[0] != activeShader->currentlightfactor || 
-					mLightParms[1] != activeShader->currentlightdist)
-				{
-					activeShader->currentlightdist = mLightParms[1];
-					activeShader->currentlightfactor = mLightParms[0];
-					gl.Uniform2fv(activeShader->lightparms_index, 1, mLightParms);
-				}
-				if (mFogColor != activeShader->currentfogcolor ||
-					mFogDensity != activeShader->currentfogdensity)
-				{
-					const float LOG2E = 1.442692f;	// = 1/log(2)
-
-					activeShader->currentfogcolor = mFogColor;
-					activeShader->currentfogdensity = mFogDensity;
-
-					// premultiply the density with as much as possible here to reduce shader
-					// exection time.
-					gl.Uniform4f (activeShader->fogcolor_index, mFogColor.r/255.f, mFogColor.g/255.f, 
-									mFogColor.b/255.f, mFogDensity * (-LOG2E / 64000.f));
-				}
-				return true;
+				activeShader = shd->Bind(mColormapState, mGlowEnabled, mWarpTime, mLightEnabled);
 			}
 		}
+	}
+	if (activeShader)
+	{
+		int fogset = 0;
+		if (mFogEnabled)
+		{
+			if ((mFogColor & 0xffffff) == 0)
+			{
+				fogset = gl_fogmode;
+			}
+			else
+			{
+				fogset = -gl_fogmode;
+			}
+		}
+
+		if (fogset != activeShader->currentfogenabled)
+		{
+			gl.Uniform1i(activeShader->fogenabled_index, (activeShader->currentfogenabled = fogset)); 
+		}
+		if (mTextureMode != activeShader->currenttexturemode)
+		{
+			gl.Uniform1i(activeShader->texturemode_index, (activeShader->currenttexturemode = mTextureMode)); 
+		}
+		if (activeShader->currentcamerapos.Update(&mCameraPos))
+		{
+			gl.Uniform3fv(activeShader->camerapos_index, 1, mCameraPos.vec); 
+		}
+		if (mLightParms[0] != activeShader->currentlightfactor || 
+			mLightParms[1] != activeShader->currentlightdist)
+		{
+			activeShader->currentlightdist = mLightParms[1];
+			activeShader->currentlightfactor = mLightParms[0];
+			gl.Uniform2fv(activeShader->lightparms_index, 1, mLightParms);
+		}
+		if (mFogColor != activeShader->currentfogcolor ||
+			mFogDensity != activeShader->currentfogdensity)
+		{
+			const float LOG2E = 1.442692f;	// = 1/log(2)
+
+			activeShader->currentfogcolor = mFogColor;
+			activeShader->currentfogdensity = mFogDensity;
+
+			// premultiply the density with as much as possible here to reduce shader
+			// exection time.
+			gl.Uniform4f (activeShader->fogcolor_index, mFogColor.r/255.f, mFogColor.g/255.f, 
+							mFogColor.b/255.f, mFogDensity * (-LOG2E / 64000.f));
+		}
+		return true;
 	}
 	return false;
 }

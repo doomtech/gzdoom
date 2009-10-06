@@ -199,35 +199,48 @@ void GLWall::RenderFogBoundary()
 {
 	if (gl_fogmode && gl_fixedcolormap == 0)
 	{
-		float fogdensity=gl_GetFogDensity(lightlevel, Colormap.FadeColor);
+		if (gl.shadermodel == 4 || (gl.shadermodel == 3 && gl_fog_shader))
+		{
+			int rel = rellight + (extralight * gl_weaponlight);
+			gl_SetFog(lightlevel, rel, &Colormap, false);
+			gl_RenderState.EnableFogboundary(true);
+			gl.Disable(GL_ALPHA_TEST);
+			RenderWall(0, NULL);
+			gl.Enable(GL_ALPHA_TEST);
+			gl_RenderState.EnableFogboundary(false);
+		}
+		else
+		{
+			float fogdensity=gl_GetFogDensity(lightlevel, Colormap.FadeColor);
 
-		float xcamera=TO_GL(viewx);
-		float ycamera=TO_GL(viewy);
+			float xcamera=TO_GL(viewx);
+			float ycamera=TO_GL(viewy);
 
-		float dist1=Dist2(xcamera,ycamera, glseg.x1,glseg.y1);
-		float dist2=Dist2(xcamera,ycamera, glseg.x2,glseg.y2);
+			float dist1=Dist2(xcamera,ycamera, glseg.x1,glseg.y1);
+			float dist2=Dist2(xcamera,ycamera, glseg.x2,glseg.y2);
 
 
-		// these values were determined by trial and error and are scale dependent!
-		float fogd1=(0.95f-exp(-fogdensity*dist1/62500.f)) * 1.05f;
-		float fogd2=(0.95f-exp(-fogdensity*dist2/62500.f)) * 1.05f;
+			// these values were determined by trial and error and are scale dependent!
+			float fogd1=(0.95f-exp(-fogdensity*dist1/62500.f)) * 1.05f;
+			float fogd2=(0.95f-exp(-fogdensity*dist2/62500.f)) * 1.05f;
 
-		gl_ModifyColor(Colormap.FadeColor.r, Colormap.FadeColor.g, Colormap.FadeColor.b, Colormap.colormap);
-		float fc[4]={Colormap.FadeColor.r/255.0f,Colormap.FadeColor.g/255.0f,Colormap.FadeColor.b/255.0f,fogd2};
+			gl_ModifyColor(Colormap.FadeColor.r, Colormap.FadeColor.g, Colormap.FadeColor.b, Colormap.colormap);
+			float fc[4]={Colormap.FadeColor.r/255.0f,Colormap.FadeColor.g/255.0f,Colormap.FadeColor.b/255.0f,fogd2};
 
-		gl_RenderState.EnableTexture(false);
-		gl_RenderState.EnableFog(false);
-		gl.AlphaFunc(GL_GREATER,0);
-		gl.DepthFunc(GL_LEQUAL);
-		gl.Color4f(fc[0],fc[1],fc[2], fogd1);
+			gl_RenderState.EnableTexture(false);
+			gl_RenderState.EnableFog(false);
+			gl.AlphaFunc(GL_GREATER,0);
+			gl.DepthFunc(GL_LEQUAL);
+			gl.Color4f(fc[0],fc[1],fc[2], fogd1);
 
-		flags &= ~GLWF_GLOW;
-		RenderWall(4,fc);
+			flags &= ~GLWF_GLOW;
+			RenderWall(4,fc);
 
-		gl.DepthFunc(GL_LESS);
-		gl_RenderState.EnableFog(true);
-		gl.AlphaFunc(GL_GEQUAL,0.5f);
-		gl_RenderState.EnableTexture(true);
+			gl.DepthFunc(GL_LESS);
+			gl_RenderState.EnableFog(true);
+			gl.AlphaFunc(GL_GEQUAL,0.5f);
+			gl_RenderState.EnableTexture(true);
+		}
 	}
 }
 

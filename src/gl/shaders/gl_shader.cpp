@@ -107,14 +107,20 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		if (fp_lump == -1) I_Error("Unable to load '%s'", frag_prog_lump);
 		FMemLump fp_data = Wads.ReadLump(fp_lump);
 
-		int pp_lump = Wads.CheckNumForFullName(proc_prog_lump);
-		if (pp_lump == -1) I_Error("Unable to load '%s'", proc_prog_lump);
-		FMemLump pp_data = Wads.ReadLump(pp_lump);
 
 		FString fp_comb;
 		if (gl.shadermodel < 4) fp_comb = "#define NO_SM4\n";
 		// This uses GetChars on the strings to get rid of terminating 0 characters.
-		fp_comb << defines << fp_data.GetString().GetChars() << "\n" << pp_data.GetString().GetChars();
+		fp_comb << defines << fp_data.GetString().GetChars() << "\n";
+
+		if (proc_prog_lump != NULL)
+		{
+			int pp_lump = Wads.CheckNumForFullName(proc_prog_lump);
+			if (pp_lump == -1) I_Error("Unable to load '%s'", proc_prog_lump);
+			FMemLump pp_data = Wads.ReadLump(pp_lump);
+
+			fp_comb << pp_data.GetString().GetChars();
+		}
 
 		hVertProg = gl.CreateShader(GL_VERTEX_SHADER);
 		hFragProg = gl.CreateShader(GL_FRAGMENT_SHADER);	
@@ -362,6 +368,8 @@ static FDefaultShader defaultshaders[]=
 
 static TArray<FShaderContainer *> AllContainers;
 
+FShader *FogboundaryShader;
+
 //==========================================================================
 //
 //
@@ -414,6 +422,12 @@ void GLShader::Initialize()
 			if (gl.shadermodel <= 2) break;	// SM2 will only initialize the default shader
 		}
 	}
+	FogboundaryShader = new FShader();
+	if (!FogboundaryShader->Load("fogboundary", "shaders/glsl/main.vp", "shaders/glsl/fogboundary.fp", NULL, "#define NO_GLOW\n"))
+	{
+		delete FogboundaryShader;
+		FogboundaryShader = NULL;
+	}
 }
 
 void GLShader::Clear()
@@ -428,6 +442,7 @@ void GLShader::Clear()
 	}
 	AllContainers.Clear();
 	AllShaders.Clear();
+	delete FogboundaryShader;
 }
 
 GLShader *GLShader::Find(const char * shn)
