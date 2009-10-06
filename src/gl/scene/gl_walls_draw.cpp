@@ -203,11 +203,11 @@ void GLWall::RenderFogBoundary()
 		{
 			int rel = rellight + (extralight * gl_weaponlight);
 			gl_SetFog(lightlevel, rel, &Colormap, false);
-			gl_RenderState.EnableFogboundary(true);
+			gl_RenderState.SetEffect(EFF_FOGBOUNDARY);
 			gl.Disable(GL_ALPHA_TEST);
 			RenderWall(0, NULL);
 			gl.Enable(GL_ALPHA_TEST);
-			gl_RenderState.EnableFogboundary(false);
+			gl_RenderState.SetEffect(EFF_NONE);
 		}
 		else
 		{
@@ -254,11 +254,12 @@ void GLWall::RenderMirrorSurface()
 {
 	if (GLRenderer->mirrortexture == NULL) return;
 
+	Vector v(glseg.y2-glseg.y1, 0 ,-glseg.x2+glseg.x1);
+	v.Normalize();
+	glNormal3fv(&v[0]);
+
 	// Use sphere mapping for this
-	gl.Enable(GL_TEXTURE_GEN_T);
-	gl.Enable(GL_TEXTURE_GEN_S);
-	gl.TexGeni(GL_S,GL_TEXTURE_GEN_MODE,GL_SPHERE_MAP);
-	gl.TexGeni(GL_T,GL_TEXTURE_GEN_MODE,GL_SPHERE_MAP);
+	gl_RenderState.SetEffect(EFF_SPHEREMAP);
 
 	gl_SetColor(lightlevel, 0, &Colormap ,0.1f);
 	gl.BlendFunc(GL_SRC_ALPHA,GL_ONE);
@@ -270,11 +271,10 @@ void GLWall::RenderMirrorSurface()
 	pat->BindPatch(Colormap.colormap, 0);
 
 	flags &= ~GLWF_GLOW;
-	flags |= GLWF_NOSHADER;
+	//flags |= GLWF_NOSHADER;
 	RenderWall(0,NULL);
 
-	gl.Disable(GL_TEXTURE_GEN_T);
-	gl.Disable(GL_TEXTURE_GEN_S);
+	gl_RenderState.SetEffect(EFF_NONE);
 
 	// Restore the defaults for the translucent pass
 	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

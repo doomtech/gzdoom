@@ -37,6 +37,14 @@ struct FStateVec3 : public FStateAttr
 	}
 };
 
+
+enum EEffect
+{
+	EFF_NONE,
+	EFF_FOGBOUNDARY,
+	EFF_SPHEREMAP,
+};
+
 class FRenderState
 {
 	bool mTextureEnabled;
@@ -44,7 +52,7 @@ class FRenderState
 	bool mGlowEnabled;
 	bool mLightEnabled;
 	bool mBrightmapEnabled;
-	bool mFogboundaryEnabled;
+	int mSpecialEffect;
 	int mTextureMode;
 	float mLightParms[2];
 
@@ -60,6 +68,7 @@ class FRenderState
 	bool ffTextureEnabled;
 	bool ffFogEnabled;
 	int ffTextureMode;
+	int ffSpecialEffect;
 	PalEntry ffFogColor;
 	float ffFogDensity;
 
@@ -73,8 +82,9 @@ public:
 
 	void Reset()
 	{
-		mFogboundaryEnabled = mTextureEnabled = mBrightmapEnabled = mFogEnabled = mGlowEnabled = mLightEnabled = false;
+		mTextureEnabled = mBrightmapEnabled = mFogEnabled = mGlowEnabled = mLightEnabled = false;
 		ffTextureEnabled = ffFogEnabled = false;
+		mSpecialEffect = ffSpecialEffect = EFF_NONE;
 		mFogColor.d = ffFogColor.d = -1;
 		mFogDensity = ffFogDensity = 0;
 		mTextureMode = ffTextureMode = -1;
@@ -98,9 +108,9 @@ public:
 		mFogEnabled = on;
 	}
 
-	void EnableFogboundary(bool on)
+	void SetEffect(int eff)
 	{
-		mFogboundaryEnabled = on;
+		mSpecialEffect = eff;
 	}
 
 	void EnableGlow(bool on)

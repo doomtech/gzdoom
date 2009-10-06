@@ -47,6 +47,7 @@
 FRenderState gl_RenderState;
 int FStateAttr::ChangeCounter;
 extern FShader *FogboundaryShader;
+extern FShader *SpheremapShader;
 
 
 
@@ -118,14 +119,23 @@ bool FRenderState::ApplyShader()
 	bool useshaders = false;
 	FShader *activeShader = NULL;
 
-
-	if (mFogboundaryEnabled)	// the fog boundary shader is special
+	switch (mSpecialEffect)
 	{
+	case EFF_FOGBOUNDARY:
 		FogboundaryShader->Bind(0);
 		activeShader = FogboundaryShader;
-	}
-	else
-	{
+		break;
+
+	case EFF_SPHEREMAP:
+		if (gl.shadermodel == 4 || (gl.shadermodel == 3 && gl_fog_shader))
+		{
+			SpheremapShader->Bind(0);
+			activeShader = SpheremapShader;
+		}
+		break;
+
+	default:
+
 		switch (gl.shadermodel)
 		{
 		case 2:
@@ -142,7 +152,6 @@ bool FRenderState::ApplyShader()
 			break;
 
 		case 4:
-			// useshaders = true;
 			useshaders = (
 				mEffectState != 0 ||	// special shaders
 				(mFogEnabled && gl_fogmode != 0) || // fog requires a shader
@@ -167,6 +176,7 @@ bool FRenderState::ApplyShader()
 			}
 		}
 	}
+
 	if (activeShader)
 	{
 		int fogset = 0;
@@ -262,6 +272,33 @@ void FRenderState::Apply(bool forcenoshader)
 				ffFogDensity=mFogDensity;
 			}
 		}
+		if (mSpecialEffect != ffSpecialEffect)
+		{
+			switch (ffSpecialEffect)
+			{
+			case EFF_SPHEREMAP:
+				gl.Disable(GL_TEXTURE_GEN_T);
+				gl.Disable(GL_TEXTURE_GEN_S);
+
+			default:
+				break;
+			}
+			switch (mSpecialEffect)
+			{
+			case EFF_SPHEREMAP:
+				// Use sphere mapping for this
+				gl.Enable(GL_TEXTURE_GEN_T);
+				gl.Enable(GL_TEXTURE_GEN_S);
+				gl.TexGeni(GL_S,GL_TEXTURE_GEN_MODE,GL_SPHERE_MAP);
+				gl.TexGeni(GL_T,GL_TEXTURE_GEN_MODE,GL_SPHERE_MAP);
+				break;
+
+			default:
+				break;
+			}
+			ffSpecialEffect = mSpecialEffect;
+		}
 	}
+
 }
 

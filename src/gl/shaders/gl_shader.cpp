@@ -369,6 +369,7 @@ static FDefaultShader defaultshaders[]=
 static TArray<FShaderContainer *> AllContainers;
 
 FShader *FogboundaryShader;
+FShader *SpheremapShader;
 
 //==========================================================================
 //
@@ -428,6 +429,13 @@ void GLShader::Initialize()
 		delete FogboundaryShader;
 		FogboundaryShader = NULL;
 	}
+
+	SpheremapShader = new FShader();
+	if (!SpheremapShader->Load("spheremap", "shaders/glsl/main_spheremap.vp", "shaders/glsl/main.fp", "shaders/glsl/func_normal.fp", "#define NO_GLOW\n#define NO_DESATURATE\n"))
+	{
+		delete SpheremapShader;
+		SpheremapShader = NULL;
+	}
 }
 
 void GLShader::Clear()
@@ -443,6 +451,7 @@ void GLShader::Clear()
 	AllContainers.Clear();
 	AllShaders.Clear();
 	delete FogboundaryShader;
+	delete SpheremapShader;
 }
 
 GLShader *GLShader::Find(const char * shn)
