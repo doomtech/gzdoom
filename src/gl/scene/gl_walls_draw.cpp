@@ -85,28 +85,133 @@ bool GLWall::PrepareLight(texcoord * tcs, ADynamicLight * light)
 		return false;
 	}
 
-	Vector t1;
-	int outcnt[4]={0,0,0,0};
-
-	for(int i=0;i<4;i++)
+	if (tcs != NULL)
 	{
-		t1.Set(&vtx[i*3]);
-		Vector nearToVert = t1 - nearPt;
-		tcs[i].u = (nearToVert.Dot(right) * scale) + 0.5f;
-		tcs[i].v = (nearToVert.Dot(up) * scale) + 0.5f;
+		Vector t1;
+		int outcnt[4]={0,0,0,0};
 
-		// quick check whether the light touches this polygon
-		if (tcs[i].u<0) outcnt[0]++;
-		if (tcs[i].u>1) outcnt[1]++;
-		if (tcs[i].v<0) outcnt[2]++;
-		if (tcs[i].v>1) outcnt[3]++;
+		for(int i=0;i<4;i++)
+		{
+			t1.Set(&vtx[i*3]);
+			Vector nearToVert = t1 - nearPt;
+			tcs[i].u = (nearToVert.Dot(right) * scale) + 0.5f;
+			tcs[i].v = (nearToVert.Dot(up) * scale) + 0.5f;
 
+			// quick check whether the light touches this polygon
+			if (tcs[i].u<0) outcnt[0]++;
+			if (tcs[i].u>1) outcnt[1]++;
+			if (tcs[i].v<0) outcnt[2]++;
+			if (tcs[i].v>1) outcnt[3]++;
+
+		}
+		// The light doesn't touch this polygon
+		if (outcnt[0]==4 || outcnt[1]==4 || outcnt[2]==4 || outcnt[3]==4) return false;
 	}
-	// The light doesn't touch this polygon
-	if (outcnt[0]==4 || outcnt[1]==4 || outcnt[2]==4 || outcnt[3]==4) return false;
 
 	draw_dlight++;
 	return true;
+}
+
+//==========================================================================
+//
+// Collect lights for shader
+//
+//==========================================================================
+FDynLightData lightdata;
+
+void GLWall::SetupLights()
+{
+	float vtx[]={glseg.x1,zbottom[0],glseg.y1, glseg.x1,ztop[0],glseg.y1, glseg.x2,ztop[1],glseg.y2, glseg.x2,zbottom[1],glseg.y2};
+	Plane p;
+
+	lightdata.Clear();
+	p.Init(vtx,4);
+
+	if (!p.ValidNormal()) 
+	{
+		return;
+	}
+	for(int i=0;i<2;i++)
+	{
+		FLightNode *node;
+		if (!seg->bPolySeg)
+		{
+			// Iterate through all dynamic lights which touch this wall and render them
+			if (seg->sidedef)
+			{
+				node = seg->sidedef->lighthead[i];
+			}
+			else node = NULL;
+		}
+		else if (sub)
+		{
+			// To avoid constant rechecking for polyobjects use the subsector's lightlist instead
+			node = sub->lighthead[i];
+		}
+		else node = NULL;
+
+		while (node)
+		{
+			if (!(node->lightsource->flags2&MF2_DORMANT))
+			{
+				iter_dlight++;
+
+				Vector fn, pos;
+
+				float x = TO_GL(node->lightsource->x);
+				float y = TO_GL(node->lightsource->y);
+				float z = TO_GL(node->lightsource->z);
+				float dist = fabsf(p.DistToPoint(x, z, y));
+				float radius = (node->lightsource->GetRadius() * gl_lights_size);
+				float scale = 1.0f / ((2.f * radius) - dist);
+
+				if (radius > 0.f && dist < radius)
+				{
+					Vector nearPt, up, right;
+
+					pos.Set(x,z,y);
+					fn=p.Normal();
+					fn.GetRightUp(right, up);
+
+					Vector tmpVec = fn * dist;
+					nearPt = pos + tmpVec;
+
+					Vector t1;
+					int outcnt[4]={0,0,0,0};
+					texcoord tcs[4];
+
+					// do a quick check whether the light touches this polygon
+					for(int i=0;i<4;i++)
+					{
+						t1.Set(&vtx[i*3]);
+						Vector nearToVert = t1 - nearPt;
+						tcs[i].u = (nearToVert.Dot(right) * scale) + 0.5f;
+						tcs[i].v = (nearToVert.Dot(up) * scale) + 0.5f;
+
+						if (tcs[i].u<0) outcnt[0]++;
+						if (tcs[i].u>1) outcnt[1]++;
+						if (tcs[i].v<0) outcnt[2]++;
+						if (tcs[i].v>1) outcnt[3]++;
+
+					}
+					if (outcnt[0]!=4 && outcnt[1]!=4 && outcnt[2]!=4 && outcnt[3]!=4) 
+					{
+						gl_GetLight(p, node->lightsource, Colormap.colormap, true, !!(flags&GLWF_FOGGY), lightdata);
+					}
+				}
+			}
+			node = node->nextLight;
+		}
+	}
+	int numlights[3];
+
+	lightdata.Combine(numlights, gl.MaxLights());
+	if (numlights[2] > 0)
+	{
+		draw_dlight+=numlights[2];
+		gl_RenderState.EnableLight(true);
+		gl_RenderState.SetLights(numlights, &lightdata.arrays[0][0]);
+	}
 }
 
 //==========================================================================
@@ -373,9 +478,15 @@ void GLWall::Draw(int pass)
 
 	switch (pass)
 	{
+	case GLPASS_PLAIN:			// Single-pass rendering
+
+		if (gl_dynlight_shader && GLRenderer->mLightCount > 0 && gl_fixedcolormap == CM_DEFAULT)
+		{
+			SetupLights();
+		}
+
 	case GLPASS_BASE:			// Base pass for non-masked polygons (all opaque geometry)
 	case GLPASS_BASE_MASKED:	// Base pass for masked polygons (2sided mid-textures and transparent 3D floors)
-	case GLPASS_PLAIN:			// Single-pass rendering
 
 		rel = rellight + (extralight * gl_weaponlight);
 		gl_SetColor(lightlevel, rel, &Colormap,1.0f);
@@ -394,6 +505,7 @@ void GLWall::Draw(int pass)
 		}
 		RenderWall((pass!=GLPASS_BASE) + 2*(pass!=GLPASS_TEXTURE), NULL);
 		gl_RenderState.EnableGlow(false);
+		gl_RenderState.EnableLight(false);
 		break;
 
 	case GLPASS_LIGHT:

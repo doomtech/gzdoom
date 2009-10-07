@@ -1,40 +1,14 @@
-#ifdef DYNLIGHT_TEST
-
-#version 120
-#extension GL_EXT_gpu_shader4 : enable
-uniform samplerBuffer lightRGB;
-uniform sampler2D tex;
-
-
-void main()
-{
-	int index = int(clamp(gl_TexCoord[0].s, 0, 32.0));
-	vec4 light = texelFetchBuffer(lightRGB, index);
-	vec4 texel = texture2D(tex, gl_TexCoord[0].st);
-
-	gl_FragColor = texel*2.0 + light/20.0;
-}
-
-vec4 desaturate(vec4 texel)
-{
-	return texel;
-}
-
-vec4 getTexel(vec2 st)
-{
-	return texture2D(tex, st);
-}
-
-#else
-
 
 #ifdef DYNLIGHT
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
+
 uniform ivec3 lightrange;
-uniform usamplerBuffer lightIndex;
-uniform samplerBuffer lightPositions;
-uniform samplerBuffer lightRGB;
+#ifdef MAXLIGHTS128
+uniform vec4 lights[256];
+#else
+uniform vec4 lights[128];
+#endif
 
 #endif
 
@@ -204,35 +178,31 @@ void main()
 	
 	
 	#ifdef DYNLIGHT
-		for(int i=lightrange.x; i<lightrange.y; i++)
+		for(int i=0; i<lightrange.x; i+=2)
 		{
-			int lightidx = int(texelFetchBuffer(lightIndex, i).r);
-			vec4 lightpos = texelFetchBuffer(lightPositions, lightidx);
-			vec4 lightcolor = texelFetchBuffer(lightRGB, lightidx);
+			vec4 lightpos = lights[i];
+			vec4 lightcolor = lights[i+1];
 			
 			lightcolor.rgb *= max(lightpos.w - distance(pixelpos.xyz, lightpos.xyz),0.0) / lightpos.w;
+			dynlight += lightcolor;
+		}
+		for(int i=lightrange.x; i<lightrange.y; i+=2)
+		{
+			vec4 lightpos = lights[i];
+			vec4 lightcolor = lights[i+1];
 			
-			if (lightcolor.a == 1.0)
-			{
-				addlight += lightcolor;
-			}
-			else if (lightcolor.a == 0.0)
-			{
-				dynlight += lightcolor;
-			}
-			else
-			{	
-				dynlight -= lightcolor;
-			}
+			lightcolor.rgb *= max(lightpos.w - distance(pixelpos.xyz, lightpos.xyz),0.0) / lightpos.w;
+			dynlight -= lightcolor;
 		}
-		if (lightrange.z != 0)
+		for(int i=lightrange.y; i<lightrange.z; i+=2)
 		{
-			addlight += dynlight;
+			vec4 lightpos = lights[i];
+			vec4 lightcolor = lights[i+1];
+			
+			lightcolor.rgb *= max(lightpos.w - distance(pixelpos.xyz, lightpos.xyz),0.0) / lightpos.w;
+			addlight += lightcolor;
 		}
-		else
-		{
-			frag.rgb = clamp(frag.rgb + dynlight.rgb, 0.0, 2.0);
-		}
+		frag.rgb = clamp(frag.rgb + dynlight.rgb, 0.0, 1.4);
 	#endif
 		
 	frag = Process(frag);
@@ -249,6 +219,3 @@ void main()
 	#endif
 	gl_FragColor = frag;
 }
-
-
-#endif // DYNLIGHT test

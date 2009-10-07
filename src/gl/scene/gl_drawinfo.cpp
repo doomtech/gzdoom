@@ -905,14 +905,11 @@ static FDrawInfoList di_list;
 FDrawInfo::FDrawInfo()
 {
 	next = NULL;
-	/*if (gl.flags & RFL_TEXTUREBUFFER) mDynLights = new FLightIndexBuffer;
-	else*/ mDynLights = NULL;
 }
 
 FDrawInfo::~FDrawInfo()
 {
 	ClearBuffers();
-	if (mDynLights != NULL) delete mDynLights;
 }
 
 
@@ -1203,35 +1200,4 @@ void FDrawInfo::FloodLowerGap(seg_t * seg)
 
 	// Step3: Delete the stencil
 	ClearFloodStencil(&ws);
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void GLDrawList::CollectFlatLights()
-{
-	for(unsigned i = 0; i < flats.Size(); i++)
-	{
-		flats[i].CollectLights();
-	}
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void FDrawInfo::CollectFlatLights()
-{
-	if (gl_dynlight_shader && gl_lights && GLRenderer->mLightCount)
-	{
-		for(unsigned i = 0; i < GLDL_TYPES; i++)
-		{
-			drawlists[i].CollectFlatLights();
-		}
-	}
 }

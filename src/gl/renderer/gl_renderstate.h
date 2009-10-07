@@ -90,6 +90,8 @@ class FRenderState
 	int mSpecialEffect;
 	int mTextureMode;
 	float mLightParms[2];
+	int mNumLights[3];
+	float *mLightData;
 
 	FStateVec3 mCameraPos;
 	FStateVec4 mGlowTop, mGlowBottom;
@@ -186,6 +188,15 @@ public:
 		mLightParms[0] = f;
 		mLightParms[1] = d;
 	}
+
+	void SetLights(int *numlights, float *lightdata)
+	{
+		mNumLights[0] = numlights[0];
+		mNumLights[1] = numlights[1];
+		mNumLights[2] = numlights[2];
+		mLightData = lightdata;	// caution: the data must be preserved by the caller until the 'apply' call!
+	}
+
 };
 
 extern FRenderState gl_RenderState;

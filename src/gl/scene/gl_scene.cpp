@@ -309,7 +309,6 @@ void FGLRenderer::CreateScene()
 	gl_drawinfo->HandleMissingTextures();	// Missing upper/lower textures
 	gl_drawinfo->HandleHackedSubsectors();	// open sector hacks for deep water
 	gl_drawinfo->ProcessSectorStacks();		// merge visplanes of sector stacks
-	gl_drawinfo->CollectFlatLights();		// can only be done after processing the render hacks.
 
 	GLRenderer->mVBO->UnmapVBO ();
 	ProcessAll.Unclock();
@@ -537,15 +536,6 @@ void FGLRenderer::DrawScene()
 	static int recursion=0;
 
 	CreateScene();
-	if (gl_dynlight_shader)
-	{
-		if (gl_drawinfo->mDynLights != NULL)
-		{
-			gl_drawinfo->mDynLights->SendBuffer();
-			gl_drawinfo->mDynLights->BindTexture(GL_TEXTURE13);
-			GLRenderer->mLightBuffer->BindTextures(GL_TEXTURE14, GL_TEXTURE15);
-		}
-	}
 	RenderScene(recursion);
 
 	// Handle all portals after rendering the opaque objects but before
@@ -553,17 +543,6 @@ void FGLRenderer::DrawScene()
 	recursion++;
 	GLPortal::EndFrame();
 	recursion--;
-
-	// the textures need to be rebound here after processing the portals
-	if (gl_dynlight_shader)
-	{
-		if (gl_drawinfo->mDynLights != NULL)
-		{
-			gl_drawinfo->mDynLights->BindTexture(GL_TEXTURE13);
-			GLRenderer->mLightBuffer->BindTextures(GL_TEXTURE14, GL_TEXTURE15);
-		}
-	}
-
 	RenderTranslucent();
 }
 
@@ -974,8 +953,6 @@ void FGLRenderer::RenderView (player_t* player)
 	TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
 	GLRenderer->mLightCount = ((it.Next()) != NULL);
 
-	if (GLRenderer->mLightBuffer != NULL) GLRenderer->mLightBuffer->CollectLightSources();
-
 	sector_t * viewsector = RenderViewpoint(player->camera, NULL, FieldOfView * 360.0f / FINEANGLES, ratio, fovratio, true);
 	EndDrawScene(viewsector);
 
@@ -1002,7 +979,6 @@ void FGLRenderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 	// Check if there's some lights. If not some code can be skipped.
 	TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
 	GLRenderer->mLightCount = ((it.Next()) != NULL);
-	if (GLRenderer->mLightBuffer != NULL) GLRenderer->mLightBuffer->CollectLightSources();
 
 	sector_t *viewsector = RenderViewpoint(players[consoleplayer].camera, &bounds, 
 								FieldOfView * 360.0f / FINEANGLES, 1.6f, 1.6f, true);

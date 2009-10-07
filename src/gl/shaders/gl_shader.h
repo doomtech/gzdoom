@@ -35,6 +35,7 @@ class FShader
 	int colormaprange_index;
 	int lightrange_index;
 	int fogcolor_index;
+	int lights_index;
 
 	int glowbottomcolor_index;
 	int glowtopcolor_index;

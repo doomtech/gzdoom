@@ -17,7 +17,6 @@ enum RenderFlags
 	RFL_MAP_BUFFER_RANGE = 1024,
 	RFL_FRAMEBUFFER = 2048,
 	RFL_TEXTUREBUFFER = 4096,
-	RFL_UNIFORM1024 = 8192,
 
 
 	RFL_GL_20 = 0x10000000,
@@ -43,8 +42,14 @@ struct RenderContext
 {
 	unsigned int flags;
 	unsigned int shadermodel;
+	unsigned int maxuniforms;
 	int max_texturesize;
 	char * vendorstring;
+
+	int MaxLights() const
+	{
+		return maxuniforms>=2048? 128:64;
+	}
 
 	void (APIENTRY * LoadExtensions) ();
 	void (APIENTRY * SetTextureMode) (int type);

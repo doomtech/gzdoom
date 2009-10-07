@@ -214,6 +214,12 @@ bool FRenderState::ApplyShader()
 			gl.Uniform4fv(activeShader->glowtopcolor_index, 1, mGlowTop.vec);
 			gl.Uniform4fv(activeShader->glowbottomcolor_index, 1, mGlowBottom.vec);
 		}
+		if (mLightEnabled)
+		{
+			gl.Uniform3iv(activeShader->lightrange_index, 1, mNumLights);
+			gl.Uniform4fv(activeShader->lights_index, mNumLights[2], mLightData);
+		}
+
 		return true;
 	}
 	return false;

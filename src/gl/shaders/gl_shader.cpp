@@ -141,6 +141,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		colormaprange_index = gl.GetUniformLocation(hShader, "colormaprange");
 		lightrange_index = gl.GetUniformLocation(hShader, "lightrange");
 		fogcolor_index = gl.GetUniformLocation(hShader, "fogcolor");
+		lights_index = gl.GetUniformLocation(hShader, "lights");
 
 		glowbottomcolor_index = gl.GetUniformLocation(hShader, "bottomglowcolor");
 		glowtopcolor_index = gl.GetUniformLocation(hShader, "topglowcolor");
@@ -250,8 +251,10 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 
 			try
 			{
+				FString str = shaderdefines[i];
+				if (i>3 && gl.MaxLights() == 128) str << "#define MAXLIGHTS128\n";
 				shader[i] = new FShader;
-				if (!shader[i]->Load(name, "shaders/glsl/main.vp", "shaders/glsl/main.fp", ShaderPath, shaderdefines[i]))
+				if (!shader[i]->Load(name, "shaders/glsl/main.vp", "shaders/glsl/main.fp", ShaderPath, str.GetChars()))
 				{
 					delete shader[i];
 					shader[i] = NULL;
@@ -263,7 +266,7 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 				Printf("Unable to load shader %s:\n%s\n", name.GetChars(), err.GetMessage());
 				I_Error("");
 			}
-			if (i==3 && !(gl.flags & RFL_TEXTUREBUFFER))
+			if (i==3 && gl.maxuniforms < 1024)
 			{
 				shader[4] = shader[5] = shader[6] = shader[7] = 0;
 				break;
