@@ -41,15 +41,12 @@
 #include "gl/system/gl_system.h"
 #include "gl/system/gl_cvars.h"
 #include "gl/shaders/gl_shader.h"
+#include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/renderer/gl_colormap.h"
 
 FRenderState gl_RenderState;
 int FStateAttr::ChangeCounter;
-extern FShader *FogboundaryShader;
-extern FShader *SpheremapShader;
-
-
 
 //==========================================================================
 //
@@ -119,23 +116,12 @@ bool FRenderState::ApplyShader()
 	bool useshaders = false;
 	FShader *activeShader = NULL;
 
-	switch (mSpecialEffect)
+	if (mSpecialEffect > 0)
 	{
-	case EFF_FOGBOUNDARY:
-		FogboundaryShader->Bind(0);
-		activeShader = FogboundaryShader;
-		break;
-
-	case EFF_SPHEREMAP:
-		if (gl.shadermodel == 4 || (gl.shadermodel == 3 && gl_fog_shader))
-		{
-			SpheremapShader->Bind(0);
-			activeShader = SpheremapShader;
-		}
-		break;
-
-	default:
-
+		activeShader = GLRenderer->mShaderManager->BindEffect(mSpecialEffect);
+	}
+	else
+	{
 		switch (gl.shadermodel)
 		{
 		case 2:
@@ -167,8 +153,7 @@ bool FRenderState::ApplyShader()
 
 		if (useshaders)
 		{
-			// we need a shader
-			GLShader *shd = GLShader::Find(mTextureEnabled? mEffectState : 4);
+			FShaderContainer *shd = GLRenderer->mShaderManager->Get(mTextureEnabled? mEffectState : 4);
 
 			if (shd != NULL)
 			{
@@ -224,6 +209,11 @@ bool FRenderState::ApplyShader()
 			gl.Uniform4f (activeShader->fogcolor_index, mFogColor.r/255.f, mFogColor.g/255.f, 
 							mFogColor.b/255.f, mFogDensity * (-LOG2E / 64000.f));
 		}
+		if (mGlowEnabled)
+		{
+			gl.Uniform4fv(activeShader->glowtopcolor_index, 1, mGlowTop.vec);
+			gl.Uniform4fv(activeShader->glowbottomcolor_index, 1, mGlowBottom.vec);
+		}
 		return true;
 	}
 	return false;
@@ -240,7 +230,7 @@ void FRenderState::Apply(bool forcenoshader)
 {
 	if (forcenoshader || !ApplyShader())
 	{
-		gl_DisableShader();
+		GLRenderer->mShaderManager->SetActiveShader(NULL);
 		if (mTextureMode != ffTextureMode)
 		{
 			gl.SetTextureMode((ffTextureMode = mTextureMode));

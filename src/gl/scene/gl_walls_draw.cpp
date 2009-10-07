@@ -140,13 +140,9 @@ void GLWall::RenderWall(int textured, float * color2, ADynamicLight * light)
 		glowing = false;
 	}
 
-	gl_RenderState.Apply(!!(flags & GLWF_NOSHADER));
+	if (glowing) gl_RenderState.SetGlowParams(topglowcolor, bottomglowcolor);
 
-	if (glowing)
-	{
-		// must be done after gl_ApplyShader!
-		gl_SetGlowParams(topglowcolor, topglowcolor[3], bottomglowcolor, bottomglowcolor[3]);
-	}
+	gl_RenderState.Apply(!!(flags & GLWF_NOSHADER));
 
 	// the rest of the code is identical for textured rendering and lights
 

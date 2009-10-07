@@ -12,6 +12,7 @@ class OpenGLFrameBuffer;
 struct FDrawInfo;
 struct pspdef_t;
 class FLightBuffer;
+class FShaderManager;
 
 extern int extralight;
 
@@ -51,6 +52,7 @@ public:
 	float mCurrentFoV;
 	AActor *mViewActor;
 	FLightBuffer *mLightBuffer;
+	FShaderManager *mShaderManager;
 	int gl_spriteindex;
 	unsigned int mFBID;
 
@@ -81,6 +83,7 @@ public:
 		mVBO = NULL;
 		gl_spriteindex = 0;
 		mLightBuffer = NULL;
+		mShaderManager = NULL;
 		glpart2 = glpart = gllight = mirrortexture = NULL;
 	}
 	~FGLRenderer() ;

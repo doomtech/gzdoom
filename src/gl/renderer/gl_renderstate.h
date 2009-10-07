@@ -12,6 +12,17 @@ struct FStateAttr
 	{
 		mLastChange = -1;
 	}
+
+	bool operator == (const FStateAttr &other)
+	{
+		return mLastChange == other.mLastChange;
+	}
+
+	bool operator != (const FStateAttr &other)
+	{
+		return mLastChange != other.mLastChange;
+	}
+
 };
 
 struct FStateVec3 : public FStateAttr
@@ -37,6 +48,30 @@ struct FStateVec3 : public FStateAttr
 	}
 };
 
+struct FStateVec4 : public FStateAttr
+{
+	float vec[4];
+
+	bool Update(FStateVec4 *other)
+	{
+		if (mLastChange != other->mLastChange)
+		{
+			*this = *other;
+			return true;
+		}
+		return false;
+	}
+
+	void Set(float x, float y, float z, float w)
+	{
+		vec[0] = x;
+		vec[1] = z;
+		vec[2] = y;
+		vec[3] = w;
+		mLastChange = ++ChangeCounter;
+	}
+};
+
 
 enum EEffect
 {
@@ -57,6 +92,7 @@ class FRenderState
 	float mLightParms[2];
 
 	FStateVec3 mCameraPos;
+	FStateVec4 mGlowTop, mGlowBottom;
 	PalEntry mFogColor;
 	float mFogDensity;
 
@@ -131,6 +167,12 @@ public:
 	void SetCameraPos(float x, float y, float z)
 	{
 		mCameraPos.Set(x,y,z);
+	}
+
+	void SetGlowParams(float *t, float *b)
+	{
+		mGlowTop.Set(t[0], t[1], t[2], t[3]);
+		mGlowBottom.Set(b[0], b[1], b[2], b[3]);
 	}
 
 	void SetFog(PalEntry c, float d)

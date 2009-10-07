@@ -16,24 +16,9 @@ const int VATTR_GLOWDISTANCE = 15;
 //
 //==========================================================================
 
-bool gl_BrightmapsActive();
-bool gl_GlowActive();
-bool gl_ExtFogActive();
-
-void gl_DisableShader();
-void gl_ClearShaders();
-void gl_InitShaders();
-
-void gl_EnableShader(bool on);
-
-
-void gl_SetGlowParams(float *topcolors, float topheight, float *bottomcolors, float bottomheight);
-void gl_SetLightRange(int first, int last, int forceadd);
-
-
 class FShader
 {
-	friend class GLShader;
+	friend class FShaderContainer;
 	friend class FRenderState;
 
 	unsigned int hShader;
@@ -81,27 +66,69 @@ public:
 	void SetLightRange(int start, int end, int forceadd);
 
 	bool Bind(float Speed);
+	unsigned int GetHandle() const { return hShader; }
 
 };
 
-struct FShaderContainer;
+//==========================================================================
+//
+// This class contains the shaders for the different lighting modes
+// that are required (e.g. special colormaps etc.)
+//
+//==========================================================================
 
-class GLShader
+class FShaderContainer
 {
+	friend class FShaderManager;
+
 	FName Name;
-	FShaderContainer *container;
+
+	enum { NUM_SHADERS = 8 };
+
+	FShader *shader[NUM_SHADERS];
+	FShader *shader_cm;	// the shader for fullscreen colormaps
 
 public:
-
-	static void Initialize();
-	static void Clear();
-	static GLShader *Find(const char * shn);
-	static GLShader *Find(unsigned int warp);
+	FShaderContainer(const char *ShaderName, const char *ShaderPath);
+	~FShaderContainer();
 	FShader *Bind(int cm, bool glowing, float Speed, bool lights);
-	static void Unbind();
-
+	
 };
 
+
+//==========================================================================
+//
+// The global shader manager
+//
+//==========================================================================
+class FShaderManager
+{
+	enum { NUM_EFFECTS = 2 };
+
+	TArray<FShaderContainer*> mTextureEffects;
+	FShader *mActiveShader;
+	FShader *mEffectShaders[NUM_EFFECTS];
+
+public:
+	FShaderManager();
+	~FShaderManager();
+	int Find(const char *mame);
+	FShader *BindEffect(int effect);
+	void SetActiveShader(FShader *sh);
+
+	FShaderContainer *Get(unsigned int eff)
+	{
+		// indices 0-2 match the warping modes, 3 is brightmap, 4 no texture, the following are custom
+		if (eff < mTextureEffects.Size())
+		{
+			return mTextureEffects[eff];
+		}
+		return NULL;
+	}
+
+
+
+};
 
 
 #endif

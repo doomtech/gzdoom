@@ -40,6 +40,7 @@
 
 
 #include "gl/system/gl_system.h"
+#include "gl/system/gl_cvars.h"
 #include "gl/data/gl_data.h"
 #include "gl/renderer/gl_colormap.h"
 #include "gl/renderer/gl_lightdata.h"
@@ -61,6 +62,28 @@ CVAR (Float, gl_light_ambient, 20.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR(Int, gl_weaponlight, 8, CVAR_ARCHIVE);
 CVAR(Bool,gl_enhanced_nightvision,true,CVAR_ARCHIVE)
 
+
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+bool gl_BrightmapsActive()
+{
+	return gl.shadermodel == 4 || (gl.shadermodel == 3 && gl_brightmap_shader);
+}
+
+bool gl_GlowActive()
+{
+	return gl.shadermodel == 4 || (gl.shadermodel == 3 && gl_glow_shader);
+}
+
+bool gl_ExtFogActive()
+{
+	return gl.shadermodel == 4;
+}
 
 //==========================================================================
 //

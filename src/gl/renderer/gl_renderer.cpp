@@ -95,7 +95,7 @@ void FGLRenderer::Initialize()
 	mFBID = 0;
 	//if (gl.flags & RFL_TEXTUREBUFFER) mLightBuffer = new FLightBuffer;
 	SetupLevel();
-	gl_InitShaders();
+	mShaderManager = new FShaderManager;
 
 #ifdef TESTING
 	gl.GenBuffers(1, &idbuffer);
@@ -151,7 +151,7 @@ void FGLRenderer::Initialize()
 FGLRenderer::~FGLRenderer() 
 {
 	FMaterial::FlushAll();
-	gl_ClearShaders();
+	if (mShaderManager != NULL) delete mShaderManager;
 	if (mVBO != NULL) delete mVBO;
 	if (mLightBuffer != NULL) delete mLightBuffer;
 	if (glpart2) delete glpart2;
@@ -175,7 +175,7 @@ void FGLRenderer::SetupLevel()
 
 void FGLRenderer::SetPaused()
 {
-	gl_DisableShader();
+	mShaderManager->SetActiveShader(NULL);
 	gl_RenderState.SetTextureMode(-1);	// something invalid
 }
 

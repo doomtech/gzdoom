@@ -47,6 +47,7 @@
 #include "doomerrors.h"
 #include "v_palette.h"
 
+#include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/system/gl_cvars.h"
 #include "gl/shaders/gl_shader.h"
@@ -62,30 +63,6 @@ CVAR(Bool, gl_glow_shader, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG|CVAR_NOINITCALL)
 
 
 extern long gl_frameMS;
-
-static FShader *gl_activeShader;
-
-
-void FShader::SetColormapColor(float r, float g, float b, float r1, float g1, float b1)
-{
-	//if (fac != currentlightfactor)
-	{
-		//currentlightfactor = fac;
-		gl.Uniform4f(colormapstart_index, r,g,b,0);
-		gl.Uniform4f(colormaprange_index, r1-r,g1-g,b1-b,0);
-	}
-}
-
-void FShader::SetGlowParams(float *topcolors, float topheight, float *bottomcolors, float bottomheight)
-{
-	gl.Uniform4f(glowtopcolor_index, topcolors[0], topcolors[1], topcolors[2], topheight);
-	gl.Uniform4f(glowbottomcolor_index, bottomcolors[0], bottomcolors[1], bottomcolors[2], bottomheight);
-}
-
-void FShader::SetLightRange(int start, int end, int forceadd)
-{
-	gl.Uniform3i(lightrange_index, start, end, forceadd);
-}
 
 //==========================================================================
 //
@@ -208,40 +185,10 @@ FShader::~FShader()
 
 bool FShader::Bind(float Speed)
 {
-	if (gl_activeShader!=this)
-	{
-		gl.UseProgram(hShader);
-		gl_activeShader=this;
-	}
+	GLRenderer->mShaderManager->SetActiveShader(this);
 	if (timer_index >=0 && Speed > 0.f) gl.Uniform1f(timer_index, gl_frameMS*Speed/1000.f);
 	return true;
 }
-
-
-
-//==========================================================================
-//
-// This class contains the shaders for the different lighting modes
-// that are required (e.g. special colormaps etc.)
-//
-//==========================================================================
-struct FShaderContainer
-{
-	friend class GLShader;
-
-	FName Name;
-	FName TexFileName;
-
-	enum { NUM_SHADERS = 8 };
-
-	FShader *shader[NUM_SHADERS];
-	FShader *shader_cm;	// the shader for fullscreen colormaps
-
-public:
-	FShaderContainer(const char *ShaderName, const char *ShaderPath);
-	~FShaderContainer();
-	
-};
 
 //==========================================================================
 //
@@ -349,157 +296,31 @@ FShaderContainer::~FShaderContainer()
 //
 //
 //==========================================================================
-struct FDefaultShader 
-{
-	const char * ShaderName;
-	const char * gettexelfunc;
-};
 
-static FDefaultShader defaultshaders[]=
-	{	
-		{"Default",	"shaders/glsl/func_normal.fp"},
-		{"Warp 1",	"shaders/glsl/func_warp1.fp"},
-		{"Warp 2",	"shaders/glsl/func_warp2.fp"},
-		{"Brightmap","shaders/glsl/func_brightmap.fp"},
-		{"No Texture", "shaders/glsl/func_notexture.fp"},
-		{NULL,NULL}
-		
-	};
-
-static TArray<FShaderContainer *> AllContainers;
-
-FShader *FogboundaryShader;
-FShader *SpheremapShader;
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-static FShaderContainer * AddShader(const char * name, const char * texfile)
-{
-	FShaderContainer *sh = new FShaderContainer(name, texfile);
-	AllContainers.Push(sh);
-	return sh;
-}
-
-
-
-static FShaderContainer * GetShader(const char * n,const char * fn)
-{
-	FName sfn = fn;
-
-	for(unsigned int i=0;i<AllContainers.Size();i++)
-	{
-		if (AllContainers[i]->TexFileName == sfn)
-		{
-			return AllContainers[i];
-		}
-	}
-	return AddShader(n, fn);
-}
-
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-static TArray<GLShader *> AllShaders;
-
-void GLShader::Initialize()
-{
-	if (gl.shadermodel > 0)
-	{
-		for(int i=0;defaultshaders[i].ShaderName != NULL;i++)
-		{
-			FShaderContainer * shc = AddShader(defaultshaders[i].ShaderName, defaultshaders[i].gettexelfunc);
-			GLShader * shd = new GLShader;
-			shd->container = shc;
-			shd->Name = defaultshaders[i].ShaderName;
-			AllShaders.Push(shd);
-			if (gl.shadermodel <= 2) break;	// SM2 will only initialize the default shader
-		}
-	}
-	FogboundaryShader = new FShader();
-	if (!FogboundaryShader->Load("fogboundary", "shaders/glsl/main.vp", "shaders/glsl/fogboundary.fp", NULL, "#define NO_GLOW\n"))
-	{
-		delete FogboundaryShader;
-		FogboundaryShader = NULL;
-	}
-
-	SpheremapShader = new FShader();
-	if (!SpheremapShader->Load("spheremap", "shaders/glsl/main_spheremap.vp", "shaders/glsl/main.fp", "shaders/glsl/func_normal.fp", "#define NO_GLOW\n#define NO_DESATURATE\n"))
-	{
-		delete SpheremapShader;
-		SpheremapShader = NULL;
-	}
-}
-
-void GLShader::Clear()
-{
-	for(unsigned int i=0;i<AllContainers.Size();i++)
-	{
-		delete AllContainers[i];
-	}
-	for(unsigned int i=0;i<AllShaders.Size();i++)
-	{
-		delete AllShaders[i];
-	}
-	AllContainers.Clear();
-	AllShaders.Clear();
-	delete FogboundaryShader;
-	delete SpheremapShader;
-}
-
-GLShader *GLShader::Find(const char * shn)
-{
-	FName sfn = shn;
-
-	for(unsigned int i=0;i<AllShaders.Size();i++)
-	{
-		if (AllContainers[i]->Name == sfn)
-		{
-			return AllShaders[i];
-		}
-	}
-	return NULL;
-}
-
-GLShader *GLShader::Find(unsigned int warp)
-{
-	// indices 0-2 match the warping modes, 3 is brightmap, 4 no texture, the following are custom
-	if (warp < AllShaders.Size())
-	{
-		return AllShaders[warp];
-	}
-	return NULL;
-}
-
-
-FShader *GLShader::Bind(int cm, bool glowing, float Speed, bool lights)
+FShader *FShaderContainer::Bind(int cm, bool glowing, float Speed, bool lights)
 {
 	FShader *sh=NULL;
 
 	if (cm >= CM_FIRSTSPECIALCOLORMAP && cm < CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size())
 	{
 		// these are never used with any kind of lighting or fog
-		sh = container->shader_cm;
+		sh = shader_cm;
 		// [BB] If there was a problem when loading the shader, sh is NULL here.
 		if( sh )
 		{
 			FSpecialColormap *map = &SpecialColormaps[cm - CM_FIRSTSPECIALCOLORMAP];
 			sh->Bind(Speed);
-			sh->SetColormapColor(map->ColorizeStart[0], map->ColorizeStart[1], map->ColorizeStart[2],
-				map->ColorizeEnd[0], map->ColorizeEnd[1], map->ColorizeEnd[2]);
+			float m[3]= {map->ColorizeEnd[0] - map->ColorizeStart[0], 
+				map->ColorizeEnd[1] - map->ColorizeStart[1], map->ColorizeEnd[2] - map->ColorizeStart[2]};
+
+			gl.Uniform3fv(sh->colormapstart_index, 1, map->ColorizeStart);
+			gl.Uniform3fv(sh->colormaprange_index, 1, m);
 		}
 	}
 	else
 	{
 		bool desat = cm>=CM_DESAT1 && cm<=CM_DESAT31;
-		sh = container->shader[glowing + 2*desat + 4*lights];
+		sh = shader[glowing + 2*desat + 4*lights];
 		// [BB] If there was a problem when loading the shader, sh is NULL here.
 		if( sh )
 		{
@@ -513,13 +334,145 @@ FShader *GLShader::Bind(int cm, bool glowing, float Speed, bool lights)
 	return sh;
 }
 
-void GLShader::Unbind()
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+struct FDefaultShader 
 {
-	if (gl.shadermodel > 0 && gl_activeShader != NULL)
+	const char * ShaderName;
+	const char * gettexelfunc;
+};
+
+static const FDefaultShader defaultshaders[]=
+{	
+	{"Default",	"shaders/glsl/func_normal.fp"},
+	{"Warp 1",	"shaders/glsl/func_warp1.fp"},
+	{"Warp 2",	"shaders/glsl/func_warp2.fp"},
+	{"Brightmap","shaders/glsl/func_brightmap.fp"},
+	{"No Texture", "shaders/glsl/func_notexture.fp"},
+	{NULL,NULL}
+	
+};
+
+struct FEffectShader
+{
+	const char *ShaderName;
+	const char *vp;
+	const char *fp1;
+	const char *fp2;
+	const char *defines;
+};
+
+static const FEffectShader effectshaders[]=
+{
+	{"fogboundary", "shaders/glsl/main.vp", "shaders/glsl/fogboundary.fp", NULL, "#define NO_GLOW\n"},
+	{"spheremap", "shaders/glsl/main_spheremap.vp", "shaders/glsl/main.fp", "shaders/glsl/func_normal.fp", "#define NO_GLOW\n#define NO_DESATURATE\n"}
+};
+
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FShaderManager::FShaderManager()
+{
+	mActiveShader = mEffectShaders[0] = mEffectShaders[1] = NULL;
+	if (gl.shadermodel > 0)
 	{
-		gl.UseProgram(0);
-		gl_activeShader=NULL;
+		for(int i=0;defaultshaders[i].ShaderName != NULL;i++)
+		{
+			FShaderContainer * shc = new FShaderContainer(defaultshaders[i].ShaderName, defaultshaders[i].gettexelfunc);
+			mTextureEffects.Push(shc);
+			if (gl.shadermodel <= 2) return;	// SM2 will only initialize the default shader
+		}
+
+		for(int i=0;i<NUM_EFFECTS;i++)
+		{
+			FShader *eff = new FShader();
+			if (!eff->Load(effectshaders[i].ShaderName, effectshaders[i].vp, effectshaders[i].fp1,
+							effectshaders[i].fp2, effectshaders[i].defines))
+			{
+				delete eff;
+			}
+			else mEffectShaders[i] = eff;
+		}
 	}
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FShaderManager::~FShaderManager()
+{
+	SetActiveShader(NULL);
+	for(unsigned int i=0;i<mTextureEffects.Size();i++)
+	{
+		if (mTextureEffects[i] != NULL) delete mTextureEffects[i];
+	}
+	for(int i=0;i<NUM_EFFECTS;i++)
+	{
+		if (mEffectShaders[i] != NULL) delete mEffectShaders[i];
+	}
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+int FShaderManager::Find(const char * shn)
+{
+	FName sfn = shn;
+
+	for(unsigned int i=0;i<mTextureEffects.Size();i++)
+	{
+		if (mTextureEffects[i]->Name == sfn)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void FShaderManager::SetActiveShader(FShader *sh)
+{
+	// shadermodel needs to be tested here because without it UseProgram will be NULL.
+	if (gl.shadermodel > 0 && mActiveShader != sh)
+	{
+		gl.UseProgram(sh == NULL? 0 : sh->GetHandle());
+		mActiveShader = sh;
+	}
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FShader *FShaderManager::BindEffect(int effect)
+{
+	if (effect > 0 && effect <= NUM_EFFECTS)
+	{
+		mEffectShaders[effect-1]->Bind(0);
+		return mEffectShaders[effect-1];
+	}
+	return NULL;
 }
 
 //==========================================================================
@@ -528,56 +481,16 @@ void GLShader::Unbind()
 //
 //==========================================================================
 
+/*
+void FShader::SetLightRange(int start, int end, int forceadd)
+{
+	gl.Uniform3i(lightrange_index, start, end, forceadd);
+}
+
 void gl_SetLightRange(int first, int last, int forceadd)
 {
 	if (gl_activeShader) gl_activeShader->SetLightRange(first, last, forceadd);
 }
+*/
 
 
-//==========================================================================
-//
-// Glow stuff
-//
-//==========================================================================
-
-
-void gl_SetGlowParams(float *topcolors, float topheight, float *bottomcolors, float bottomheight)
-{
-	if (gl_activeShader) gl_activeShader->SetGlowParams(topcolors, topheight, bottomcolors, bottomheight);
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void gl_InitShaders()
-{
-	GLShader::Initialize();
-}
-
-void gl_DisableShader()
-{
-	GLShader::Unbind();
-}
-
-void gl_ClearShaders()
-{
-	GLShader::Clear();
-}
-
-bool gl_BrightmapsActive()
-{
-	return gl.shadermodel == 4 || (gl.shadermodel == 3 && gl_brightmap_shader);
-}
-
-bool gl_GlowActive()
-{
-	return gl.shadermodel == 4 || (gl.shadermodel == 3 && gl_glow_shader);
-}
-
-bool gl_ExtFogActive()
-{
-	return gl.shadermodel == 4;
-}
