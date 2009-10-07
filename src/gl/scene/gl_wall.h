@@ -248,7 +248,6 @@ class GLFlat
 public:
 	friend struct GLDrawList;
 
-	static TArray<int> dynlightdata;
 	sector_t * sector;
 	subsector_t * sub;	// only used for translucent planes
 	float z; // the z position of the flat (height)
@@ -259,7 +258,7 @@ public:
 
 	float alpha;
 	GLSectorPlane plane;
-	short lightlevel;
+	int lightlevel;
 	bool stack;
 	bool foggy;
 	bool ceiling;

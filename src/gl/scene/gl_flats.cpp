@@ -61,8 +61,6 @@
 #include "gl/utility/gl_convert.h"
 #include "gl/utility/gl_templates.h"
 
-TArray<int> GLFlat::dynlightdata;
-
 //==========================================================================
 //
 // Sets the texture matrix according to the plane's texture positioning
