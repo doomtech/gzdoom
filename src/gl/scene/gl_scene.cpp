@@ -878,7 +878,6 @@ sector_t * FGLRenderer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, flo
 
 	retval = viewsector;
 
-	GLFlat::dynlightdata.Clear();
 	SetViewport(bounds);
 	mCurrentFoV = fov;
 	SetProjection(fov, ratio, fovratio);	// switch to perspective mode and set up clipper

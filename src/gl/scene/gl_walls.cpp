@@ -1503,7 +1503,6 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 	glseg.y2= TO_GL(v2->y);
 	Colormap=frontsector->ColorMap;
 	flags = (!gl_isBlack(Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE)? GLWF_FOGGY : 0;
-	firstdynlight = lastdynlight = (gl_dynlight_shader && gl_lights && GLRenderer->mLightCount)? -1 : 0;
 
 	lightlevel = seg->sidedef->GetLightLevel(true, frontsector->lightlevel);
 
