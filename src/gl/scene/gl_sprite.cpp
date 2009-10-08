@@ -586,10 +586,15 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 		x2=x-viewvecY*rightfac;
 		y1=y+viewvecX*leftfac;
 		y2=y+viewvecX*rightfac;
-
-		scale = fabs(viewvecX * (thing->x-viewx) + viewvecY * (thing->y-viewy));
 	}
-	else gltexture=NULL;
+	else 
+	{
+		x1 = x2 = x;
+		y1 = y2 = y;
+		z1 = z2 = z;
+		gltexture=NULL;
+	}
+	scale = fabs(GLRenderer->mViewVector.X * (thing->x-viewx) + GLRenderer->mViewVector.Y * (thing->y-viewy));
 
 	// light calculation
 
