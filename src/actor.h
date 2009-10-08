@@ -843,6 +843,7 @@ public:
 	fixed_t MaxDropOffHeight, MaxStepHeight;
 	SDWORD Mass;
 	SWORD PainChance;
+	int PainThreshold;
 	FNameNoInit DamageType;
 
 	FState *SpawnState;

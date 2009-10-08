@@ -302,6 +302,11 @@ void AActor::Serialize (FArchive &arc)
 		<< Score
 		<< Tag;
 
+	if (SaveVersion >= 1900)
+	{
+		arc << PainThreshold;
+	}
+
 	for(int i=0; i<10; i++) arc << uservar[i];
 
 	if (arc.IsStoring ())
