@@ -97,10 +97,11 @@ void gl_SetRenderStyle(FRenderStyle style, bool drawopaque, bool allowcolorblend
 //==========================================================================
 void GLSprite::Draw(int pass)
 {
+	if (pass!=GLPASS_PLAIN && pass != GLPASS_ALL && pass!=GLPASS_TRANSLUCENT) return;
+
+
 	bool additivefog = false;
 	int rel = extralight*gl_weaponlight;
-
-	if (pass!=GLPASS_PLAIN && pass!=GLPASS_TRANSLUCENT) return;
 
 	if (pass==GLPASS_TRANSLUCENT)
 	{
