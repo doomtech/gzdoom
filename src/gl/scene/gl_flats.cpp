@@ -202,7 +202,7 @@ bool GLFlat::SetupSubsectorLights(bool lightsapplied, subsector_t * sub)
 		lightdata.Combine(numlights, gl.MaxLights());
 		if (numlights[2] > 0)
 		{
-			draw_dlightf+=numlights[2];
+			draw_dlightf+=numlights[2]/2;
 			gl_RenderState.EnableLight(true);
 			gl_RenderState.SetLights(numlights, &lightdata.arrays[0][0]);
 			gl_RenderState.Apply();

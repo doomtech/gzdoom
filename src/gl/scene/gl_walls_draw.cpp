@@ -208,7 +208,7 @@ void GLWall::SetupLights()
 	lightdata.Combine(numlights, gl.MaxLights());
 	if (numlights[2] > 0)
 	{
-		draw_dlight+=numlights[2];
+		draw_dlight+=numlights[2]/2;
 		gl_RenderState.EnableLight(true);
 		gl_RenderState.SetLights(numlights, &lightdata.arrays[0][0]);
 	}
@@ -217,11 +217,7 @@ void GLWall::SetupLights()
 //==========================================================================
 //
 // General purpose wall rendering function
-// with the exception of walls lit by glowing flats 
 // everything goes through here
-//
-// Tests have shown that precalculating this data
-// doesn't give any noticable performance improvements
 //
 //==========================================================================
 
