@@ -92,11 +92,19 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 
 		if (proc_prog_lump != NULL)
 		{
-			int pp_lump = Wads.CheckNumForFullName(proc_prog_lump);
-			if (pp_lump == -1) I_Error("Unable to load '%s'", proc_prog_lump);
-			FMemLump pp_data = Wads.ReadLump(pp_lump);
+			if (*proc_prog_lump != '#')
+			{
+				int pp_lump = Wads.CheckNumForFullName(proc_prog_lump);
+				if (pp_lump == -1) I_Error("Unable to load '%s'", proc_prog_lump);
+				FMemLump pp_data = Wads.ReadLump(pp_lump);
 
-			fp_comb << pp_data.GetString().GetChars();
+				fp_comb << pp_data.GetString().GetChars();
+			}
+			else 
+			{
+				// Proc_prog_lump is not a lump name but the source itself (from generated shaders)
+				fp_comb << proc_prog_lump+1;
+			}
 		}
 
 		hVertProg = gl.CreateShader(GL_VERTEX_SHADER);
@@ -150,13 +158,6 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 
 		int texture_index = gl.GetUniformLocation(hShader, "texture2");
 		if (texture_index > 0) gl.Uniform1i(texture_index, 1);
-
-		texture_index = gl.GetUniformLocation(hShader, "lightIndex");
-		if (texture_index > 0) gl.Uniform1i(texture_index, 13);
-		texture_index = gl.GetUniformLocation(hShader, "lightRGB");
-		if (texture_index > 0) gl.Uniform1i(texture_index, 14);
-		texture_index = gl.GetUniformLocation(hShader, "lightPositions");
-		if (texture_index > 0) gl.Uniform1i(texture_index, 15);
 
 		gl.UseProgram(0);
 		return !!linked;
@@ -228,7 +229,7 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 	try
 	{
 		shader_cm = new FShader;
-		if (!shader_cm->Load(name, "shaders/glsl/main_colormap.vp", "shaders/glsl/main_colormap.fp", ShaderPath, "\n"))
+		if (!shader_cm->Load(name, "shaders/glsl/main.vp", "shaders/glsl/main_colormap.fp", ShaderPath, "#define NO_FOG\n#define NO_GLOW\n"))
 		{
 			delete shader_cm;
 			shader_cm = NULL;
@@ -372,7 +373,7 @@ struct FEffectShader
 static const FEffectShader effectshaders[]=
 {
 	{"fogboundary", "shaders/glsl/main.vp", "shaders/glsl/fogboundary.fp", NULL, "#define NO_GLOW\n"},
-	{"spheremap", "shaders/glsl/main_spheremap.vp", "shaders/glsl/main.fp", "shaders/glsl/func_normal.fp", "#define NO_GLOW\n#define NO_DESATURATE\n"}
+	{"spheremap", "shaders/glsl/main.vp", "shaders/glsl/main.fp", "shaders/glsl/func_normal.fp", "#define NO_GLOW\n#define NO_DESATURATE\n#define SPHEREMAP\n#define SPHEREMAP_0\n"}
 };
 
 

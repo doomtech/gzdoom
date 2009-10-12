@@ -123,6 +123,7 @@ public:
 	fixed_t		yScale;
 
 	int SourceLump;
+	FTextureID id;
 
 	union
 	{
@@ -179,6 +180,7 @@ public:
 	virtual bool UseBasePalette();
 	virtual int GetSourceLump() { return SourceLump; }
 	virtual FTexture *GetRedirect(bool wantwarped);
+	FTextureID GetID() const { return id; }
 
 	virtual void Unload () = 0;
 

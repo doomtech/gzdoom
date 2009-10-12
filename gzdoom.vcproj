@@ -6499,6 +6499,21 @@
 					RelativePath=".\src\gl\shaders\gl_shader.h"
 					>
 				</File>
+				<File
+					RelativePath=".\src\gl\shaders\gl_texshader.cpp"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath=".\src\gl\shaders\gl_texshader.h"
+					>
+				</File>
 				<Filter
 					Name="Shader Sources"
 					>

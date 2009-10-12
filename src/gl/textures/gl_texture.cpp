@@ -245,7 +245,8 @@ FTexture::MiscGLInfo::~MiscGLInfo()
 	if (SystemTexture != NULL) delete SystemTexture;
 	SystemTexture = NULL;
 
-	if (Brightmap != NULL) delete Brightmap;
+	// this is managed by the texture manager so it may not be deleted here.
+	//if (Brightmap != NULL) delete Brightmap;
 	Brightmap = NULL;
 
 	if (areas != NULL) delete [] areas;
@@ -284,6 +285,7 @@ void FTexture::CreateDefaultBrightmap()
 					DPrintf("brightmap created for texture '%s'\n", Name);
 					gl_info.Brightmap = new FBrightmapTexture(this);
 					gl_info.bBrightmapChecked = 1;
+					TexMan.AddTexture(gl_info.Brightmap);
 					return;
 				}
 			}
@@ -357,6 +359,7 @@ void FTexture::GetGlowColor(float *data)
 //	Gets the average color of a texture for use as a sky cap color
 //
 //===========================================================================
+
 PalEntry FTexture::GetSkyCapColor(bool bottom)
 {
 	PalEntry col;
@@ -389,6 +392,7 @@ PalEntry FTexture::GetSkyCapColor(bool bottom)
 //  This was mainly added to speed up one area in E4M6 of 007LTSD
 //
 //===========================================================================
+
 bool FTexture::FindHoles(const unsigned char * buffer, int w, int h)
 {
 	const unsigned char * li;
@@ -503,6 +507,7 @@ void FTexture::CheckTrans(unsigned char * buffer, int size, int trans)
 // smooth the edges of transparent fields in the texture
 //
 //===========================================================================
+
 #ifdef WORDS_BIGENDIAN
 #define MSB 0
 #define SOME_MASK 0xffffff00
@@ -573,8 +578,6 @@ bool FTexture::ProcessData(unsigned char * buffer, int w, int h, bool ispatch)
 	return true;
 }
 
-
-
 //===========================================================================
 //
 // fake brightness maps
@@ -598,7 +601,6 @@ FBrightmapTexture::FBrightmapTexture (FTexture *source)
 
 FBrightmapTexture::~FBrightmapTexture ()
 {
-	Unload();
 }
 
 const BYTE *FBrightmapTexture::GetColumn (unsigned int column, const Span **spans_out)
@@ -752,20 +754,30 @@ void gl_ParseBrightmap(FScanner &sc, int deflump)
 			Printf("Cannot combine warping with brightmap on texture '%s'\n", tex->Name);
 			return;
 		}
-		FTexture *brightmap = FTexture::CreateTexture(maplump, tex->UseType);
-		if (!brightmap)
+
+		// Brightmap textures are stored in the texture manager so that multiple
+		// instances of the same textures can be avoided.
+		FTexture *brightmap;
+		FTextureID brightmapId = TexMan.FindTextureByLumpNum(maplump);
+
+		if (!brightmapId.isValid())
 		{
-			Printf("Unable to create texture from '%s' in brightmap definition for '%s'\n", 
-				maplumpname.GetChars(), tex->Name);
-			return;
+			// a texture for this lump has not been created yet.
+			brightmap = FTexture::CreateTexture(maplump, tex->UseType);
+			if (!brightmap)
+			{
+				Printf("Unable to create texture from '%s' in brightmap definition for '%s'\n", 
+					maplumpname.GetChars(), tex->Name);
+				return;
+			}
+			brightmap->gl_info.bBrightmap = true;
 		}
-		if (tex->gl_info.Brightmap != NULL)
+		else
 		{
-			// If there is already a brightmap assigned replace it
-			delete tex->gl_info.Brightmap;
+			brightmap = TexMan[brightmapId];
 		}
+
 		tex->gl_info.Brightmap = brightmap;
-		brightmap->gl_info.bBrightmap = true;
 	}	
 	tex->gl_info.bBrightmapDisablesFullbright = disable_fullbright;
 }

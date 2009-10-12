@@ -1,11 +1,8 @@
 /*
-** gltexture.cpp
-** The texture classes for hardware rendering
-** (Even though they are named 'gl' there is nothing hardware dependent
-**  in this file. That is all encapsulated in the FHardwareTexture class.)
-**
+** gl_material.cpp
+** 
 **---------------------------------------------------------------------------
-** Copyright 2004-2005 Christoph Oelckers
+** Copyright 2004-2009 Christoph Oelckers
 ** All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without
@@ -531,6 +528,7 @@ FGLTexture * FMaterial::ValidateSysTexture(FTexture * tex, bool expand)
 //
 //===========================================================================
 TArray<FMaterial *> FMaterial::mMaterials;
+int FMaterial::mMaxBound;
 
 FMaterial::FMaterial(FTexture * tx, bool forceexpand)
 {
@@ -541,29 +539,52 @@ FMaterial::FMaterial(FTexture * tx, bool forceexpand)
 					tx->UseType == FTexture::TEX_Decal ||
 					forceexpand;
 
-	tex = tx;
-
-	// FIXME: Should let the texture create the FGLTexture object.
-	FGLTexture *gltex = ValidateSysTexture(tx, expanded);
-
-	mTextures.Push(gltex);
-
+	// TODO: apply custom shader object here
+	/* if (tx->CustomShaderDefinition)
+	{
+	}
+	else
+	*/
 	// set default shader. Can be warp or brightmap
-	mShaderIndex = tx->bWarped;
-	if (!tx->bWarped && gl.shadermodel > 2) 
+	if (tx->bWarped)
+	{
+		// todo: Get the proper texture shader
+		mShaderIndex = tx->bWarped;
+		expanded = false;
+	}
+	else if (gl.shadermodel > 2) 
 	{
 		tx->CreateDefaultBrightmap();
 		if (tx->gl_info.Brightmap != NULL)
 		{
-			gltex = ValidateSysTexture(tx->gl_info.Brightmap, expanded);
-			mTextures.Push(gltex);
+			ValidateSysTexture(tx->gl_info.Brightmap, expanded);
+			FTextureLayer layer = {tx->gl_info.Brightmap, false};
+			mTextureLayers.Push(layer);
+			// todo: Get the proper texture shader
 			mShaderIndex = 3;
 		}
 	}
-	mTextures.ShrinkToFit();
+
+	if (!expanded)
+	{
+		// check if the texture is just a simple redirect to a patch
+		// If so we should use the patch for texture creation to
+		// avoid eventual redundancies. For textures that need to
+		// be expanded at the edges this may not be done though.
+		// Warping can be ignored with SM4 because it's always done
+		// by shader
+		tex = tx->GetRedirect(gl.shadermodel < 4);
+	}
+	else tex = tx;
+
+
+	// make sure the system texture is valid
+	mBaseLayer = ValidateSysTexture(tex, expanded);
+
+	mTextureLayers.ShrinkToFit();
 	mMaxBound = -1;
 	mMaterials.Push(this);
-	tex->gl_info.Material = this;
+	tx->gl_info.Material = this;
 }
 
 //===========================================================================
@@ -574,7 +595,6 @@ FMaterial::FMaterial(FTexture * tx, bool forceexpand)
 
 FMaterial::~FMaterial()
 {
-	//if (tex != NULL && tex->gl_info.Material == this) tex->gl_info.Material = NULL;
 	for(unsigned i=0;i<mMaterials.Size();i++)
 	{
 		if (mMaterials[i]==this) 
@@ -600,13 +620,24 @@ const WorldTextureInfo * FMaterial::Bind(int cm, int clampmode, int translation)
 
 	int softwarewarp = gl_RenderState.SetupShader(tex->bHasCanvas, shaderindex, cm, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 1.f);
 
-	const WorldTextureInfo *inf = mTextures[0]->Bind(0, cm, clampmode, translation, softwarewarp);
+	const WorldTextureInfo *inf = mBaseLayer->Bind(0, cm, clampmode, translation, softwarewarp);
 	if (inf != NULL && shaderindex > 0)
 	{
-		for(unsigned i=1;i<mTextures.Size();i++)
+		for(unsigned i=0;i<mTextureLayers.Size();i++)
 		{
-			mTextures[i]->Bind(i, CM_DEFAULT, clampmode, 0, false);
-			maxbound = i;
+			FTexture *tex;
+			if (mTextureLayers[i].animated)
+			{
+				FTextureID id = mTextureLayers[i].texture->GetID();
+				tex = TexMan(id);
+				ValidateSysTexture(tex, false);
+			}
+			else
+			{
+				tex = mTextureLayers[i].texture;
+			}
+			tex->gl_info.SystemTexture->Bind(i+1, CM_DEFAULT, clampmode, 0, false);
+			maxbound = i+1;
 		}
 	}
 	// unbind everything from the last texture that's still active
@@ -633,14 +664,12 @@ const PatchTextureInfo * FMaterial::BindPatch(int cm, int translation)
 
 	int softwarewarp = gl_RenderState.SetupShader(tex->bHasCanvas, shaderindex, cm, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 1.f);
 
-	const PatchTextureInfo *inf = mTextures[0]->BindPatch(0, cm, translation, softwarewarp);
-	if (inf != NULL && shaderindex > 0)
+	const PatchTextureInfo *inf = mBaseLayer->BindPatch(0, cm, translation, softwarewarp);
+	// The only multitexture effect usable on sprites is the brightmap.
+	if (inf != NULL && shaderindex == 3)
 	{
-		for(unsigned i=1;i<mTextures.Size();i++)
-		{
-			mTextures[i]->BindPatch(i, CM_DEFAULT, 0, softwarewarp);
-			maxbound = i;
-		}
+		mTextureLayers[0].texture->gl_info.SystemTexture->BindPatch(1, CM_DEFAULT, 0, 0);
+		maxbound = 1;
 	}
 	// unbind everything from the last texture that's still active
 	for(int i=maxbound+1; i<=mMaxBound;i++)
@@ -660,21 +689,21 @@ const PatchTextureInfo * FMaterial::BindPatch(int cm, int translation)
 
 void FMaterial::SetWallScaling(fixed_t x, fixed_t y)
 {
-	if (x != mTextures[0]->tempScaleX)
+	if (x != mBaseLayer->tempScaleX)
 	{
 		fixed_t scale_x = FixedMul(x, tex->xScale);
-		int foo = (mTextures[0]->Width[GLUSE_TEXTURE] << 17) / scale_x; 
-		mTextures[0]->RenderWidth[GLUSE_TEXTURE] = (foo >> 1) + (foo & 1); 
-		mTextures[0]->scalex = scale_x/(float)FRACUNIT;
-		mTextures[0]->tempScaleX = x;
+		int foo = (mBaseLayer->Width[GLUSE_TEXTURE] << 17) / scale_x; 
+		mBaseLayer->RenderWidth[GLUSE_TEXTURE] = (foo >> 1) + (foo & 1); 
+		mBaseLayer->scalex = scale_x/(float)FRACUNIT;
+		mBaseLayer->tempScaleX = x;
 	}
-	if (y != mTextures[0]->tempScaleY)
+	if (y != mBaseLayer->tempScaleY)
 	{
 		fixed_t scale_y = FixedMul(y, tex->yScale);
-		int foo = (mTextures[0]->Height[GLUSE_TEXTURE] << 17) / scale_y; 
-		mTextures[0]->RenderHeight[GLUSE_TEXTURE] = (foo >> 1) + (foo & 1); 
-		mTextures[0]->scaley = scale_y/(float)FRACUNIT;
-		mTextures[0]->tempScaleY = y;
+		int foo = (mBaseLayer->Height[GLUSE_TEXTURE] << 17) / scale_y; 
+		mBaseLayer->RenderHeight[GLUSE_TEXTURE] = (foo >> 1) + (foo & 1); 
+		mBaseLayer->scaley = scale_y/(float)FRACUNIT;
+		mBaseLayer->tempScaleY = y;
 	}
 }
 
@@ -686,15 +715,15 @@ void FMaterial::SetWallScaling(fixed_t x, fixed_t y)
 
 fixed_t FMaterial::RowOffset(fixed_t rowoffset) const
 {
-	if (mTextures[0]->tempScaleX == FRACUNIT)
+	if (mBaseLayer->tempScaleX == FRACUNIT)
 	{
-		if (mTextures[0]->scaley==1.f || tex->bWorldPanning) return rowoffset;
-		else return quickertoint(rowoffset/mTextures[0]->scaley);
+		if (mBaseLayer->scaley==1.f || tex->bWorldPanning) return rowoffset;
+		else return quickertoint(rowoffset/mBaseLayer->scaley);
 	}
 	else
 	{
-		if (tex->bWorldPanning) return FixedDiv(rowoffset, mTextures[0]->tempScaleY);
-		else return quickertoint(rowoffset/mTextures[0]->scaley);
+		if (tex->bWorldPanning) return FixedDiv(rowoffset, mBaseLayer->tempScaleY);
+		else return quickertoint(rowoffset/mBaseLayer->scaley);
 	}
 }
 
@@ -706,15 +735,15 @@ fixed_t FMaterial::RowOffset(fixed_t rowoffset) const
 
 fixed_t FMaterial::TextureOffset(fixed_t textureoffset) const
 {
-	if (mTextures[0]->tempScaleX == FRACUNIT)
+	if (mBaseLayer->tempScaleX == FRACUNIT)
 	{
-		if (mTextures[0]->scalex==1.f || tex->bWorldPanning) return textureoffset;
-		else return quickertoint(textureoffset/mTextures[0]->scalex);
+		if (mBaseLayer->scalex==1.f || tex->bWorldPanning) return textureoffset;
+		else return quickertoint(textureoffset/mBaseLayer->scalex);
 	}
 	else
 	{
-		if (tex->bWorldPanning) return FixedDiv(textureoffset, mTextures[0]->tempScaleX);
-		else return quickertoint(textureoffset/mTextures[0]->scalex);
+		if (tex->bWorldPanning) return FixedDiv(textureoffset, mBaseLayer->tempScaleX);
+		else return quickertoint(textureoffset/mBaseLayer->scalex);
 	}
 }
 
@@ -729,10 +758,10 @@ fixed_t FMaterial::TextureAdjustWidth(ETexUse i) const
 {
 	if (tex->bWorldPanning) 
 	{
-		if (i == GLUSE_PATCH || mTextures[0]->tempScaleX == FRACUNIT) return mTextures[0]->RenderWidth[i];
-		else return FixedDiv(mTextures[0]->Width[i], mTextures[0]->tempScaleX);
+		if (i == GLUSE_PATCH || mBaseLayer->tempScaleX == FRACUNIT) return mBaseLayer->RenderWidth[i];
+		else return FixedDiv(mBaseLayer->Width[i], mBaseLayer->tempScaleX);
 	}
-	else return mTextures[0]->Width[i];
+	else return mBaseLayer->Width[i];
 }
 
 //===========================================================================
@@ -743,13 +772,13 @@ fixed_t FMaterial::TextureAdjustWidth(ETexUse i) const
 
 void FMaterial::BindToFrameBuffer()
 {
-	if (mTextures[0]->gltexture == NULL)
+	if (mBaseLayer->gltexture == NULL)
 	{
 		// must create the hardware texture first
-		mTextures[0]->Bind(0, CM_DEFAULT, 0, 0, false);
+		mBaseLayer->Bind(0, CM_DEFAULT, 0, 0, false);
 		FHardwareTexture::Unbind(0);
 	}
-	mTextures[0]->gltexture->BindToFrameBuffer();
+	mBaseLayer->gltexture->BindToFrameBuffer();
 }
 
 //===========================================================================
@@ -805,6 +834,13 @@ void FMaterial::FlushAll()
 	for(int i=mMaterials.Size()-1;i>=0;i--)
 	{
 		mMaterials[i]->Clean(true);
+	}
+	// This is for shader layers. All shader layers must be managed by the texture manager
+	// so this will catch everything.
+	for(int i=TexMan.NumTextures()-1;i>=0;i--)
+	{
+		FGLTexture *gltex = TexMan.ByIndex(i)->gl_info.SystemTexture;
+		if (gltex != NULL) gltex->Clean(true);
 	}
 }
 
