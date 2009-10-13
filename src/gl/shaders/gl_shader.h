@@ -104,7 +104,10 @@ public:
 //==========================================================================
 class FShaderManager
 {
-	enum { NUM_EFFECTS = 2 };
+	enum 
+	{ 
+		NUM_EFFECTS = 2 
+	};
 
 	TArray<FShaderContainer*> mTextureEffects;
 	FShader *mActiveShader;
@@ -126,10 +129,9 @@ public:
 		}
 		return NULL;
 	}
-
-
-
 };
+
+#define FIRST_USER_SHADER 5
 
 
 #endif

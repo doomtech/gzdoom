@@ -279,6 +279,8 @@ public:
 		int GlowHeight;
 		FloatRect *areas;
 		int areacount;
+		int shaderindex;
+		float shaderspeed;
 		int mIsTransparent:2;
 		bool bGlowing:1;						// Texture glows
 		bool bFullbright:1;						// always draw fullbright

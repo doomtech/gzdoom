@@ -152,6 +152,8 @@ void FShaderLayer::Update(float diff)
 	scaleY.Update(diff);
 	adjustX.Update(diff);
 	adjustY.Update(diff);
+	srcFactor.Update(diff);
+	dstFactor.Update(diff);
 
 	offsetX += vectorX * diff;
 	if (offsetX >= 1.f) offsetX -= 1.f;
@@ -194,15 +196,18 @@ static const FParseKey BlendTags[]=
 {
 	{"GL_ZERO",					GL_ZERO},
 	{"GL_ONE",					GL_ONE},
+
 	{"GL_DST_COLOR",			GL_DST_COLOR},
 	{"GL_ONE_MINUS_DST_COLOR",	GL_ONE_MINUS_DST_COLOR},
-	{"GL_SRC_ALPHA",			GL_SRC_ALPHA},
-	{"GL_ONE_MINUS_SRC_ALPHA",	GL_ONE_MINUS_SRC_ALPHA},
 	{"GL_DST_ALPHA",			GL_DST_ALPHA},
 	{"GL_ONE_MINUS_DST_ALPHA",  GL_ONE_MINUS_DST_ALPHA},
-	{"GL_SRC_ALPHA_SATURATE",   GL_SRC_ALPHA_SATURATE},
+
 	{"GL_SRC_COLOR",			GL_SRC_COLOR},
 	{"GL_ONE_MINUS_SRC_COLOR",	GL_ONE_MINUS_SRC_COLOR},
+	{"GL_SRC_ALPHA",			GL_SRC_ALPHA},
+	{"GL_ONE_MINUS_SRC_ALPHA",	GL_ONE_MINUS_SRC_ALPHA},
+
+	{"GL_SRC_ALPHA_SATURATE",   GL_SRC_ALPHA_SATURATE},
 	{NULL}
 };
 
@@ -275,6 +280,50 @@ bool FShaderLayer::ParseLayer(FScanner &sc)
 					alpha.SetParams(float(sc.Float), float(sc.Float), 0.f);
 				}
 			}
+			else if (sc.Compare("srcfactor"))
+			{
+				if (sc.CheckString("cycle"))
+				{
+					srcFactor.ShouldCycle(true);
+					srcFactor.SetCycleType(ParseCycleType(sc));
+
+					sc.GetFloat();
+					start = sc.Float;
+					sc.GetFloat();
+					end = sc.Float;
+					sc.GetFloat();
+					cycle = sc.Float;
+
+					srcFactor.SetParams(start, end, cycle);
+				}
+				else
+				{
+					sc.MustGetFloat();
+					srcFactor.SetParams(float(sc.Float), float(sc.Float), 0.f);
+				}
+			}
+			if (sc.Compare("destfactor"))
+			{
+				if (sc.CheckString("cycle"))
+				{
+					dstFactor.ShouldCycle(true);
+					dstFactor.SetCycleType(ParseCycleType(sc));
+
+					sc.GetFloat();
+					start = sc.Float;
+					sc.GetFloat();
+					end = sc.Float;
+					sc.GetFloat();
+					cycle = sc.Float;
+
+					dstFactor.SetParams(start, end, cycle);
+				}
+				else
+				{
+					sc.MustGetFloat();
+					dstFactor.SetParams(float(sc.Float), float(sc.Float), 0.f);
+				}
+			}
 			else if (sc.Compare("animate"))
 			{
                sc.GetString();
@@ -284,11 +333,11 @@ bool FShaderLayer::ParseLayer(FScanner &sc)
 			{
 				sc.GetString();
 				type = sc.MustMatchString(&BlendTags[0].name, sizeof(BlendTags[0]));
-				blendFuncSrc = BlendTags[type].value;
+				blendFuncSrc = type;// BlendTags[type].value;
 
 				sc.GetString();
 				type = sc.MustMatchString(&BlendTags[0].name, sizeof(BlendTags[0]));
-				blendFuncDst = BlendTags[type].value;
+				blendFuncDst = type; //BlendTags[type].value;
 			}
 			else if (sc.Compare("color"))
 			{
@@ -549,7 +598,15 @@ bool FTextureShader::ParseShader(FScanner &sc, TArray<FTextureID> &names)
 				FShaderLayer *lay = new FShaderLayer;
 				if (lay->ParseLayer(sc))
 				{
-					layers.Push(lay);
+					if (layers.Size() < 8)
+					{
+						layers.Push(lay);
+					}
+					else
+					{
+						delete lay;
+						sc.ScriptMessage("Only 8 layers per texture allowed.");
+					}
 				}
 				else
 				{
@@ -596,3 +653,46 @@ void FTextureShader::FakeUpdate(int framems)
 {
 	lastUpdate = framems;
 }
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FString FTextureShader::CreateName()
+{
+	FString compose = "custom";
+	for(unsigned i=0; i<layers.Size(); i++)
+	{
+		compose.AppendFormat("@%de%ds%ud%ut%dw%d", i, layers[i]->emissive, 
+			layers[i]->blendFuncSrc, layers[i]->blendFuncDst, layers[i]->texgen, layers[i]->warp);
+	}
+	return compose;
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FString FTextureShader::GenerateCode()
+{
+	static const char *funcnames[] = {"gettexel", "getwarp1", "getwarp2" };
+	static const char *srcblend[] = { "vec4(0.0)", "src", "src*dest", "1.0-src*dest", "src*dest.a", "1.0-src*dest.a", 
+										"src*src", "1.0-src*src", "src*src.a", "1.0-src*src", "vec4(src.rgb*src.a, 1)" };
+	static const char *dstblend[] = { "vec4(0.0)", "dest", "dest*dest", "1.0-dest*dest", "dest*dest.a", "1.0-dest*dest.a", 
+										"dest*src", "1.0-dest*src", "dest*src.a", "1.0-dest*src", "vec4(dest.rgb*src.a, 1)" };
+	FString compose;
+	for(unsigned i=0; i<layers.Size(); i++)
+	{
+		compose.AppendFormat("src = %s(texture%d, glTexCoord[%d].st) * colors[%d];\n",
+			funcnames[layers[i]->warp], i+1, i, i);
+		if (!layers[i]->emissive) compose.AppendFormat("src.rgb *= gl_Color.rgb;\n");
+		compose.AppendFormat("dest = (%s)*srcfactor + (%s)*dstfactor;\n", 
+			srcblend[layers[i]->blendFuncSrc], dstblend[layers[i]->blendFuncDst]);
+	}
+	return compose;
+}
+

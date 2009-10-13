@@ -230,6 +230,7 @@ FTexture::MiscGLInfo::MiscGLInfo() throw()
 	areas = NULL;
 	areacount = 0;
 	mIsTransparent = -1;
+	shaderspeed = 1.f;
 
 	Material = NULL;
 	SystemTexture = NULL;

@@ -4,6 +4,7 @@
 
 
 #include "tarray.h"
+#include "zstring.h"
 #include "gl/utility/gl_cycler.h"
 
 
@@ -46,6 +47,7 @@ public:
 	FCycler scaleX, scaleY;
 	FCycler alpha;
 	FCycler r, g, b;
+	FCycler srcFactor, dstFactor;
 	unsigned int flags;
 	unsigned int blendFuncSrc, blendFuncDst;
 	FShaderLayer *layerMask;
@@ -66,6 +68,8 @@ public:
 	bool Setup(float time);
 	void Update(int framems);
 	void FakeUpdate(int framems);
+	FString CreateName();
+	FString GenerateCode();
 
 	FName name;
 	TDeletingArray <FShaderLayer *> layers; // layers for shader

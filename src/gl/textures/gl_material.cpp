@@ -132,7 +132,6 @@ FGLTexture::FGLTexture(FTexture * tx, bool expandpatches)
 
 FGLTexture::~FGLTexture()
 {
-	//if (tex != NULL && tex->gl_info.SystemTexture == this) tex->gl_info.SystemTexture = NULL;
 	Clean(true);
 	if (hirestexture) delete hirestexture;
 }
@@ -357,8 +356,8 @@ unsigned char * FGLTexture::CreateTexBuffer(ETexUse use, int _cm, int translatio
 	if (warp != 0)
 	{
 		buffer = WarpBuffer(buffer, W, H, warp);
-		currentwarp = warp;
 	}
+	currentwarp = warp;
 
 	return buffer;
 }
@@ -545,25 +544,32 @@ FMaterial::FMaterial(FTexture * tx, bool forceexpand)
 	}
 	else
 	*/
-	// set default shader. Can be warp or brightmap
 	if (tx->bWarped)
 	{
-		// todo: Get the proper texture shader
 		mShaderIndex = tx->bWarped;
 		expanded = false;
+		tx->gl_info.shaderspeed = static_cast<FWarpTexture*>(tx)->GetSpeed();
 	}
 	else if (gl.shadermodel > 2) 
 	{
-		tx->CreateDefaultBrightmap();
-		if (tx->gl_info.Brightmap != NULL)
+		if (tx->gl_info.shaderindex >= FIRST_USER_SHADER)
 		{
-			ValidateSysTexture(tx->gl_info.Brightmap, expanded);
-			FTextureLayer layer = {tx->gl_info.Brightmap, false};
-			mTextureLayers.Push(layer);
-			// todo: Get the proper texture shader
-			mShaderIndex = 3;
+			mShaderIndex = tx->gl_info.shaderindex;
+			expanded = false;
+		}
+		else
+		{
+			tx->CreateDefaultBrightmap();
+			if (tx->gl_info.Brightmap != NULL)
+			{
+				ValidateSysTexture(tx->gl_info.Brightmap, expanded);
+				FTextureLayer layer = {tx->gl_info.Brightmap, false};
+				mTextureLayers.Push(layer);
+				mShaderIndex = 3;
+			}
 		}
 	}
+	else mShaderIndex = 0;
 
 	if (!expanded)
 	{
@@ -618,7 +624,7 @@ const WorldTextureInfo * FMaterial::Bind(int cm, int clampmode, int translation)
 	int shaderindex = mShaderIndex;
 	int maxbound = 0;
 
-	int softwarewarp = gl_RenderState.SetupShader(tex->bHasCanvas, shaderindex, cm, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 1.f);
+	int softwarewarp = gl_RenderState.SetupShader(tex->bHasCanvas, shaderindex, cm, tex->gl_info.shaderspeed);
 
 	const WorldTextureInfo *inf = mBaseLayer->Bind(0, cm, clampmode, translation, softwarewarp);
 	if (inf != NULL && shaderindex > 0)
@@ -662,7 +668,7 @@ const PatchTextureInfo * FMaterial::BindPatch(int cm, int translation)
 	int shaderindex = mShaderIndex;
 	int maxbound = 0;
 
-	int softwarewarp = gl_RenderState.SetupShader(tex->bHasCanvas, shaderindex, cm, tex->bWarped? static_cast<FWarpTexture*>(tex)->GetSpeed() : 1.f);
+	int softwarewarp = gl_RenderState.SetupShader(tex->bHasCanvas, shaderindex, cm, tex->gl_info.shaderspeed);
 
 	const PatchTextureInfo *inf = mBaseLayer->BindPatch(0, cm, translation, softwarewarp);
 	// The only multitexture effect usable on sprites is the brightmap.
