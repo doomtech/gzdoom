@@ -729,6 +729,7 @@ add_executable( zdoom WIN32
 	gl/utility/gl_cycler.cpp
 	gl/utility/gl_geometric.cpp
 	gl/renderer/gl_renderer.cpp
+	gl/renderer/gl_renderstate.cpp
 	gl/renderer/gl_lightdata.cpp
 	gl/textures/gl_hwtexture.cpp
 	gl/textures/gl_texture.cpp
@@ -760,6 +761,7 @@ add_executable( zdoom WIN32
 	gl/dynlights/gl_dynlight1.cpp
 	gl/dynlights/gl_lightbuffer.cpp
 	gl/shaders/gl_shader.cpp
+	gl/shaders/gl_texshader.cpp
 	gl/system/gl_interface.cpp
 	gl/system/gl_framebuffer.cpp
 	gl/system/gl_menu.cpp
