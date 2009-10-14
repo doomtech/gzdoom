@@ -211,7 +211,7 @@ FHardwareTexture::FHardwareTexture(int _width, int _height, bool _mipmap, bool w
 		scaleyfac=MIN<float>(1.f,(float)texheight/FHardwareTexture::GetTexDimension(texheight));
 	}
 
-	int cm_arraysize = gl.shadermodel < 4? CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size() : 1;
+	int cm_arraysize = CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size();
 	glTexID = new unsigned[cm_arraysize];
 	memset(glTexID,0,sizeof(unsigned int)*cm_arraysize);
 	clampmode=0;
