@@ -538,6 +538,7 @@ FMaterial::FMaterial(FTexture * tx, bool forceexpand)
 					tx->UseType == FTexture::TEX_Decal ||
 					forceexpand;
 
+	mShaderIndex = 0;
 	// TODO: apply custom shader object here
 	/* if (tx->CustomShaderDefinition)
 	{
@@ -569,7 +570,6 @@ FMaterial::FMaterial(FTexture * tx, bool forceexpand)
 			}
 		}
 	}
-	else mShaderIndex = 0;
 
 	if (!expanded)
 	{
