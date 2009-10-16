@@ -1,3 +1,23 @@
+October 16, 2009  (Changes by Graf Zahl)
+- added 'defaultterrain' option to terrain parser for mods that want to have
+  a different default terrain than a generic solid surface.
+- added format char processing to A_Print(Bold) and all printable messages
+  that can be defined in DECORATE.
+- Fixed: The railgun code ignored MF3_ALWAYSPUFF.
+- added desaturated translations.
+- added optional state parameters to A_ReFire and A_GunFlash and A_CountdownArg.
+
+October 15, 2009  (Changes by Graf Zahl)
+- added ACS CheckActorClass function
+- fixed: When a blasted actor collided with another one this other actor's
+  DONTBLAST flag was not checked.
+- added a global DamageFactor actor property. All damage this actor takes is multiplied
+  by this factor in addition to damage type specific damage factors.
+- added better earthquake functions for ACS and DECORATE.
+
+October 10, 2009  (Changes by Graf Zahl)
+- Added MF6_NOTRIGGER flag that disables all line actions for an actor.
+
 October 9, 2009  (Changes by Graf Zahl)
 - Added Gez's seeker missile submission.
 - Added Gez's thing activation submission.
