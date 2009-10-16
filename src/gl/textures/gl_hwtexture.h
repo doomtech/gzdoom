@@ -78,17 +78,17 @@ public:
 
 
 	// Get right/bottom UV coordinates for patch drawing
-	float GetUL() { return 0; }
-	float GetVT() { return 0; }
-	float GetUR() { return scalexfac; }
-	float GetVB() { return scaleyfac; }
-	float GetU(float upix) { return upix/(float)texwidth * scalexfac; }
-	float GetV(float vpix) { return vpix/(float)texheight* scaleyfac; }
+	float GetUL() const { return 0; }
+	float GetVT() const { return 0; }
+	float GetUR() const { return scalexfac; }
+	float GetVB() const { return scaleyfac; }
+	float GetU(float upix) const { return upix/(float)texwidth * scalexfac; }
+	float GetV(float vpix) const { return vpix/(float)texheight* scaleyfac; }
 
 	// gets a texture coordinate from a pixel coordinate
-	float FloatToTexU(float v) { return v/(float)texwidth; }
-	float FixToTexU(int v) { return (float)v/(float)FRACUNIT/(float)texwidth; }
-	float FixToTexV(int v) { return (float)v/(float)FRACUNIT/(float)texheight; }
+	float FloatToTexU(float v) const { return v/(float)texwidth; }
+	float FixToTexU(int v) const { return (float)v/(float)FRACUNIT/(float)texwidth; }
+	float FixToTexV(int v) const { return (float)v/(float)FRACUNIT/(float)texheight; }
 
 };
 

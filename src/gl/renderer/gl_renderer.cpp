@@ -257,7 +257,7 @@ unsigned char *FGLRenderer::GetTextureBuffer(FTexture *tex, int &w, int &h)
 	FMaterial * gltex = FMaterial::ValidateTexture(tex);
 	if (gltex)
 	{
-		return gltex->CreateTexBuffer(GLUSE_TEXTURE, CM_DEFAULT, 0, w, h);
+		return gltex->CreateTexBuffer(CM_DEFAULT, 0, w, h);
 	}
 	return NULL;
 }

@@ -26,22 +26,9 @@ class WorldTextureInfo
 {
 	friend class FMaterial;
 protected:
-	FHardwareTexture * gltexture;
+	const FHardwareTexture * gltexture;
 	float scalex;
 	float scaley;
-
-	void Clean(bool all)
-	{
-		if (gltexture) 
-		{
-			if (!all) gltexture->Clean(false);
-			else
-			{
-				delete gltexture;
-				gltexture=NULL;
-			}
-		}
-	}
 
 public:
 
@@ -55,21 +42,9 @@ public:
 
 class PatchTextureInfo
 {
+	friend class FMaterial;
 protected:
-	FHardwareTexture * glpatch;
-
-	void Clean(bool all)
-	{
-		if (glpatch) 
-		{
-			if (!all) glpatch->Clean(false);
-			else
-			{
-				delete glpatch;
-				glpatch=NULL;
-			}
-		}
-	}
+	const FHardwareTexture * glpatch;
 
 public:
 	float GetUL() const { return glpatch->GetUL(); }
@@ -95,7 +70,7 @@ enum ETexUse
 };
 
 
-class FGLTexture : protected WorldTextureInfo, protected PatchTextureInfo
+class FGLTexture //: protected WorldTextureInfo, protected PatchTextureInfo
 {
 	friend class FMaterial;
 public:
@@ -105,34 +80,29 @@ public:
 	int HiresLump;
 
 private:
+	FHardwareTexture *gltexture;
+	FHardwareTexture *glpatch;
+
 	int currentwarp;
 
 	bool bHasColorkey;		// only for hires
-
-	short LeftOffset[2];
-	short TopOffset[2];
-	short Width[2];
-	short Height[2];
-	short RenderWidth[2];
-	short RenderHeight[2];
+	bool bExpand;
 	float AlphaThreshold;
-	fixed_t tempScaleX, tempScaleY;
 
 	unsigned char * LoadHiresTexture(int *width, int *height, int cm);
-
 	BYTE *WarpBuffer(BYTE *buffer, int Width, int Height, int warp);
 
-	const WorldTextureInfo * GetWorldTextureInfo();
-	const PatchTextureInfo * GetPatchTextureInfo();
+	bool CreateTexture();
+	bool CreatePatch();
 
-	const WorldTextureInfo * Bind(int texunit, int cm, int clamp, int translation, int warp);
-	const PatchTextureInfo * BindPatch(int texunit, int cm, int translation, int warp);
+	const FHardwareTexture *Bind(int texunit, int cm, int clamp, int translation, bool allowhires, int warp);
+	const FHardwareTexture *BindPatch(int texunit, int cm, int translation, int warp);
 
 public:
 	FGLTexture(FTexture * tx, bool expandpatches);
 	~FGLTexture();
 
-	unsigned char * CreateTexBuffer(ETexUse use, int cm, int translation, int & w, int & h, bool allowhires, int warp);
+	unsigned char * CreateTexBuffer(int cm, int translation, int & w, int & h, bool expand, bool allowhires, int warp);
 
 	void Clean(bool all);
 
@@ -159,6 +129,18 @@ class FMaterial
 	TArray<FTextureLayer> mTextureLayers;
 	int mShaderIndex;
 
+	WorldTextureInfo wti;
+	PatchTextureInfo pti;
+	short LeftOffset[2];
+	short TopOffset[2];
+	short Width[2];
+	short Height[2];
+	short RenderWidth[2];
+	short RenderHeight[2];
+	fixed_t tempScaleX, tempScaleY;
+
+
+
 	void SetupShader(int shaderindex, int &cm);
 	FGLTexture * ValidateSysTexture(FTexture * tex, bool expand);
 
@@ -171,12 +153,12 @@ public:
 	const WorldTextureInfo * Bind(int cm, int clamp=0, int translation=0);
 	const PatchTextureInfo * BindPatch(int cm, int translation=0);
 
-	const WorldTextureInfo * GetWorldTextureInfo() { return mBaseLayer->GetWorldTextureInfo(); }
-	const PatchTextureInfo * GetPatchTextureInfo() { return mBaseLayer->GetPatchTextureInfo(); }
+	const WorldTextureInfo * GetWorldTextureInfo();// { return mBaseLayer->GetWorldTextureInfo(); }
+	const PatchTextureInfo * GetPatchTextureInfo();// { return mBaseLayer->GetPatchTextureInfo(); }
 
-	unsigned char * CreateTexBuffer(ETexUse use, int cm, int translation, int & w, int & h, bool allowhires=true)
+	unsigned char * CreateTexBuffer(int cm, int translation, int & w, int & h, bool expand = false, bool allowhires=true)
 	{
-		return mBaseLayer->CreateTexBuffer(use, cm, translation, w, h, allowhires, 0);
+		return mBaseLayer->CreateTexBuffer(cm, translation, w, h, expand, allowhires, 0);
 	}
 
 	void Clean(bool f)
@@ -191,8 +173,8 @@ public:
 
 	void SetWallScaling(fixed_t x, fixed_t y);
 
-	int TextureHeight(ETexUse i) const { return mBaseLayer->RenderHeight[i]; }
-	int TextureWidth(ETexUse i) const { return mBaseLayer->RenderWidth[i]; }
+	int TextureHeight(ETexUse i) const { return RenderHeight[i]; }
+	int TextureWidth(ETexUse i) const { return RenderWidth[i]; }
 
 	int GetAreaCount() const { return tex->gl_info.areacount; }
 	FloatRect *GetAreas() const { return tex->gl_info.areas; }
@@ -205,32 +187,32 @@ public:
 
 	int GetWidth(ETexUse i) const
 	{
-		return mBaseLayer->Width[i];
+		return Width[i];
 	}
 
 	int GetHeight(ETexUse i) const
 	{
-		return mBaseLayer->Height[i];
+		return Height[i];
 	}
 
 	int GetLeftOffset(ETexUse i) const
 	{
-		return mBaseLayer->LeftOffset[i];
+		return LeftOffset[i];
 	}
 
 	int GetTopOffset(ETexUse i) const
 	{
-		return mBaseLayer->TopOffset[i];
+		return TopOffset[i];
 	}
 
 	int GetScaledLeftOffset(ETexUse i) const
 	{
-		return DivScale16(mBaseLayer->LeftOffset[i], tex->xScale);
+		return DivScale16(LeftOffset[i], tex->xScale);
 	}
 
 	int GetScaledTopOffset(ETexUse i) const
 	{
-		return DivScale16(mBaseLayer->TopOffset[i], tex->yScale);
+		return DivScale16(TopOffset[i], tex->yScale);
 	}
 
 	bool GetTransparent()
