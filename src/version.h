@@ -41,17 +41,17 @@
 
 /** Lots of different version numbers **/
 
-#define DOTVERSIONSTR_NOREV "1.2.1"
+#define DOTVERSIONSTR_NOREV "1.3.0 beta"
 #define ZDVER_STRING "2.3.1"
 
 // The version string the user actually sees.
 #define DOTVERSIONSTR DOTVERSIONSTR_NOREV " (r" SVN_REVISION_STRING ") / ZDoom" ZDVER_STRING " (r" ZD_SVN_REVISION_STRING ")"
 
 // The version as seen in the Windows resource
-#define RC_FILEVERSION 1,2,1,SVN_REVISION_NUMBER
-#define RC_PRODUCTVERSION 1,2,1,0
+#define RC_FILEVERSION 1,3,0,SVN_REVISION_NUMBER
+#define RC_PRODUCTVERSION 1,3,0,0
 #define RC_FILEVERSION2 DOTVERSIONSTR
-#define RC_PRODUCTVERSION2 "1.2"
+#define RC_PRODUCTVERSION2 "1.3"
 
 // Version identifier for network games.
 // Bump it every time you do a release unless you're certain you
