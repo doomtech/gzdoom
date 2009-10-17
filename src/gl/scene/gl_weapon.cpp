@@ -178,6 +178,7 @@ void FGLRenderer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 		lightlevel=255;
 		cm.GetFixedColormap();
 		statebright[0] = statebright[1] = true;
+		fakesec = viewsector;
 	}
 	else
 	{
@@ -262,9 +263,26 @@ void FGLRenderer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 	{
 		if (psp->state) 
 		{
+			FColormap cmc = cm;
+			if (statebright[i]) 
+			{
+				if (fakesec == viewsector || in_area != area_below)	
+					// under water areas keep most of their color for fullbright objects
+				{
+					cmc.LightColor.r=
+					cmc.LightColor.g=
+					cmc.LightColor.b=0xff;
+				}
+				else
+				{
+					cmc.LightColor.r = (3*cmc.LightColor.r + 0xff)/4;
+					cmc.LightColor.g = (3*cmc.LightColor.g + 0xff)/4;
+					cmc.LightColor.b = (3*cmc.LightColor.b + 0xff)/4;
+				}
+			}
 			// set the lighting parameters (only calls glColor and glAlphaFunc)
 			gl_SetSpriteLighting(vis.RenderStyle, playermo, statebright[i]? 255 : lightlevel, 
-				0, &cm, 0xffffff, trans, statebright[i], true);
+				0, &cmc, 0xffffff, trans, statebright[i], true);
 			DrawPSprite (player,psp,psp->sx+ofsx, psp->sy+ofsy, cm.colormap, hudModelStep);
 		}
 	}

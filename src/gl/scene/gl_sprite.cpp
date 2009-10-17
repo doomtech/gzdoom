@@ -641,6 +641,12 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 				Colormap.LightColor.g=
 				Colormap.LightColor.b=0xff;
 			}
+			else
+			{
+				Colormap.LightColor.r = (3*Colormap.LightColor.r + 0xff)/4;
+				Colormap.LightColor.g = (3*Colormap.LightColor.g + 0xff)/4;
+				Colormap.LightColor.b = (3*Colormap.LightColor.b + 0xff)/4;
+			}
 		}
 		else if (glset.nocoloredspritelighting)
 		{
