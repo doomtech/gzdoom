@@ -36,8 +36,7 @@ public:
 	float GetV(float vpix) const { return gltexture->GetV(vpix*scaley); }
 		  
 	float FloatToTexU(float v) const { return gltexture->FloatToTexU(v*scalex); }
-	float FixToTexU(int v) const { return gltexture->FixToTexU(v)*scalex; }
-	float FixToTexV(int v) const { return gltexture->FixToTexV(v)*scaley; }
+	float FloatToTexV(float v) const { return gltexture->FloatToTexV(v*scaley); }
 };
 
 class PatchTextureInfo
@@ -181,6 +180,8 @@ public:
 
 	fixed_t RowOffset(fixed_t rowoffset) const;
 	fixed_t TextureOffset(fixed_t textureoffset) const;
+
+	float FMaterial::RowOffset(float rowoffset) const;
 
 	// Returns the size for which texture offset coordinates are used.
 	fixed_t TextureAdjustWidth(ETexUse i) const;

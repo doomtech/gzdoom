@@ -59,6 +59,7 @@
 #include "gl/textures/gl_bitmap.h"
 #include "gl/textures/gl_material.h"
 #include "gl/shaders/gl_shader.h"
+#include "gl/utility/gl_convert.h"
 
 EXTERN_CVAR(Bool, gl_render_precise)
 EXTERN_CVAR(Int, gl_lightmode)
@@ -768,6 +769,26 @@ fixed_t FMaterial::RowOffset(fixed_t rowoffset) const
 	{
 		if (tex->bWorldPanning) return FixedDiv(rowoffset, tempScaleY);
 		else return quickertoint(rowoffset/wti.scaley);
+	}
+}
+
+//===========================================================================
+//
+//
+//
+//===========================================================================
+
+float FMaterial::RowOffset(float rowoffset) const
+{
+	if (tempScaleX == FRACUNIT)
+	{
+		if (wti.scaley==1.f || tex->bWorldPanning) return rowoffset;
+		else return rowoffset / wti.scaley;
+	}
+	else
+	{
+		if (tex->bWorldPanning) return rowoffset / TO_GL(tempScaleY);
+		else return rowoffset / wti.scaley;
 	}
 }
 

@@ -181,7 +181,7 @@ public:
 	void SetFog(PalEntry c, float d)
 	{
 		mFogColor = c;
-		mFogDensity = d;
+		if (d >= 0.0f) mFogDensity = d;
 	}
 
 	void SetLightParms(float f, float d)
@@ -196,6 +196,11 @@ public:
 		mNumLights[1] = numlights[1];
 		mNumLights[2] = numlights[2];
 		mLightData = lightdata;	// caution: the data must be preserved by the caller until the 'apply' call!
+	}
+
+	PalEntry GetFogColor() const
+	{
+		return mFogColor;
 	}
 
 };

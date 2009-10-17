@@ -87,8 +87,7 @@ public:
 
 	// gets a texture coordinate from a pixel coordinate
 	float FloatToTexU(float v) const { return v/(float)texwidth; }
-	float FixToTexU(int v) const { return (float)v/(float)FRACUNIT/(float)texwidth; }
-	float FixToTexV(int v) const { return (float)v/(float)FRACUNIT/(float)texheight; }
+	float FloatToTexV(float v) const { return v/(float)texheight; }
 
 };
 
