@@ -62,12 +62,12 @@ struct FStateVec4 : public FStateAttr
 		return false;
 	}
 
-	void Set(float x, float y, float z, float w)
+	void Set(float r, float g, float b, float a)
 	{
-		vec[0] = x;
-		vec[1] = z;
-		vec[2] = y;
-		vec[3] = w;
+		vec[0] = r;
+		vec[1] = g;
+		vec[2] = b;
+		vec[3] = a;
 		mLastChange = ++ChangeCounter;
 	}
 };
