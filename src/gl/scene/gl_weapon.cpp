@@ -114,7 +114,17 @@ void FGLRenderer::DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed
 	texturemid = (100<<FRACBITS) - (sy-(tex->GetScaledTopOffset(GLUSE_PATCH)<<FRACBITS));
 
 	AWeapon * wi=player->ReadyWeapon;
-	if (wi && wi->YAdjust && screenblocks>=11 && !st_scale) texturemid -= wi->YAdjust;
+	if (wi && wi->YAdjust)
+	{
+		if (screenblocks>=11)
+		{
+			texturemid -= wi->YAdjust;
+		}
+		else if (!st_scale)
+		{
+			texturemid -= FixedMul (StatusBar->GetDisplacement (), wi->YAdjust);
+		}
+	}
 
 	scale = ((SCREENHEIGHT*vw)/SCREENWIDTH) / 200.0f;    
 	y1=viewwindowy+(vh>>1)-(int)(((float)texturemid/(float)FRACUNIT)*scale);
