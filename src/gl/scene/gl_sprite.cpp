@@ -774,8 +774,10 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 	player_t *player=&players[consoleplayer];
 	
 	if (particle->trans==0) return;
-	lightlevel = sector->lightlevel;
 
+	lightlevel = sector->GetTexture(sector_t::ceiling) == skyflatnum ? 
+					GetCeilingLight(sector) : GetFloorLight(sector);
+	foglevel = sector->lightlevel;
 
 	if (gl_fixedcolormap) 
 	{
