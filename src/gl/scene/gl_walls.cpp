@@ -123,7 +123,7 @@ void GLWall::PutWall(bool translucent)
 		4,		//RENDERWALL_COLORLAYER        // color layer needs special handling
 	};
 	
-	if (gltexture && gltexture->GetTransparent())
+	if (gltexture && gltexture->GetTransparent() && passflag[type] == 2)
 	{
 		translucent = true;
 	}
@@ -1493,7 +1493,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
-	if (seg->linedef-lines==14)
+	if (seg->linedef-lines==11274)
 		__asm nop
 #endif
 #endif

@@ -57,6 +57,7 @@
 
 EXTERN_CVAR (Bool, r_drawplayersprites)
 EXTERN_CVAR(Float, transsouls)
+EXTERN_CVAR (Bool, st_scale)
 
 
 //==========================================================================
@@ -113,7 +114,7 @@ void FGLRenderer::DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed
 	texturemid = (100<<FRACBITS) - (sy-(tex->GetScaledTopOffset(GLUSE_PATCH)<<FRACBITS));
 
 	AWeapon * wi=player->ReadyWeapon;
-	if (wi && wi->YAdjust && screenblocks>=11) texturemid -= wi->YAdjust;
+	if (wi && wi->YAdjust && screenblocks>=11 && !st_scale) texturemid -= wi->YAdjust;
 
 	scale = ((SCREENHEIGHT*vw)/SCREENWIDTH) / 200.0f;    
 	y1=viewwindowy+(vh>>1)-(int)(((float)texturemid/(float)FRACUNIT)*scale);

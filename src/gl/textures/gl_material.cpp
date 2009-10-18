@@ -567,6 +567,7 @@ FMaterial::FMaterial(FTexture * tx, bool forceexpand)
 	wti.scaley = tx->yScale/(float)FRACUNIT;
 	if (tx->bHasCanvas) wti.scaley=-wti.scaley;
 
+	FTexture *basetex;
 	if (!expanded)
 	{
 		// check if the texture is just a simple redirect to a patch
@@ -575,13 +576,13 @@ FMaterial::FMaterial(FTexture * tx, bool forceexpand)
 		// be expanded at the edges this may not be done though.
 		// Warping can be ignored with SM4 because it's always done
 		// by shader
-		tex = tx->GetRedirect(gl.shadermodel < 4);
+		basetex = tx->GetRedirect(gl.shadermodel < 4);
 	}
 	else 
 	{
 		// a little adjustment to make sprites look better with texture filtering:
 		// create a 1 pixel wide empty frame around them.
-		tex = tx;
+		basetex = tx;
 		RenderWidth[GLUSE_PATCH]+=2;
 		RenderHeight[GLUSE_PATCH]+=2;
 		Width[GLUSE_PATCH]+=2;
@@ -591,12 +592,14 @@ FMaterial::FMaterial(FTexture * tx, bool forceexpand)
 	}
 
 	// make sure the system texture is valid
-	mBaseLayer = ValidateSysTexture(tex, expanded);
+	mBaseLayer = ValidateSysTexture(basetex, expanded);
 
 	mTextureLayers.ShrinkToFit();
 	mMaxBound = -1;
 	mMaterials.Push(this);
 	tx->gl_info.Material = this;
+	if (tx->bHasCanvas) tx->gl_info.mIsTransparent = 0;
+	tex = tx;
 }
 
 //===========================================================================
@@ -638,18 +641,18 @@ const WorldTextureInfo *FMaterial::Bind(int cm, int clampmode, int translation)
 	{
 		for(unsigned i=0;i<mTextureLayers.Size();i++)
 		{
-			FTexture *tex;
+			FTexture *layer;
 			if (mTextureLayers[i].animated)
 			{
 				FTextureID id = mTextureLayers[i].texture->GetID();
-				tex = TexMan(id);
-				ValidateSysTexture(tex, false);
+				layer = TexMan(id);
+				ValidateSysTexture(layer, false);
 			}
 			else
 			{
-				tex = mTextureLayers[i].texture;
+				layer = mTextureLayers[i].texture;
 			}
-			tex->gl_info.SystemTexture->Bind(i+1, CM_DEFAULT, clampmode, 0, allowhires, false);
+			layer->gl_info.SystemTexture->Bind(i+1, CM_DEFAULT, clampmode, 0, allowhires, false);
 			maxbound = i+1;
 		}
 	}
