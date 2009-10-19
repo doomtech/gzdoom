@@ -83,10 +83,10 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(int width, int height, int bits, int refres
 	ScreenshotBuffer = NULL;
 	LastCamera = NULL;
 
-	DoSetGamma();
-
 	InitializeState();
 	gl_GenerateGlobalBrightmapFromColormap();
+	DoSetGamma();
+	needsetgamma = true;
 }
 
 OpenGLFrameBuffer::~OpenGLFrameBuffer()
@@ -193,6 +193,11 @@ void OpenGLFrameBuffer::Update()
 	Finish.Clock();
 	gl.Finish();
 	Finish.Unclock();
+	if (needsetgamma) 
+	{
+		DoSetGamma();
+		needsetgamma = false;
+	}
 	gl.SwapBuffers();
 	Unlock();
 }
