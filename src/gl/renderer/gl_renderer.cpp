@@ -516,6 +516,7 @@ void FGLRenderer::FlatFill (int left, int top, int right, int bottom, FTexture *
 	}
 	gl_RenderState.Apply();
 	gl.Begin(GL_TRIANGLE_STRIP);
+	gl.Color4f(1, 1, 1, 1);
 	gl.TexCoord2f(fU1, fV1); gl.Vertex2f(left, top);
 	gl.TexCoord2f(fU1, fV2); gl.Vertex2f(left, bottom);
 	gl.TexCoord2f(fU2, fV1); gl.Vertex2f(right, top);
