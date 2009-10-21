@@ -79,7 +79,7 @@ public:
 	int HiresLump;
 
 private:
-	FHardwareTexture *gltexture;
+	FHardwareTexture *gltexture[5];
 	FHardwareTexture *glpatch;
 
 	int currentwarp;
@@ -91,7 +91,8 @@ private:
 	unsigned char * LoadHiresTexture(int *width, int *height, int cm);
 	BYTE *WarpBuffer(BYTE *buffer, int Width, int Height, int warp);
 
-	bool CreateTexture();
+	FHardwareTexture *CreateTexture(int clampmode);
+	//bool CreateTexture();
 	bool CreatePatch();
 
 	const FHardwareTexture *Bind(int texunit, int cm, int clamp, int translation, bool allowhires, int warp);
@@ -148,6 +149,7 @@ public:
 	
 	FMaterial(FTexture *tex, bool forceexpand);
 	~FMaterial();
+	void Precache();
 
 	const WorldTextureInfo * Bind(int cm, int clamp=0, int translation=0);
 	const PatchTextureInfo * BindPatch(int cm, int translation=0);

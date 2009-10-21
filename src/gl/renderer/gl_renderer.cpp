@@ -187,28 +187,6 @@ void FGLRenderer::FlushTextures()
 //
 //===========================================================================
 
-void FGLRenderer::PrecacheTexture(FTexture *tex)
-{
-	FMaterial * gltex = FMaterial::ValidateTexture(tex);
-	if (gltex) 
-	{
-		if (tex->UseType==FTexture::TEX_Sprite) 
-		{
-			gltex->BindPatch(CM_DEFAULT, 0);
-		}
-		else 
-		{
-			gltex->Bind (CM_DEFAULT, 0, 0);
-		}
-	}
-}
-
-//===========================================================================
-// 
-//
-//
-//===========================================================================
-
 bool FGLRenderer::StartOffscreen()
 {
 	if (gl.flags & RFL_FRAMEBUFFER)
@@ -232,18 +210,6 @@ void FGLRenderer::EndOffscreen()
 	{
 		gl.BindFramebuffer(GL_FRAMEBUFFER, 0); 
 	}
-}
-
-//===========================================================================
-// 
-//
-//
-//===========================================================================
-
-void FGLRenderer::UncacheTexture(FTexture *tex)
-{
-	FMaterial * gltex = FMaterial::ValidateTexture(tex);
-	if (gltex) gltex->Clean(true); 
 }
 
 //===========================================================================

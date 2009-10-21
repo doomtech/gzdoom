@@ -314,7 +314,8 @@ void FTexture::PrecacheGL()
 {
 	if (gl_precache)
 	{
-		GLRenderer->PrecacheTexture(this);
+		FMaterial * gltex = FMaterial::ValidateTexture(this);
+		if (gltex) gltex->Precache();
 	}
 }
 
@@ -326,7 +327,7 @@ void FTexture::PrecacheGL()
 
 void FTexture::UncacheGL()
 {
-	GLRenderer->UncacheTexture(this);
+	if (gl_info.Material) gl_info.Material->Clean(true); 
 }
 
 //==========================================================================

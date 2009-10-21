@@ -83,7 +83,7 @@ FGLTexture::FGLTexture(FTexture * tx, bool expandpatches)
 	tex = tx;
 
 	glpatch=NULL;
-	gltexture=NULL;
+	for(int i=0;i<5;i++) gltexture[i]=NULL;
 	HiresLump=-1;
 	hirestexture = NULL;
 	currentwarp = 0;
@@ -164,13 +164,16 @@ unsigned char *FGLTexture::LoadHiresTexture(int *width, int *height, int cm)
 
 void FGLTexture::Clean(bool all)
 {
-	if (gltexture) 
+	for(int i=0;i<5;i++)
 	{
-		if (!all) gltexture->Clean(false);
-		else
+		if (gltexture[i]) 
 		{
-			delete gltexture;
-			gltexture=NULL;
+			if (!all) gltexture[i]->Clean(false);
+			else
+			{
+				delete gltexture[i];
+				gltexture[i]=NULL;
+			}
 		}
 	}
 	if (glpatch) 
@@ -350,12 +353,14 @@ unsigned char * FGLTexture::CreateTexBuffer(int _cm, int translation, int & w, i
 //
 //===========================================================================
 
-bool FGLTexture::CreateTexture()
+FHardwareTexture *FGLTexture::CreateTexture(int clampmode)
 {
-	if (tex->UseType==FTexture::TEX_Null) return false;		// Cannot register a NULL texture
-	if (!gltexture) gltexture=new FHardwareTexture(tex->GetWidth(), tex->GetHeight(), true, true);
-	if (gltexture) return true; 	
-	return false;
+	if (tex->UseType==FTexture::TEX_Null) return NULL;		// Cannot register a NULL texture
+	if (!gltexture[clampmode]) 
+	{
+		gltexture[clampmode] = new FHardwareTexture(tex->GetWidth(), tex->GetHeight(), true, true);
+	}
+	return gltexture[clampmode]; 
 }
 
 //===========================================================================
@@ -375,6 +380,7 @@ bool FGLTexture::CreatePatch()
 	return false;
 }
 
+
 //===========================================================================
 // 
 //	Binds a texture to the renderer
@@ -390,17 +396,35 @@ const FHardwareTexture *FGLTexture::Bind(int texunit, int cm, int clampmode, int
 	else if (translation == TRANSLATION(TRANSLATION_Standard, 7)) translation = CM_ICE;
 	else translation = GLTranslationPalette::GetInternalTranslation(translation);
 
-	if (CreateTexture())
+	FHardwareTexture *hwtex;
+	
+	if (gltexture[4] != NULL && clampmode < 4 && gltexture[clampmode] == NULL)
+	{
+		hwtex = gltexture[clampmode] = gltexture[4];
+		gltexture[4] = NULL;
+
+		if (hwtex->Bind(texunit, cm, translation))
+		{
+			gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (clampmode & GLT_CLAMPX)? GL_CLAMP_TO_EDGE : GL_REPEAT);
+			gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (clampmode & GLT_CLAMPY)? GL_CLAMP_TO_EDGE : GL_REPEAT);
+		}
+	}
+	else
+	{
+		hwtex = CreateTexture(clampmode);
+	}
+
+	if (hwtex)
 	{
 		if (warp != 0 || currentwarp != warp)
 		{
 			// must recreate the texture
 			Clean(true);
-			CreateTexture();
+			hwtex = CreateTexture(clampmode);
 		}
 
 		// Bind it to the system.
-		if (!gltexture->Bind(texunit, cm, translation, clampmode))
+		if (!hwtex->Bind(texunit, cm, translation))
 		{
 			
 			int w, h;
@@ -413,18 +437,19 @@ const FHardwareTexture *FGLTexture::Bind(int texunit, int cm, int clampmode, int
 				buffer = CreateTexBuffer(cm, translation, w, h, false, allowhires, warp);
 				tex->ProcessData(buffer, w, h, false);
 			}
-			if (!gltexture->CreateTexture(buffer, w, h, true, texunit, cm, translation)) 
+			if (!hwtex->CreateTexture(buffer, w, h, true, texunit, cm, translation)) 
 			{
 				// could not create texture
 				delete buffer;
 				return NULL;
 			}
+			gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (clampmode & GLT_CLAMPX)? GL_CLAMP_TO_EDGE : GL_REPEAT);
+			gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (clampmode & GLT_CLAMPY)? GL_CLAMP_TO_EDGE : GL_REPEAT);
 			delete buffer;
 		}
-		gltexture->SetTextureClamp(clampmode);
 
 		if (tex->bHasCanvas) static_cast<FCanvasTexture*>(tex)->NeedUpdate();
-		return gltexture; 
+		return hwtex; 
 	}
 	return NULL;
 }
@@ -454,7 +479,7 @@ const FHardwareTexture * FGLTexture::BindPatch(int texunit, int cm, int translat
 		}
 
 		// Bind it to the system. 
-		if (!glpatch->Bind(texunit, cm, translation, -1))
+		if (!glpatch->Bind(texunit, cm, translation))
 		{
 			int w, h;
 
@@ -468,9 +493,6 @@ const FHardwareTexture * FGLTexture::BindPatch(int texunit, int cm, int translat
 				return NULL;
 			}
 			delete buffer;
-		}
-		if (gl_render_precise)
-		{
 			gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		}
@@ -478,7 +500,6 @@ const FHardwareTexture * FGLTexture::BindPatch(int texunit, int cm, int translat
 	}
 	return NULL;
 }
-
 
 //===========================================================================
 //
@@ -621,6 +642,8 @@ FMaterial::~FMaterial()
 
 }
 
+
+
 //===========================================================================
 // 
 //	Binds a texture to the renderer
@@ -635,6 +658,10 @@ const WorldTextureInfo *FMaterial::Bind(int cm, int clampmode, int translation)
 	bool allowhires = wti.scaley==1.0 && wti.scaley==1.0;
 
 	int softwarewarp = gl_RenderState.SetupShader(tex->bHasCanvas, shaderindex, cm, tex->gl_info.shaderspeed);
+
+	if (tex->bHasCanvas) clampmode = 0;
+	else if (clampmode != -1) clampmode &= 3;
+	else clampmode = 4;
 
 	wti.gltexture = mBaseLayer->Bind(0, cm, clampmode, translation, allowhires, softwarewarp);
 	if (wti.gltexture != NULL && shaderindex > 0)
@@ -698,6 +725,32 @@ const PatchTextureInfo * FMaterial::BindPatch(int cm, int translation)
 
 
 //===========================================================================
+//
+//
+//
+//===========================================================================
+void FMaterial::Precache()
+{
+	if (tex->UseType==FTexture::TEX_Sprite) 
+	{
+		BindPatch(CM_DEFAULT, 0);
+	}
+	else 
+	{
+		int cached = 0;
+		for(int i=0;i<4;i++)
+		{
+			if (mBaseLayer->gltexture[i] != 0)
+			{
+				Bind (CM_DEFAULT, i, 0);
+				cached++;
+			}
+			if (cached == 0) Bind(CM_DEFAULT, -1, 0);
+		}
+	}
+}
+
+//===========================================================================
 // 
 //
 //
@@ -705,9 +758,17 @@ const PatchTextureInfo * FMaterial::BindPatch(int cm, int translation)
 
 const WorldTextureInfo *FMaterial::GetWorldTextureInfo()
 {
-	if (mBaseLayer->CreateTexture())
+	for(int i=0;i<5;i++)
 	{
-		wti.gltexture = mBaseLayer->gltexture;
+		if (mBaseLayer->gltexture[i])
+		{
+			wti.gltexture = mBaseLayer->gltexture[i];
+			return &wti;
+		}
+	}
+	if (mBaseLayer->CreateTexture(4))
+	{
+		wti.gltexture = mBaseLayer->gltexture[4];
 		return &wti;
 	}
 	return NULL;
@@ -846,7 +907,7 @@ void FMaterial::BindToFrameBuffer()
 		mBaseLayer->Bind(0, CM_DEFAULT, 0, 0, false, false);
 		FHardwareTexture::Unbind(0);
 	}
-	mBaseLayer->gltexture->BindToFrameBuffer();
+	mBaseLayer->gltexture[0]->BindToFrameBuffer();
 }
 
 //===========================================================================

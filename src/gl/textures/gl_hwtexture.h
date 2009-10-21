@@ -69,10 +69,9 @@ public:
 
 	void BindToFrameBuffer();
 
-	unsigned int Bind(int texunit, int cm, int translation=0, int clampmode = -1);
+	unsigned int Bind(int texunit, int cm, int translation=0);
 	unsigned int CreateTexture(unsigned char * buffer, int w, int h,bool wrap, int texunit, int cm, int translation=0);
 	void Resize(int _width, int _height) ;
-	void SetTextureClamp(int clampmode);
 
 	void Clean(bool all);
 
