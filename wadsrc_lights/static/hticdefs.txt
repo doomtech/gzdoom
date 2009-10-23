@@ -721,7 +721,7 @@ pointlight REDAXE
 
 flickerlight REDAXE_X1
 {
-    color 7.0 0.0 0.0
+    color 0.7 0.0 0.0
     size 32
     secondarySize 48
     chance 0.3
@@ -729,7 +729,7 @@ flickerlight REDAXE_X1
 
 flickerlight REDAXE_X2
 {
-    color 4.0 0.0 0.0
+    color 0.4 0.0 0.0
     size 48
     secondarySize 56
     chance 0.3
@@ -737,7 +737,7 @@ flickerlight REDAXE_X2
 
 flickerlight REDAXE_X3
 {
-    color 2.0 0.0 0.0
+    color 0.2 0.0 0.0
     size 56
     secondarySize 64
     chance 0.3
@@ -829,10 +829,10 @@ flickerlight IRONLICH4
 
 object Ironlich
 {
-    frame HEADD { light IRONLICH1 }
-    frame HEADE { light IRONLICH2 }
-    frame HEADF { light IRONLICH3 }
-    frame HEADG { light IRONLICH4 }
+    frame LICHD { light IRONLICH1 }
+    frame LICHE { light IRONLICH2 }
+    frame LICHF { light IRONLICH3 }
+    frame LICHG { light IRONLICH4 }
 }
 
 // IronLich frost ball
