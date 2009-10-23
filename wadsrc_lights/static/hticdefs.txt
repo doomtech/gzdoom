@@ -221,16 +221,12 @@ pointlight CLAWPUFF4
     size 8
 }
 
-object BlasterPuff1
+object BlasterPuff
 {
     frame FX17A { light CLAWPUFF1 }
     frame FX17B { light CLAWPUFF2 }
     frame FX17C { light CLAWPUFF3 }
     frame FX17D { light CLAWPUFF4 }
-}
-
-object BlasterPuff2
-{
     frame FX17F { light CLAWPUFF1 }
     frame FX17G { light CLAWPUFF2 }
     frame FX17H { light CLAWPUFF3 }
