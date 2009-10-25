@@ -626,7 +626,7 @@ struct sector_t
 
 	sector_t *GetHeightSec() const 
 	{
-		return (MoreFlags & SECF_IGNOREHEIGHTSEC)? NULL : heightsec;
+		return (heightsec && !(heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC))? heightsec : NULL;
 	}
 
 	void ChangeLightLevel(int newval)
