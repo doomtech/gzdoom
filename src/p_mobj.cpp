@@ -60,7 +60,6 @@
 #include "colormatcher.h"
 #include "v_palette.h"
 #include "p_enemy.h"
-#include "gl/gl_functions.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -86,7 +85,6 @@ EXTERN_CVAR (Int,  cl_rockettrails)
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
-static bool SpawningMapThing;
 static FRandom pr_explodemissile ("ExplodeMissile");
 FRandom pr_bounce ("Bounce");
 static FRandom pr_reflect ("Reflect");
@@ -315,7 +313,13 @@ void AActor::Serialize (FArchive &arc)
 		arc << DamageFactor;
 	}
 
-	for(int i=0; i<10; i++) arc << uservar[i];
+	// Skip past uservar array in old savegames
+	if (SaveVersion < 1933)
+	{
+		int foo;
+		for (int i = 0; i < 10; ++i)
+			arc << foo;
+	}
 
 	if (arc.IsStoring ())
 	{
@@ -555,7 +559,7 @@ bool AActor::SetState (FState *newstate)
 		newstate = newstate->GetNextState();
 	} while (tics == 0);
 
-	gl_SetActorLights(this);
+	screen->StateChanged(this);
 	return true;
 }
 
@@ -615,7 +619,7 @@ bool AActor::SetStateNF (FState *newstate)
 		newstate = newstate->GetNextState();
 	} while (tics == 0);
 
-	gl_SetActorLights(this);
+	screen->StateChanged(this);
 	return true;
 }
 
@@ -3456,7 +3460,7 @@ bool AActor::UpdateWaterLevel (fixed_t oldz, bool dosplash)
 //
 //==========================================================================
 
-AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t iz, replace_t allowreplacement)
+AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t iz, replace_t allowreplacement, bool SpawningMapThing)
 {
 	if (type == NULL)
 	{
@@ -3620,10 +3624,7 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 	{
 		level.total_items++;
 	}
-	bool smt = SpawningMapThing;
-	SpawningMapThing = false;
-	gl_SetActorLights(actor);
-	SpawningMapThing = smt;
+	screen->StateChanged(actor);
 	return actor;
 }
 
@@ -3739,15 +3740,6 @@ void AActor::Deactivate (AActor *activator)
 			}
 		}
 	}
-}
-
-size_t AActor::PropagateMark()
-{
-	for (unsigned i=0; i<dynamiclights.Size(); i++)
-	{
-		GC::Mark(dynamiclights[i]);
-	}
-	return Super::PropagateMark();
 }
 
 //
@@ -4349,9 +4341,7 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 	else
 		z = ONFLOORZ;
 
-	SpawningMapThing = true;
-	mobj = Spawn (i, x, y, z, NO_REPLACE);
-	SpawningMapThing = false;
+	mobj = AActor::StaticSpawn (i, x, y, z, NO_REPLACE, true);
 
 	if (z == ONFLOORZ)
 		mobj->z += mthing->z;

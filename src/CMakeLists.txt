@@ -739,6 +739,7 @@ add_executable( zdoom WIN32
 	gl/textures/gl_cameratexture.cpp
 	gl/textures/gl_translate.cpp
 	gl/textures/gl_hqresize.cpp
+	gl/textures/gl_skyboxtexture.cpp
 	gl/scene/gl_bsp.cpp
 	gl/scene/gl_fakeflat.cpp
 	gl/scene/gl_clipper.cpp

@@ -548,7 +548,7 @@ public:
 
 	void Serialize (FArchive &arc);
 
-	static AActor *StaticSpawn (const PClass *type, fixed_t x, fixed_t y, fixed_t z, replace_t allowreplacement);
+	static AActor *StaticSpawn (const PClass *type, fixed_t x, fixed_t y, fixed_t z, replace_t allowreplacement, bool SpawningMapThing = false);
 
 	inline AActor *GetDefault () const
 	{
@@ -790,7 +790,6 @@ public:
 	int				tid;			// thing identifier
 	int				special;		// special
 	int				args[5];		// special arguments
-	int				uservar[10];		// user variables, accessible by DECORATE and ACS
 
 	AActor			*inext, **iprev;// Links to other mobjs in same bucket
 	TObjPtr<AActor> goal;			// Monster's goal if not chasing anything

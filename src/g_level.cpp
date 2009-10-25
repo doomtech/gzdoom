@@ -84,9 +84,6 @@
 #include "g_hub.h"
 
 
-
-#include "gl/gl_functions.h"
-
 #ifndef STAT
 #define STAT_NEW(map)
 #define STAT_END(newl)
@@ -695,8 +692,6 @@ void G_DoCompleted (void)
 {
 	int i; 
 
-	gl_DeleteAllAttachedLights();
-
 	gameaction = ga_nothing;
 
 	if (gamestate == GS_TITLELEVEL)
@@ -1206,7 +1201,6 @@ void G_FinishTravel ()
 			pawndup->Destroy ();
 			pawn->LinkToWorld ();
 			pawn->AddToHash ();
-			pawn->dynamiclights.Clear();	// remove all dynamic lights from the previous level
 			pawn->SetState(pawn->SpawnState);
 
 			for (inv = pawn->Inventory; inv != NULL; inv = inv->Inventory)
@@ -1214,7 +1208,6 @@ void G_FinishTravel ()
 				inv->ChangeStatNum (STAT_INVENTORY);
 				inv->LinkToWorld ();
 				inv->Travelled ();
-				inv->dynamiclights.Clear();	// remove all dynamic lights from the previous level
 			}
 			if (ib_compatflags & BCOMPATF_RESETPLAYERSPEED)
 			{
@@ -1411,7 +1404,7 @@ void G_SerializeLevel (FArchive &arc, bool hubLoad)
 {
 	int i = level.totaltime;
 	
-	gl_DeleteAllAttachedLights();
+	screen->StartSerialize(arc);
 
 	arc << level.flags
 		<< level.flags2
@@ -1530,7 +1523,7 @@ void G_SerializeLevel (FArchive &arc, bool hubLoad)
 			}
 		}
 	}
-	gl_RecreateAllAttachedLights();
+	screen->EndSerialize(arc);
 	STAT_SAVE(arc, hubLoad);
 }
 

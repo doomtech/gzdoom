@@ -59,6 +59,7 @@
 #include "gl/textures/gl_translate.h"
 #include "gl/utility/gl_clock.h"
 #include "gl/utility/gl_templates.h"
+#include "gl/gl_functions.h"
 
 IMPLEMENT_CLASS(OpenGLFrameBuffer)
 EXTERN_CVAR (Float, vid_brightness)
@@ -332,6 +333,47 @@ void OpenGLFrameBuffer::PrecacheTexture(FTexture *tex, int cache)
 	}
 }
 
+
+//==========================================================================
+//
+// DFrameBuffer :: StateChanged
+//
+//==========================================================================
+
+void OpenGLFrameBuffer::StateChanged(AActor *actor)
+{
+	gl_SetActorLights(actor);
+}
+
+//===========================================================================
+//
+// notify the renderer that serialization of the curent level is about to start/end
+//
+//===========================================================================
+
+void OpenGLFrameBuffer::StartSerialize(FArchive &arc)
+{
+	gl_DeleteAllAttachedLights();
+}
+
+void OpenGLFrameBuffer::EndSerialize(FArchive &arc)
+{
+	gl_RecreateAllAttachedLights();
+}
+
+//===========================================================================
+//
+// Get max. view angle (renderer specific information so it goes here now)
+//
+//===========================================================================
+
+EXTERN_CVAR(Float, maxviewpitch)
+
+int OpenGLFrameBuffer::GetMaxViewPitch(bool down)
+{
+	if (netgame) return Super::GetMaxViewPitch(down);
+	else return (down? maxviewpitch : -maxviewpitch) * ANGLE_1;
+}
 
 //==========================================================================
 //

@@ -60,6 +60,7 @@
 #include "gl/utility/gl_clock.h"
 #include "gl/utility/gl_convert.h"
 #include "gl/shaders/gl_shader.h"
+#include "gl/gl_functions.h"
 
 GLRenderSettings glset;
 long gl_frameMS;

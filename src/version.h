@@ -105,6 +105,8 @@ static inline const char *MakeSaveSig()
 #define SAVESIG			"ZDOOMSAVE"ZD_SVN_REVISION_STRING
 #endif
 
+#define DYNLIGHT
+
 // This is so that derivates can use the same savegame versions without worrying about engine compatibility
 #define GAMESIG "GZDOOM"
 #define BASEWAD "gzdoom.pk3"
