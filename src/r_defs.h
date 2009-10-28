@@ -960,7 +960,6 @@ enum slopetype_t
 	ST_NEGATIVE
 };
 
-
 struct line_t
 {
 	vertex_t	*v1, *v2;	// vertices, from v1 to v2
