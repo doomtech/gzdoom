@@ -270,7 +270,12 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 			try
 			{
 				FString str = shaderdefines[i];
-				if (i>3 && gl.MaxLights() == 128) str << "#define MAXLIGHTS128\n";
+				if (i>3)
+				{
+					// this can't be in the shader code due to ATI strangeness.
+					str << "#version 120\n#extension GL_EXT_gpu_shader4 : enable\n";
+					if (gl.MaxLights() == 128) str << "#define MAXLIGHTS128\n";
+				}
 				shader[i] = new FShader;
 				if (!shader[i]->Load(name, "shaders/glsl/main.vp", "shaders/glsl/main.fp", ShaderPath, str.GetChars()))
 				{
