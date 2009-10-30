@@ -337,20 +337,23 @@ void FVertexBuffer::BindVBO()
 
 void FVertexBuffer::CheckPlanes(sector_t *sector)
 {
-	if (sector->GetPlaneTexZ(sector_t::ceiling) != sector->vboheight[sector_t::ceiling])
+	if (gl.flags & RFL_MAP_BUFFER_RANGE)
 	{
-		if (sector->ceilingdata == NULL) // only update if there's no thinker attached
+		if (sector->GetPlaneTexZ(sector_t::ceiling) != sector->vboheight[sector_t::ceiling])
 		{
-			UpdatePlaneVertices(sector, sector_t::ceiling);
-			sector->vboheight[sector_t::ceiling] = sector->GetPlaneTexZ(sector_t::ceiling);
+			if (sector->ceilingdata == NULL) // only update if there's no thinker attached
+			{
+				UpdatePlaneVertices(sector, sector_t::ceiling);
+				sector->vboheight[sector_t::ceiling] = sector->GetPlaneTexZ(sector_t::ceiling);
+			}
 		}
-	}
-	if (sector->GetPlaneTexZ(sector_t::floor) != sector->vboheight[sector_t::floor])
-	{
-		if (sector->floordata == NULL) // only update if there's no thinker attached
+		if (sector->GetPlaneTexZ(sector_t::floor) != sector->vboheight[sector_t::floor])
 		{
-			UpdatePlaneVertices(sector, sector_t::floor);
-			sector->vboheight[sector_t::floor] = sector->GetPlaneTexZ(sector_t::floor);
+			if (sector->floordata == NULL) // only update if there's no thinker attached
+			{
+				UpdatePlaneVertices(sector, sector_t::floor);
+				sector->vboheight[sector_t::floor] = sector->GetPlaneTexZ(sector_t::floor);
+			}
 		}
 	}
 }

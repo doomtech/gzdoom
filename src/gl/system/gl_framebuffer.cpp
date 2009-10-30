@@ -168,7 +168,7 @@ void OpenGLFrameBuffer::InitializeState()
 // Updates the screen
 //
 //==========================================================================
-CVAR(Bool, gl_draw_synchronized, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR(Bool, gl_draw_synchronized, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 void OpenGLFrameBuffer::Update()
 {
@@ -193,6 +193,7 @@ void OpenGLFrameBuffer::Update()
 	Finish.Reset();
 	Finish.Clock();
 	if (gl_draw_synchronized) gl.Finish();
+	else gl.Flush();
 	if (needsetgamma) 
 	{
 		DoSetGamma();
