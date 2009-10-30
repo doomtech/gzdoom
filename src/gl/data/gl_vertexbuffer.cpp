@@ -359,7 +359,8 @@ void FVertexBuffer::CheckPlanes(sector_t *sector)
 //
 // checks the validity of all planes attached to this sector
 // and updates them if possible. Anything moving will not be
-// updated unless it stops.
+// updated unless it stops. This is to ensure that we never
+// have to synchronize with the rendering process.
 //
 //==========================================================================
 
