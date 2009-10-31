@@ -546,7 +546,7 @@ void FGLRenderer::RenderTranslucent()
 // stencil, z-buffer and the projection matrix intact!
 //
 //-----------------------------------------------------------------------------
-EXTERN_CVAR(Bool, gl_draw_synchronized)
+EXTERN_CVAR(Bool, gl_draw_sync)
 
 void FGLRenderer::DrawScene(bool toscreen)
 {
@@ -556,7 +556,7 @@ void FGLRenderer::DrawScene(bool toscreen)
 
 	// Up to this point in the main draw call no rendering is performed so we can wait
 	// with swapping the render buffer until now.
-	if (!gl_draw_synchronized && toscreen)
+	if (!gl_draw_sync && toscreen)
 	{
 		All.Unclock();
 		static_cast<OpenGLFrameBuffer*>(screen)->Swap();
