@@ -55,6 +55,7 @@
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_lightdata.h"
 #include "gl/data/gl_data.h"
+#include "gl/textures/gl_hwtexture.h"
 #include "gl/textures/gl_texture.h"
 #include "gl/textures/gl_translate.h"
 #include "gl/utility/gl_clock.h"
@@ -169,7 +170,9 @@ void OpenGLFrameBuffer::InitializeState()
 // Updates the screen
 //
 //==========================================================================
-CVAR(Bool, gl_draw_sync, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+
+// Testing only for now. 
+CVAR(Bool, gl_draw_sync, true, 0) //false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 void OpenGLFrameBuffer::Update()
 {
@@ -213,12 +216,13 @@ void OpenGLFrameBuffer::Swap()
 	gl.Finish();
 	if (needsetgamma) 
 	{
-		DoSetGamma();
+		//DoSetGamma();
 		needsetgamma = false;
 	}
 	gl.SwapBuffers();
 	Finish.Unclock();
 	swapped = true;
+	FHardwareTexture::UnbindAll();
 }
 
 //===========================================================================

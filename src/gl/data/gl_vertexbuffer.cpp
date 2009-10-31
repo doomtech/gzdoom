@@ -59,6 +59,8 @@ FVertexBuffer::FVertexBuffer()
 {
 	const char *c = Args->CheckValue("-vbo");
 	if (c) vbo_arg = strtol(c, NULL, 0);
+	// some ATI cards have problems with the VBO update.
+	else if (!(gl.flags & RFL_NVIDIA) && gl.shadermodel < 4) vbo_arg = 1;	
 	vbo_id = 0;
 	map = NULL;
 	if (gl.flags&RFL_VBO && vbo_arg > 0)
