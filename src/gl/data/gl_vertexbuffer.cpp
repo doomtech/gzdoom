@@ -41,12 +41,13 @@
 #include "gl/system/gl_system.h"
 #include "doomtype.h"
 #include "p_local.h"
+#include "m_argv.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/data/gl_data.h"
 #include "gl/data/gl_vertexbuffer.h"
 
 
-
+int vbo_arg = 2;
 
 //==========================================================================
 //
@@ -56,9 +57,11 @@
 
 FVertexBuffer::FVertexBuffer()
 {
+	const char *c = Args->CheckValue("-vbo");
+	if (c) vbo_arg = strtol(c, NULL, 0);
 	vbo_id = 0;
 	map = NULL;
-	if (gl.flags&RFL_VBO)
+	if (gl.flags&RFL_VBO && vbo_arg > 0)
 	{
 		gl.GenBuffers(1, &vbo_id);
 	}
@@ -67,7 +70,7 @@ FVertexBuffer::FVertexBuffer()
 FVertexBuffer::~FVertexBuffer()
 {
 	UnmapVBO();
-	if (gl.flags&RFL_VBO)
+	if (vbo_id != 0)
 	{
 		gl.DeleteBuffers(1, &vbo_id);
 	}
@@ -337,7 +340,7 @@ void FVertexBuffer::BindVBO()
 
 void FVertexBuffer::CheckPlanes(sector_t *sector)
 {
-	if (gl.flags & RFL_MAP_BUFFER_RANGE)
+	if (vbo_arg == 2)
 	{
 		if (sector->GetPlaneTexZ(sector_t::ceiling) != sector->vboheight[sector_t::ceiling])
 		{
