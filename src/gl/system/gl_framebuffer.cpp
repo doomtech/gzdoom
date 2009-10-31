@@ -88,6 +88,7 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(int width, int height, int bits, int refres
 	gl_GenerateGlobalBrightmapFromColormap();
 	DoSetGamma();
 	needsetgamma = true;
+	swapped = false;
 }
 
 OpenGLFrameBuffer::~OpenGLFrameBuffer()
@@ -168,7 +169,7 @@ void OpenGLFrameBuffer::InitializeState()
 // Updates the screen
 //
 //==========================================================================
-CVAR(Bool, gl_draw_synchronized, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+CVAR(Bool, gl_draw_sync, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 void OpenGLFrameBuffer::Update()
 {
@@ -190,10 +191,26 @@ void OpenGLFrameBuffer::Update()
 
 		Begin2D(false);
 	}
+	if (gl_draw_sync || !swapped)
+	{
+		Swap();
+	}
+	swapped = false;
+	Unlock();
+}
+
+
+//==========================================================================
+//
+// Swap the buffers
+//
+//==========================================================================
+
+void OpenGLFrameBuffer::Swap()
+{
 	Finish.Reset();
 	Finish.Clock();
-	if (gl_draw_synchronized) gl.Finish();
-	else gl.Flush();
+	gl.Finish();
 	if (needsetgamma) 
 	{
 		DoSetGamma();
@@ -201,8 +218,7 @@ void OpenGLFrameBuffer::Update()
 	}
 	gl.SwapBuffers();
 	Finish.Unclock();
-
-	Unlock();
+	swapped = true;
 }
 
 //===========================================================================
