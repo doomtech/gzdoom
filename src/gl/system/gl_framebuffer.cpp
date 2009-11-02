@@ -65,6 +65,7 @@
 IMPLEMENT_CLASS(OpenGLFrameBuffer)
 EXTERN_CVAR (Float, vid_brightness)
 EXTERN_CVAR (Float, vid_contrast)
+EXTERN_CVAR (Bool, vid_vsync)
 
 void gl_SetupMenu();
 
