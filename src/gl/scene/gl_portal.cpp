@@ -846,10 +846,10 @@ void GLHorizonPortal::DrawContents()
 
 
 	gltexture->Bind(origin->colormap.colormap);
-	gl_SetPlaneTextureRotation(sp, gltexture);
+	bool pushed = gl_SetPlaneTextureRotation(sp, gltexture);
 
-	gl.Disable(GL_ALPHA_TEST);
-	gl.BlendFunc(GL_ONE,GL_ZERO);
+	gl_RenderState.EnableAlphaTest(false);
+	gl_RenderState.BlendFunc(GL_ONE,GL_ZERO);
 	gl_RenderState.Apply();
 
 
@@ -916,8 +916,11 @@ void GLHorizonPortal::DrawContents()
 
 	gl.End();
 
-	gl.MatrixMode(GL_TEXTURE);
-	gl.PopMatrix();
+	if (pushed)
+	{
+		gl.MatrixMode(GL_TEXTURE);
+		gl.PopMatrix();
+	}
 	gl.MatrixMode(GL_MODELVIEW);
 
 	PortalAll.Unclock();

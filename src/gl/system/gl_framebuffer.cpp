@@ -145,8 +145,8 @@ void OpenGLFrameBuffer::InitializeState()
 	gl.Disable(GL_DEPTH_TEST);
 	gl.Enable(GL_TEXTURE_2D);
 	gl.Disable(GL_LINE_SMOOTH);
-	gl.AlphaFunc(GL_GEQUAL,0.5f);
-	gl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glAlphaFunc(GL_GEQUAL,0.5f);
 	gl.Hint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 	gl.Hint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 	gl.Hint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
