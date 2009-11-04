@@ -269,7 +269,7 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 
 			try
 			{
-				FString str
+				FString str;
 				if (i>3)
 				{
 					// this can't be in the shader code due to ATI strangeness.
