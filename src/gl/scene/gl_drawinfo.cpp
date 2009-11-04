@@ -1057,13 +1057,15 @@ void FDrawInfo::DrawFloodedPlane(wallseg * ws, float planez, sector_t * sec, boo
 	gl_SetColor(lightlevel, rel, &Colormap, 1.0f);
 	gl_SetFog(lightlevel, rel, &Colormap, false);
 	gltexture->Bind(Colormap.colormap);
-	bool pushed = gl_SetPlaneTextureRotation(&plane, gltexture);
 
 	float fviewx = TO_GL(viewx);
 	float fviewy = TO_GL(viewy);
 	float fviewz = TO_GL(viewz);
 
 	gl_RenderState.Apply();
+
+	bool pushed = gl_SetPlaneTextureRotation(&plane, gltexture);
+
 	gl.Begin(GL_TRIANGLE_FAN);
 	float prj_fac1 = (planez-fviewz)/(ws->z1-fviewz);
 	float prj_fac2 = (planez-fviewz)/(ws->z2-fviewz);
@@ -1096,10 +1098,9 @@ void FDrawInfo::DrawFloodedPlane(wallseg * ws, float planez, sector_t * sec, boo
 
 	if (pushed)
 	{
-		gl.MatrixMode(GL_TEXTURE);
 		gl.PopMatrix();
+		gl.MatrixMode(GL_MODELVIEW);
 	}
-	gl.MatrixMode(GL_MODELVIEW);
 }
 
 //==========================================================================
