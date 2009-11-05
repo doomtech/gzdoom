@@ -137,6 +137,7 @@ ADD_STAT(rendertimes)
 	int t=I_MSTime();
 	if (t-lasttime>1000) 
 	{
+		buff.Truncate(0);
 		AppendRenderTimes(buff);
 		lasttime=t;
 	}
