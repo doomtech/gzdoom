@@ -329,6 +329,11 @@ DFsVariable *DFsScript::NewVariable(const char *name, int vtype)
 }
 
 
+void DFsScript::NewFunction(const char *name, void (FParser::*handler)() )
+{
+	NewVariable (name, svt_function)->value.handler = handler;
+}
+
 //==========================================================================
 //
 // search a particular script for a variable, which

@@ -4611,11 +4611,6 @@ void FParser::SF_ScriptRunning()
 
 static int zoom=1;	// Dummy - no longer needed!
 
-inline void new_function(const char *name, void (FParser::*handler)() )
-{
-	global_script->NewVariable (name, svt_function)->value.handler = handler;
-}
-
 void init_functions(void)
 {
 	for(unsigned i=0;i<countof(ActorNames_init);i++)
@@ -4623,203 +4618,205 @@ void init_functions(void)
 		ActorTypes[i]=PClass::FindClass(ActorNames_init[i]);
 	}
 
+	DFsScript * gscr = global_script;
+
 	// add all the functions
-	global_script->NewVariable("consoleplayer", svt_pInt)->value.pI = &consoleplayer;
-	global_script->NewVariable("displayplayer", svt_pInt)->value.pI = &consoleplayer;
-	global_script->NewVariable("zoom", svt_pInt)->value.pI = &zoom;
-	global_script->NewVariable("fov", svt_pInt)->value.pI = &zoom;
-	global_script->NewVariable("trigger", svt_pMobj)->value.pMobj = &trigger_obj;
+	gscr->NewVariable("consoleplayer", svt_pInt)->value.pI = &consoleplayer;
+	gscr->NewVariable("displayplayer", svt_pInt)->value.pI = &consoleplayer;
+	gscr->NewVariable("zoom", svt_pInt)->value.pI = &zoom;
+	gscr->NewVariable("fov", svt_pInt)->value.pI = &zoom;
+	gscr->NewVariable("trigger", svt_pMobj)->value.pMobj = &trigger_obj;
 	
 	// important C-emulating stuff
-	new_function("break", &FParser::SF_Break);
-	new_function("continue", &FParser::SF_Continue);
-	new_function("return", &FParser::SF_Return);
-	new_function("goto", &FParser::SF_Goto);
-	new_function("include", &FParser::SF_Include);
+	gscr->NewFunction("break", &FParser::SF_Break);
+	gscr->NewFunction("continue", &FParser::SF_Continue);
+	gscr->NewFunction("return", &FParser::SF_Return);
+	gscr->NewFunction("goto", &FParser::SF_Goto);
+	gscr->NewFunction("include", &FParser::SF_Include);
 	
 	// standard FraggleScript functions
-	new_function("print", &FParser::SF_Print);
-	new_function("rnd", &FParser::SF_Rnd);	// Legacy uses a normal rand() call for this which is extremely dangerous.
-	new_function("prnd", &FParser::SF_Rnd);	// I am mapping rnd and prnd to the same named RNG which should eliminate any problem
-	new_function("input", &FParser::SF_Input);
-	new_function("beep", &FParser::SF_Beep);
-	new_function("clock", &FParser::SF_Clock);
-	new_function("wait", &FParser::SF_Wait);
-	new_function("tagwait", &FParser::SF_TagWait);
-	new_function("scriptwait", &FParser::SF_ScriptWait);
-	new_function("startscript", &FParser::SF_StartScript);
-	new_function("scriptrunning", &FParser::SF_ScriptRunning);
+	gscr->NewFunction("print", &FParser::SF_Print);
+	gscr->NewFunction("rnd", &FParser::SF_Rnd);	// Legacy uses a normal rand() call for this which is extremely dangerous.
+	gscr->NewFunction("prnd", &FParser::SF_Rnd);	// I am mapping rnd and prnd to the same named RNG which should eliminate any problem
+	gscr->NewFunction("input", &FParser::SF_Input);
+	gscr->NewFunction("beep", &FParser::SF_Beep);
+	gscr->NewFunction("clock", &FParser::SF_Clock);
+	gscr->NewFunction("wait", &FParser::SF_Wait);
+	gscr->NewFunction("tagwait", &FParser::SF_TagWait);
+	gscr->NewFunction("scriptwait", &FParser::SF_ScriptWait);
+	gscr->NewFunction("startscript", &FParser::SF_StartScript);
+	gscr->NewFunction("scriptrunning", &FParser::SF_ScriptRunning);
 	
 	// doom stuff
-	new_function("startskill", &FParser::SF_StartSkill);
-	new_function("exitlevel", &FParser::SF_ExitLevel);
-	new_function("tip", &FParser::SF_Tip);
-	new_function("timedtip", &FParser::SF_TimedTip);
-	new_function("message", &FParser::SF_Message);
-	new_function("gameskill", &FParser::SF_Gameskill);
-	new_function("gamemode", &FParser::SF_Gamemode);
+	gscr->NewFunction("startskill", &FParser::SF_StartSkill);
+	gscr->NewFunction("exitlevel", &FParser::SF_ExitLevel);
+	gscr->NewFunction("tip", &FParser::SF_Tip);
+	gscr->NewFunction("timedtip", &FParser::SF_TimedTip);
+	gscr->NewFunction("message", &FParser::SF_Message);
+	gscr->NewFunction("gameskill", &FParser::SF_Gameskill);
+	gscr->NewFunction("gamemode", &FParser::SF_Gamemode);
 	
 	// player stuff
-	new_function("playermsg", &FParser::SF_PlayerMsg);
-	new_function("playertip", &FParser::SF_PlayerTip);
-	new_function("playeringame", &FParser::SF_PlayerInGame);
-	new_function("playername", &FParser::SF_PlayerName);
-	new_function("playeraddfrag", &FParser::SF_PlayerAddFrag);
-	new_function("playerobj", &FParser::SF_PlayerObj);
-	new_function("isplayerobj", &FParser::SF_IsPlayerObj);
-	new_function("isobjplayer", &FParser::SF_IsPlayerObj);
-	new_function("skincolor", &FParser::SF_SkinColor);
-	new_function("playerkeys", &FParser::SF_PlayerKeys);
-	new_function("playerammo", &FParser::SF_PlayerAmmo);
-	new_function("maxplayerammo", &FParser::SF_MaxPlayerAmmo); 
-	new_function("playerweapon", &FParser::SF_PlayerWeapon);
-	new_function("playerselwep", &FParser::SF_PlayerSelectedWeapon);
+	gscr->NewFunction("playermsg", &FParser::SF_PlayerMsg);
+	gscr->NewFunction("playertip", &FParser::SF_PlayerTip);
+	gscr->NewFunction("playeringame", &FParser::SF_PlayerInGame);
+	gscr->NewFunction("playername", &FParser::SF_PlayerName);
+	gscr->NewFunction("playeraddfrag", &FParser::SF_PlayerAddFrag);
+	gscr->NewFunction("playerobj", &FParser::SF_PlayerObj);
+	gscr->NewFunction("isplayerobj", &FParser::SF_IsPlayerObj);
+	gscr->NewFunction("isobjplayer", &FParser::SF_IsPlayerObj);
+	gscr->NewFunction("skincolor", &FParser::SF_SkinColor);
+	gscr->NewFunction("playerkeys", &FParser::SF_PlayerKeys);
+	gscr->NewFunction("playerammo", &FParser::SF_PlayerAmmo);
+	gscr->NewFunction("maxplayerammo", &FParser::SF_MaxPlayerAmmo); 
+	gscr->NewFunction("playerweapon", &FParser::SF_PlayerWeapon);
+	gscr->NewFunction("playerselwep", &FParser::SF_PlayerSelectedWeapon);
 	
 	// mobj stuff
-	new_function("spawn", &FParser::SF_Spawn);
-	new_function("spawnexplosion", &FParser::SF_SpawnExplosion);
-	new_function("radiusattack", &FParser::SF_RadiusAttack);
-	new_function("kill", &FParser::SF_KillObj);
-	new_function("removeobj", &FParser::SF_RemoveObj);
-	new_function("objx", &FParser::SF_ObjX);
-	new_function("objy", &FParser::SF_ObjY);
-	new_function("objz", &FParser::SF_ObjZ);
-	new_function("testlocation", &FParser::SF_TestLocation);
-	new_function("teleport", &FParser::SF_Teleport);
-	new_function("silentteleport", &FParser::SF_SilentTeleport);
-	new_function("damageobj", &FParser::SF_DamageObj);
-	new_function("healobj", &FParser::SF_HealObj);
-	new_function("player", &FParser::SF_Player);
-	new_function("objsector", &FParser::SF_ObjSector);
-	new_function("objflag", &FParser::SF_ObjFlag);
-	new_function("pushobj", &FParser::SF_PushThing);
-	new_function("pushthing", &FParser::SF_PushThing);
-	new_function("objangle", &FParser::SF_ObjAngle);
-	new_function("objhealth", &FParser::SF_ObjHealth);
-	new_function("objdead", &FParser::SF_ObjDead);
-	new_function("reactiontime", &FParser::SF_ReactionTime);
-	new_function("objreactiontime", &FParser::SF_ReactionTime);
-	new_function("objtarget", &FParser::SF_MobjTarget);
-	new_function("objmomx", &FParser::SF_MobjMomx);
-	new_function("objmomy", &FParser::SF_MobjMomy);
-	new_function("objmomz", &FParser::SF_MobjMomz);
+	gscr->NewFunction("spawn", &FParser::SF_Spawn);
+	gscr->NewFunction("spawnexplosion", &FParser::SF_SpawnExplosion);
+	gscr->NewFunction("radiusattack", &FParser::SF_RadiusAttack);
+	gscr->NewFunction("kill", &FParser::SF_KillObj);
+	gscr->NewFunction("removeobj", &FParser::SF_RemoveObj);
+	gscr->NewFunction("objx", &FParser::SF_ObjX);
+	gscr->NewFunction("objy", &FParser::SF_ObjY);
+	gscr->NewFunction("objz", &FParser::SF_ObjZ);
+	gscr->NewFunction("testlocation", &FParser::SF_TestLocation);
+	gscr->NewFunction("teleport", &FParser::SF_Teleport);
+	gscr->NewFunction("silentteleport", &FParser::SF_SilentTeleport);
+	gscr->NewFunction("damageobj", &FParser::SF_DamageObj);
+	gscr->NewFunction("healobj", &FParser::SF_HealObj);
+	gscr->NewFunction("player", &FParser::SF_Player);
+	gscr->NewFunction("objsector", &FParser::SF_ObjSector);
+	gscr->NewFunction("objflag", &FParser::SF_ObjFlag);
+	gscr->NewFunction("pushobj", &FParser::SF_PushThing);
+	gscr->NewFunction("pushthing", &FParser::SF_PushThing);
+	gscr->NewFunction("objangle", &FParser::SF_ObjAngle);
+	gscr->NewFunction("objhealth", &FParser::SF_ObjHealth);
+	gscr->NewFunction("objdead", &FParser::SF_ObjDead);
+	gscr->NewFunction("reactiontime", &FParser::SF_ReactionTime);
+	gscr->NewFunction("objreactiontime", &FParser::SF_ReactionTime);
+	gscr->NewFunction("objtarget", &FParser::SF_MobjTarget);
+	gscr->NewFunction("objmomx", &FParser::SF_MobjMomx);
+	gscr->NewFunction("objmomy", &FParser::SF_MobjMomy);
+	gscr->NewFunction("objmomz", &FParser::SF_MobjMomz);
 
-	new_function("spawnmissile", &FParser::SF_SpawnMissile);
-	new_function("mapthings", &FParser::SF_MapThings);
-	new_function("objtype", &FParser::SF_ObjType);
-	new_function("mapthingnumexist", &FParser::SF_MapThingNumExist);
-	new_function("objstate", &FParser::SF_ObjState);
-	new_function("resurrect", &FParser::SF_Resurrect);
-	new_function("lineattack", &FParser::SF_LineAttack);
-	new_function("setobjposition", &FParser::SF_SetObjPosition);
+	gscr->NewFunction("spawnmissile", &FParser::SF_SpawnMissile);
+	gscr->NewFunction("mapthings", &FParser::SF_MapThings);
+	gscr->NewFunction("objtype", &FParser::SF_ObjType);
+	gscr->NewFunction("mapthingnumexist", &FParser::SF_MapThingNumExist);
+	gscr->NewFunction("objstate", &FParser::SF_ObjState);
+	gscr->NewFunction("resurrect", &FParser::SF_Resurrect);
+	gscr->NewFunction("lineattack", &FParser::SF_LineAttack);
+	gscr->NewFunction("setobjposition", &FParser::SF_SetObjPosition);
 
 	// sector stuff
-	new_function("floorheight", &FParser::SF_FloorHeight);
-	new_function("floortext", &FParser::SF_FloorTexture);
-	new_function("floortexture", &FParser::SF_FloorTexture);   // haleyjd: alias
-	new_function("movefloor", &FParser::SF_MoveFloor);
-	new_function("ceilheight", &FParser::SF_CeilingHeight);
-	new_function("ceilingheight", &FParser::SF_CeilingHeight); // haleyjd: alias
-	new_function("moveceil", &FParser::SF_MoveCeiling);
-	new_function("moveceiling", &FParser::SF_MoveCeiling);     // haleyjd: aliases
-	new_function("ceilingtexture", &FParser::SF_CeilingTexture);
-	new_function("ceiltext", &FParser::SF_CeilingTexture);  // haleyjd: wrong
-	new_function("lightlevel", &FParser::SF_LightLevel);    // handler - was
-	new_function("fadelight", &FParser::SF_FadeLight);      // &FParser::SF_FloorTexture!
-	new_function("colormap", &FParser::SF_SectorColormap);
+	gscr->NewFunction("floorheight", &FParser::SF_FloorHeight);
+	gscr->NewFunction("floortext", &FParser::SF_FloorTexture);
+	gscr->NewFunction("floortexture", &FParser::SF_FloorTexture);   // haleyjd: alias
+	gscr->NewFunction("movefloor", &FParser::SF_MoveFloor);
+	gscr->NewFunction("ceilheight", &FParser::SF_CeilingHeight);
+	gscr->NewFunction("ceilingheight", &FParser::SF_CeilingHeight); // haleyjd: alias
+	gscr->NewFunction("moveceil", &FParser::SF_MoveCeiling);
+	gscr->NewFunction("moveceiling", &FParser::SF_MoveCeiling);     // haleyjd: aliases
+	gscr->NewFunction("ceilingtexture", &FParser::SF_CeilingTexture);
+	gscr->NewFunction("ceiltext", &FParser::SF_CeilingTexture);  // haleyjd: wrong
+	gscr->NewFunction("lightlevel", &FParser::SF_LightLevel);    // handler - was
+	gscr->NewFunction("fadelight", &FParser::SF_FadeLight);      // &FParser::SF_FloorTexture!
+	gscr->NewFunction("colormap", &FParser::SF_SectorColormap);
 	
 	// cameras!
-	new_function("setcamera", &FParser::SF_SetCamera);
-	new_function("clearcamera", &FParser::SF_ClearCamera);
-	new_function("movecamera", &FParser::SF_MoveCamera);
+	gscr->NewFunction("setcamera", &FParser::SF_SetCamera);
+	gscr->NewFunction("clearcamera", &FParser::SF_ClearCamera);
+	gscr->NewFunction("movecamera", &FParser::SF_MoveCamera);
 	
 	// trig functions
-	new_function("pointtoangle", &FParser::SF_PointToAngle);
-	new_function("pointtodist", &FParser::SF_PointToDist);
+	gscr->NewFunction("pointtoangle", &FParser::SF_PointToAngle);
+	gscr->NewFunction("pointtodist", &FParser::SF_PointToDist);
 	
 	// sound functions
-	new_function("startsound", &FParser::SF_StartSound);
-	new_function("startsectorsound", &FParser::SF_StartSectorSound);
-	new_function("ambientsound", &FParser::SF_AmbientSound);
-	new_function("startambiantsound", &FParser::SF_AmbientSound);	// Legacy's incorrectly spelled name!
-	new_function("changemusic", &FParser::SF_ChangeMusic);
+	gscr->NewFunction("startsound", &FParser::SF_StartSound);
+	gscr->NewFunction("startsectorsound", &FParser::SF_StartSectorSound);
+	gscr->NewFunction("ambientsound", &FParser::SF_AmbientSound);
+	gscr->NewFunction("startambiantsound", &FParser::SF_AmbientSound);	// Legacy's incorrectly spelled name!
+	gscr->NewFunction("changemusic", &FParser::SF_ChangeMusic);
 	
 	// hubs!
-	new_function("changehublevel", &FParser::SF_ChangeHubLevel);
+	gscr->NewFunction("changehublevel", &FParser::SF_ChangeHubLevel);
 	
 	// doors
-	new_function("opendoor", &FParser::SF_OpenDoor);
-	new_function("closedoor", &FParser::SF_CloseDoor);
+	gscr->NewFunction("opendoor", &FParser::SF_OpenDoor);
+	gscr->NewFunction("closedoor", &FParser::SF_CloseDoor);
 
 	// HU Graphics
-	new_function("newhupic", &FParser::SF_NewHUPic);
-	new_function("createpic", &FParser::SF_NewHUPic);
-	new_function("deletehupic", &FParser::SF_DeleteHUPic);
-	new_function("modifyhupic", &FParser::SF_ModifyHUPic);
-	new_function("modifypic", &FParser::SF_ModifyHUPic);
-	new_function("sethupicdisplay", &FParser::SF_SetHUPicDisplay);
-	new_function("setpicvisible", &FParser::SF_SetHUPicDisplay);
+	gscr->NewFunction("newhupic", &FParser::SF_NewHUPic);
+	gscr->NewFunction("createpic", &FParser::SF_NewHUPic);
+	gscr->NewFunction("deletehupic", &FParser::SF_DeleteHUPic);
+	gscr->NewFunction("modifyhupic", &FParser::SF_ModifyHUPic);
+	gscr->NewFunction("modifypic", &FParser::SF_ModifyHUPic);
+	gscr->NewFunction("sethupicdisplay", &FParser::SF_SetHUPicDisplay);
+	gscr->NewFunction("setpicvisible", &FParser::SF_SetHUPicDisplay);
 
 	//
-	new_function("playdemo", &FParser::SF_PlayDemo);
-	new_function("runcommand", &FParser::SF_RunCommand);
-	new_function("checkcvar", &FParser::SF_CheckCVar);
-	new_function("setlinetexture", &FParser::SF_SetLineTexture);
-	new_function("linetrigger", &FParser::SF_LineTrigger);
-	new_function("lineflag", &FParser::SF_LineFlag);
+	gscr->NewFunction("playdemo", &FParser::SF_PlayDemo);
+	gscr->NewFunction("runcommand", &FParser::SF_RunCommand);
+	gscr->NewFunction("checkcvar", &FParser::SF_CheckCVar);
+	gscr->NewFunction("setlinetexture", &FParser::SF_SetLineTexture);
+	gscr->NewFunction("linetrigger", &FParser::SF_LineTrigger);
+	gscr->NewFunction("lineflag", &FParser::SF_LineFlag);
 
 	//Hurdler: new math functions
-	new_function("max", &FParser::SF_Max);
-	new_function("min", &FParser::SF_Min);
-	new_function("abs", &FParser::SF_Abs);
+	gscr->NewFunction("max", &FParser::SF_Max);
+	gscr->NewFunction("min", &FParser::SF_Min);
+	gscr->NewFunction("abs", &FParser::SF_Abs);
 
-	new_function("sin", &FParser::SF_Sin);
-	new_function("asin", &FParser::SF_ASin);
-	new_function("cos", &FParser::SF_Cos);
-	new_function("acos", &FParser::SF_ACos);
-	new_function("tan", &FParser::SF_Tan);
-	new_function("atan", &FParser::SF_ATan);
-	new_function("exp", &FParser::SF_Exp);
-	new_function("log", &FParser::SF_Log);
-	new_function("sqrt", &FParser::SF_Sqrt);
-	new_function("floor", &FParser::SF_Floor);
-	new_function("pow", &FParser::SF_Pow);
+	gscr->NewFunction("sin", &FParser::SF_Sin);
+	gscr->NewFunction("asin", &FParser::SF_ASin);
+	gscr->NewFunction("cos", &FParser::SF_Cos);
+	gscr->NewFunction("acos", &FParser::SF_ACos);
+	gscr->NewFunction("tan", &FParser::SF_Tan);
+	gscr->NewFunction("atan", &FParser::SF_ATan);
+	gscr->NewFunction("exp", &FParser::SF_Exp);
+	gscr->NewFunction("log", &FParser::SF_Log);
+	gscr->NewFunction("sqrt", &FParser::SF_Sqrt);
+	gscr->NewFunction("floor", &FParser::SF_Floor);
+	gscr->NewFunction("pow", &FParser::SF_Pow);
 	
 	// Eternity extensions
-	new_function("setlineblocking", &FParser::SF_SetLineBlocking);
-	new_function("setlinetrigger", &FParser::SF_SetLineTrigger);
-	new_function("setlinemnblock", &FParser::SF_SetLineMonsterBlocking);
-	new_function("scriptwaitpre", &FParser::SF_ScriptWaitPre);
-	new_function("exitsecret", &FParser::SF_ExitSecret);
-	new_function("objawaken", &FParser::SF_ObjAwaken);
+	gscr->NewFunction("setlineblocking", &FParser::SF_SetLineBlocking);
+	gscr->NewFunction("setlinetrigger", &FParser::SF_SetLineTrigger);
+	gscr->NewFunction("setlinemnblock", &FParser::SF_SetLineMonsterBlocking);
+	gscr->NewFunction("scriptwaitpre", &FParser::SF_ScriptWaitPre);
+	gscr->NewFunction("exitsecret", &FParser::SF_ExitSecret);
+	gscr->NewFunction("objawaken", &FParser::SF_ObjAwaken);
 	
 	// forced coercion functions
-	new_function("mobjvalue", &FParser::SF_MobjValue);
-	new_function("stringvalue", &FParser::SF_StringValue);
-	new_function("intvalue", &FParser::SF_IntValue);
-	new_function("fixedvalue", &FParser::SF_FixedValue);
+	gscr->NewFunction("mobjvalue", &FParser::SF_MobjValue);
+	gscr->NewFunction("stringvalue", &FParser::SF_StringValue);
+	gscr->NewFunction("intvalue", &FParser::SF_IntValue);
+	gscr->NewFunction("fixedvalue", &FParser::SF_FixedValue);
 
 	// new for GZDoom
-	new_function("spawnshot2", &FParser::SF_SpawnShot2);
-	new_function("setcolor", &FParser::SF_SetColor);
-	new_function("sectortype", &FParser::SF_SectorType);
-	new_function("wallglow", &FParser::SF_WallGlow);
-	new_function("objradius", &FParser::SF_MobjRadius);
-	new_function("objheight", &FParser::SF_MobjHeight);
-	new_function("thingcount", &FParser::SF_ThingCount);
-	new_function("killinsector", &FParser::SF_KillInSector);
-	new_function("changetag", &FParser::SF_ChangeTag);
-	new_function("levelnum", &FParser::SF_LevelNum);
+	gscr->NewFunction("spawnshot2", &FParser::SF_SpawnShot2);
+	gscr->NewFunction("setcolor", &FParser::SF_SetColor);
+	gscr->NewFunction("sectortype", &FParser::SF_SectorType);
+	gscr->NewFunction("wallglow", &FParser::SF_WallGlow);
+	gscr->NewFunction("objradius", &FParser::SF_MobjRadius);
+	gscr->NewFunction("objheight", &FParser::SF_MobjHeight);
+	gscr->NewFunction("thingcount", &FParser::SF_ThingCount);
+	gscr->NewFunction("killinsector", &FParser::SF_KillInSector);
+	gscr->NewFunction("changetag", &FParser::SF_ChangeTag);
+	gscr->NewFunction("levelnum", &FParser::SF_LevelNum);
 
 	// new inventory
-	new_function("giveinventory", &FParser::SF_GiveInventory);
-	new_function("takeinventory", &FParser::SF_TakeInventory);
-	new_function("checkinventory", &FParser::SF_CheckInventory);
-	new_function("setweapon", &FParser::SF_SetWeapon);
+	gscr->NewFunction("giveinventory", &FParser::SF_GiveInventory);
+	gscr->NewFunction("takeinventory", &FParser::SF_TakeInventory);
+	gscr->NewFunction("checkinventory", &FParser::SF_CheckInventory);
+	gscr->NewFunction("setweapon", &FParser::SF_SetWeapon);
 
-	new_function("ls", &FParser::SF_Ls);	// execute Hexen type line special
+	gscr->NewFunction("ls", &FParser::SF_Ls);	// execute Hexen type line special
 
 	// Dummies - shut up warnings
-	new_function("setcorona", &FParser::SF_SetCorona);
+	gscr->NewFunction("setcorona", &FParser::SF_SetCorona);
 }
 

@@ -41,7 +41,10 @@
 #include "m_fixed.h"
 #include "actor.h"
 
-
+#ifdef _MSC_VER
+// This pragma saves 8kb of wasted code.
+#pragma pointers_to_members( full_generality, single_inheritance )
+#endif
 
 class DRunningScript;
 
@@ -314,6 +317,8 @@ public:
 	void Serialize(FArchive &ar);
 
 	DFsVariable *NewVariable(const char *name, int vtype);
+	void NewFunction(const char *name, void (FParser::*handler)());
+
 	DFsVariable *VariableForName(const char *name);
 	DFsVariable *FindVariable(const char *name);
 	void ClearVariables(bool complete= false);

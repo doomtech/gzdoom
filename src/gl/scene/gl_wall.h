@@ -175,7 +175,7 @@ private:
 	bool DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2);
 
 	bool SetWallCoordinates(seg_t * seg, float ceilingrefheight,
-							int topleft,int topright, int bottomleft,int bottomright, int texoffset);
+							float topleft,float topright,float bottomleft,float bottomright, float texoffset);
 
 	void DoTexture(int type,seg_t * seg,int peg,
 						   int ceilingrefheight,int floorrefheight,

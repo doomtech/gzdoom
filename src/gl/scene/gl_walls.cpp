@@ -496,24 +496,24 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 	lightlist_t * light;
 
 	// ZDoom doesn't support slopes in a horizon sector so I won't either!
-	ztop[1]=ztop[0]=TO_GL(fs->GetPlaneTexZ(sector_t::ceiling));
-	zbottom[1]=zbottom[0]=TO_GL(fs->GetPlaneTexZ(sector_t::floor));
+	ztop[1] = ztop[0] = TO_GL(fs->GetPlaneTexZ(sector_t::ceiling));
+	zbottom[1] = zbottom[0] = TO_GL(fs->GetPlaneTexZ(sector_t::floor));
 
-	if (viewz<fs->GetPlaneTexZ(sector_t::ceiling))
+	if (viewz < fs->GetPlaneTexZ(sector_t::ceiling))
 	{
-		if (viewz>fs->GetPlaneTexZ(sector_t::floor))
-			zbottom[1]=zbottom[0]=TO_GL(viewz);
+		if (viewz > fs->GetPlaneTexZ(sector_t::floor))
+			zbottom[1] = zbottom[0] = TO_GL(viewz);
 
-		if (fs->GetTexture(sector_t::ceiling)==skyflatnum)
+		if (fs->GetTexture(sector_t::ceiling) == skyflatnum)
 		{
 			SkyTexture(fs->sky, fs->CeilingSkyBox, true);
 		}
 		else
 		{
-			type=RENDERWALL_HORIZON;
+			type = RENDERWALL_HORIZON;
 			hi.plane.GetFromSector(fs, true);
-			hi.lightlevel=GetCeilingLight(fs);
-			hi.colormap=fs->ColorMap;
+			hi.lightlevel = GetCeilingLight(fs);
+			hi.colormap = fs->ColorMap;
 
 			if (fs->e->XFloor.ffloors.Size())
 			{
@@ -524,25 +524,25 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 			}
 
 			if (gl_fixedcolormap) hi.colormap.GetFixedColormap();
-			horizon=&hi;
+			horizon = &hi;
 			PutWall(0);
 		}
-		ztop[1]=ztop[0]=zbottom[0];
+		ztop[1] = ztop[0] = zbottom[0];
 	}
 
-	if (viewz>fs->GetPlaneTexZ(sector_t::floor))
+	if (viewz > fs->GetPlaneTexZ(sector_t::floor))
 	{
-		zbottom[1]=zbottom[0]=TO_GL(fs->GetPlaneTexZ(sector_t::floor));
-		if (fs->GetTexture(sector_t::floor)==skyflatnum)
+		zbottom[1] = zbottom[0] = TO_GL(fs->GetPlaneTexZ(sector_t::floor));
+		if (fs->GetTexture(sector_t::floor) == skyflatnum)
 		{
 			SkyTexture(fs->sky, fs->FloorSkyBox, false);
 		}
 		else
 		{
-			type=RENDERWALL_HORIZON;
+			type = RENDERWALL_HORIZON;
 			hi.plane.GetFromSector(fs, false);
-			hi.lightlevel=GetFloorLight(fs);
-			hi.colormap=fs->ColorMap;
+			hi.lightlevel = GetFloorLight(fs);
+			hi.colormap = fs->ColorMap;
 
 			if (fs->e->XFloor.ffloors.Size())
 			{
@@ -566,7 +566,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 //
 //==========================================================================
 bool GLWall::SetWallCoordinates(seg_t * seg, float texturetop,
-								int topleft,int topright, int bottomleft,int bottomright, int t_ofs)
+								float topleft, float topright, float bottomleft, float bottomright, float t_ofs)
 {
 	//
 	//
@@ -582,7 +582,7 @@ bool GLWall::SetWallCoordinates(seg_t * seg, float texturetop,
 		float length = seg->sidedef? seg->sidedef->TexelLength: Dist2(glseg.x1, glseg.y1, glseg.x2, glseg.y2);
 
 		wti=gltexture->GetWorldTextureInfo();
-		l_ul=wti->FloatToTexU(TO_GL(gltexture->TextureOffset(t_ofs)));
+		l_ul=wti->FloatToTexU(gltexture->TextureOffset(t_ofs));
 		texlength = wti->FloatToTexU(length);
 	}
 	else 
@@ -601,36 +601,34 @@ bool GLWall::SetWallCoordinates(seg_t * seg, float texturetop,
 	if (topleft>=bottomleft)
 	{
 		// normal case
-		ztop[0]=TO_GL(topleft);
-		zbottom[0]=TO_GL(bottomleft);
+		ztop[0] = topleft;
+		zbottom[0] = bottomleft;
 
 		if (wti)
 		{
-			uplft.v=wti->FloatToTexV(-ztop[0] + texturetop);
-			lolft.v=wti->FloatToTexV(-zbottom[0] + texturetop);
+			uplft.v=wti->FloatToTexV(-topleft + texturetop);
+			lolft.v=wti->FloatToTexV(-bottomleft + texturetop);
 		}
 	}
 	else
 	{
 		// ceiling below floor - clip to the visible part of the wall
-		fixed_t dch=topright-topleft;
-		fixed_t dfh=bottomright-bottomleft;
-		fixed_t coeff=FixedDiv(bottomleft-topleft, dch-dfh);
+		float dch = topright - topleft;
+		float dfh = bottomright - bottomleft;
 
-		fixed_t inter_y=topleft+FixedMul(coeff,dch);
-											 
-		float inter_x= TO_GL(coeff);
+		float inter_x = (bottomleft-topleft) / (dch-dfh);
+		float inter_y = topleft + inter_x / dch;
 
-		glseg.x1=glseg.x1+inter_x*(glseg.x2-glseg.x1);
-		glseg.y1=glseg.y1+inter_x*(glseg.y2-glseg.y1);
+		glseg.x1 = glseg.x1 + inter_x * (glseg.x2 - glseg.x1);
+		glseg.y1 = glseg.y1 + inter_x * (glseg.y2 - glseg.y1);
 		glseg.fracleft = inter_x;
 
-		zbottom[0]=ztop[0]=TO_GL(inter_y);	
+		zbottom[0] = ztop[0] = inter_y;	
 
 		if (wti)
 		{
 			//uplft.u=lolft.u=l_ul+wti->FloatToTexU(inter_x*length);
-			lolft.v=uplft.v=wti->FloatToTexV(-ztop[0] + texturetop);
+			lolft.v = uplft.v = wti->FloatToTexV(-inter_y + texturetop);
 		}
 	}
 
@@ -639,39 +637,37 @@ bool GLWall::SetWallCoordinates(seg_t * seg, float texturetop,
 	// set up coordinates for the right side of the polygon
 	//
 	// check left side for intersections
-	if (topright>=bottomright)
+	if (topright >= bottomright)
 	{
 		// normal case
-		ztop[1]=TO_GL(topright)		;
-		zbottom[1]=TO_GL(bottomright)		;
+		ztop[1] = topright;
+		zbottom[1] = bottomright;
 
 		if (wti)
 		{
 			//uprgt.u=lorgt.u=l_ul+wti->FloatToTexU(length);
-			uprgt.v=wti->FloatToTexV(-ztop[1] + texturetop);
-			lorgt.v=wti->FloatToTexV(-zbottom[1] + texturetop);
+			uprgt.v=wti->FloatToTexV(-topright + texturetop);
+			lorgt.v=wti->FloatToTexV(-bottomright + texturetop);
 		}
 	}
 	else
 	{
 		// ceiling below floor - clip to the visible part of the wall
-		fixed_t dch=topright-topleft;
-		fixed_t dfh=bottomright-bottomleft;
-		fixed_t coeff=FixedDiv(bottomleft-topleft, dch-dfh);
+		float dch = topright - topleft;
+		float dfh = bottomright - bottomleft;
 
-		fixed_t inter_y=topleft+FixedMul(coeff,dch);
-											 
-		float inter_x= TO_GL(coeff);
+		float inter_x = (bottomleft-topleft) / (dch-dfh);
+		float inter_y = topleft + inter_x / dch;
 
-		glseg.x2=glseg.x1+inter_x*(glseg.x2-glseg.x1);
-		glseg.y2=glseg.y1+inter_x*(glseg.y2-glseg.y1);
+		glseg.x2 = glseg.x1 + inter_x * (glseg.x2 - glseg.x1);
+		glseg.y2 = glseg.y1 + inter_x * (glseg.y2 - glseg.y1);
 		glseg.fracright = inter_x;
 
-		zbottom[1]=ztop[1]=TO_GL(inter_y);
+		zbottom[1] = ztop[1] = inter_y;
 		if (wti)
 		{
 			//uprgt.u=lorgt.u=l_ul+wti->FloatToTexU(inter_x*length);
-			lorgt.v=uprgt.v=wti->FloatToTexV(-ztop[1] + texturetop);
+			lorgt.v = uprgt.v = wti->FloatToTexV(-inter_y + texturetop);
 		}
 	}
 
@@ -704,6 +700,8 @@ void GLWall::CheckTexturePosition()
 
 	if (gltexture->tex->bHasCanvas) return;
 
+	// clamp texture coordinates to a reasonable range.
+	// Extremely large values can cause visual problems
 	if (uplft.v < uprgt.v)
 	{
 		sub = floorf(uplft.v);
@@ -729,7 +727,7 @@ void GLWall::CheckTexturePosition()
 //  Handle one sided walls, upper and lower texture
 //
 //==========================================================================
-void GLWall::DoTexture(int _type,seg_t * seg,int peg,
+void GLWall::DoTexture(int _type,seg_t * seg, int peg,
 					   int ceilingrefheight,int floorrefheight,
 					   int topleft,int topright,
 					   int bottomleft,int bottomright,
@@ -763,8 +761,8 @@ void GLWall::DoTexture(int _type,seg_t * seg,int peg,
 							gltexture->RowOffset(TO_GL(seg->sidedef->GetTextureYOffset(texpos))) +
 							TO_GL((peg ? (gltexture->TextureHeight(GLUSE_TEXTURE)<<FRACBITS)-lh-v_offset:0));
 
-	if (!SetWallCoordinates(seg, floatceilingref, topleft, topright, bottomleft, bottomright, 
-							seg->sidedef->GetTextureXOffset(texpos))) return;
+	if (!SetWallCoordinates(seg, floatceilingref, TO_GL(topleft), TO_GL(topright), TO_GL(bottomleft), TO_GL(bottomright), 
+							TO_GL(seg->sidedef->GetTextureXOffset(texpos)))) return;
 
 	gltexture->SetWallScaling(FRACUNIT, FRACUNIT);
 	CheckTexturePosition();
@@ -955,7 +953,7 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 			flags|=GLT_CLAMPY;
 		}
 	}
-	SetWallCoordinates(seg, TO_GL(texturetop), topleft, topright, bottomleft, bottomright, t_ofs);
+	SetWallCoordinates(seg, TO_GL(texturetop), TO_GL(topleft), TO_GL(topright), TO_GL(bottomleft), TO_GL(bottomright), TO_GL(t_ofs));
 
 	if (gltexture != NULL) gltexture->SetWallScaling(FRACUNIT, FRACUNIT);
 
@@ -1803,7 +1801,7 @@ void GLWall::ProcessLowerMiniseg(seg_t *seg, sector_t * frontsector, sector_t * 
 		if (gltexture) 
 		{
 			type=RENDERWALL_BOTTOM;
-			SetWallCoordinates(seg, TO_GL(bfh), bfh, bfh, ffh, ffh, 0);
+			SetWallCoordinates(seg, TO_GL(bfh), TO_GL(bfh), TO_GL(bfh), TO_GL(ffh), TO_GL(ffh), 0);
 			PutWall(false);
 		}
 	}
