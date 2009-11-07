@@ -251,7 +251,6 @@ void GLWall::PutWall(bool translucent)
 
 void GLWall::Put3DWall(lightlist_t * lightlist, bool translucent)
 {
-#ifndef OPTIMIZE_SPLIT
 	bool fadewall = (!translucent && lightlist->caster && (lightlist->caster->flags&FF_FADEWALLS) && 
 		!gl_isBlack((*lightlist->p_extra_colormap)->Fade)) && gl_isBlack(Colormap.FadeColor);
 
@@ -275,11 +274,6 @@ void GLWall::Put3DWall(lightlist_t * lightlist, bool translucent)
 		alpha = 1.0;
 		gltexture = tex;
 	}
-#else
-	lightlevel=*lightlist->p_lightlevel;
-	Colormap.CopyLightColor(*lightlist->p_extra_colormap);
-	gl_drawinfo->AddSplitWall(this);
-#endif
 }
 
 //==========================================================================
@@ -774,14 +768,8 @@ void GLWall::DoTexture(int _type,seg_t * seg, int peg,
 	// Add this wall to the render list
 	sector_t * sec = sub? sub->sector : seg->frontsector;
 
-#ifndef OPTIMIZE_SPLIT
 	if (sec->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) PutWall(false);
 	else SplitWall(sec, false);
-#else
-	if (sec->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) numwalls = 1;
-	else numwalls = 0;
-	PutWall(false);
-#endif
 
 	glseg=glsave;
 	flags&=~GLT_CLAMPY;
@@ -1059,14 +1047,8 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 				// Draw the stuff
 				//
 				//
-#ifndef OPTIMIZE_SPLIT
 				if (realfront->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) split.PutWall(translucent);
 				else split.SplitWall(realfront, translucent);
-#else
-				if (realfront->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) numwalls = 1;
-				else numwalls = 0;
-				split.PutWall(translucent);
-#endif
 
 				t=1;
 			}
@@ -1079,14 +1061,8 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 			// Draw the stuff without splitting
 			//
 			//
-#ifndef OPTIMIZE_SPLIT
 			if (realfront->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) PutWall(translucent);
 			else SplitWall(realfront, translucent);
-#else
-			if (realfront->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) numwalls = 1;
-			else numwalls = 0;
-			PutWall(translucent);
-#endif
 		}
 		alpha=1.0f;
 	}
@@ -1201,14 +1177,8 @@ void GLWall::BuildFFBlock(seg_t * seg, F3DFloor * rover,
 	
 	sector_t * sec = sub? sub->sector : seg->frontsector;
 
-#ifndef OPTIMIZE_SPLIT
 	if (sec->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) PutWall(translucent);
 	else SplitWall(sec, translucent);
-#else
-	if (sec->e->XFloor.lightlist.Size()==0 || gl_fixedcolormap) numwalls = 1;
-	else numwalls = 0;
-	split.PutWall(translucent);
-#endif
 
 	alpha=1.0f;
 	lightlevel = savelight;
