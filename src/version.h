@@ -41,15 +41,15 @@
 
 /** Lots of different version numbers **/
 
-#define DOTVERSIONSTR_NOREV "1.3.12 beta"
+#define DOTVERSIONSTR_NOREV "1.3.13 beta"
 #define ZDVER_STRING "2.3.1"
 
 // The version string the user actually sees.
 #define DOTVERSIONSTR DOTVERSIONSTR_NOREV " (r" SVN_REVISION_STRING ") / ZDoom" ZDVER_STRING " (r" ZD_SVN_REVISION_STRING ")"
 
 // The version as seen in the Windows resource
-#define RC_FILEVERSION 1,3,12,SVN_REVISION_NUMBER
-#define RC_PRODUCTVERSION 1,3,12,0
+#define RC_FILEVERSION 1,3,13,SVN_REVISION_NUMBER
+#define RC_PRODUCTVERSION 1,3,13,0
 #define RC_FILEVERSION2 DOTVERSIONSTR
 #define RC_PRODUCTVERSION2 "1.3"
 
