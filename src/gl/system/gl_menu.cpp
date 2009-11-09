@@ -81,6 +81,13 @@ static value_t SpriteclipModes[]=
 	{ 2.0, "Always" },
 };
 
+static value_t VBOModes[]=
+{
+	{ 0.0, "Off" },
+	{ 1.0, "Static" },
+	{ 2.0, "Dynamic" },
+};
+
 static value_t FilterModes[] =
 {
 	{ 0.0, "None" },
@@ -238,13 +245,14 @@ menuitem_t GLPrefItems[] = {
 	{ discrete, "Fog mode",					{&gl_fogmode},					{3.0}, {0.0}, {0.0}, {FogMode} },
 	{ discrete, "Fake contrast",			{&gl_fakecontrast},				{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Environment map on mirrors",{&gl_mirror_envmap},			{2.0}, {0.0}, {0.0}, {OnOff} },
-	{ discrete, "Enhanced night vision mode",{&gl_enhanced_nightvision},		{2.0}, {0.0}, {0.0}, {OnOff} },
+	{ discrete, "Enhanced night vision mode",{&gl_enhanced_nightvision},	{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Adjust sprite clipping",	{&gl_spriteclip},				{3.0}, {0.0}, {0.0}, {SpriteclipModes} },
 	{ discrete, "Smooth sprite edges",		{&gl_sprite_blend},				{2.0}, {0.0}, {0.0}, {OnOff} },
 	{ discrete, "Sprite billboard",			{&gl_billboard_mode},			{2.0}, {0.0}, {0.0}, {BillboardModes} },
 	{ discrete, "Particle style",			{&gl_particles_style},			{3.0}, {0.0}, {0.0}, {Particles} },
 	{ slider,	"Ambient light level",		{&gl_light_ambient},			{0.0}, {255.0}, {5.0}, {NULL} },
 	{ discrete, "Rendering quality",		{&gl_render_precise},			{2.0}, {0.0}, {0.0}, {Precision} },
+	{ discrete, "Use vertex buffer",		{&gl_usevbo},					{3.0}, {0.0}, {0.0}, {VBOModes} },
 };
 
 menuitem_t GLShaderItems[] = {
