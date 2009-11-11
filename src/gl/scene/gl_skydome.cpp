@@ -245,7 +245,8 @@ static void RenderDome(FTextureID texno, FMaterial * tex, float x_offset, float 
 {
 	int texh;
 
-	bool skystretch = (r_stretchsky && !(level.flags & LEVEL_FORCENOSKYSTRETCH));
+	// Sky stretching is rather pointless with the GL renderer now that it can handle all sky heights.
+	bool skystretch = false; // (r_stretchsky && !(level.flags & LEVEL_FORCENOSKYSTRETCH));
 
 
 	if (tex)
