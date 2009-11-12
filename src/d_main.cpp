@@ -860,6 +860,9 @@ void D_DoomLoop ()
 {
 	int lasttic = 0;
 
+	// Clamp the timer to TICRATE until the playloop has been entered.
+	r_NoInterpolate = true;
+
 	for (;;)
 	{
 		try
@@ -1483,9 +1486,9 @@ bool ConsiderPatches (const char *arg, const char *ext)
 		for (i = 0; i < files->NumArgs(); ++i)
 		{
 			if ( (f = BaseFileSearch (files->GetArg (i), ".deh")) )
-				DoDehPatch (f, false);
+				D_LoadDehFile(f);
 			else if ( (f = BaseFileSearch (files->GetArg (i), ".bex")) )
-				DoDehPatch (f, false);
+				D_LoadDehFile(f);
 		}
 		noDef = true;
 	}
@@ -1593,8 +1596,6 @@ void D_DoomMain (void)
 	char *v;
 	const char *wad;
 	DArgs *execFiles;
-
-	srand(I_MSTime());
 
 	// Set the FPU precision to 53 significant bits. This is the default
 	// for Visual C++, but not for GCC, so some slight math variances
@@ -1947,13 +1948,12 @@ void D_DoomMain (void)
 	DecalLibrary.Clear ();
 	DecalLibrary.ReadAllDecals ();
 
-	// [RH] Try adding .deh and .bex files on the command line.
+	// [RH] Add any .deh and .bex files on the command line.
 	// If there are none, try adding any in the config file.
+	// Note that the command line overrides defaults from the config.
 
-	if (!ConsiderPatches ("-deh", ".deh") &&
-		!ConsiderPatches ("-bex", ".bex") &&
-		(gameinfo.gametype == GAME_Doom) &&
-		GameConfig->SetSection ("Doom.DefaultDehacked"))
+	if ((ConsiderPatches("-deh", ".deh") | ConsiderPatches("-bex", ".bex")) == 0 &&
+		gameinfo.gametype == GAME_Doom && GameConfig->SetSection ("Doom.DefaultDehacked"))
 	{
 		const char *key;
 		const char *value;
@@ -1963,16 +1963,18 @@ void D_DoomMain (void)
 			if (stricmp (key, "Path") == 0 && FileExists (value))
 			{
 				Printf ("Applying patch %s\n", value);
-				DoDehPatch (value, true);
+				D_LoadDehFile(value);
 			}
 		}
 	}
 
-	DoDehPatch (NULL, true);	// See if there's a patch in a PWAD
-	FinishDehPatch ();			// Create replacements for dehacked pickups
+	// Load embedded Dehacked patches
+	D_LoadDehLumps();
+
+	// Create replacements for dehacked pickups
+	FinishDehPatch();
 
 	FActorInfo::StaticSetActorNums ();
-
 
 	// [RH] User-configurable startup strings. Because BOOM does.
 	static const char *startupString[5] = {
