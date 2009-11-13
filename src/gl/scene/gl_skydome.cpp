@@ -243,7 +243,7 @@ static void RenderSkyHemisphere(int hemi, bool mirror)
 //
 //
 //-----------------------------------------------------------------------------
-CVAR(Float, skyoffset, -40, 0)	// temporary workaround
+CVAR(Float, skyoffset, 0, 0)	// for testing
 
 static void RenderDome(FTextureID texno, FMaterial * tex, float x_offset, float y_offset, bool mirror, int CM_Index)
 {
@@ -270,7 +270,7 @@ static void RenderDome(FTextureID texno, FMaterial * tex, float x_offset, float 
 		}
 		else
 		{
-			gl.Translatef(0.f, (200-texh+skyoffset)*skyoffsetfactor, 0.f);
+			gl.Translatef(0.f, (200 - texh + tex->tex->SkyOffset + skyoffset)*skyoffsetfactor, 0.f);
 			gl.Scalef(1.f, 1.f + ((texh-200.f)/200.f) * 1.17f, 1.f);
 		}
 	}
