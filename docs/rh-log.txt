@@ -1,3 +1,27 @@
+November 15, 2009  (Changes by Graf Zahl)
+- fixed: fullscreen images with texture scaling used the unscaled size for
+  positioning. To avoid future problems with them I added a new DTA_Fullscreen
+  option for DrawTexture.
+- fixed: The sky baseline position needs to take texture scaling into account.
+
+November 14, 2009
+- Do not squash skies taller than 200 into square pixels.
+
+November 14, 2009  (Changes by Graf Zahl)
+- Added skillinfo fix by Gez.
+- added a r_scaletallskies CVAR so that sky positioning can be checked
+  more easily.
+- fixed: Skies with a height of exactly 200 pixels should not be stretched.
+  
+November 13, 2009
+- More sky changes: Textures taller than 200 pixels but shorter than 241
+  are scaled to the height of a 200 pixel tall sky. Skies taller than 240
+  use the same scale as a 240 tall sky but are shifted down to make the
+  top of the texture align with the top of the screen when looking fully up.
+  Thus, by using a sky texture with a height of 240 or more pixels, the sky
+  will be drawn with square pixels instead of the vertically elongated ones
+  imposed by Doom's native 320x200 resolution.
+
 November 12, 2009
 - Improved sky stretching a bit: It now only stretches the sky as tall as it
   needs to be: 228 pixels, not 256. It no longer stretches horizontally,
