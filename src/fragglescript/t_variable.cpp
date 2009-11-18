@@ -92,8 +92,8 @@ fixed_t fixedvalue(const svalue_t &v)
 float floatvalue(const svalue_t &v)
 {
 	return (float)( (v.type == svt_string ? atof(v.string) :       
-	v.type == svt_fixed ? (int)(v.value.f / (float)FRACUNIT) : 
-	v.type == svt_mobj ? -1 : v.value.i ));
+	v.type == svt_fixed ? (float)(v.value.f / (float)FRACUNIT) : 
+	v.type == svt_mobj ? -1.f : (float)v.value.i ));
 }
 
 //==========================================================================
