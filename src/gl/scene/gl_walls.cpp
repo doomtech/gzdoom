@@ -695,11 +695,11 @@ void GLWall::CheckTexturePosition()
 	// Extremely large values can cause visual problems
 	if (uplft.v < uprgt.v)
 	{
-		sub = floorf(uplft.v);
+		sub = float(xs_FloorToInt(uplft.v));
 	}
 	else
 	{
-		sub = floorf(uprgt.v);
+		sub = float(xs_FloorToInt(uprgt.v));
 	}
 	uplft.v -= sub;
 	uprgt.v -= sub;

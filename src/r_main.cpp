@@ -534,7 +534,7 @@ void R_SetVisibility (float vis)
 		return;
 	}
 
-	r_BaseVisibility = toint (vis * 65536.f);
+	r_BaseVisibility = xs_RoundToInt(vis * 65536.f);
 
 	// Prevent overflow on walls
 	if (r_BaseVisibility < 0 && r_BaseVisibility < -MaxVisForWall)
