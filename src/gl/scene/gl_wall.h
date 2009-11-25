@@ -299,6 +299,7 @@ public:
 	BYTE lightlevel;
 	BYTE foglevel;
 	BYTE hw_styleflags;
+	bool fullbright;
 	PalEntry ThingColor;	// thing's own color
 	FColormap Colormap;
 	FSpriteModelFrame * modelframe;
