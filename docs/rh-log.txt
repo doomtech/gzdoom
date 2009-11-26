@@ -1,3 +1,47 @@
+November 25, 2009
+- Make the palette indexes used by FRemapTable subject to the global remap
+  table, just as the images they translate are.
+
+November 24, 2009  (Changes by Graf Zahl)
+- Added MF4_ALLOWPARTICLES checks to blood spawning code.
+- Fixed: EV_DoDonut, EV_DoElevator and EV_StartWaggle did not to any 0-tag
+  checks.
+- Fixed: Doom line type 44 (lower ceiling to 8 above floor) must halt
+  movement if blocked which essentially means it acts like a Hexen-style
+  crusher.
+- Fixed: Not all places checking for player start spots did it correctly.
+  The editor number for player start spot 5 is now stored in the game info
+  so that there's only one place where this check needs to be done.
+- Fixed: WIF_NOAUTOAIM only worked for projectiles.
+
+November 23, 2009
+- Added Windows 7 (aka Windows NT 6.1) and Server 2008 identification to
+  I_DetectOS().
+- Fixed: ArtiPork did not use all its sprite frames.
+- Fixed: FWadCollection::AddFile() did not call FixPathSeperator(), so
+  savegames would hold the full file path for wads that had been specified
+  with backslash characters, because GetWadName() would not trim off the
+  path.
+
+November 22, 2009  (Changes by Graf Zahl)
+- extended Doom map format linedef translator so that it also handles the flags.
+
+November 19, 2009
+- Replaced toint/quickertoint with the portable routines from xs_Float.h. The
+  former used fistp, which is not portable across platforms, so cannot be
+  used in the play simulation. They were only suitable for the renderer.
+  xs_Float.h also has a very fast float->fixed conversion, so FLOAT2FIXED
+  uses that now.
+  (And I also learned that the FPU's round to nearest is not the rounding I
+  learned in grade school but actually Banker's Rounding. I had no idea.)
+  (Also, also, the only thing that could have made quickertoint faster than
+  toint was that it stored a 32-bit int. I never timed them, and I doubt in
+  practice there was any real difference between the two.)
+
+November 18, 2009
+- Added padding around packed textures to compensate for apparent NVidia
+  texture coordinate imprecision.
+
 November 17, 2009
 - Fixed two bugs in FMODSoundRenderer::HandleChannelDelay():
   * Looping sounds that have been playing for a very long time, were evicted,

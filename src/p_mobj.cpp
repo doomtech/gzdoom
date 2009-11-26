@@ -3838,17 +3838,13 @@ APlayerPawn *P_SpawnPlayer (FMapThing *mthing, bool tempplayer)
 	// [RH] Things 4001-? are also multiplayer starts. Just like 1-4.
 	//		To make things simpler, figure out which player is being
 	//		spawned here.
-	if (mthing->type <= 4 || gameinfo.gametype == GAME_Strife)		// don't forget Strife's starts 5-8 here!
+	if (mthing->type <= 4)
 	{
 		playernum = mthing->type - 1;
 	}
-	else if (gameinfo.gametype != GAME_Hexen)
-	{
-		playernum = mthing->type - 4001 + 4;
-	}
 	else
 	{
-		playernum = mthing->type - 9100 + 4;
+		playernum = mthing->type - gameinfo.player5start + 4;
 	}
 
 	// not playing?
@@ -4140,12 +4136,9 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 	}
 	else
 	{
-		const int base = (gameinfo.gametype == GAME_Strife) ? 5 :
-						 (gameinfo.gametype == GAME_Hexen) ? 9100 : 4001;
-
-		if (mthing->type >= base && mthing->type < base + MAXPLAYERS - 4)
+		if (mthing->type >= gameinfo.player5start && mthing->type < gameinfo.player5start + MAXPLAYERS - 4)
 		{
-			pnum = mthing->type - base + 4;
+			pnum = mthing->type - gameinfo.player5start + 4;
 		}
 	}
 
@@ -4449,8 +4442,13 @@ void P_SpawnBlood (fixed_t x, fixed_t y, fixed_t z, angle_t dir, int damage, AAc
 	AActor *th;
 	PalEntry bloodcolor = (PalEntry)originator->GetClass()->Meta.GetMetaInt(AMETA_BloodColor);
 	const PClass *bloodcls = PClass::FindClass((ENamedName)originator->GetClass()->Meta.GetMetaInt(AMETA_BloodType, NAME_Blood));
+	
+	int bloodtype = cl_bloodtype;
+	
+	if (bloodcls != NULL && !(GetDefaultByType(bloodcls)->flags4 & MF4_ALLOWPARTICLES))
+		bloodtype = 0;
 
-	if (bloodcls!=NULL && cl_bloodtype <= 1)
+	if (bloodcls!=NULL && bloodtype <= 1)
 	{
 		z += pr_spawnblood.Random2 () << 10;
 		th = Spawn (bloodcls, x, y, z, ALLOW_REPLACE);
@@ -4492,7 +4490,7 @@ void P_SpawnBlood (fixed_t x, fixed_t y, fixed_t z, angle_t dir, int damage, AAc
 		}
 	}
 
-	if (cl_bloodtype >= 1)
+	if (bloodtype >= 1)
 		P_DrawSplash2 (40, x, y, z, dir, 2, bloodcolor);
 }
 
@@ -4507,7 +4505,12 @@ void P_BloodSplatter (fixed_t x, fixed_t y, fixed_t z, AActor *originator)
 	PalEntry bloodcolor = (PalEntry)originator->GetClass()->Meta.GetMetaInt(AMETA_BloodColor);
 	const PClass *bloodcls = PClass::FindClass((ENamedName)originator->GetClass()->Meta.GetMetaInt(AMETA_BloodType2, NAME_BloodSplatter));
 
-	if (bloodcls!=NULL && cl_bloodtype <= 1)
+	int bloodtype = cl_bloodtype;
+	
+	if (bloodcls != NULL && !(GetDefaultByType(bloodcls)->flags4 & MF4_ALLOWPARTICLES))
+		bloodtype = 0;
+
+	if (bloodcls!=NULL && bloodtype <= 1)
 	{
 		AActor *mo;
 
@@ -4523,7 +4526,7 @@ void P_BloodSplatter (fixed_t x, fixed_t y, fixed_t z, AActor *originator)
 			mo->Translation = TRANSLATION(TRANSLATION_Blood, bloodcolor.a);
 		}
 	}
-	if (cl_bloodtype >= 1)
+	if (bloodtype >= 1)
 	{
 		P_DrawSplash2 (40, x, y, z, R_PointToAngle2 (x, y, originator->x, originator->y), 2, bloodcolor);
 	}
@@ -4540,7 +4543,12 @@ void P_BloodSplatter2 (fixed_t x, fixed_t y, fixed_t z, AActor *originator)
 	PalEntry bloodcolor = (PalEntry)originator->GetClass()->Meta.GetMetaInt(AMETA_BloodColor);
 	const PClass *bloodcls = PClass::FindClass((ENamedName)originator->GetClass()->Meta.GetMetaInt(AMETA_BloodType3, NAME_AxeBlood));
 
-	if (bloodcls!=NULL && cl_bloodtype <= 1)
+	int bloodtype = cl_bloodtype;
+	
+	if (bloodcls != NULL && !(GetDefaultByType(bloodcls)->flags4 & MF4_ALLOWPARTICLES))
+		bloodtype = 0;
+
+	if (bloodcls!=NULL && bloodtype <= 1)
 	{
 		AActor *mo;
 		
@@ -4556,7 +4564,7 @@ void P_BloodSplatter2 (fixed_t x, fixed_t y, fixed_t z, AActor *originator)
 			mo->Translation = TRANSLATION(TRANSLATION_Blood, bloodcolor.a);
 		}
 	}
-	if (cl_bloodtype >= 1)
+	if (bloodtype >= 1)
 	{
 		P_DrawSplash2 (100, x, y, z, R_PointToAngle2 (0, 0, originator->x - x, originator->y - y), 2, bloodcolor);
 	}
@@ -4577,7 +4585,13 @@ void P_RipperBlood (AActor *mo, AActor *bleeder)
 	x = mo->x + (pr_ripperblood.Random2 () << 12);
 	y = mo->y + (pr_ripperblood.Random2 () << 12);
 	z = mo->z + (pr_ripperblood.Random2 () << 12);
-	if (bloodcls!=NULL && cl_bloodtype <= 1)
+
+	int bloodtype = cl_bloodtype;
+	
+	if (bloodcls != NULL && !(GetDefaultByType(bloodcls)->flags4 & MF4_ALLOWPARTICLES))
+		bloodtype = 0;
+
+	if (bloodcls!=NULL && bloodtype <= 1)
 	{
 		AActor *th;
 		th = Spawn (bloodcls, x, y, z, ALLOW_REPLACE);
@@ -4593,7 +4607,7 @@ void P_RipperBlood (AActor *mo, AActor *bleeder)
 			th->Translation = TRANSLATION(TRANSLATION_Blood, bloodcolor.a);
 		}
 	}
-	if (cl_bloodtype >= 1)
+	if (bloodtype >= 1)
 	{
 		P_DrawSplash2 (28, x, y, z, 0, 0, bloodcolor);
 	}
