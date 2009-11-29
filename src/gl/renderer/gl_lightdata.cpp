@@ -451,7 +451,7 @@ void gl_SetFog(int lightlevel, int rellight, const FColormap *cmap, bool isaddit
 		}
 		else
 		{
-			gl_SetShaderLight(1.f, 1.f);
+			gl_RenderState.SetLightParms(1.f, 0.f);
 		}
 
 		// For additive rendering using the regular fog color here would mean applying it twice
