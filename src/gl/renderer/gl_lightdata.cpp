@@ -213,7 +213,7 @@ int gl_CalcLightLevel(int lightlevel, int rellight, bool weapon)
 
 	if (glset.lightmode&2 && lightlevel<192 && !weapon) 
 	{
-		light = (192.f - (192-lightlevel)* 1.95f);
+		light = xs_CRoundToInt(192.f - (192-lightlevel)* 1.95f);
 	}
 	else
 	{
@@ -398,7 +398,7 @@ void gl_SetShaderLight(float level, float olight)
 	}
 	else lightdist = MAXDIST;
 
-	lightfactor = clamp<float>(1.f + ((olight/level) - 1.f) * FACTOR, 1.f, 4.f);
+	lightfactor = 1.f + ((olight/level) - 1.f) * FACTOR;
 	if (lightfactor == 1.f) lightdist = 0.f;	// save some code in the shader
 	gl_RenderState.SetLightParms(lightfactor, lightdist);
 }
