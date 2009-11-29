@@ -58,7 +58,12 @@ static PalEntry outsidefogcolor;
 static int outsidefogdensity;
 int skyfog;
 
-CVAR (Int, gl_light_ambient, 20, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
+CUSTOM_CVAR (Int, gl_light_ambient, 20, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+{
+	// ambient of 0 does not work correctly because light level 0 is special.
+	if (self < 1) self = 1;
+}
+
 CVAR(Int, gl_weaponlight, 8, CVAR_ARCHIVE);
 CVAR(Bool,gl_enhanced_nightvision,true,CVAR_ARCHIVE)
 
@@ -222,6 +227,7 @@ int gl_CalcLightLevel(int lightlevel, int rellight, bool weapon)
 
 	if (light<gl_light_ambient) 
 	{
+		light = gl_light_ambient;
 		if (rellight<0) rellight>>=1;
 	}
 	return clamp(light+rellight, 0, 255);
@@ -389,18 +395,25 @@ void gl_SetShaderLight(float level, float olight)
 	const float FACTOR = 2.75f;
 #endif
 
-	float lightdist, lightfactor;
-		
-	if (olight < THRESHOLD)
+	if (level > 0)
 	{
-		lightdist = (MAXDIST/2) + (olight * MAXDIST / THRESHOLD / 2);
-		olight = THRESHOLD;
-	}
-	else lightdist = MAXDIST;
+		float lightdist, lightfactor;
+			
+		if (olight < THRESHOLD)
+		{
+			lightdist = (MAXDIST/2) + (olight * MAXDIST / THRESHOLD / 2);
+			olight = THRESHOLD;
+		}
+		else lightdist = MAXDIST;
 
-	lightfactor = 1.f + ((olight/level) - 1.f) * FACTOR;
-	if (lightfactor == 1.f) lightdist = 0.f;	// save some code in the shader
-	gl_RenderState.SetLightParms(lightfactor, lightdist);
+		lightfactor = 1.f + ((olight/level) - 1.f) * FACTOR;
+		if (lightfactor == 1.f) lightdist = 0.f;	// save some code in the shader
+		gl_RenderState.SetLightParms(lightfactor, lightdist);
+	}
+	else
+	{
+		gl_RenderState.SetLightParms(1.f, 0.f);
+	}
 }
 
 
