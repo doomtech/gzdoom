@@ -392,6 +392,7 @@ void GLWall::RenderMirrorSurface()
 		gl.DepthMask(true);
 		gl.PolygonOffset(0.0f, 0.0f);
 		gl.Disable(GL_POLYGON_OFFSET_FILL);
+		gl_RenderState.SetTextureMode(TM_MODULATE);
 		gl_RenderState.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 }

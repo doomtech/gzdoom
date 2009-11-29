@@ -329,6 +329,7 @@ void FGLRenderer::RenderScene(int recursion)
 {
 	RenderAll.Clock();
 
+	gl.DepthMask(true);
 	if (!gl_no_skyclear) GLPortal::RenderFirstSkyPortal(recursion);
 
 	gl_RenderState.SetCameraPos(FIXED2FLOAT(viewx), FIXED2FLOAT(viewy), FIXED2FLOAT(viewz));
