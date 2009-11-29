@@ -19,6 +19,7 @@
 #include "gl/utility/gl_templates.h"
 
 void gl_CalculateCPUSpeed();
+extern int NewWidth, NewHeight, NewBits, DisplayBits;
 
 CUSTOM_CVAR(Int, gl_vid_multisample, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL )
 {
@@ -410,6 +411,9 @@ void Win32GLFrameBuffer::NewRefreshRate ()
 	if (m_Fullscreen)
 	{
 		setmodeneeded = true;
+		NewWidth = screen->GetWidth();
+		NewHeight = screen->GetHeight();
+		NewBits = DisplayBits;
 	}
 }
 
