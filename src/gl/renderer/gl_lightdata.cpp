@@ -209,6 +209,8 @@ int gl_CalcLightLevel(int lightlevel, int rellight, bool weapon)
 {
 	int light;
 
+	if (lightlevel == 0) return 0;
+
 	if (glset.lightmode&2 && lightlevel<192 && !weapon) 
 	{
 		light = (192.f - (192-lightlevel)* 1.95f);
@@ -220,7 +222,6 @@ int gl_CalcLightLevel(int lightlevel, int rellight, bool weapon)
 
 	if (light<gl_light_ambient) 
 	{
-		light=gl_light_ambient;
 		if (rellight<0) rellight>>=1;
 	}
 	return clamp(light+rellight, 0, 255);
@@ -392,12 +393,12 @@ void gl_SetShaderLight(float level, float olight)
 		
 	if (olight < THRESHOLD)
 	{
-		lightdist = olight * MAXDIST / THRESHOLD;
+		lightdist = (MAXDIST/2) + (olight * MAXDIST / THRESHOLD / 2);
 		olight = THRESHOLD;
 	}
 	else lightdist = MAXDIST;
 
-	lightfactor = 1.f + ((olight/level) - 1.f) * FACTOR;
+	lightfactor = clamp<float>(1.f + ((olight/level) - 1.f) * FACTOR, 1.f, 4.f);
 	if (lightfactor == 1.f) lightdist = 0.f;	// save some code in the shader
 	gl_RenderState.SetLightParms(lightfactor, lightdist);
 }
