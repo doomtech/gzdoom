@@ -179,8 +179,7 @@ public:
 	int TextureHeight(ETexUse i) const { return RenderHeight[i]; }
 	int TextureWidth(ETexUse i) const { return RenderWidth[i]; }
 
-	int GetAreaCount() const { return tex->gl_info.areacount; }
-	FloatRect *GetAreas() const { return tex->gl_info.areas; }
+	int GetAreas(FloatRect **pAreas) const;
 
 	fixed_t TextureOffset(fixed_t textureoffset) const;
 	float TextureOffset(float textureoffset) const;

@@ -924,6 +924,26 @@ fixed_t FMaterial::TextureAdjustWidth(ETexUse i) const
 //
 //===========================================================================
 
+int FMaterial::GetAreas(FloatRect **pAreas) const
+{
+	if (mShaderIndex == 0)	// texture splitting can only be done if there's no attached effects
+	{
+		FTexture *tex = mBaseLayer->tex;
+		*pAreas = tex->gl_info.areas;
+		return tex->gl_info.areacount;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+//===========================================================================
+//
+//
+//
+//===========================================================================
+
 void FMaterial::BindToFrameBuffer()
 {
 	if (mBaseLayer->gltexture == NULL)
