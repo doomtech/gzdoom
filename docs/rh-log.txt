@@ -1,3 +1,54 @@
+December 11, 2009  (Changes by Graf Zahl)
+- fixed: Auto-COMPAT_SHORTTEX for IWADs must be set per IWAD, not in general
+  for Doom.
+- added autodetection of Harmony's IWAD.
+- Added SnailMan's updated language.ita file.
+
+December 11, 2009
+- Fixed: You should still be able to pick up ammo that has a max amount set
+  at 0.
+- Added a few NULL screen checks.
+
+December 6, 2009  (Changes by Graf Zahl)
+- added some code that prevents overlapping monsters from getting stuck in
+  each other. PIT_CheckThing will return true under the following contitions 
+  now:
+  * It was called from P_Move
+  * The actor that is blocking the move already overlaps with the monster
+    that is being moved.
+  * the move will take the 2 actors further apart.  
+
+December 1, 2009
+- Added another surface to receive a copy of the top back buffer immediately
+  before it is presented. This effectively produces a copy of the front
+  buffer without the performance penalty of GetFrontBufferData, so fullscreen
+  wipe preparation and screenshots are faster now. At lower resolutions,
+  always copying the backbuffer does incur a slight FPS hit, but it's
+  practically free at higher resolutions.
+
+November 30, 2009
+- The initial wipe screen is now kept in video memory. I had previously
+  assumed that since the wipes only run at 35 FPS, the time spent DMA'ing
+  it from system to video memory would be acceptable. Apparently I was wrong.
+  In particular, updating the same surface several times probably has to
+  synchronize between each one, making melt particularly slower than it
+  needs to be.
+
+November 29, 2009  (Changes by Graf Zahl)
+- fixed: Line_SetBlocking and Line_SetTextureScale were not in the list
+  of action specials used by DECORATE or MAPINFO.
+- fixed: Teleport_NoStop was not in the line special function table.
+
+November 28, 2009
+- Fixed: The FPS meter cannot use I_MSTime(), because if the game is started
+  with +vid_fps 1, it can need the time before the timer is ready to start.
+- Initialize TempRenderTexture and the back buffer to black upon creation.
+- Fixed: Windowed mode always needs to draw to the temporary surface, even
+  when not gamma correcting, so that D3DFB::GetCurrentScreen() can read from
+  it.
+- Use the spawned class's scale as default for ScriptedMarine instead of
+  DoomPlayer.
+
 November 28, 2009  (Changes by Graf Zahl)
 - fixed: Morph weapons weren't destroyed because the code checked for 
   them in the unmorphed player class.
