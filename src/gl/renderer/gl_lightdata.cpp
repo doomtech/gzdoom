@@ -85,11 +85,6 @@ bool gl_GlowActive()
 	return gl.shadermodel == 4 || (gl.shadermodel == 3 && gl_glow_shader);
 }
 
-bool gl_ExtFogActive()
-{
-	return gl.shadermodel == 4;
-}
-
 //==========================================================================
 //
 // Sets up the fog tables
@@ -127,15 +122,17 @@ CUSTOM_CVAR(Int,gl_fogmode,1,CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
 	if (self>2) self=2;
 	if (self<0) self=0;
-	if (self == 2 && !gl_ExtFogActive()) self = 1;	// mode 2 requires SM4
+	if (self == 2 && gl.shadermodel == 2) self = 1;
+	if (gl.shadermodel == 3) GLRenderer->mShaderManager->Recompile();
 }
 
 CUSTOM_CVAR(Int, gl_lightmode, 3 ,CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
 	if (self>4) self=4;
 	if (self<0) self=0;
-	if (self == 2 && !gl_ExtFogActive()) self = 3;	// mode 2 requires SM4
+	if (self == 2 && gl.shadermodel == 2) self = 3;
 	glset.lightmode = self;
+	if (gl.shadermodel == 3) GLRenderer->mShaderManager->Recompile();
 }
 
 

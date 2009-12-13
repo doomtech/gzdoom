@@ -292,7 +292,7 @@ void InitGLRMapinfoData()
 		glset.map_lightmode = opt->lightmode;
 		glset.map_nocoloredspritelighting = opt->nocoloredspritelighting;
 		glset.skyrotatevector = opt->skyrotatevector;
-		if (!gl_ExtFogActive() && glset.map_lightmode ==2) glset.map_lightmode = 3;
+		if (gl.shadermodel == 2 && glset.map_lightmode ==2) glset.map_lightmode = 3;
 	}
 	else
 	{
