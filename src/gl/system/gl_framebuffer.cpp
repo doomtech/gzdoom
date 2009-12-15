@@ -91,6 +91,7 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(int width, int height, int bits, int refres
 	DoSetGamma();
 	needsetgamma = true;
 	swapped = false;
+	Accel2D = true;
 	if (gl.SetVSync!=NULL) gl.SetVSync(vid_vsync);
 }
 

@@ -495,15 +495,18 @@ bool gl_LoadGLSubsectors(FileReader * f, wadlump_t * lump)
 			seg_t * seg = &segs[subsectors[i].firstline+j];
 			if (seg->linedef==NULL) seg->frontsector = seg->backsector = segs[subsectors[i].firstline].frontsector;
 		}
+		seg_t *firstseg = &segs[subsectors[i].firstline];
+		seg_t *lastseg = &segs[subsectors[i].firstline + subsectors[i].numlines - 1];
+		// The subsector must be closed. If it isn't we can't use these nodes and have to do a rebuild.
+		if (lastseg->v2 != firstseg->v1)
+		{
+			delete [] datab;
+			return false;
+		}
+
 	}
-
-	seg_t *firstseg = &segs[subsectors[i].firstline];
-	seg_t *lastseg = &segs[subsectors[i].firstline + subsectors[i].numlines - 1];
-
 	delete [] datab;
-
-	// The subsector must be closed. If it isn't we can't use these nodes and have to do a rebuild.
-	return (lastseg->v2 == firstseg->v1);
+	return true;
 }
 
 //==========================================================================
