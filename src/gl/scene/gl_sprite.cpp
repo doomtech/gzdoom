@@ -594,7 +594,8 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 		z1 = z2 = z;
 		gltexture=NULL;
 	}
-	scale = fabs(GLRenderer->mViewVector.X * (thing->x-viewx) + GLRenderer->mViewVector.Y * (thing->y-viewy));
+
+	depth = DMulScale20 (thing->x-viewx, viewtancos, thing->y-viewy, viewtansin);
 
 	// light calculation
 
@@ -857,7 +858,9 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 	y2=y+viewvecX*scalefac;
 	z1=z-scalefac;
 	z2=z+scalefac;
-	scale = fabs(viewvecX * (particle->x-viewx) + viewvecY * (particle->y-viewy));
+
+	depth = DMulScale20 (particle->x-viewx, viewtancos, particle->y-viewy, viewtansin);
+
 	actor=NULL;
 	this->particle=particle;
 	
