@@ -1,3 +1,16 @@
+December 18, 2009  (Changes by Graf Zahl)
+- added all known maps requiring inverted sprite sorting to compatibility.txt.
+- added compatibility option to invert sprite sorting. Apparently Doom.exe
+  originally sorted them differently than most source port and on some maps
+  which depends on this it doesn't look right (e.g. Strain MAP13)
+
+December 17, 2009
+- Fixed: Using Transfer_Heights with the SECF_UNDERWATER and
+  SECF_FAKEFLOORONLY flags applied the water effect to the ceiling and not
+  just the floor.
+- Replaced sprite sorting with a stable sort. Performance at the start of
+  nuts.wad seems the same.
+
 December 16, 2009  (Changes by Graf Zahl)
 - Fixed: Morphed players tried endlessly to switch to a weapon they picked up.
 - fixed: P_DamageMobj just set an ice corpse's velocity to 0 to make it shatter.

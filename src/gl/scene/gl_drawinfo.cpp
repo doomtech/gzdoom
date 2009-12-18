@@ -558,7 +558,6 @@ void GLDrawList::SortSpriteIntoWall(SortNode * head,SortNode * sort)
 //
 //
 //==========================================================================
-CVAR(Bool, gl_spritesortback, false, 0)
 
 inline int GLDrawList::CompareSprites(SortNode * a,SortNode * b)
 {
@@ -566,8 +565,9 @@ inline int GLDrawList::CompareSprites(SortNode * a,SortNode * b)
 	GLSprite * s2=&sprites[drawitems[b->itemindex].index];
 
 	float res = s2->scale-s1->scale;
-	if (fabs(res)>FLT_EPSILON) return res;
-	return gl_spritesortback? s1->index-s2->index : s2->index-s1->index;
+	if (res > FLT_EPSILON) return 1;
+	else if (res < FLT_EPSILON) return -1;
+	else return (i_compatflags & COMPATF_SPRITESORT)? s1->index-s2->index : s2->index-s1->index;
 }
 
 //==========================================================================
