@@ -167,7 +167,7 @@ bool FRenderState::ApplyShader()
 			break;
 
 		case 4:
-			useshaders = (!m2D || mEffectState != 0); // all 3D rendering and 2D with texture effects.
+			useshaders = (!m2D || mEffectState != 0 || mColormapState); // all 3D rendering and 2D with texture effects.
 			break;
 
 		default:
