@@ -20,7 +20,8 @@ uniform int fogenabled;
 uniform vec4 fogcolor;
 uniform vec3 camerapos;
 varying vec4 pixelpos;
-uniform vec2 lightparms;
+varying vec4 fogparm;
+//uniform vec2 lightparms;
 uniform float desaturation_factor;
 
 uniform vec4 topglowcolor;
@@ -82,9 +83,9 @@ vec4 getLightColor(float fogdist, float fogfactor)
 	{
 		#if !defined NO_SM4 || defined DOOMLIGHT
 			// special lighting mode 'Doom' not available on older cards for performance reasons.
-			if (fogdist < lightparms.y) 
+			if (fogdist < fogparm.y) 
 			{
-				color.rgb *= lightparms.x - (fogdist / lightparms.y) * (lightparms.x - 1.0);
+				color.rgb *= fogparm.x - (fogdist / fogparm.y) * (fogparm.x - 1.0);
 			}
 		#endif
 		
@@ -174,7 +175,7 @@ void main()
 		#else
 			fogdist = max(16.0, distance(pixelpos.xyz, camerapos));
 		#endif
-		fogfactor = exp2 (fogcolor.a * fogdist);
+		fogfactor = exp2 (fogparm.z * fogdist);
 	}
 	#endif
 	
