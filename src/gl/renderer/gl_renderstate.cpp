@@ -212,14 +212,14 @@ bool FRenderState::ApplyShader()
 		{
 			gl.Uniform3fv(activeShader->camerapos_index, 1, mCameraPos.vec); 
 		}
-		if (mLightParms[0] != activeShader->currentlightfactor || 
+		/*if (mLightParms[0] != activeShader->currentlightfactor || 
 			mLightParms[1] != activeShader->currentlightdist ||
-			mFogDensity != activeShader->currentfogdensity)
+			mFogDensity != activeShader->currentfogdensity)*/
 		{
 			const float LOG2E = 1.442692f;	// = 1/log(2)
-			activeShader->currentlightdist = mLightParms[1];
-			activeShader->currentlightfactor = mLightParms[0];
-			activeShader->currentfogdensity = mFogDensity;
+			//activeShader->currentlightdist = mLightParms[1];
+			//activeShader->currentlightfactor = mLightParms[0];
+			//activeShader->currentfogdensity = mFogDensity;
 			// premultiply the density with as much as possible here to reduce shader
 			// execution time.
 			gl.VertexAttrib4f(VATTR_FOGPARAMS, mLightParms[0], mLightParms[1], mFogDensity * (-LOG2E / 64000.f), 0);

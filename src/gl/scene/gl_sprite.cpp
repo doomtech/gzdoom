@@ -106,16 +106,6 @@ void GLSprite::Draw(int pass)
 	{
 		// The translucent pass requires special setup for the various modes.
 
-		if (!gl_sprite_blend && hw_styleflags != STYLEHW_Solid && actor && !(actor->velx|actor->vely))
-		{
-			// Draw translucent non-moving sprites with a slightly altered z-offset to avoid z-fighting 
-			// when in the same position as a regular sprite.
-			// (mostly added for KDiZD's lens flares.)
-			
-			gl.Enable(GL_POLYGON_OFFSET_FILL);
-			gl.PolygonOffset(-1.0f, -64.0f);
-		}
-
 		// Brightmaps will only be used when doing regular drawing ops and having no fog
 		if (!gl_isBlack(Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE || 
 			RenderStyle.BlendOp != STYLEOP_Add)
@@ -291,12 +281,6 @@ void GLSprite::Draw(int pass)
 		{
 			gl_RenderState.AlphaFunc(GL_GEQUAL,gl_mask_sprite_threshold);
 		}
-
-		if (!gl_sprite_blend && hw_styleflags != STYLEHW_Solid && actor && !(actor->velx|actor->vely))
-		{
-			gl.Disable(GL_POLYGON_OFFSET_FILL);
-			gl.PolygonOffset(0, 0);
-		}
 	}
 
 	gl_RenderState.EnableTexture(true);
@@ -312,7 +296,7 @@ inline void GLSprite::PutSprite(bool translucent)
 {
 	int list;
 	// [BB] Allow models to be drawn in the GLDL_TRANSLUCENT pass.
-	if ( translucent || (!modelframe && gl_sprite_blend))
+	if (translucent || !modelframe)
 	{
 		list = GLDL_TRANSLUCENT;
 	}
@@ -706,6 +690,19 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 		trans=1.f;
 		
 		hw_styleflags = STYLEHW_Solid;
+
+		if (!gl_sprite_blend)
+		{
+			RenderStyle.SrcAlpha = STYLEALPHA_One;
+			RenderStyle.DestAlpha = STYLEALPHA_Zero;
+		}
+		else
+		{
+			RenderStyle.SrcAlpha = STYLEALPHA_Src;
+			RenderStyle.DestAlpha = STYLEALPHA_InvSrc;
+		}
+
+
 	}
 	if ((gltexture && gltexture->GetTransparent()) || (RenderStyle.Flags & STYLEF_RedIsAlpha))
 	{

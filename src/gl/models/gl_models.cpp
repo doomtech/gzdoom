@@ -48,6 +48,7 @@
 #include "g_level.h"
 //#include "gl/gl_intern.h"
 
+#include "gl/renderer/gl_renderer.h"
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/models/gl_models.h"
 #include "gl/textures/gl_material.h"
@@ -60,6 +61,7 @@ static inline float GetTimeFloat()
 }
 
 CVAR(Bool, gl_interpolate_model_frames, true, CVAR_ARCHIVE)
+CVAR(Bool, gl_light_models, true, CVAR_ARCHIVE)
 EXTERN_CVAR(Int, gl_fogmode)
 
 
@@ -503,8 +505,9 @@ void gl_RenderFrameModels( const FSpriteModelFrame *smf,
 						   const int curTics,
 						   const PClass *ti,
 						   int cm,
-						   Matrix3x4 *modeltoworld = NULL,
-						   int translation = 0 )
+						   Matrix3x4 *modeltoworld,
+						   Matrix3x4 *normaltransform,
+						   int translation)
 {
 	// [BB] Frame interpolation: Find the FSpriteModelFrame smfNext which follows after smf in the animation
 	// and the scalar value inter ( element of [0,1) ), both necessary to determine the interpolated frame.
@@ -585,18 +588,18 @@ void gl_RenderModel(GLSprite * spr, int cm)
 		glFrontFace(GL_CW);
 	}
 
-	Matrix3x4 ModelToWorld;
-	Matrix3x4 LightTransform;
-	Matrix3x4 *mat;
+	int translation = 0;
+	if ( !(smf->flags & MDL_IGNORETRANSLATION) )
+		translation = spr->actor->Translation;
 
-	// The light transform matrix only contains the inverse rotations and scalings
-	/*
-	LightTransform.MakeIdentity();
 
-	gl.Scalef(	
-		1./FIXED2FLOAT(spr->actor->scaleX) * smf->xscale,
-		1./FIXED2FLOAT(spr->actor->scaleY) * smf->zscale,	// y scale for a sprite means height, i.e. z in the world!
-		1./FIXED2FLOAT(spr->actor->scaleX) * smf->yscale);
+	// y scale for a sprite means height, i.e. z in the world!
+	float scaleFactorX = FIXED2FLOAT(spr->actor->scaleX) * smf->xscale;
+	float scaleFactorY = FIXED2FLOAT(spr->actor->scaleX) * smf->yscale;
+	float scaleFactorZ = FIXED2FLOAT(spr->actor->scaleY) * smf->zscale;
+	float pitch = 0;
+	float rotateOffset = 0;
+	float angle = ANGLE_TO_FLOAT(spr->actor->angle);
 
 	// [BB] Workaround for the missing pitch information.
 	if ( (smf->flags & MDL_PITCHFROMMOMENTUM) )
@@ -605,28 +608,22 @@ void gl_RenderModel(GLSprite * spr, int cm)
 		const double y = static_cast<double>(spr->actor->vely);
 		const double z = static_cast<double>(spr->actor->velz);
 		// [BB] Calculate the pitch using spherical coordinates.
-		const double pitch = atan( z/sqrt(x*x+y*y) ) / M_PI * 180;
-
-		LightTransform.Rotate(0,0,1,-pitch);
+		
+		pitch = float(atan( z/sqrt(x*x+y*y) ) / M_PI * 180);
 	}
+
 	if( smf->flags & MDL_ROTATING )
 	{
-		float offsetAngle = 0.;
-		const float time = smf->rotationSpeed*GetTimeFloat()/200.;
-		offsetAngle = ( (time - static_cast<int>(time)) *360. );
-
-		LightTransform.Rotate(smf->xrotate, smf->yrotate, smf->zrotate, -offsetAngle);
+		const float time = smf->rotationSpeed*GetTimeFloat()/200.f;
+		rotateOffset = float((time - xs_FloorToInt(time)) *360.f );
 	}
-	LightTransform.Rotate(0,1,0, ANGLE_TO_FLOAT(spr->actor->angle));
-	*/
 
-
-	if (gl_fogmode != 2)
+	if (gl_fogmode != 2 && (GLRenderer->mLightCount == 0 || !gl_light_models))
 	{
 		// Model space => World space
 		gl.Translatef(spr->x, spr->z, spr->y );
 
-		gl.Rotatef(-ANGLE_TO_FLOAT(spr->actor->angle), 0, 1, 0);
+		gl.Rotatef(-angle, 0, 1, 0);
 
 		// Model rotation.
 		// [BB] Added Doomsday like rotation of the weapon pickup models.
@@ -634,38 +631,27 @@ void gl_RenderModel(GLSprite * spr, int cm)
 		
 		if( smf->flags & MDL_ROTATING )
 		{
-			float offsetAngle = 0.;
-			const float time = smf->rotationSpeed*GetTimeFloat()/200.;
-			offsetAngle = ( (time - static_cast<int>(time)) *360. );
 			gl.Translatef(smf->rotationCenterX, smf->rotationCenterY, smf->rotationCenterZ);
-			gl.Rotatef(offsetAngle, smf->xrotate, smf->yrotate, smf->zrotate);
+			gl.Rotatef(rotateOffset, smf->xrotate, smf->yrotate, smf->zrotate);
 			gl.Translatef(-smf->rotationCenterX, -smf->rotationCenterY, -smf->rotationCenterZ);
 		} 		
 
 		// [BB] Workaround for the missing pitch information.
-		if ( (smf->flags & MDL_PITCHFROMMOMENTUM) )
-		{
-			const double x = static_cast<double>(spr->actor->velx);
-			const double y = static_cast<double>(spr->actor->vely);
-			const double z = static_cast<double>(spr->actor->velz);
-			// [BB] Calculate the pitch using spherical coordinates.
-			const double pitch = atan( z/sqrt(x*x+y*y) ) / M_PI * 180;
-
-			gl.Rotatef(pitch, 0, 0, 1);
-		}
+		if (pitch != 0)	gl.Rotatef(pitch, 0, 0, 1);
 
 		// Scaling and model space offset.
-		gl.Scalef(	
-			FIXED2FLOAT(spr->actor->scaleX) * smf->xscale,
-			FIXED2FLOAT(spr->actor->scaleY) * smf->zscale,	// y scale for a sprite means height, i.e. z in the world!
-			FIXED2FLOAT(spr->actor->scaleX) * smf->yscale);
+		gl.Scalef(scaleFactorX, scaleFactorZ, scaleFactorY);
 
 		// [BB] Apply zoffset here, needs to be scaled by 1 / smf->zscale, so that zoffset doesn't depend on the z-scaling.
 		gl.Translatef(0., smf->zoffset / smf->zscale, 0.);
-		mat = NULL;
+
+		gl_RenderFrameModels( smf, spr->actor->state, spr->actor->tics, RUNTIME_TYPE(spr->actor), cm, NULL, NULL, translation );
 	}
 	else
 	{
+		Matrix3x4 ModelToWorld;
+		Matrix3x4 NormalTransform;
+
 		// For radial fog we need to pass coordinates in world space in order to calculate distances.
 		// That means that the local transformations cannot be part of the modelview matrix
 
@@ -673,7 +659,7 @@ void gl_RenderModel(GLSprite * spr, int cm)
 
 		// Model space => World space
 		ModelToWorld.Translate(spr->x, spr->z, spr->y);
-		ModelToWorld.Rotate(0,1,0, -ANGLE_TO_FLOAT(spr->actor->angle));
+		ModelToWorld.Rotate(0,1,0, -angle);
 
 		// Model rotation.
 		// [BB] Added Doomsday like rotation of the weapon pickup models.
@@ -681,43 +667,37 @@ void gl_RenderModel(GLSprite * spr, int cm)
 
 		if( smf->flags & MDL_ROTATING )
 		{
-			float offsetAngle = 0.;
-			const float time = smf->rotationSpeed*GetTimeFloat()/200.;
-			offsetAngle = ( (time - static_cast<int>(time)) *360. );
-
 			ModelToWorld.Translate(-smf->rotationCenterX, -smf->rotationCenterY, -smf->rotationCenterZ);
-			ModelToWorld.Rotate(smf->xrotate, smf->yrotate, smf->zrotate, offsetAngle);
+			ModelToWorld.Rotate(smf->xrotate, smf->yrotate, smf->zrotate, rotateOffset);
 			ModelToWorld.Translate(smf->rotationCenterX, smf->rotationCenterY, smf->rotationCenterZ);
 		}
 
 		// [BB] Workaround for the missing pitch information.
-		if ( (smf->flags & MDL_PITCHFROMMOMENTUM) )
-		{
-			const double x = static_cast<double>(spr->actor->velx);
-			const double y = static_cast<double>(spr->actor->vely);
-			const double z = static_cast<double>(spr->actor->velz);
-			// [BB] Calculate the pitch using spherical coordinates.
-			const double pitch = atan( z/sqrt(x*x+y*y) ) / M_PI * 180;
+		if (pitch != 0) ModelToWorld.Rotate(0,0,1,pitch);
 
-			ModelToWorld.Rotate(0,0,1,pitch);
-		}
-
-		ModelToWorld.Scale(FIXED2FLOAT(spr->actor->scaleX) * smf->xscale,
-						   FIXED2FLOAT(spr->actor->scaleY) * smf->zscale,	// y scale for a sprite means height, i.e. z in the world!
-						   FIXED2FLOAT(spr->actor->scaleX) * smf->yscale);
-
+		ModelToWorld.Scale(scaleFactorX, scaleFactorZ, scaleFactorY);
 
 		// [BB] Apply zoffset here, needs to be scaled by 1 / smf->zscale, so that zoffset doesn't depend on the z-scaling.
 		ModelToWorld.Translate(0., smf->zoffset / smf->zscale, 0.);
 
-		mat = &ModelToWorld;
+		if (!gl_light_models)
+		{
+			gl_RenderFrameModels( smf, spr->actor->state, spr->actor->tics, RUNTIME_TYPE(spr->actor), cm, &ModelToWorld, NULL, translation );
+		}
+		else
+		{
+			// The normal transform matrix only contains the inverse rotations and scalings but not the translations
+			NormalTransform.MakeIdentity();
+
+			NormalTransform.Scale(1.f/scaleFactorX, 1.f/scaleFactorZ, 1.f/scaleFactorY);
+			if (pitch != 0) NormalTransform.Rotate(0,0,1,-pitch);
+			if( smf->flags & MDL_ROTATING ) NormalTransform.Rotate(smf->xrotate, smf->yrotate, smf->zrotate, -rotateOffset);
+			if (angle != 0) NormalTransform.Rotate(0,1,0, angle);
+
+			gl_RenderFrameModels( smf, spr->actor->state, spr->actor->tics, RUNTIME_TYPE(spr->actor), cm, &ModelToWorld, &NormalTransform, translation );
+		}
+
 	}
-
-	int translation = 0;
-	if ( !(smf->flags & MDL_IGNORETRANSLATION) )
-		translation = spr->actor->Translation;
-
-	gl_RenderFrameModels( smf, spr->actor->state, spr->actor->tics, RUNTIME_TYPE(spr->actor), cm, mat, translation );
 
 	gl.MatrixMode(GL_MODELVIEW);
 	gl.PopMatrix();
@@ -774,7 +754,7 @@ void gl_RenderHUDModel(pspdef_t *psp, fixed_t ofsx, fixed_t ofsy, int cm)
 	// [BB] For some reason the jDoom models need to be rotated.
 	gl.Rotatef(90., 0, 1, 0);
 
-	gl_RenderFrameModels( smf, psp->state, psp->tics, playermo->player->ReadyWeapon->GetClass(), cm );
+	gl_RenderFrameModels( smf, psp->state, psp->tics, playermo->player->ReadyWeapon->GetClass(), cm, NULL, NULL, 0 );
 
 	gl.MatrixMode(GL_MODELVIEW);
 	gl.PopMatrix();

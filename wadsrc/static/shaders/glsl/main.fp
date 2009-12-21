@@ -60,21 +60,6 @@ vec4 getLightColor(float fogdist, float fogfactor)
 {
 	vec4 color = gl_Color;
 
-	#ifndef NO_GLOW
-	//
-	// handle glowing walls
-	//
-	if (topglowcolor.a > 0.0 && glowdist.x < topglowcolor.a)
-	{
-		color.rgb += desaturate(topglowcolor * (1.0 - glowdist.x / topglowcolor.a)).rgb;
-	}
-	if (bottomglowcolor.a > 0.0 && glowdist.y < bottomglowcolor.a)
-	{
-		color.rgb += desaturate(bottomglowcolor * (1.0 - glowdist.y / bottomglowcolor.a)).rgb;
-	}
-	color = min(color, 1.0);
-	#endif
-
 	#ifndef NO_FOG
 	//
 	// apply light diminishing	
@@ -92,6 +77,21 @@ vec4 getLightColor(float fogdist, float fogfactor)
 		//color = vec4(color.rgb * (1.0 - fogfactor), color.a);
 		color.rgb = mix(vec3(0.0, 0.0, 0.0), color.rgb, fogfactor);
 	}
+	#endif
+	
+	#ifndef NO_GLOW
+	//
+	// handle glowing walls
+	//
+	if (topglowcolor.a > 0.0 && glowdist.x < topglowcolor.a)
+	{
+		color.rgb += desaturate(topglowcolor * (1.0 - glowdist.x / topglowcolor.a)).rgb;
+	}
+	if (bottomglowcolor.a > 0.0 && glowdist.y < bottomglowcolor.a)
+	{
+		color.rgb += desaturate(bottomglowcolor * (1.0 - glowdist.y / bottomglowcolor.a)).rgb;
+	}
+	color = min(color, 1.0);
 	#endif
 	
 	// calculation of actual light color is complete.
