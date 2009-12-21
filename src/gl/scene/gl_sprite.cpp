@@ -689,12 +689,12 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 		// This is a non-translucent sprite (i.e. STYLE_Normal or equivalent)
 		trans=1.f;
 		
-		hw_styleflags = STYLEHW_Solid;
 
 		if (!gl_sprite_blend)
 		{
 			RenderStyle.SrcAlpha = STYLEALPHA_One;
 			RenderStyle.DestAlpha = STYLEALPHA_Zero;
+			hw_styleflags = STYLEHW_Solid;
 		}
 		else
 		{
