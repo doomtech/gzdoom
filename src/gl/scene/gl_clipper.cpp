@@ -49,6 +49,7 @@ int Clipper::anglecache;
 // Destructor
 //
 //-----------------------------------------------------------------------------
+
 Clipper::~Clipper()
 {
 	Clear();
@@ -65,6 +66,7 @@ Clipper::~Clipper()
 // RemoveRange
 //
 //-----------------------------------------------------------------------------
+
 void Clipper::RemoveRange(ClipNode * range)
 {
 	if (range == cliphead)
@@ -85,6 +87,7 @@ void Clipper::RemoveRange(ClipNode * range)
 // Clear
 //
 //-----------------------------------------------------------------------------
+
 void Clipper::Clear()
 {
 	ClipNode *node = cliphead;
@@ -107,6 +110,7 @@ void Clipper::Clear()
 // IsRangeVisible
 //
 //-----------------------------------------------------------------------------
+
 bool Clipper::IsRangeVisible(angle_t startAngle, angle_t endAngle)
 {
 	ClipNode *ci;
@@ -131,6 +135,7 @@ bool Clipper::IsRangeVisible(angle_t startAngle, angle_t endAngle)
 // AddClipRange
 //
 //-----------------------------------------------------------------------------
+
 void Clipper::AddClipRange(angle_t start, angle_t end)
 {
 	ClipNode *node, *temp, *prevNode;
@@ -235,6 +240,7 @@ void Clipper::AddClipRange(angle_t start, angle_t end)
 // RemoveClipRange
 //
 //-----------------------------------------------------------------------------
+
 void Clipper::RemoveClipRange(angle_t start, angle_t end)
 {
 	ClipNode *node, *temp;
@@ -283,6 +289,26 @@ void Clipper::RemoveClipRange(angle_t start, angle_t end)
 			node = node->next;
 		}
 	}
+}
+
+
+//-----------------------------------------------------------------------------
+//
+// 
+//
+//-----------------------------------------------------------------------------
+
+angle_t Clipper::AngleToPseudo(angle_t ang)
+{
+	double vecx = cos(ang * M_PI / ANGLE_180);
+	double vecy = sin(ang * M_PI / ANGLE_180);
+
+	double result = vecy / (fabs(vecx) + fabs(vecy));
+	if (vecx < 0)
+	{
+		result = 2.f - result;
+	}
+	return xs_Fix<30>::ToFix(result);
 }
 
 //-----------------------------------------------------------------------------

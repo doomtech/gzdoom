@@ -83,8 +83,8 @@ static void AddLine (seg_t *seg,sector_t * sector,subsector_t * polysub)
 		}
 	}
 
-	startAngle = seg->v2->GetViewAngle();
-	endAngle = seg->v1->GetViewAngle();
+	startAngle = seg->v2->GetClipAngle();
+	endAngle = seg->v1->GetClipAngle();
 
 	// Back side, i.e. backface culling	- read: endAngle >= startAngle!
 	if (startAngle-endAngle<ANGLE_180 || !seg->linedef)  

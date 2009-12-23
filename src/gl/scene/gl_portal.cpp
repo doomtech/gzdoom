@@ -305,24 +305,24 @@ inline void GLPortal::ClearClipper()
 	static int call=0;
 
 	// Set the clipper to the minimal visible area
-	clipper.AddClipRange(0,0xffffffff);
+	clipper.SafeAddClipRange(0,0xffffffff);
 	for(unsigned int i=0;i<lines.Size();i++)
 	{
-		angle_t startAngle = R_PointToPseudoAngle(savedviewx, savedviewy, 
+		angle_t startAngle = R_PointToAnglePrecise(savedviewx, savedviewy, 
 												FLOAT2FIXED(lines[i].glseg.x2), FLOAT2FIXED(lines[i].glseg.y2));
 
-		angle_t endAngle = R_PointToPseudoAngle(savedviewx, savedviewy, 
+		angle_t endAngle = R_PointToAnglePrecise(savedviewx, savedviewy, 
 												FLOAT2FIXED(lines[i].glseg.x1), FLOAT2FIXED(lines[i].glseg.y1));
 
 		if (startAngle-endAngle>0) 
 		{
-			clipper.SafeRemoveClipRange(startAngle + angleOffset, endAngle + angleOffset);
+			clipper.SafeRemoveClipRangeRealAngles(startAngle + angleOffset, endAngle + angleOffset);
 		}
 	}
 
 	// and finally clip it to the visible area
 	angle_t a1 = GLRenderer->FrustumAngle();
-	if (a1<ANGLE_180) clipper.SafeAddClipRange(viewangle+a1, viewangle-a1);
+	if (a1<ANGLE_180) clipper.SafeAddClipRangeRealAngles(viewangle+a1, viewangle-a1);
 
 }
 
@@ -773,10 +773,10 @@ void GLMirrorPortal::DrawContents()
 	clipper.Clear();
 
 	angle_t af = GLRenderer->FrustumAngle();
-	if (af<ANGLE_180) clipper.SafeAddClipRange(viewangle+af, viewangle-af);
+	if (af<ANGLE_180) clipper.SafeAddClipRangeRealAngles(viewangle+af, viewangle-af);
 
-	angle_t a2 = GLRenderer->mirrorline->v1->GetViewAngle();
-	angle_t a1 = GLRenderer->mirrorline->v2->GetViewAngle();
+	angle_t a2 = GLRenderer->mirrorline->v1->GetClipAngle();
+	angle_t a1 = GLRenderer->mirrorline->v2->GetClipAngle();
 	clipper.SafeAddClipRange(a1,a2);
 
 	GLRenderer->DrawScene();
