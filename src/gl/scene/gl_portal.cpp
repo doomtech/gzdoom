@@ -308,10 +308,10 @@ inline void GLPortal::ClearClipper()
 	clipper.AddClipRange(0,0xffffffff);
 	for(unsigned int i=0;i<lines.Size();i++)
 	{
-		angle_t startAngle = R_PointToAnglePrecise(savedviewx, savedviewy, 
+		angle_t startAngle = R_PointToPseudoAngle(savedviewx, savedviewy, 
 												FLOAT2FIXED(lines[i].glseg.x2), FLOAT2FIXED(lines[i].glseg.y2));
 
-		angle_t endAngle = R_PointToAnglePrecise(savedviewx, savedviewy, 
+		angle_t endAngle = R_PointToPseudoAngle(savedviewx, savedviewy, 
 												FLOAT2FIXED(lines[i].glseg.x1), FLOAT2FIXED(lines[i].glseg.y1));
 
 		if (startAngle-endAngle>0) 
@@ -736,17 +736,18 @@ void GLMirrorPortal::DrawContents()
 	}
 	else
 	{ 
-		// any mirror--use floats to avoid integer overflow
+		// any mirror--use floats to avoid integer overflow. 
+		// Use doubles to avoid losing precision which is very important here.
 
-		float dx = FIXED2FLOAT(v2->x - v1->x);
-		float dy = FIXED2FLOAT(v2->y - v1->y);
-		float x1 = FIXED2FLOAT(v1->x);
-		float y1 = FIXED2FLOAT(v1->y);
-		float x = FIXED2FLOAT(startx);
-		float y = FIXED2FLOAT(starty);
+		double dx = FIXED2FLOAT(v2->x - v1->x);
+		double dy = FIXED2FLOAT(v2->y - v1->y);
+		double x1 = FIXED2FLOAT(v1->x);
+		double y1 = FIXED2FLOAT(v1->y);
+		double x = FIXED2FLOAT(startx);
+		double y = FIXED2FLOAT(starty);
 
 		// the above two cases catch len == 0
-		float r = ((x - x1)*dx + (y - y1)*dy) / (dx*dx + dy*dy);
+		double r = ((x - x1)*dx + (y - y1)*dy) / (dx*dx + dy*dy);
 
 		viewx = FLOAT2FIXED((x1 + r * dx)*2 - x);
 		viewy = FLOAT2FIXED((y1 + r * dy)*2 - y);
@@ -758,6 +759,7 @@ void GLMirrorPortal::DrawContents()
 		viewx+= FLOAT2FIXED(v[1] * renderdepth / 2);
 		viewy+= FLOAT2FIXED(v[0] * renderdepth / 2);
 	}
+	// we cannot afford any imprecisions caused by R_PointToAngle2 here. They'd be visible as seams around the mirror.
 	viewangle = 2*R_PointToAnglePrecise (GLRenderer->mirrorline->v1->x, GLRenderer->mirrorline->v1->y,
 										GLRenderer->mirrorline->v2->x, GLRenderer->mirrorline->v2->y) - startang;
 

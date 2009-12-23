@@ -119,17 +119,17 @@ public:
 
 extern Clipper clipper;
 
-
-// Used to speed up angle calculations during clipping
+angle_t R_PointToPseudoAngle (fixed_t viewx, fixed_t viewy, fixed_t x, fixed_t y);
 
 inline angle_t R_PointToAnglePrecise (fixed_t viewx, fixed_t viewy, fixed_t x, fixed_t y)
 {
 	return xs_RoundToUInt(atan2(double(y-viewy), double(x-viewx)) * (ANGLE_180/M_PI));
 }
 
+// Used to speed up angle calculations during clipping
 inline angle_t vertex_t::GetViewAngle()
 {
-	return angletime == Clipper::anglecache? viewangle : (angletime = Clipper::anglecache, viewangle = R_PointToAnglePrecise(viewx, viewy, x,y));
+	return angletime == Clipper::anglecache? viewangle : (angletime = Clipper::anglecache, viewangle = R_PointToPseudoAngle(viewx, viewy, x,y));
 }
 
 #endif

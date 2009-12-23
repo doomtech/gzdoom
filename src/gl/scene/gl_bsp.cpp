@@ -343,7 +343,7 @@ void gl_RenderBSPNode (void *node)
 		side ^= 1;
 
 		// It is not necessary to use the slower precise version here
-		if (!clipper.CheckBoxFast(bsp->bbox[side]))
+		if (!clipper.CheckBox(bsp->bbox[side]))
 		{
 			return;
 		}
