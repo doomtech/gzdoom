@@ -222,6 +222,7 @@ player_t::player_t()
   centering(0),
   turnticks(0),
   attackdown(0),
+  usedown(0),
   oldbuttons(0),
   health(0),
   inventorytics(0),
@@ -1399,10 +1400,12 @@ void P_CheckPlayerSprites()
 		{
 			int crouchspriteno;
 			fixed_t defscaleY = mo->GetDefault()->scaleY;
+			fixed_t defscaleX = mo->GetDefault()->scaleX;
 			
-			if (player->userinfo.skin != 0)
+			if (player->userinfo.skin != 0 && !(player->mo->flags4 & MF4_NOSKIN))
 			{
 				defscaleY = skins[player->userinfo.skin].ScaleY;
+				defscaleX = skins[player->userinfo.skin].ScaleX;
 			}
 			
 			// Set the crouch sprite
@@ -1413,8 +1416,9 @@ void P_CheckPlayerSprites()
 				{
 					crouchspriteno = mo->crouchsprite;
 				}
-				else if (mo->sprite == skins[player->userinfo.skin].sprite ||
-						 mo->sprite == skins[player->userinfo.skin].crouchsprite)
+				else if (!(player->mo->flags4 & MF4_NOSKIN) &&
+						(mo->sprite == skins[player->userinfo.skin].sprite ||
+						 mo->sprite == skins[player->userinfo.skin].crouchsprite))
 				{
 					crouchspriteno = skins[player->userinfo.skin].crouchsprite;
 				}
@@ -1446,6 +1450,7 @@ void P_CheckPlayerSprites()
 				}
 				mo->scaleY = defscaleY;
 			}
+			mo->scaleX = defscaleX;
 		}
 	}
 }
@@ -2283,9 +2288,14 @@ void P_PlayerThink (player_t *player)
 			}
 		}
 		// check for use
-		if ((cmd->ucmd.buttons & BT_USE) && !(player->oldbuttons & BT_USE))
+		if ((cmd->ucmd.buttons & BT_USE) && !player->usedown)
 		{
+			player->usedown = true;
 			P_UseLines (player);
+		}
+		else
+		{
+			player->usedown = false;
 		}
 		// Morph counter
 		if (player->morphTics)

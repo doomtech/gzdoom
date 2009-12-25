@@ -1,3 +1,67 @@
+December 25, 2009  (Changes by Graf Zahl)
+- Fixed: Decals could spread to walls which had a decal-less texture or
+  were flagged not to have decals.
+- Fixed: DBaseDecal/DImpactDecal::CloneSelf never checked the return value
+  from their StickToWall call and left unplaced decals behind if that happened.
+- Reintroduced Doom.exe's player_t::usedown variable so that respawning a
+  player does not immediately activate switches. oldbuttons was not usable
+  for this. This also required that CopyPlayer preserves this info.
+- Fixed: When restarting the music there was a NULL pointer check missing
+  so it crashed when the game was started wi
+- Fixed: If the Use key is used to respawn the player it must be cleared
+  so that it doesn't trigger any subsequent actions after respawning.
+- Fixed: Resurrecting a monster did not restore flags5 and flags6.
+- Fixed: Projectiles which killed a non-monster were unable to determine
+  what precisely they hit because MF_CORPSE is only valid for monsters.
+  A new flag, MF6_KILLED that gets set for all objects that die, was added
+  for this case.
+- Added a generic A_Weave function that exposes all possible options of
+  A_BishopMissileWeave and A_CStaffMissileSlither. These 2 functions are
+  no longer needed from DECORATE and therefore deprecated.
+
+December 24, 2009
+- The options menu no longer scales up so quickly, so it can fit wider text
+  onscreen. In addition, it now uses the whole height available to it. Also,
+  at lower resolutions, items on the compatibility options menu now cut off
+  the beginning of the option label rather than the option setting, making
+  this menu useable where previously it was not.
+- Added a channel parameter to the sector overload of SN_StopSequence() so
+  it can be properly paired with calls to SN_StartSequence().
+- Fixed: P_CheckPlayerSprites() ignored the MF4_NOSKIN flag.  It now also sets
+  the X scale, so switching skins while morphed does not produce weird
+  stretching upon unmorphing.
+- Fixed: Calling S_ChangeMusic() with the same song but a different looping
+  flag now restarts the song so that the new looping setting can be applied.
+  (This was easier than modifying every music handler to support modifying
+  loop changes on the fly, which seems like overkill.)
+- Fixed: savepatchsize was declared incorrectly in d_dehacked.cpp:DoInclude().
+- Changed AFastProjectile::Effect() so that it sets the spawned trail to face
+  same direction as the projectile.
+
+December 24, 2009  (Changes by Graf Zahl)
+- fixed: The UDMF blockfloaters flag was misnamed. Changed to match the spec.
+
+December 23, 2009  (Changes by Graf Zahl)
+- made the initial weave index for A_BishopMissileWeave and A_CStaffMissileSlither
+  a configurable actor property.
+- added a menu item for snd_channels.
+
+December 20, 2009  (Changes by Graf Zahl)
+- Fixed: The Dehacked parser could read past the end of the file if the last
+  element was improperly defined.
+
+December 19, 2009
+- Extended MF3_SKYEXPLODE to apply to horizon walls as well.
+
+December 19, 2009  (Changes by Graf Zahl)
+- Fixed: It was not possible to set the ammo type of a weapon explicitly to
+  'none'.
+
+December 18, 2009
+- A_FreezeDeath() now removes fuzz effects.
+- In mus2midi.cpp, added range checking to MUS_SYSEVENT and MUS_CTRLCHANGE,
+  and masking for note-off keys, note-on velocities, and program changes.
+
 December 18, 2009  (Changes by Graf Zahl)
 - added all known maps requiring inverted sprite sorting to compatibility.txt.
 - added compatibility option to invert sprite sorting. Apparently Doom.exe

@@ -135,12 +135,12 @@ DEFINE_ACTION_FUNCTION(AActor, A_CStaffAttack)
 	mo = P_SpawnPlayerMissile (self, RUNTIME_CLASS(ACStaffMissile), self->angle-(ANG45/15));
 	if (mo)
 	{
-		mo->weaveindex = 32;
+		mo->WeaveIndexXY = 32;
 	}
 	mo = P_SpawnPlayerMissile (self, RUNTIME_CLASS(ACStaffMissile), self->angle+(ANG45/15));
 	if (mo)
 	{
-		mo->weaveindex = 0;
+		mo->WeaveIndexXY = 0;
 	}
 	S_Sound (self, CHAN_WEAPON, "ClericCStaffFire", 1, ATTN_NORM);
 }
@@ -153,22 +153,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_CStaffAttack)
 
 DEFINE_ACTION_FUNCTION(AActor, A_CStaffMissileSlither)
 {
-	fixed_t newX, newY;
-	int weaveXY;
-	int angle;
-
-	if (self->weaveindex == -1) self->weaveindex = 0;
-
-	// since these values are now user configurable we have to do a proper range check to avoid array overflows.
-	weaveXY = self->weaveindex & 63;
-	angle = (self->angle+ANG90)>>ANGLETOFINESHIFT;
-	newX = self->x-FixedMul(finecosine[angle], FloatBobOffsets[weaveXY]);
-	newY = self->y-FixedMul(finesine[angle], FloatBobOffsets[weaveXY]);
-	weaveXY = (weaveXY+3)&63;
-	newX += FixedMul(finecosine[angle], FloatBobOffsets[weaveXY]);
-	newY += FixedMul(finesine[angle], FloatBobOffsets[weaveXY]);
-	P_TryMove (self, newX, newY, true);
-	self->weaveindex = weaveXY;
+	A_Weave(self, 3, 0, FRACUNIT, 0);
 }
 
 //============================================================================

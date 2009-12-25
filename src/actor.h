@@ -319,6 +319,7 @@ enum
 	MF6_LINEDONE		= 0x00008000,	// From MBF: Object has already run a line effect
 	MF6_NOTRIGGER		= 0x00010000,	// actor cannot trigger any line actions
 	MF6_SHATTERING		= 0x00020000,	// marks an ice corpse for forced shattering
+	MF6_KILLED			= 0x00040000,	// Something that was killed (but not necessarily a corpse)
 
 // --- mobj.renderflags ---
 
@@ -765,7 +766,6 @@ public:
 	DWORD			flags6;			// Shit! Where did all the flags go?
 	int				special1;		// Special info
 	int				special2;		// Special info
-	int				weaveindex;		// Separated from special2 because it's used by globally accessible functions.
 	int 			health;
 	BYTE			movedir;		// 0-7
 	SBYTE			visdir;
@@ -783,6 +783,8 @@ public:
 	TObjPtr<AActor>	LastLookActor;	// Actor last looked for (if TIDtoHate != 0)
 	fixed_t			SpawnPoint[3]; 	// For nightmare respawn
 	WORD			SpawnAngle;
+	BYTE			WeaveIndexXY;	// Separated from special2 because it's used by globally accessible functions.
+	BYTE			WeaveIndexZ;
 	int				skillrespawncount;
 	int				TIDtoHate;			// TID of things to hate (0 if none)
 	FNameNoInit		Species;		// For monster families
