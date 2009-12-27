@@ -1024,10 +1024,8 @@ struct subsector_t
 	fixed_t		CenterX, CenterY;
 
 	// subsector related GL data
-	FGLSection *	section;		// section this subsector belongs to
 	FLightNode *	lighthead[2];	// Light nodes (blended and additive)
 	sector_t *		render_sector;	// The sector this belongs to for rendering
-	int				validcount2;	// Second v
 	fixed_t			bbox[4];		// Bounding box
 	bool			degenerate;
 	char			hacked;			// 1: is part of a render hack
