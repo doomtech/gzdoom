@@ -1,11 +1,11 @@
 /*
 ** gl_hqresize.cpp
 ** Contains high quality upsampling functions.
-** So far Scale2x/3x/4x as described in http://scale2x.sourceforge.net/
-** are implemented.
+** So far supports Scale2x/3x/4x as described in http://scale2x.sourceforge.net/
+** and Maxim Stepin's hq2x/3x/4x.
 **
 **---------------------------------------------------------------------------
-** Copyright 2008 Benjamin Berkels
+** Copyright 2008-2009 Benjamin Berkels
 ** All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without
@@ -34,13 +34,13 @@
 **
 */
 
-#include "gl/system/gl_system.h"
-#include "gl/renderer/gl_renderer.h"
-#include "gl/textures/gl_texture.h"
+#include "gl_pch.h"
+#include "gl_hqresize.h"
+#include "gl_intern.h"
 #include "c_cvars.h"
 // [BB] hqnx scaling is only supported with the MS compiler.
 #ifdef _MSC_VER
-#include "gl/hqnx/hqnx.h"
+#include "../hqnx/hqnx.h"
 #endif
 
 CUSTOM_CVAR(Int, gl_texture_hqresize, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
@@ -51,18 +51,18 @@ CUSTOM_CVAR(Int, gl_texture_hqresize, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR
 	if (self < 0 || self > 3)
 #endif
 		self = 0;
-	GLRenderer->FlushTextures();
+	FGLTexture::FlushAll();
 }
 
 CUSTOM_CVAR(Int, gl_texture_hqresize_maxinputsize, 512, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	if (self > 1024) self = 1024;
-	GLRenderer->FlushTextures();
+	FGLTexture::FlushAll();
 }
 
 CUSTOM_CVAR(Int, gl_texture_hqresize_targets, 7, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
-	GLRenderer->FlushTextures();
+	FGLTexture::FlushAll();
 }
 
 CVAR (Flag, gl_texture_hqresize_textures, gl_texture_hqresize_targets, 1);
@@ -195,13 +195,6 @@ static unsigned char *hqNxHelper( void (*hqNxFunction) ( int*, unsigned char*, i
 							  int &outWidth,
 							  int &outHeight )
 {
-	static int initdone = false;
-
-	if (!initdone)
-	{
-		InitLUTs();
-		initdone = true;
-	}
 	outWidth = N * inWidth;
 	outHeight = N *inHeight;
 
@@ -222,7 +215,7 @@ static unsigned char *hqNxHelper( void (*hqNxFunction) ( int*, unsigned char*, i
 //  the upsampled buffer.
 //
 //===========================================================================
-unsigned char *gl_CreateUpsampledTextureBuffer ( const FTexture *inputTexture, unsigned char *inputBuffer, const int inWidth, const int inHeight, int &outWidth, int &outHeight )
+unsigned char *gl_CreateUpsampledTextureBuffer ( const FGLTexture *inputGLTexture, unsigned char *inputBuffer, const int inWidth, const int inHeight, int &outWidth, int &outHeight )
 {
 	// [BB] Make sure that outWidth and outHeight denote the size of
 	// the returned buffer even if we don't upsample the input buffer.
@@ -233,15 +226,19 @@ unsigned char *gl_CreateUpsampledTextureBuffer ( const FTexture *inputTexture, u
 	if ( ( inWidth > gl_texture_hqresize_maxinputsize ) || ( inHeight > gl_texture_hqresize_maxinputsize ) )
 		return inputBuffer;
 
+	// [BB] The hqnx upsampling (not the scaleN one) destroys partial transparency, don't upsamle textures using it.
+	if ( inputGLTexture->bIsTransparent == 1 )
+		return inputBuffer;
+
 	// [BB] Don't try to upsample textures based off FCanvasTexture.
-	if ( inputTexture->bHasCanvas )
+	if ( inputGLTexture->tex->bHasCanvas )
 		return inputBuffer;
 
 	// [BB] Don't upsample non-shader handled warped textures. Needs too much memory.
-	if (gl.shadermodel == 2 || (gl.shadermodel == 3 && inputTexture->bWarped))
+	if ( (!(gl.flags & RFL_GLSL) || !gl_warp_shader) && inputGLTexture->tex->bWarped )
 		return inputBuffer;
 
-	switch (inputTexture->UseType)
+	switch (inputGLTexture->tex->UseType)
 	{
 	case FTexture::TEX_Sprite:
 	case FTexture::TEX_SkinSprite:
@@ -259,8 +256,6 @@ unsigned char *gl_CreateUpsampledTextureBuffer ( const FTexture *inputTexture, u
 
 	if (inputBuffer)
 	{
-		outWidth = inWidth;
-		outHeight = inHeight;
 		int type = gl_texture_hqresize;
 		switch (type)
 		{
