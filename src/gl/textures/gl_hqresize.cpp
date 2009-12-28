@@ -222,7 +222,7 @@ static unsigned char *hqNxHelper( void (*hqNxFunction) ( int*, unsigned char*, i
 //  the upsampled buffer.
 //
 //===========================================================================
-unsigned char *gl_CreateUpsampledTextureBuffer ( const FTexture *inputTexture, unsigned char *inputBuffer, const int inWidth, const int inHeight, int &outWidth, int &outHeight )
+unsigned char *gl_CreateUpsampledTextureBuffer ( const FTexture *inputTexture, unsigned char *inputBuffer, const int inWidth, const int inHeight, int &outWidth, int &outHeight, bool hasAlpha )
 {
 	// [BB] Make sure that outWidth and outHeight denote the size of
 	// the returned buffer even if we don't upsample the input buffer.
@@ -237,7 +237,7 @@ unsigned char *gl_CreateUpsampledTextureBuffer ( const FTexture *inputTexture, u
 	if ( inputTexture->bHasCanvas )
 		return inputBuffer;
 
-	// [BB] Don't upsample non-shader handled warped textures. Needs too much memory.
+	// [BB] Don't upsample non-shader handled warped textures. Needs too much memory and time
 	if (gl.shadermodel == 2 || (gl.shadermodel == 3 && inputTexture->bWarped))
 		return inputBuffer;
 
@@ -262,6 +262,12 @@ unsigned char *gl_CreateUpsampledTextureBuffer ( const FTexture *inputTexture, u
 		outWidth = inWidth;
 		outHeight = inHeight;
 		int type = gl_texture_hqresize;
+		// hqNx does not preserve the alpha channel so fall back to ScaleNx for such textures
+		if (hasAlpha && type > 3)
+		{
+			type -= 3;
+		}
+
 		switch (type)
 		{
 		case 1:
