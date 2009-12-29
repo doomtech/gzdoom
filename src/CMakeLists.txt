@@ -722,6 +722,7 @@ add_executable( zdoom WIN32
 	gl/data/gl_sections.cpp
 	gl/data/gl_nodes.cpp
 	gl/data/gl_data.cpp
+	gl/data/gl_portaldata.cpp
 	gl/data/gl_setup.cpp
 	gl/data/gl_vertexbuffer.cpp
 	gl/dynlights/a_dynlight.cpp
