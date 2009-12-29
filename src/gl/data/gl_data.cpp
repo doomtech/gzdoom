@@ -155,6 +155,29 @@ static int LS_Sector_SetPlaneReflection (line_t *ln, AActor *it, bool backSide,
 	return true;
 }
 
+static int LS_SetGlobalFogParameter (line_t *ln, AActor *it, bool backSide,
+	int arg0, int arg1, int arg2, int arg3, int arg4)
+{
+// SetGlobalFogParameter (type, value)
+	switch(arg0)
+	{
+	case 0:
+		fogdensity = arg1>>1;
+		return true;
+
+	case 1:
+		outsidefogdensity = arg1>>1;
+		return true;
+
+	case 2:
+		skyfog = arg1;
+		return true;
+
+	default:
+		return false;
+	}
+}
+
 
 //==========================================================================
 //
@@ -442,6 +465,7 @@ void sector_t::SetDirty(bool dolines, bool dovertices)
 
 void gl_InitData()
 {
+	LineSpecials[157]=LS_SetGlobalFogParameter;
 	LineSpecials[159]=LS_Sector_SetPlaneReflection;
 	gl_InitModels();
 	AdjustSpriteOffsets();
