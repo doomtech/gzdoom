@@ -457,12 +457,11 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 		if (P_AproxDistance(thingx-viewx, thingy-viewy) < thing->Speed ) return;
 	}
 
-	if (GLRenderer->mirrorline)
+	if (GLRenderer->mCurrentPortal)
 	{
-		// this thing is behind the mirror!
-		if (P_PointOnLineSide(thingx, thingy, GLRenderer->mirrorline)) return;
+		int clipres = GLRenderer->mCurrentPortal->ClipPoint(thingx, thingy);
+		if (clipres == GLPortal::PClip_InFront) return;
 	}
-
 
 	player_t *player=&players[consoleplayer];
 	FloatRect r;
@@ -762,10 +761,10 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 
 void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int shade, int fakeside)
 {
-	if (GLRenderer->mirrorline)
+	if (GLRenderer->mCurrentPortal)
 	{
-		// this particle is  behind the mirror!
-		if (P_PointOnLineSide(particle->x, particle->y, GLRenderer->mirrorline)) return;
+		int clipres = GLRenderer->mCurrentPortal->ClipPoint(particle->x, particle->y);
+		if (clipres == GLPortal::PClip_InFront) return;
 	}
 
 	player_t *player=&players[consoleplayer];

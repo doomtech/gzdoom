@@ -56,24 +56,11 @@
 #include "gl/renderer/gl_renderer.h"
 #include "gl/data/gl_data.h"
 #include "gl/data/gl_vertexbuffer.h"
+#include "gl/scene/gl_clipper.h"
 #include "gl/dynlights/gl_dynlight.h"
 #include "gl/dynlights/gl_glow.h"
 #include "gl/utility/gl_clock.h"
 #include "gl/gl_functions.h"
-
-struct FPortal
-{
-	TArray<vertex_t *> Shape;	// forms the smallest convex outline around the portal area
-	fixed_t xDeplacement;
-	fixed_t yDeplacement;
-	int plane;
-	AStackPoint *origin;
-
-	int PointOnShapeLineSide(fixed_t x, fixed_t y, int shapeindex);
-	void AddVertexToShape(vertex_t *vertex);
-	void AddSectorToPortal(sector_t *sector);
-};
-
 
 TArray<FPortal> portals;
 
@@ -204,6 +191,20 @@ void FPortal::AddSectorToPortal(sector_t *sector)
 
 //==========================================================================
 //
+//
+//
+//==========================================================================
+
+void FPortal::UpdateClipAngles()
+{
+	for(unsigned int i=0; i<Shape.Size(); i++)
+	{
+		ClipAngles[i] = R_PointToPseudoAngle(viewx, viewy, Shape[i]->x, Shape[i]->y);
+	}
+}
+
+//==========================================================================
+//
 // portal initialization
 //
 //==========================================================================
@@ -236,16 +237,24 @@ void gl_InitPortals()
 			// we only process portals that actually are in use.
 			if (portal == NULL) 
 			{
-Printf(PRINT_LOG, "Portal #%d, stackpoint at (%f,%f)\n", i, pt->x/65536., pt->y/65536.);
 				pt->special1 = portals.Size();	// Link portal thing to render data
 				portal = &portals[portals.Reserve(1)];
 				portal->origin = pt;
 				portal->plane = 0;
-				portal->xDeplacement = pt->x - pt->Mate->x;
-				portal->yDeplacement = pt->y - pt->Mate->y;
+				portal->xDisplacement = pt->x - pt->Mate->x;
+				portal->yDisplacement = pt->y - pt->Mate->y;
 			}
 			portal->AddSectorToPortal(&sectors[i]);
 			portal->plane|=plane;
+		}
+		if (portal != NULL)
+		{
+			// if the first vertex is duplicated at the end it'll save time in a time critical function
+			// because that code does not need to check for wraparounds anymire.
+			portal->Shape.Resize(portal->Shape.Size()+1);
+			portal->Shape[portal->Shape.Size()-1] = portal->Shape[0];
+			portal->Shape.ShrinkToFit();
+			portal->ClipAngles.Resize(portal->Shape.Size());
 		}
 	}
 }
@@ -255,7 +264,8 @@ CCMD(dumpportals)
 {
 	for(unsigned i=0;i<portals.Size(); i++)
 	{
-		Printf("Portal #%d, plane %d, stackpoint at (%f,%f)\n", i, portals[i].plane, portals[i].origin->x/65536., portals[i].origin->y/65536.);
+		Printf("Portal #%d, plane %d, stackpoint at (%f,%f), displacement = (%f,%f)\n", i, portals[i].plane, portals[i].origin->x/65536., portals[i].origin->y/65536.,
+			portals[i].origin->x/65536. - portals[i].origin->Mate->x/65536., portals[i].origin->y/65536. - portals[i].origin->Mate->y/65536.);
 		for (unsigned j=0;j<portals[i].Shape.Size(); j++)
 		{
 			Printf("\t(%f,%f)\n", portals[i].Shape[j]->x/65536., portals[i].Shape[j]->y/65536.);
