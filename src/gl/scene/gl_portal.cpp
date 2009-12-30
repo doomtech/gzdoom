@@ -592,9 +592,10 @@ void GLSkyboxPortal::DrawContents()
 
 	gl.Disable(GL_DEPTH_CLAMP_NV);
 
-	viewx = origin->x;
-	viewy = origin->y;
-	viewz = origin->z;
+	viewx = origin->PrevX + FixedMul(r_TicFrac, origin->x - origin->PrevX);
+	viewy = origin->PrevY + FixedMul(r_TicFrac, origin->y - origin->PrevY);
+	viewz = origin->PrevZ + FixedMul(r_TicFrac, origin->z - origin->PrevZ);
+	viewangle += origin->PrevAngle + FixedMul(r_TicFrac, origin->angle - origin->PrevAngle);
 
 	// Don't let the viewpoint be too close to a floor or ceiling!
 	fixed_t floorh = origin->Sector->floorplane.ZatPoint(origin->x, origin->y);
@@ -602,7 +603,6 @@ void GLSkyboxPortal::DrawContents()
 	if (viewz<floorh+4*FRACUNIT) viewz=floorh+4*FRACUNIT;
 	if (viewz>ceilh-4*FRACUNIT) viewz=ceilh-4*FRACUNIT;
 
-	viewangle += origin->angle;
 
 	GLRenderer->mViewActor = origin;
 
