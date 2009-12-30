@@ -873,9 +873,6 @@ public:
 	fixed_t PrevX, PrevY, PrevZ;
 	angle_t PrevAngle;
 
-	fixed_t LastX, LastY, LastZ;
-	angle_t LastAngle;
-
 	// ThingIDs
 	static void ClearTIDHashes ();
 	void AddToHash ();
