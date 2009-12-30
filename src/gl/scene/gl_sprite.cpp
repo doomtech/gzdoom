@@ -201,7 +201,7 @@ void GLSprite::Draw(int pass)
 	{
 		// [BB] Billboard stuff
 		const bool drawWithXYBillboard = ( !(actor && actor->renderflags & RF_FORCEYBILLBOARD)
-		                                   && GLRenderer->mViewActor != NULL
+		                                   //&& GLRenderer->mViewActor != NULL
 		                                   && (gl_billboard_mode == 1 || (actor && actor->renderflags & RF_FORCEXYBILLBOARD )) );
 		gl_RenderState.Apply();
 		gl.Begin(GL_TRIANGLE_STRIP);
