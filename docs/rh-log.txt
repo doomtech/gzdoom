@@ -1,6 +1,50 @@
+﻿January 2, 2010  (Changes by Graf Zahl)
+- fixed: Polyobjects could contain segs that weren't flagged as such.
+- fixed: Trying to show a popup crashed in the SBARINFO code because of a 
+  missing NULL pointer check.
+- fixed: The ACS thinker needs its own statnum above all actors. Otherwise
+  order of execution is not guaranteed.
+- fixed: Only ActorMovers should go into STAT_ACTORMOVER, not all PathFollowers.
+- fixed: SBARINFO's DrawGem command accepted a size value of 0 and divided
+  by it. Reinstated the old '+1' this command had in the old code.
+- fixed: The floor waggle code used FloatBobOffsets as sine table but this
+  only has 64 entries and is not precise enough. It now uses finesine instead.
+- fixed: When compositing a multipatch texture any patch that is a multpatch
+  texture itself and contains rotations may not be composited directly into
+  the destination buffer. This must be done with an intermediate buffer.
+- Fixed: Drawing a slider in the options menu did not scale the x-coordinate.
+- Fixed: If the alt HUD had to draw negative numbers the minus sign was misplaced
+  due to incorrect texture coordinate calculations.
+- changed option menu scaling for widescreen modes so that it doesn't scale down
+  so quickly. 
+- made some error messages in DECORATE that don't affect the parsing non-fatal
+  so that the parser can continue to find more problems.
+  
 January 1, 2010  (Changes by Graf Zahl)
+- added initial support for a GAMEINFO lump in PWADs. When the game is started
+  all files loaded with '-file' are scanned for this lump. This lump is read
+  before any WAD initialization takes place, in particular the IWAD is not yet
+  loaded at this time. This allows PWADs the option to specify an IWAD they 
+  want to run with and optionally autoload external resource WADs.
+- Fixed a few places where FixPathSeperator was called with a locked FString buffer.
+  It's better to use the FString version of this function instead.
+- replaced wadlist_t with an array of FStrings and added a list parameter to
+  everything that eventually calls D_AddFile. Also create the list of files
+  loaded on the command line separately to allow further checks on them.
+- fixed: The node builder did not check if all segs could be split properly.
+  Also removed some fudging that tried to work around this case but produced
+  a broken BSP tree on other maps.
+- Added Blzut3's Solaris patch.
 - Fixed: Heretic's Weredragon (Beast) should not have a melee state.
 
+January 1, 2010  (SBARINFO update)
+- Reorganized the SBarInfo code.
+- Added interpolate(<speed>) flag to drawnumber, drawbar, and drawgem.  The old
+  way of interpolating the health and armor is depreciated.
+- Added: armortype to drawswitchableimage loosely based on Gez's submission.
+- As an extension to the previous you can now use comparison operators on
+  inventory items and armortype in drawswitchableimage.
+  
 December 31, 2009  (Changes by Graf Zahl)
 - fixed: FastProjectile was missing all sky checks when the projectile's move
   was blocked.
