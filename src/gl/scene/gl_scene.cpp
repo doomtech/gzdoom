@@ -79,7 +79,6 @@ CVAR(Bool, gl_no_skyclear, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Float, gl_mask_threshold, 0.5f,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Float, gl_mask_sprite_threshold, 0.5f,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Bool, gl_forcemultipass, false, 0)
-CVAR(Int,gl_nearclip,5,CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 EXTERN_CVAR (Int, screenblocks)
 EXTERN_CVAR (Bool, cl_capfps)
@@ -248,7 +247,7 @@ void FGLRenderer::SetProjection(float fov, float ratio, float fovratio)
 	gl.LoadIdentity();
 
 	float fovy = 2 * RAD2DEG(atan(tan(DEG2RAD(fov) / 2) / fovratio));
-	gluPerspective(fovy, ratio, (float)gl_nearclip, 65536.f);
+	gluPerspective(fovy, ratio, 5.f, 65536.f);
 	gl_RenderState.Set2DMode(false);
 }
 
