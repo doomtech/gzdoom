@@ -1,7 +1,0 @@
-ACTOR Decal native
-{
-	Info
-	{
-		DoomEdNum (9200)
-	}
-}
