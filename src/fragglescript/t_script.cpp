@@ -366,6 +366,7 @@ TObjPtr<DFraggleThinker> DFraggleThinker::ActiveThinker;
 //==========================================================================
 
 DFraggleThinker::DFraggleThinker() 
+: DThinker(STAT_SCRIPTS)
 {
 	if (ActiveThinker)
 	{
