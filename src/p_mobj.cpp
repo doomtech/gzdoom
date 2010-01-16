@@ -3677,7 +3677,7 @@ AActor *Spawn (const char *type, fixed_t x, fixed_t y, fixed_t z, replace_t allo
 	FName classname(type, true);
 	if (classname == NAME_None)
 	{
-		I_Error("Attempt to spawn actor without a type\n");
+		I_Error("Attempt to spawn actor of unknown type '%s'\n", type);
 	}
 	return Spawn(classname, x, y, z, allowreplacement);
 }
