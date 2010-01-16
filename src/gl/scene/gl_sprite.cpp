@@ -706,6 +706,8 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 	if ((gltexture && gltexture->GetTransparent()) || (RenderStyle.Flags & STYLEF_RedIsAlpha))
 	{
 		hw_styleflags = STYLEHW_NoAlphaTest;
+		RenderStyle.SrcAlpha = STYLEALPHA_Src;
+		RenderStyle.DestAlpha = STYLEALPHA_InvSrc;
 	}
 
 	if (enhancedvision && gl_enhanced_nightvision)
