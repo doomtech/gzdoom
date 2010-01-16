@@ -389,6 +389,7 @@ void OpenGLFrameBuffer::StartSerialize(FArchive &arc)
 void OpenGLFrameBuffer::EndSerialize(FArchive &arc)
 {
 	gl_RecreateAllAttachedLights();
+	if (arc.IsLoading()) gl_InitPortals();
 }
 
 //===========================================================================
