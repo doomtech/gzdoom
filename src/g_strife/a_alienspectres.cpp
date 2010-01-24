@@ -207,7 +207,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_AlienSpectreDeath)
 
 //============================================================================
 //
-// AAlienSpectre3 :: TakeSpecialDamage
+// AAlienSpetre3 :: TakeSpecialDamage
 //
 // The third spectre type (the Oracle's) is invulnerable to the first stage
 // Sigil, just like the Oracle.

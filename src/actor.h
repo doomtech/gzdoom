@@ -581,7 +581,6 @@ public:
 	virtual void Deactivate (AActor *activator);
 
 	virtual void Tick ();
-	void DoTick ();
 
 	// Smallest yaw interval for a mapthing to be spawned with
 	virtual angle_t AngleIncrements ();
