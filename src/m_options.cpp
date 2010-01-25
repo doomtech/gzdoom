@@ -1584,12 +1584,12 @@ static void M_DrawSlider (int x, int y, double min, double max, double cur,int f
 	cur = clamp(cur, min, max);
 
 	M_DrawConText(CR_WHITE, x, y, "\x10\x11\x11\x11\x11\x11\x11\x11\x11\x11\x11\x12");
-	M_DrawConText(CR_ORANGE, x + int((5 + ((cur * 78) / range)) * CleanXfac_1), y, "\x13");
+	M_DrawConText(CR_ORANGE, x + int((5 + (((cur-min) * 78) / range)) * CleanXfac_1), y, "\x13");
 
 	if (fracdigits >= 0)
 	{
 		char textbuf[16];
-		mysnprintf(textbuf, countof(textbuf), "%.*f", fracdigits, cur - min);
+		mysnprintf(textbuf, countof(textbuf), "%.*f", fracdigits, cur);
 		screen->DrawText(SmallFont, CR_DARKGRAY, x + (12*8 + 4) * CleanXfac_1, y, textbuf, DTA_CleanNoMove_1, true, TAG_DONE);
 	}
 }
