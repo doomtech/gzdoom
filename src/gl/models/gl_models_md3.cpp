@@ -264,7 +264,7 @@ void FMD3Model::RenderFrame(FTexture * skin, int frameno, int cm, Matrix3x4 *mod
 			if (!surfaceSkin) return;
 		}
 
-		FGLTexture * tex = FGLTexture::ValidateTexture(surfaceSkin);
+		FMaterial * tex = FMaterial::ValidateTexture(surfaceSkin);
 
 		tex->Bind(cm, 0, translation);
 		RenderTriangles(surf, surf->vertices + frameno * surf->numVertices, modeltoworld);
@@ -289,7 +289,7 @@ void FMD3Model::RenderFrameInterpolated(FTexture * skin, int frameno, int framen
 			if (!surfaceSkin) return;
 		}
 
-		FGLTexture * tex = FGLTexture::ValidateTexture(surfaceSkin);
+		FMaterial * tex = FMaterial::ValidateTexture(surfaceSkin);
 
 		tex->Bind(cm, 0, translation);
 
