@@ -66,6 +66,10 @@
 #include "md5.h"
 #include "compatibility.h"
 
+#include "gl/gl_functions.h"
+
+#include "fragglescript/t_fs.h"
+
 void P_SpawnSlopeMakers (FMapThing *firstmt, FMapThing *lastmt);
 void P_SetSlopes ();
 void BloodCrypt (void *data, int key, int len);
@@ -654,28 +658,64 @@ static void SetTexture (side_t *side, int position, DWORD *blend, char *name8)
 	side->SetTexture(position, texture);
 }
 
-static void SetTextureNoErr (side_t *side, int position, DWORD *color, char *name8, bool *validcolor)
+static void SetTextureNoErr (side_t *side, int position, DWORD *color, char *name8, bool *validcolor, bool isFog)
 {
 	char name[9];
 	FTextureID texture;
 	strncpy (name, name8, 8);
 	name[8] = 0;
-
+	*validcolor = false;
 	texture = TexMan.CheckForTexture (name, FTexture::TEX_Wall,	
 		FTextureManager::TEXMAN_Overridable|FTextureManager::TEXMAN_TryAny);
 	if (!texture.Exists())
 	{
 		char name2[9];
 		char *stop;
-		strncpy (name2, name, 8);
-		name2[8] = 0;
-		*color = strtoul (name2, &stop, 16);
+		strncpy (name2, name+1, 7);
+		name2[7] = 0;
+		if (*name != '#')
+		{
+			*color = strtoul (name, &stop, 16);
+			texture = FNullTextureID();
+			*validcolor = (*stop == 0) && (stop >= name + 2) && (stop <= name + 6);
+			return;
+		}
+		else	// Support for Legacy's color format!
+		{
+			int l=(int)strlen(name);
+			texture = FNullTextureID();
+			*validcolor = false;
+			if (l>=7) 
+			{
+				for(stop=name2;stop<name2+6;stop++) if (!isxdigit(*stop)) *stop='0';
+
+				int factor = l==7? 0 : clamp<int> ((name2[6]&223)-'A', 0, 25);
+
+				name2[6]=0; int blue=strtol(name2+4,NULL,16);
+				name2[4]=0; int green=strtol(name2+2,NULL,16);
+				name2[2]=0; int red=strtol(name2,NULL,16);
+
+				if (!isFog) 
+				{
+					if (factor==0) 
+					{
+						*validcolor=false;
+						return;
+					}
+					factor = factor * 255 / 25;
+				}
+				else
+				{
+					factor=0;
+				}
+
+				*color=MAKEARGB(factor, red, green, blue);
+				texture = FNullTextureID();
+				*validcolor = true;
+				return;
+			}
+		}
 		texture = FNullTextureID();
-		*validcolor = (*stop == 0) && (stop >= name2 + 2) && (stop <= name2 + 6);
-	}
-	else
-	{
-		*validcolor = false;
 	}
 	side->SetTexture(position, texture);
 }
@@ -885,7 +925,7 @@ void P_LoadGLZSegs (FileReaderZ &data, DWORD id)
 //
 //===========================================================================
 
-static void P_LoadZNodes (FileReader &dalump, DWORD id)
+void P_LoadZNodes (FileReader &dalump, DWORD id)
 {
 	FileReaderZ data (dalump);
 	DWORD i;
@@ -1472,6 +1512,7 @@ void SpawnMapThing(int index, FMapThing *mt, int position)
 			index, mt->x>>FRACBITS, mt->y>>FRACBITS, mt->z>>FRACBITS, mt->type, mt->flags, 
 			spawned? spawned->GetClass()->TypeName.GetChars() : "(none)");
 	}
+	T_AddSpawnedThing(spawned);
 }
 
 //===========================================================================
@@ -2220,8 +2261,8 @@ void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, mapside
 			DWORD color = MAKERGB(255,255,255), fog = 0;
 			bool colorgood, foggood;
 
-			SetTextureNoErr (sd, side_t::bottom, &fog, msd->bottomtexture, &foggood);
-			SetTextureNoErr (sd, side_t::top, &color, msd->toptexture, &colorgood);
+			SetTextureNoErr (sd, side_t::bottom, &fog, msd->bottomtexture, &foggood, true);
+			SetTextureNoErr (sd, side_t::top, &color, msd->toptexture, &colorgood, false);
 			strncpy (name, msd->midtexture, 8);
 			SetTexture(sd, side_t::mid, msd->midtexture);
 
@@ -3178,6 +3219,7 @@ extern polyblock_t **PolyBlockMap;
 
 void P_FreeLevelData ()
 {
+	gl_CleanLevelData();
 	SN_StopAllSequences ();
 	DThinker::DestroyAllThinkers ();
 	level.total_monsters = level.total_items = level.total_secrets =
@@ -3421,7 +3463,7 @@ void P_SetupLevel (char *lumpname, int position)
 			P_LoadTranslator(!level.info->Translator.IsEmpty()? level.info->Translator.GetChars() : gameinfo.translator.GetChars());
 		}
 		CheckCompatibility(map);
-
+		T_LoadScripts(map);
 
 		if (!map->HasBehavior || map->isText)
 		{
@@ -3509,7 +3551,7 @@ void P_SetupLevel (char *lumpname, int position)
 		ForceNodeBuild = true;
 	}
 
-	UsingGLNodes = false;
+	UsingGLNodes = true;	// There really is no point in building non-GL nodes
 	if (!ForceNodeBuild)
 	{
 		// Check for compressed nodes first, then uncompressed nodes
@@ -3560,23 +3602,36 @@ void P_SetupLevel (char *lumpname, int position)
 		}
 		else if (!map->isText)	// regular nodes are not supported for text maps
 		{
-			times[7].Clock();
-			P_LoadSubsectors (map);
-			times[7].Unclock();
+			// If all 3 node related lumps are empty there's no need to output a message.
+			// This just means that the map has no nodes and the engine is supposed to build them.
+			if (map->Size(ML_SEGS) != 0 || map->Size(ML_SSECTORS) != 0 || map->Size(ML_NODES) != 0)
+			{
+				times[7].Clock();
+				P_LoadSubsectors (map);
+				times[7].Unclock();
 
-			times[8].Clock();
-			if (!ForceNodeBuild) P_LoadNodes (map);
-			times[8].Unclock();
+				times[8].Clock();
+				if (!ForceNodeBuild) P_LoadNodes (map);
+				times[8].Unclock();
 
-			times[9].Clock();
-			if (!ForceNodeBuild) P_LoadSegs (map);
-			times[9].Unclock();
+				times[9].Clock();
+				if (!ForceNodeBuild) P_LoadSegs (map);
+				times[9].Unclock();
+			}
+			else ForceNodeBuild = true;
 		}
 		else ForceNodeBuild = true;
+
+		// If loading the regular nodes failed try GL nodes before considering a rebuild
+		if (ForceNodeBuild)
+		{
+			 if (gl_LoadGLNodes(map)) ForceNodeBuild=false;
+		}
 	}
+	unsigned int startTime=0, endTime=0;
+
 	if (ForceNodeBuild)
 	{
-		unsigned int startTime, endTime;
 
 		startTime = I_FPSTime ();
 		TArray<FNodeBuilder::FPolyStart> polyspots, anchors;
@@ -3598,6 +3653,10 @@ void P_SetupLevel (char *lumpname, int position)
 		endTime = I_FPSTime ();
 		DPrintf ("BSP generation took %.3f sec (%d segs)\n", (endTime - startTime) * 0.001, numsegs);
 	}
+
+	// If the nodes being loaded are not GL nodes the GL renderer needs to create a second set of nodes.
+	// The originals have to be kept for use by P_PointInSubsector.
+	gl_CheckNodes(map, ForceNodeBuild, endTime - startTime);
 
 	times[10].Clock();
 	P_LoadBlockMap (map);
@@ -3660,6 +3719,9 @@ void P_SetupLevel (char *lumpname, int position)
 	// set up world state
 	P_SpawnSpecials ();
 
+	// This must be done BEFORE the PolyObj Spawn!!!
+	gl_PreprocessLevel();
+
 	times[16].Clock();
 	PO_Init ();	// Initialize the polyobjs
 	times[16].Unclock();
@@ -3677,6 +3739,27 @@ void P_SetupLevel (char *lumpname, int position)
 		}
 	}
 
+	// Don't count monsters in end-of-level sectors
+	// In 99.9% of all occurences they are part of a trap
+	// and not supposed to be killed.
+	{
+		TThinkerIterator<AActor> it;
+		AActor * mo;
+
+		while ((mo=it.Next()))
+		{
+			if (mo->flags & MF_COUNTKILL)
+			{
+				if (mo->Sector->special == dDamage_End)
+				{
+					level.total_monsters--;
+					mo->flags&=~(MF_COUNTKILL);
+				}
+			}
+		}
+	}
+
+	T_PreprocessScripts();        // preprocess FraggleScript scripts
 
 	// build subsector connect matrix
 	//	UNUSED P_ConnectSubsectors ();
