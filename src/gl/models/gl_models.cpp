@@ -625,19 +625,19 @@ void gl_RenderModel(GLSprite * spr, int cm)
 
 		gl.Rotatef(-angle, 0, 1, 0);
 
+		// [BB] Workaround for the missing pitch information.
+		if (pitch != 0)	gl.Rotatef(pitch, 0, 0, 1);
+
 		// Model rotation.
 		// [BB] Added Doomsday like rotation of the weapon pickup models.
 		// The rotation angle is based on the elapsed time.
-		
+
 		if( smf->flags & MDL_ROTATING )
 		{
 			gl.Translatef(smf->rotationCenterX, smf->rotationCenterY, smf->rotationCenterZ);
 			gl.Rotatef(rotateOffset, smf->xrotate, smf->yrotate, smf->zrotate);
 			gl.Translatef(-smf->rotationCenterX, -smf->rotationCenterY, -smf->rotationCenterZ);
 		} 		
-
-		// [BB] Workaround for the missing pitch information.
-		if (pitch != 0)	gl.Rotatef(pitch, 0, 0, 1);
 
 		// Scaling and model space offset.
 		gl.Scalef(scaleFactorX, scaleFactorZ, scaleFactorY);
@@ -661,6 +661,9 @@ void gl_RenderModel(GLSprite * spr, int cm)
 		ModelToWorld.Translate(spr->x, spr->z, spr->y);
 		ModelToWorld.Rotate(0,1,0, -angle);
 
+		// [BB] Workaround for the missing pitch information.
+		if (pitch != 0) ModelToWorld.Rotate(0,0,1,pitch);
+
 		// Model rotation.
 		// [BB] Added Doomsday like rotation of the weapon pickup models.
 		// The rotation angle is based on the elapsed time.
@@ -671,9 +674,6 @@ void gl_RenderModel(GLSprite * spr, int cm)
 			ModelToWorld.Rotate(smf->xrotate, smf->yrotate, smf->zrotate, rotateOffset);
 			ModelToWorld.Translate(smf->rotationCenterX, smf->rotationCenterY, smf->rotationCenterZ);
 		}
-
-		// [BB] Workaround for the missing pitch information.
-		if (pitch != 0) ModelToWorld.Rotate(0,0,1,pitch);
 
 		ModelToWorld.Scale(scaleFactorX, scaleFactorZ, scaleFactorY);
 
@@ -690,8 +690,8 @@ void gl_RenderModel(GLSprite * spr, int cm)
 			NormalTransform.MakeIdentity();
 
 			NormalTransform.Scale(1.f/scaleFactorX, 1.f/scaleFactorZ, 1.f/scaleFactorY);
-			if (pitch != 0) NormalTransform.Rotate(0,0,1,-pitch);
 			if( smf->flags & MDL_ROTATING ) NormalTransform.Rotate(smf->xrotate, smf->yrotate, smf->zrotate, -rotateOffset);
+			if (pitch != 0) NormalTransform.Rotate(0,0,1,-pitch);
 			if (angle != 0) NormalTransform.Rotate(0,1,0, angle);
 
 			gl_RenderFrameModels( smf, spr->actor->state, spr->actor->tics, RUNTIME_TYPE(spr->actor), cm, &ModelToWorld, &NormalTransform, translation );

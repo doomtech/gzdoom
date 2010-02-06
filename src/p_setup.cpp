@@ -72,7 +72,7 @@
 
 void P_SpawnSlopeMakers (FMapThing *firstmt, FMapThing *lastmt);
 void P_SetSlopes ();
-void P_CopySlopes ();
+void P_CopySlopes();
 void BloodCrypt (void *data, int key, int len);
 void P_ClearUDMFKeys();
 
@@ -3460,8 +3460,24 @@ void P_SetupLevel (char *lumpname, int position)
 		else
 		{
 			// We need translators only for Doom format maps.
-			// If none has been defined in a map use the game's default.
-			P_LoadTranslator(!level.info->Translator.IsEmpty()? level.info->Translator.GetChars() : gameinfo.translator.GetChars());
+			const char *translator;
+
+			if (!level.info->Translator.IsEmpty())
+			{
+				// The map defines its own translator.
+				translator = level.info->Translator.GetChars();
+			}
+			else
+			{
+				// Has the user overridden the game's default translator with a commandline parameter?
+				translator = Args->CheckValue("-xlat");
+				if (translator == NULL) 
+				{
+					// Use the game's default.
+					translator = gameinfo.translator.GetChars();
+				}
+			}
+			P_LoadTranslator(translator);
 		}
 		CheckCompatibility(map);
 		T_LoadScripts(map);
