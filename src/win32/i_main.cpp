@@ -105,7 +105,7 @@
 // EXTERNAL FUNCTION PROTOTYPES --------------------------------------------
 
 LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);
-void CreateCrashLog (char *custominfo, DWORD customsize);
+void CreateCrashLog (char *custominfo, DWORD customsize, HWND richedit);
 void DisplayCrashLog ();
 extern BYTE *ST_Util_BitsForBitmap (BITMAPINFO *bitmap_info);
 
@@ -422,7 +422,7 @@ LRESULT CALLBACK LConProc (HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	TEXTMETRIC tm;
 	HINSTANCE inst = (HINSTANCE)(LONG_PTR)GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
 	DRAWITEMSTRUCT *drawitem;
-	CHARFORMAT2 format;
+	CHARFORMAT2W format;
 
 	switch (msg)
 	{
@@ -453,7 +453,7 @@ LRESULT CALLBACK LConProc (HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		SelectObject (hdc, oldfont);
 
 		// Create log read-only edit control
-		view = CreateWindowEx (WS_EX_NOPARENTNOTIFY, RICHEDIT_CLASS, NULL,
+		view = CreateWindowEx (WS_EX_NOPARENTNOTIFY, "RichEdit20W", NULL,
 			WS_CHILD | WS_VISIBLE | WS_VSCROLL |
 			ES_LEFT | ES_MULTILINE | WS_CLIPSIBLINGS,
 			0, 0, 0, 0,
@@ -471,13 +471,14 @@ LRESULT CALLBACK LConProc (HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		// Setup default font for the log.
 		//SendMessage (view, WM_SETFONT, (WPARAM)GetStockObject (DEFAULT_GUI_FONT), FALSE);
 		format.cbSize = sizeof(format);
-		format.dwMask = CFM_BOLD | CFM_COLOR | CFM_FACE | CFM_SIZE;
+		format.dwMask = CFM_BOLD | CFM_COLOR | CFM_FACE | CFM_SIZE | CFM_CHARSET;
 		format.dwEffects = 0;
 		format.yHeight = 200;
 		format.crTextColor = RGB(223,223,223);
+		format.bCharSet = ANSI_CHARSET;
 		format.bPitchAndFamily = FF_SWISS | VARIABLE_PITCH;
-		strcpy (format.szFaceName, "Bitstream Vera Sans");	// At least I have it. :p
-		SendMessage (view, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&format);
+		wcscpy(format.szFaceName, L"DejaVu Sans");	// At least I have it. :p
+		SendMessageW(view, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&format);
 
 		ConWindow = view;
 		ReleaseDC (hWnd, hdc);
@@ -1175,7 +1176,7 @@ LONG WINAPI CatchAllExceptions (LPEXCEPTION_POINTERS info)
 
 	CrashPointers = *info;
 	DoomSpecificInfo (custominfo, 16384);
-	CreateCrashLog (custominfo, (DWORD)strlen(custominfo));
+	CreateCrashLog (custominfo, (DWORD)strlen(custominfo), ConWindow);
 
 	// If the main thread crashed, then make it clean up after itself.
 	// Otherwise, put the crashing thread to sleep and signal the main thread to clean up.
@@ -1247,7 +1248,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE nothing, LPSTR cmdline, int n
 			*(int *)0 = 0;
 		}
 		__except(CrashPointers = *GetExceptionInformation(),
-			CreateCrashLog (__argv[1], 9), EXCEPTION_EXECUTE_HANDLER)
+			CreateCrashLog (__argv[1], 9, NULL), EXCEPTION_EXECUTE_HANDLER)
 		{
 		}
 		DisplayCrashLog ();
@@ -1260,7 +1261,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE nothing, LPSTR cmdline, int n
 			infiniterecursion(1);
 		}
 		__except(CrashPointers = *GetExceptionInformation(),
-			CreateCrashLog (__argv[1], 14), EXCEPTION_EXECUTE_HANDLER)
+			CreateCrashLog (__argv[1], 14, NULL), EXCEPTION_EXECUTE_HANDLER)
 		{
 		}
 		DisplayCrashLog ();
@@ -1290,7 +1291,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE nothing, LPSTR cmdline, int n
 	_CrtSetDbgFlag (_CrtSetDbgFlag(0) | _CRTDBG_LEAK_CHECK_DF);
 
 	// Use this to break at a specific allocation number.
-	//_crtBreakAlloc = 3660;
+	//_crtBreakAlloc = 30055;
 #endif
 
 	DoMain (hInstance);

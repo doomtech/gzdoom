@@ -114,6 +114,14 @@ CUSTOM_CVAR (Float, sv_gravity, 800.f, CVAR_SERVERINFO|CVAR_NOSAVE)
 	level.gravity = self;
 }
 
+CUSTOM_CVAR(Bool, r_forceplayertranslation, false, CVAR_ARCHIVE|CVAR_NOINITCALL)
+{
+	if (!multiplayer && players[0].mo != NULL)
+	{
+		players[0].mo->Translation = self? TRANSLATION(TRANSLATION_Players, 0) : 0;
+	}
+}
+
 CVAR (Bool, cl_missiledecals, true, CVAR_ARCHIVE)
 CVAR (Bool, addrocketexplosion, false, CVAR_ARCHIVE)
 
@@ -2229,12 +2237,7 @@ void P_ZMovement (AActor *mo, fixed_t oldfloorz)
 		// teleported the actor so it is no longer below the floor.
 		if (mo->z <= mo->floorz)
 		{
-			// old code for boss cube disabled
-			//if ((mo->flags & MF_MISSILE) && (!(gameinfo.gametype & GAME_DoomChex) || !(mo->flags & MF_NOCLIP)))
-
-			// We can't remove this completely because it was abused by some DECORATE definitions
-			// (e.g. the monster pack's Afrit)
-			if ((mo->flags & MF_MISSILE) && ((mo->flags & MF_NOGRAVITY) || !(mo->flags & MF_NOCLIP)))
+			if ((mo->flags & MF_MISSILE) && !(mo->flags & MF_NOCLIP))
 			{
 				mo->z = mo->floorz;
 				if (mo->BounceFlags & BOUNCE_Floors)
@@ -2345,8 +2348,7 @@ void P_ZMovement (AActor *mo, fixed_t oldfloorz)
 			}
 			if (mo->velz > 0)
 				mo->velz = 0;
-			if (mo->flags & MF_MISSILE)
-				//&& (!(gameinfo.gametype & GAME_DoomChex) || !(mo->flags & MF_NOCLIP)))
+			if ((mo->flags & MF_MISSILE) && !(mo->flags & MF_NOCLIP))
 			{
 				if (mo->flags3 & MF3_CEILINGHUGGER)
 				{
@@ -3990,7 +3992,10 @@ APlayerPawn *P_SpawnPlayer (FMapThing *mthing, bool tempplayer)
 	R_BuildPlayerTranslation (playernum);
 
 	// [RH] set color translations for player sprites
-	mobj->Translation = TRANSLATION(TRANSLATION_Players,playernum);
+	if (multiplayer || r_forceplayertranslation)
+		mobj->Translation = TRANSLATION(TRANSLATION_Players,playernum);
+	else
+		mobj->Translation = 0;
 
 	mobj->angle = spawn_angle;
 	mobj->pitch = mobj->roll = 0;
