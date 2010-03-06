@@ -114,14 +114,6 @@ CUSTOM_CVAR (Float, sv_gravity, 800.f, CVAR_SERVERINFO|CVAR_NOSAVE)
 	level.gravity = self;
 }
 
-CUSTOM_CVAR(Bool, r_forceplayertranslation, false, CVAR_ARCHIVE|CVAR_NOINITCALL)
-{
-	if (!multiplayer && players[0].mo != NULL)
-	{
-		players[0].mo->Translation = self? TRANSLATION(TRANSLATION_Players, 0) : 0;
-	}
-}
-
 CVAR (Bool, cl_missiledecals, true, CVAR_ARCHIVE)
 CVAR (Bool, addrocketexplosion, false, CVAR_ARCHIVE)
 
@@ -3988,14 +3980,15 @@ APlayerPawn *P_SpawnPlayer (FMapThing *mthing, bool tempplayer)
 	p->userinfo.skin = R_FindSkin (skins[p->userinfo.skin].name, p->CurrentPlayerClass);
 	StatusBar->SetFace (&skins[p->userinfo.skin]);
 
-	// [RH] Be sure the player has the right translation
-	R_BuildPlayerTranslation (playernum);
 
-	// [RH] set color translations for player sprites
-	if (multiplayer || r_forceplayertranslation)
+	if (!(mobj->flags2 & MF2_DONTTRANSLATE))
+	{
+		// [RH] Be sure the player has the right translation
+		R_BuildPlayerTranslation (playernum);
+
+		// [RH] set color translations for player sprites
 		mobj->Translation = TRANSLATION(TRANSLATION_Players,playernum);
-	else
-		mobj->Translation = 0;
+	}
 
 	mobj->angle = spawn_angle;
 	mobj->pitch = mobj->roll = 0;
