@@ -57,19 +57,13 @@ extern int NewWidth, NewHeight, NewBits, DisplayBits;
 bool V_DoModeSetup (int width, int height, int bits);
 void I_RestartRenderer();
 
-EXTERN_CVAR(Bool, gl_nogl)
 int currentrenderer;
-bool gl_disabled = gl_nogl;
 
 // [ZDoomGL]
 CUSTOM_CVAR (Int, vid_renderer, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG | CVAR_NOINITCALL)
 {
 	// 0: Software renderer
 	// 1: OpenGL renderer
-	if (gl_disabled)
-	{
-		return;
-	}
 
 	if (self != currentrenderer)
 	{
@@ -110,8 +104,7 @@ void I_InitGraphics ()
 	val.Bool = !!Args->CheckParm ("-devparm");
 	ticker.SetGenericRepDefault (val, CVAR_Bool);
 	
-	if (gl_disabled) currentrenderer=0;
-	else currentrenderer = vid_renderer;
+	currentrenderer = vid_renderer;
 	if (currentrenderer==1) Video = new SDLGLVideo(0);
 	else Video = new SDLVideo (0);
 	

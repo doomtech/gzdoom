@@ -104,7 +104,6 @@ static value_t Renderers[] = {
 };
 EXTERN_CVAR (Float, vid_brightness)
 EXTERN_CVAR (Float, vid_contrast)
-extern bool gl_disabled;
 
 //
 // defaulted values
@@ -1420,13 +1419,6 @@ void M_OptInit (void)
 		LabelColor = CR_RED;
 		ValueColor = CR_UNTRANSLATED;
 		MoreColor = CR_UNTRANSLATED;
-	}
-
-	if (gl_disabled)
-	{
-		// If the GL system is permanently disabled change the GL menu items.
-		VideoItems[1].label = "Enable OpenGL system";
-		ModesItems[1].type = nochoice;
 	}
 }
 
