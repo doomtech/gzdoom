@@ -270,8 +270,12 @@ void AActor::Serialize (FArchive &arc)
 		<< ActiveSound
 		<< UseSound
 		<< BounceSound
-		<< WallBounceSound
-		<< Speed
+		<< WallBounceSound;
+	if (SaveVersion >= 2234)
+	{
+		arc << CrushPainSound;
+	}
+	arc	<< Speed
 		<< FloatSpeed
 		<< Mass
 		<< PainChance
@@ -1068,7 +1072,7 @@ bool AActor::Grind(bool items)
 			if (isgeneric)	// Not a custom crush state, so colorize it appropriately.
 			{
 				S_Sound (this, CHAN_BODY, "misc/fallingsplat", 1, ATTN_IDLE);
-				PalEntry bloodcolor = PalEntry(GetClass()->Meta.GetMetaInt(AMETA_BloodColor));
+				PalEntry bloodcolor = GetBloodColor();
 				if (bloodcolor!=0) Translation = TRANSLATION(TRANSLATION_Blood, bloodcolor.a);
 			}
 			return false;
@@ -1112,7 +1116,7 @@ bool AActor::Grind(bool items)
 			}
 			S_Sound (this, CHAN_BODY, "misc/fallingsplat", 1, ATTN_IDLE);
 
-			PalEntry bloodcolor = (PalEntry)this->GetClass()->Meta.GetMetaInt(AMETA_BloodColor);
+			PalEntry bloodcolor = GetBloodColor();
 			if (bloodcolor!=0) gib->Translation = TRANSLATION(TRANSLATION_Blood, bloodcolor.a);
 		}
 		if (flags & MF_ICECORPSE)
@@ -2128,8 +2132,9 @@ void P_ZMovement (AActor *mo, fixed_t oldfloorz)
 {
 	fixed_t dist;
 	fixed_t delta;
-	fixed_t oldz = mo->z;	
-	
+	fixed_t oldz = mo->z;
+	fixed_t grav = mo->GetGravity();
+
 //	
 // check for smooth step up
 //
@@ -2154,8 +2159,6 @@ void P_ZMovement (AActor *mo, fixed_t oldfloorz)
 		if (!mo->waterlevel || mo->flags & MF_CORPSE || (mo->player &&
 			!(mo->player->cmd.ucmd.forwardmove | mo->player->cmd.ucmd.sidemove)))
 		{
-			fixed_t grav = mo->GetGravity();
-
 			// [RH] Double gravity only if running off a ledge. Coming down from
 			// an upward thrust (e.g. a jump) should not double it.
 			if (mo->velz == 0 && oldfloorz > mo->floorz && mo->z == oldfloorz)
@@ -2291,7 +2294,10 @@ void P_ZMovement (AActor *mo, fixed_t oldfloorz)
 				mo->HitFloor ();
 				if (mo->player)
 				{
-					mo->player->jumpTics = 7;	// delay any jumping for a short while
+					if (mo->player->jumpTics != 0 && mo->velz < -grav*4)
+					{ // delay any jumping for a short while
+						mo->player->jumpTics = 7;
+					}
 					if (mo->velz < minvel && !(mo->flags & MF_NOGRAVITY))
 					{
 						// Squat down.
@@ -2606,11 +2612,6 @@ void AActor::RemoveFromHash ()
 		inext = NULL;
 	}
 	tid = 0;
-}
-
-angle_t AActor::AngleIncrements ()
-{
-	return ANGLE_45;
 }
 
 //==========================================================================
@@ -3015,7 +3016,7 @@ void AActor::Tick ()
 						&& !players[i].enemy
 						&& player ? !IsTeammate (players[i].mo) : true
 						&& P_AproxDistance (players[i].mo->x-x, players[i].mo->y-y) < MAX_MONSTER_TARGET_DIST
-						&& P_CheckSight (players[i].mo, this, 2))
+						&& P_CheckSight (players[i].mo, this, SF_SEEPASTBLOCKEVERYTHING))
 					{ //Probably a monster, so go kill it.
 						players[i].enemy = this;
 					}
@@ -3694,8 +3695,6 @@ void AActor::LevelSpawned ()
 {
 	if (tics > 0 && !(flags4 & MF4_SYNCHRONIZED))
 		tics = 1 + (pr_spawnmapthing() % tics);
-	angle_t incs = AngleIncrements ();
-	angle -= angle % incs;
 	flags &= ~MF_DROPPED;		// [RH] clear MF_DROPPED flag
 	HandleSpawnFlags ();
 }
@@ -3954,7 +3953,15 @@ APlayerPawn *P_SpawnPlayer (FMapThing *mthing, bool tempplayer)
 	{
 		spawn_x = mthing->x;
 		spawn_y = mthing->y;
-		spawn_angle = ANG45 * (mthing->angle/45);
+		// Allow full angular precision but avoid roundoff errors for multiples of 45 degrees.
+		if (mthing->angle % 45 != 0)
+		{
+			spawn_angle = mthing->angle * (ANG45 / 45);
+		}
+		else
+		{
+			spawn_angle = ANG45 * (mthing->angle / 45);
+		}
 	}
 
 	mobj = static_cast<APlayerPawn *>
@@ -4502,8 +4509,8 @@ AActor *P_SpawnPuff (AActor *source, const PClass *pufftype, fixed_t x, fixed_t 
 void P_SpawnBlood (fixed_t x, fixed_t y, fixed_t z, angle_t dir, int damage, AActor *originator)
 {
 	AActor *th;
-	PalEntry bloodcolor = (PalEntry)originator->GetClass()->Meta.GetMetaInt(AMETA_BloodColor);
-	const PClass *bloodcls = PClass::FindClass((ENamedName)originator->GetClass()->Meta.GetMetaInt(AMETA_BloodType, NAME_Blood));
+	PalEntry bloodcolor = originator->GetBloodColor();
+	const PClass *bloodcls = originator->GetBloodType();
 	
 	int bloodtype = cl_bloodtype;
 	
@@ -4564,8 +4571,8 @@ void P_SpawnBlood (fixed_t x, fixed_t y, fixed_t z, angle_t dir, int damage, AAc
 
 void P_BloodSplatter (fixed_t x, fixed_t y, fixed_t z, AActor *originator)
 {
-	PalEntry bloodcolor = (PalEntry)originator->GetClass()->Meta.GetMetaInt(AMETA_BloodColor);
-	const PClass *bloodcls = PClass::FindClass((ENamedName)originator->GetClass()->Meta.GetMetaInt(AMETA_BloodType2, NAME_BloodSplatter));
+	PalEntry bloodcolor = originator->GetBloodColor();
+	const PClass *bloodcls = originator->GetBloodType(1); 
 
 	int bloodtype = cl_bloodtype;
 	
@@ -4602,8 +4609,8 @@ void P_BloodSplatter (fixed_t x, fixed_t y, fixed_t z, AActor *originator)
 
 void P_BloodSplatter2 (fixed_t x, fixed_t y, fixed_t z, AActor *originator)
 {
-	PalEntry bloodcolor = (PalEntry)originator->GetClass()->Meta.GetMetaInt(AMETA_BloodColor);
-	const PClass *bloodcls = PClass::FindClass((ENamedName)originator->GetClass()->Meta.GetMetaInt(AMETA_BloodType3, NAME_AxeBlood));
+	PalEntry bloodcolor = originator->GetBloodColor();
+	const PClass *bloodcls = originator->GetBloodType(2);
 
 	int bloodtype = cl_bloodtype;
 	
@@ -4641,8 +4648,8 @@ void P_BloodSplatter2 (fixed_t x, fixed_t y, fixed_t z, AActor *originator)
 void P_RipperBlood (AActor *mo, AActor *bleeder)
 {
 	fixed_t x, y, z;
-	PalEntry bloodcolor = (PalEntry)bleeder->GetClass()->Meta.GetMetaInt(AMETA_BloodColor);
-	const PClass *bloodcls = PClass::FindClass((ENamedName)bleeder->GetClass()->Meta.GetMetaInt(AMETA_BloodType, NAME_Blood));
+	PalEntry bloodcolor = bleeder->GetBloodColor();
+	const PClass *bloodcls = bleeder->GetBloodType();
 
 	x = mo->x + (pr_ripperblood.Random2 () << 12);
 	y = mo->y + (pr_ripperblood.Random2 () << 12);

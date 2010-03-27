@@ -1891,9 +1891,9 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CheckSight)
 
 	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
 
-	for (int i=0;i<MAXPLAYERS;i++) 
+	for (int i = 0; i < MAXPLAYERS; i++) 
 	{
-		if (playeringame[i] && P_CheckSight(players[i].camera,self,true)) return;
+		if (playeringame[i] && P_CheckSight(players[i].camera, self, SF_IGNOREVISIBILITY)) return;
 	}
 
 	ACTION_JUMP(jump);
@@ -1944,7 +1944,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CheckSightOrRange)
 			}
 
 			// Now check LOS.
-			if (P_CheckSight(camera, self, true))
+			if (P_CheckSight(camera, self, SF_IGNOREVISIBILITY))
 			{ // Visible
 				return;
 			}
@@ -2395,7 +2395,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfTargetInLOS)
 
 		if (!target) return; // [KS] Let's not call P_CheckSight unnecessarily in this case.
 
-		if (!P_CheckSight (self, target, 1))
+		if (!P_CheckSight (self, target, SF_IGNOREVISIBILITY))
 			return;
 
 		if (fov && (fov < ANGLE_MAX))
@@ -2458,7 +2458,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfInTargetLOS)
 
 	if (!target) return; // [KS] Let's not call P_CheckSight unnecessarily in this case.
 
-	if (!P_CheckSight (target, self, 1))
+	if (!P_CheckSight (target, self, SF_IGNOREVISIBILITY))
 		return;
 
 	if (fov && (fov < ANGLE_MAX))
@@ -3009,7 +3009,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SetUserVar)
 	ACTION_PARAM_NAME(varname, 0);
 	ACTION_PARAM_INT(value, 1);	
 
-	PSymbol *sym = self->GetClass()->Symbols.FindSymbol(varname, true);
+	PSymbol *sym = stateowner->GetClass()->Symbols.FindSymbol(varname, true);
 	PSymbolVariable *var;
 
 	if (sym == NULL || sym->SymbolType != SYM_Variable ||
@@ -3017,11 +3017,11 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SetUserVar)
 		var->ValueType.Type != VAL_Int)
 	{
 		Printf("%s is not a user variable in class %s\n", varname.GetChars(),
-			self->GetClass()->TypeName.GetChars());
+			stateowner->GetClass()->TypeName.GetChars());
 		return;
 	}
 	// Set the value of the specified user variable.
-	*(int *)(reinterpret_cast<BYTE *>(self) + var->offset) = value;
+	*(int *)(reinterpret_cast<BYTE *>(stateowner) + var->offset) = value;
 }
 
 //===========================================================================
@@ -3037,7 +3037,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SetUserArray)
 	ACTION_PARAM_INT(pos, 1);
 	ACTION_PARAM_INT(value, 2);
 
-	PSymbol *sym = self->GetClass()->Symbols.FindSymbol(varname, true);
+	PSymbol *sym = stateowner->GetClass()->Symbols.FindSymbol(varname, true);
 	PSymbolVariable *var;
 
 	if (sym == NULL || sym->SymbolType != SYM_Variable ||
@@ -3045,17 +3045,17 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SetUserArray)
 		var->ValueType.Type != VAL_Array || var->ValueType.BaseType != VAL_Int)
 	{
 		Printf("%s is not a user array in class %s\n", varname.GetChars(),
-			self->GetClass()->TypeName.GetChars());
+			stateowner->GetClass()->TypeName.GetChars());
 		return;
 	}
 	if (pos < 0 || pos >= var->ValueType.size)
 	{
 		Printf("%d is out of bounds in array %s in class %s\n", pos, varname.GetChars(),
-			self->GetClass()->TypeName.GetChars());
+			stateowner->GetClass()->TypeName.GetChars());
 		return;
 	}
 	// Set the value of the specified user array at index pos.
-	((int *)(reinterpret_cast<BYTE *>(self) + var->offset))[pos] = value;
+	((int *)(reinterpret_cast<BYTE *>(stateowner) + var->offset))[pos] = value;
 }
 
 //===========================================================================
