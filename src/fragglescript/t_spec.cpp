@@ -481,10 +481,14 @@ void FParser::EvaluateFunction(svalue_t &result, int start, int stop)
 	
 	// all the functions are stored in the global script
 	else if( !(func = global_script->VariableForName (Tokens[start]))  )
+	{
 		script_error("no such function: '%s'\n",Tokens[start]);
+	}
 	
-	else if(func->type != svt_function)
+	else if(func->type != svt_function && func->type != svt_linespec)
+	{
 		script_error("'%s' not a function\n", Tokens[start]);
+	}
 	
 	// build the argument list
 	// use a C command-line style system rather than
@@ -522,7 +526,14 @@ void FParser::EvaluateFunction(svalue_t &result, int start, int stop)
 	t_return.value.i = 0;
 	
 	// now run the function
-	(this->*func->value.handler)();
+	if (func->type == svt_function)
+	{
+		(this->*func->value.handler)();
+	}
+	else
+	{
+		RunLineSpecial(func->value.ls);
+	}
 	
 	// return the returned value
 	result = t_return;
@@ -554,10 +565,14 @@ void FParser::OPstructure(svalue_t &result, int start, int n, int stop)
 	
 	// all the functions are stored in the global script
 	if( !(func = global_script->VariableForName (Tokens[n+1]))  )
+	{
 		script_error("no such function: '%s'\n",Tokens[n+1]);
+	}
 	
 	else if(func->type != svt_function)
+	{
 		script_error("'%s' not a function\n", Tokens[n+1]);
+	}
 	
 	// build the argument list
 	

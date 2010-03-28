@@ -498,7 +498,7 @@ void FParser::OPincrement(svalue_t &result, int start, int n, int stop)
 		{
 			script_error("unknown variable '%s'\n", Tokens[stop]);
 		}
-		result = var->GetValue();
+		var->GetValue(result);
 		
 		// haleyjd
 		if(var->type != svt_fixed)
@@ -524,7 +524,7 @@ void FParser::OPincrement(svalue_t &result, int start, int n, int stop)
 		{
 			script_error("unknown variable '%s'\n", Tokens[start]);
 		}
-		result = var->GetValue();
+		var->GetValue(result);
 		
 		// haleyjd
 		if(var->type != svt_fixed)
@@ -563,7 +563,7 @@ void FParser::OPdecrement(svalue_t &result, int start, int n, int stop)
 		{
 			script_error("unknown variable '%s'\n", Tokens[stop]);
 		}
-		result = var->GetValue();
+		var->GetValue(result);
 		
 		// haleyjd
 		if(var->type != svt_fixed)
@@ -589,7 +589,7 @@ void FParser::OPdecrement(svalue_t &result, int start, int n, int stop)
 		{
 			script_error("unknown variable '%s'\n", Tokens[start]);
 		}
-		result = var->GetValue();
+		var->GetValue(result);
 		
 		// haleyjd
 		if(var->type != svt_fixed)

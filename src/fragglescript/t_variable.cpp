@@ -204,33 +204,41 @@ DFsVariable::DFsVariable(const char * _name)
 //
 //==========================================================================
 
-svalue_t DFsVariable::GetValue()
+void DFsVariable::GetValue(svalue_t &returnvar)
 {
-	svalue_t returnvar;
-	
-	if(type == svt_pInt)
-    {
+	switch (type)
+	{
+	case svt_pInt:
 		returnvar.type = svt_int;
 		returnvar.value.i = *value.pI;
-    }
-	else if(type == svt_pMobj)
-    {
+		break;
+
+	case svt_pMobj:
 		returnvar.type = svt_mobj;
 		returnvar.value.mobj = *value.pMobj;
-    }
-	else if (type == svt_mobj)
-	{
+		break;
+
+	case svt_mobj:
 		returnvar.type = type;
 		returnvar.value.mobj = actor;
-	}
-	else
-    {
+		break;
+
+	case svt_linespec:
+		returnvar.type = svt_int;
+		returnvar.value.i = value.ls->number;
+		break;
+
+	case svt_string:
+		returnvar.type = type;
+		returnvar.string = string;
+		break;
+
+	default:
 		// copy the value (also handles fixed)
 		returnvar.type = type;
 		returnvar.value.i = value.i;
+		break;
     }
-	
-	return returnvar;
 }
 
 

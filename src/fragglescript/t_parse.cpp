@@ -583,7 +583,7 @@ void FParser::SimpleEvaluate(svalue_t &returnvar, int n)
 		{
 			script_error("unknown variable '%s'\n", Tokens[n]);
 		}
-		else returnvar = var->GetValue();
+		else var->GetValue(returnvar);
 		
     default: 
 		break;

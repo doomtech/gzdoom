@@ -38,6 +38,7 @@
 #define __T_SCRIPT_H__
 
 #include "p_setup.h"
+#include "p_lnspec.h"
 #include "m_fixed.h"
 #include "actor.h"
 
@@ -73,6 +74,7 @@ enum
   svt_fixed,        // haleyjd: fixed-point int - 8-17 std
   svt_pInt,         // pointer to game int
   svt_pMobj,        // pointer to game mobj
+  svt_linespec,		// line special (can be used as both function and constant)
 };
 
 //==========================================================================
@@ -144,7 +146,7 @@ public:
 	FString Name;
 	TObjPtr<DFsVariable> next;       // for hashing
 
-	int type;       // vt_string or vt_int: same as in svalue_t
+	int type;       // svt_string or svt_int: same as in svalue_t
 	FString string;
 	TObjPtr<AActor> actor;
 
@@ -158,13 +160,14 @@ public:
 		int *pI;                // pointer to game int
 		AActor **pMobj;         // pointer to game obj
 		void (FParser::*handler)();      // for functions
+		const FLineSpecial *ls;
 	} value;
 
 public:
 
 	DFsVariable(const char *_name = "");
 
-	svalue_t GetValue();
+	void GetValue(svalue_t &result);
 	void SetValue(const svalue_t &newvalue);
 	void Serialize(FArchive &ar);
 };
@@ -600,6 +603,7 @@ struct FParser
 	void SF_SetLineTrigger();
 	void SF_ChangeTag();
 	void SF_WallGlow();
+	void RunLineSpecial(const FLineSpecial *);
 
 	DRunningScript *SaveCurrentScript();
 

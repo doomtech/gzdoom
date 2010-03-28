@@ -4037,7 +4037,7 @@ void FParser::SF_SetCorona(void)
 
 //==========================================================================
 //
-// new for GZDoom: Call a Hexen line special
+// new for GZDoom: Call a Hexen line special (deprecated, superseded by direct use)
 //
 //==========================================================================
 
@@ -4418,6 +4418,28 @@ void FParser::SF_WallGlow()
 
 //==========================================================================
 //
+// new for GZDoom: Call a Hexen line special
+//
+//==========================================================================
+
+void FParser::RunLineSpecial(const FLineSpecial *spec)
+{
+
+	if (CheckArgs(spec->min_args))
+	{
+		int args[5];
+		for(int i=0;i<5;i++)
+		{
+			if (t_argc>i) args[i]=intvalue(t_argv[i]);
+			else args[i] = 0;
+		}
+		t_return.value.i = LineSpecials[spec->number](NULL,Script->trigger,false, args[0],args[1],args[2],args[3],args[4]);
+	}
+}
+
+
+//==========================================================================
+//
 //
 //
 //==========================================================================
@@ -4626,6 +4648,17 @@ void init_functions(void)
 	gscr->NewVariable("zoom", svt_pInt)->value.pI = &zoom;
 	gscr->NewVariable("fov", svt_pInt)->value.pI = &zoom;
 	gscr->NewVariable("trigger", svt_pMobj)->value.pMobj = &trigger_obj;
+
+	// Create constants for all existing line specials
+	for(int i=0; i<256; i++)
+	{
+		const FLineSpecial *ls = LineSpecialsInfo[i];
+
+		if (ls != NULL && ls->max_args >= 0)	// specials with max args set to -1 can only be used in a map and are of no use hee.
+		{
+			gscr->NewVariable(ls->name, svt_linespec)->value.ls = ls;
+		}
+	}
 	
 	// important C-emulating stuff
 	gscr->NewFunction("break", &FParser::SF_Break);
