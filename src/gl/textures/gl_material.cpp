@@ -746,14 +746,14 @@ bool FMaterial::TrimBorders(int *rect)
 	rect[0] = 0;
 	rect[2] = w;
 
-	buffer += rect[1] * w * 4;
+	unsigned char *bufferoff = buffer + (rect[1] * w * 4);
 	h = rect[3];
 
 	for(int x = 0; x < w; x++)
 	{
 		for(int y = 0; y < h; y++)
 		{
-			if (buffer[(x+y*w)*4+3] != 0) goto outl;
+			if (bufferoff[(x+y*w)*4+3] != 0) goto outl;
 		}
 		rect[0]++;
 	}
@@ -764,7 +764,7 @@ outl:
 	{
 		for(int y = 0; y < h; y++)
 		{
-			if (buffer[(x+y*w)*4+3] != 0) 
+			if (bufferoff[(x+y*w)*4+3] != 0) 
 			{
 				delete [] buffer;
 				return true;
