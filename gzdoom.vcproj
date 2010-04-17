@@ -1523,6 +1523,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svnrevision.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\Tables.h"
 				>
 			</File>

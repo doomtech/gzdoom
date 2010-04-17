@@ -513,7 +513,7 @@ bool gl_LoadGLSubsectors(FileReader * f, wadlump_t * lump)
 // P_LoadNodes
 //
 //==========================================================================
-
+#define NF_SUBSECTOR 0x8000
 static bool gl_LoadNodes (FileReader * f, wadlump_t * lump)
 {
 	int 		i;
