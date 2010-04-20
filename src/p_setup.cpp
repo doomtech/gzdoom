@@ -870,7 +870,7 @@ void P_LoadZSegs (FileReaderBase &data)
 //
 //===========================================================================
 
-void P_LoadGLZSegs (FileReaderBase &data, DWORD id)
+void P_LoadGLZSegs (FileReaderBase &data, int type)
 {
 	for (int i = 0; i < numsubsectors; ++i)
 	{
@@ -883,7 +883,7 @@ void P_LoadGLZSegs (FileReaderBase &data, DWORD id)
 			BYTE side;
 
 			data >> v1 >> partner;
-			if (id == MAKE_ID('Z','G','L','2'))
+			if (type == 2)
 			{
 				data >> line;
 			}
@@ -1194,7 +1194,7 @@ void P_LoadSegs (MapData * map)
 	{
 		for (i = 0; i < numsegs; i++)
 		{
-			seg_t *li = segs+i;
+			seg_t *li = segs + i;
 			segtype *ml = ((segtype *) data) + i;
 
 			int side, linedef;
@@ -1367,8 +1367,8 @@ void P_LoadSubsectors (MapData * map)
 			return;
 		}
 
-        subsectors[i].numlines = subd.numsegs;
-        subsectors[i].firstline = subd.firstseg;
+		subsectors[i].numlines = subd.numsegs;
+		subsectors[i].firstline = subd.firstseg;
 
 		if (subsectors[i].firstline >= maxseg)
 		{
