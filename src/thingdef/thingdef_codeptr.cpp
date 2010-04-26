@@ -1314,11 +1314,17 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_GiveToTarget)
 //
 //===========================================================================
 
+enum
+{
+	TIF_NOTAKEINFINITE = 1,
+};
+
 void DoTakeInventory(AActor * receiver, DECLARE_PARAMINFO)
 {
-	ACTION_PARAM_START(2);
+	ACTION_PARAM_START(3);
 	ACTION_PARAM_CLASS(item, 0);
 	ACTION_PARAM_INT(amount, 1);
+	ACTION_PARAM_INT(flags, 2);
 	
 	if (item == NULL || receiver == NULL) return;
 
@@ -1332,7 +1338,15 @@ void DoTakeInventory(AActor * receiver, DECLARE_PARAMINFO)
 		{
 			res = true;
 		}
-		if (!amount || amount>=inv->Amount) 
+		// Do not take ammo if the "no take infinite/take as ammo depletion" flag is set
+		// and infinite ammo is on
+		if (flags & TIF_NOTAKEINFINITE &&
+			((dmflags & DF_INFINITE_AMMO) || (receiver->player->cheats & CF_INFINITEAMMO)) &&
+			inv->IsKindOf(RUNTIME_CLASS(AAmmo)))
+		{
+			// Nothing to do here, except maybe res = false;? Would it make sense?
+		}
+		else if (!amount || amount>=inv->Amount) 
 		{
 			if (inv->ItemFlags&IF_KEEPDEPLETED) inv->Amount=0;
 			else inv->Destroy();
@@ -1810,11 +1824,13 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FadeIn)
 	ACTION_PARAM_START(1);
 	ACTION_PARAM_FIXED(reduce, 0);
 
-	if (reduce == 0) reduce = FRACUNIT/10;
-
+	if (reduce == 0)
+	{
+		reduce = FRACUNIT/10;
+	}
 	self->RenderStyle.Flags &= ~STYLEF_Alpha1;
 	self->alpha += reduce;
-	//if (self->alpha<=0) self->Destroy();
+	// Should this clamp alpha to 1.0?
 }
 
 //===========================================================================
@@ -1830,11 +1846,57 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FadeOut)
 	ACTION_PARAM_FIXED(reduce, 0);
 	ACTION_PARAM_BOOL(remove, 1);
 
-	if (reduce == 0) reduce = FRACUNIT/10;
-
+	if (reduce == 0)
+	{
+		reduce = FRACUNIT/10;
+	}
 	self->RenderStyle.Flags &= ~STYLEF_Alpha1;
 	self->alpha -= reduce;
-	if (self->alpha<=0 && remove) self->Destroy();
+	if (self->alpha <= 0 && remove)
+	{
+		self->Destroy();
+	}
+}
+
+//===========================================================================
+//
+// A_FadeTo
+//
+// fades the actor to a specified transparency by a specified amount and
+// destroys it if so desired
+//
+//===========================================================================
+DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FadeTo)
+{
+	ACTION_PARAM_START(3);
+	ACTION_PARAM_FIXED(target, 0);
+	ACTION_PARAM_FIXED(amount, 1);
+	ACTION_PARAM_BOOL(remove, 2);
+
+	self->RenderStyle.Flags &= ~STYLEF_Alpha1;
+
+	if (self->alpha > target)
+	{
+		self->alpha -= amount;
+
+		if (self->alpha < target)
+		{
+			self->alpha = target;
+		}
+	}
+	else if (self->alpha < target)
+	{
+		self->alpha += amount;
+
+		if (self->alpha > target)
+		{
+			self->alpha = target;
+		}
+	}
+	if (self->alpha == target && remove)
+	{
+		self->Destroy();
+	}
 }
 
 //===========================================================================
