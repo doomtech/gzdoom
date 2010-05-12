@@ -446,6 +446,7 @@ EXTERN_CVAR (Int,  wipetype)
 EXTERN_CVAR (Bool, vid_palettehack)
 EXTERN_CVAR (Bool, vid_attachedsurfaces)
 EXTERN_CVAR (Int,  screenblocks)
+EXTERN_CVAR (Int, r_fakecontrast)
 
 static TArray<valuestring_t> Crosshairs;
 
@@ -485,6 +486,12 @@ static value_t Endoom[] = {
 	{ 2.0, "Only modified" }
 };
 
+static value_t Contrast[] = {
+	{ 0.0, "Off" },
+	{ 1.0, "On" },
+	{ 2.0, "Smooth" }
+};
+
 static menuitem_t VideoItems[] = {
 	{ more,		"Message Options",		{NULL},					{0.0}, {0.0},	{0.0}, {(value_t *)StartMessagesMenu} },
 	{ more,     "OpenGL Options",		{NULL},					{0.0}, {0.0},	{0.0}, {(value_t *)StartGLMenu} },
@@ -509,6 +516,7 @@ static menuitem_t VideoItems[] = {
 #endif
 	{ redtext,	" ",					{NULL},					{0.0}, {0.0},	{0.0}, {NULL} },
 	{ discrete, "Use fuzz effect",		{&r_drawfuzz},			{2.0}, {0.0},	{0.0}, {YesNo} },
+	{ discrete, "Use fake contrast",	{&r_fakecontrast},		{3.0}, {0.0},	{0.0}, {YesNo} },
 	{ discrete, "Rocket Trails",		{&cl_rockettrails},		{4.0}, {0.0},	{0.0}, {RocketTrailTypes} },
 	{ discrete, "Blood Type",			{&cl_bloodtype},	   	{3.0}, {0.0},	{0.0}, {BloodTypes} },
 	{ discrete, "Bullet Puff Type",		{&cl_pufftype},			{2.0}, {0.0},	{0.0}, {PuffTypes} },
