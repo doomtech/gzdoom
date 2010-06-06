@@ -3237,10 +3237,6 @@
 					/>
 				</FileConfiguration>
 			</File>
-			<File
-				RelativePath=".\src\g_heretic\heretic_sbar.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Hexen Game"
@@ -4368,10 +4364,6 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="src\g_hexen\hexen_sbar.cpp"
-				>
 			</File>
 		</Filter>
 		<Filter
