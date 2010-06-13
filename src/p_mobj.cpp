@@ -772,7 +772,7 @@ AInventory *AActor::DropInventory (AInventory *item)
 //
 //============================================================================
 
-AInventory *AActor::FindInventory (const PClass *type)
+AInventory *AActor::FindInventory (const PClass *type, bool subclass)
 {
 	AInventory *item;
 
@@ -781,9 +781,19 @@ AInventory *AActor::FindInventory (const PClass *type)
 	assert (type->ActorInfo != NULL);
 	for (item = Inventory; item != NULL; item = item->Inventory)
 	{
-		if (item->GetClass() == type)
+		if (!subclass)
 		{
-			break;
+			if (item->GetClass() == type)
+			{
+				break;
+			}
+		}
+		else
+		{
+			if (item->IsKindOf(type))
+			{
+				break;
+			}
 		}
 	}
 	return item;
@@ -4289,6 +4299,11 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 	{
 		mthing->args[0] = mthing->type - 14000;
 		mthing->type = 14065;
+	}
+	else if (mthing->type >= 14101 && mthing->type <= 14164)
+	{
+		mthing->args[0] = mthing->type - 14100;
+		mthing->type = 14165;
 	}
 	// find which type to spawn
 	i = DoomEdMap.FindType (mthing->type);
