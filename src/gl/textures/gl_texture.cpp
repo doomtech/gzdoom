@@ -796,3 +796,34 @@ void gl_ParseBrightmap(FScanner &sc, int deflump)
 	tex->gl_info.bBrightmapDisablesFullbright = disable_fullbright;
 }
 
+//==========================================================================
+//
+// Parses a GLBoom+ detail texture definition
+//
+// They are of the form of a Detail block containing Walls and Flats blocks.
+// Within a walls or flats block, the normal texture is listed first, then
+// the detail texture applied to it, and optionally two integer values.
+//
+// This merely parses the block and returns no error if valid. The feature
+// is not actually implemented, so nothing else happens.
+//==========================================================================
+
+void gl_ParseDetailTexture(FScanner &sc)
+{
+	while (!sc.CheckToken('}'))
+	{
+		sc.MustGetString();
+		if (sc.Compare("walls") || sc.Compare("flats"))
+		{
+			sc.MustGetToken('{');
+			while (!sc.CheckToken('}'))
+			{
+				sc.MustGetString();
+				sc.MustGetString();
+				if (sc.CheckNumber())
+					sc.MustGetNumber();
+			}
+		}
+	}
+}
+

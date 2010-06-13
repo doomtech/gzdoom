@@ -68,6 +68,7 @@ void gl_InitGlow(FScanner &sc);
 void gl_ParseBrightmap(FScanner &sc, int);
 void gl_ParseHardwareShader(FScanner &sc, int deflump);
 void gl_ParseSkybox(FScanner &sc);
+void gl_ParseDetailTexture(FScanner &sc);
 void gl_ParseVavoomSkybox();
 
 //==========================================================================
@@ -852,6 +853,7 @@ static const char *CoreKeywords[]=
    "brightmap",
    "disable_fullbright",
    "hardwareshader",
+   "detail",
    "#include",
    NULL
 };
@@ -873,6 +875,7 @@ enum
    TAG_BRIGHTMAP,
    TAG_DISABLE_FB,
    TAG_HARDWARESHADER,
+   TAG_DETAIL,
    TAG_INCLUDE,
 };
 
@@ -1260,6 +1263,9 @@ void gl_DoParseDefs(FScanner &sc, int workingLump)
 			break;
 		case TAG_HARDWARESHADER:
 			gl_ParseHardwareShader(sc, workingLump);
+			break;
+		case TAG_DETAIL:
+			gl_ParseDetailTexture(sc);
 			break;
 		case TAG_DISABLE_FB:
 			{
