@@ -800,10 +800,14 @@ void gl_ParseBrightmap(FScanner &sc, int deflump)
 //
 // Parses a GLBoom+ detail texture definition
 //
-// They are of the form of a Detail block containing Walls and Flats blocks.
-// Within a walls or flats block, the normal texture is listed first, then
-// the detail texture applied to it, and optionally two integer values.
-//
+// Syntax is this:
+//	detail
+//	{
+//		(walls | flats) [default_detail_name [width [height [offset_x [offset_y]]]]]
+//		{
+//			texture_name [detail_name [width [height [offset_x [offset_y]]]]]
+//		}
+//	}
 // This merely parses the block and returns no error if valid. The feature
 // is not actually implemented, so nothing else happens.
 //==========================================================================
@@ -815,13 +819,33 @@ void gl_ParseDetailTexture(FScanner &sc)
 		sc.MustGetString();
 		if (sc.Compare("walls") || sc.Compare("flats"))
 		{
+			if (!sc.CheckToken('{'))
+			{
+				sc.MustGetString();  // Default detail texture
+				if (sc.CheckFloat()) // Width
+				if (sc.CheckFloat()) // Height
+				if (sc.CheckFloat()) // OffsX
+				if (sc.CheckFloat()) // OffsY
+				{
+					// Nothing
+				}
+			}
+			else sc.UnGet();
 			sc.MustGetToken('{');
 			while (!sc.CheckToken('}'))
 			{
-				sc.MustGetString();
-				sc.MustGetString();
-				if (sc.CheckNumber())
-					sc.MustGetNumber();
+				sc.MustGetString();  // Texture
+				if (sc.GetString())	 // Detail texture
+				{
+					if (sc.CheckFloat()) // Width
+					if (sc.CheckFloat()) // Height
+					if (sc.CheckFloat()) // OffsX
+					if (sc.CheckFloat()) // OffsY
+					{
+						// Nothing
+					}
+				}
+				else sc.UnGet();
 			}
 		}
 	}
