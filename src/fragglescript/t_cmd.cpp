@@ -92,8 +92,9 @@ void FS_MapCmd(FScanner &sc)
 {
 	char nextmap[9];
 	int NextSkill = -1;
-	bool resetplayers=true;
-	bool nomonsters = !!(dmflags & DF_NO_MONSTERS);
+	int flags = CHANGELEVEL_RESETINVENTORY|CHANGELEVEL_RESETHEALTH;
+	if (dmflags & DF_NO_MONSTERS)
+		flags |= CHANGELEVEL_NOMONSTERS;
 	sc.MustGetString();
 	strncpy (nextmap, sc.String, 8);
 	nextmap[8]=0;
@@ -108,16 +109,18 @@ void FS_MapCmd(FScanner &sc)
 		else if (sc.Compare("-monsters"))
 		{
 			sc.MustGetNumber();
-			nomonsters = !!sc.Number;
+			if (sc.Number)
+				flags &= ~CHANGELEVEL_NOMONSTERS;
+			else
+				flags |= CHANGELEVEL_NOMONSTERS;
 		}
 		else if (sc.Compare("-noresetplayers"))
 		{
-			resetplayers=false;
+			flags &= ~(CHANGELEVEL_RESETINVENTORY|CHANGELEVEL_RESETHEALTH);
 		}
 	}
-	G_ChangeLevel(nextmap, 0, false, NextSkill, true, resetplayers, nomonsters);
+	G_ChangeLevel(nextmap, 0, flags, NextSkill);
 }
-
 
 //==========================================================================
 //
