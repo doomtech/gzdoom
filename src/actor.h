@@ -40,6 +40,7 @@
 #include "r_blend.h"
 #include "s_sound.h"
 
+struct subsector_t;
 //
 // NOTES: AActor
 //
@@ -929,7 +930,15 @@ public:
 		return GetClass()->ActorInfo->FindState(2, names, exact);
 	}
 
+
 	bool HasSpecialDeathStates () const;
+
+	TArray<TObjPtr<AActor> >		dynamiclights;
+	void *				lightassociations;
+	bool				hasmodel;
+	subsector_t *		subsector;
+
+	size_t PropagateMark();
 };
 
 class FActorIterator
