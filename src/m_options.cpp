@@ -96,15 +96,6 @@ EXTERN_CVAR (Bool, vid_vsync)
 EXTERN_CVAR(Bool, displaynametags)
 EXTERN_CVAR (Int, snd_channels)
 
-void StartGLMenu (void);
-EXTERN_CVAR(Int, vid_renderer)
-static value_t Renderers[] = {
-	{ 0.0, "Software" },
-	{ 1.0, "OpenGL" },
-};
-EXTERN_CVAR (Float, vid_brightness)
-EXTERN_CVAR (Float, vid_contrast)
-
 //
 // defaulted values
 //
@@ -495,14 +486,11 @@ static value_t Contrast[] = {
 
 static menuitem_t VideoItems[] = {
 	{ more,		"Message Options",		{NULL},					{0.0}, {0.0},	{0.0}, {(value_t *)StartMessagesMenu} },
-	{ more,     "OpenGL Options",		{NULL},					{0.0}, {0.0},	{0.0}, {(value_t *)StartGLMenu} },
 	{ more,		"Automap Options",		{NULL},					{0.0}, {0.0},	{0.0}, {(value_t *)StartAutomapMenu} },
 	{ more,		"Scoreboard Options",	{NULL},					{0.0}, {0.0},	{0.0}, {(value_t *)StartScoreboardMenu} },
 	{ redtext,	" ",					{NULL},					{0.0}, {0.0},	{0.0}, {NULL} },
 	{ slider,	"Screen size",			{&screenblocks},	   	{3.0}, {12.0},	{1.0}, {NULL} },
-	{ slider,	"Gamma correction",		{&Gamma},			   	{0.1f}, {3.0},	{0.1f}, {NULL} },
-	{ slider,	"Brightness",			{&vid_brightness},		{-0.8f}, {0.8f},	{0.05f}, {NULL} },
-	{ slider,	"Contrast",				{&vid_contrast},	   	{0.1f}, {3.0},	{0.1f}, {NULL} },
+	{ slider,	"Brightness",			{&Gamma},			   	{1.0}, {3.0},	{0.1f}, {NULL} },
 	{ discrete, "Vertical Sync",		{&vid_vsync},			{2.0}, {0.0},	{0.0}, {OnOff} },
 	{ discretes,"Crosshair",			{&crosshair},		   	{8.0}, {0.0},	{0.0}, {NULL} },
 	{ discrete, "Column render mode",	{&r_columnmethod},		{2.0}, {0.0},	{0.0}, {ColumnMethods} },
@@ -524,7 +512,7 @@ static menuitem_t VideoItems[] = {
 	{ discrete, "Display nametags",		{&displaynametags},		{2.0}, {0.0},	{0.0}, {YesNo} },
 };
 
-#define CROSSHAIR_INDEX 10
+#define CROSSHAIR_INDEX 7
 
 menu_t VideoMenu =
 {
@@ -941,7 +929,6 @@ static menuitem_t ModesItems[] = {
 //	{ discrete, "Screen mode",			{&DummyDepthCvar},		{0.0}, {0.0},	{0.0}, {Depths} },
 	{ discrete, "Force aspect ratio",	{&vid_aspect},			{5.0}, {0.0},	{0.0}, {ForceRatios} },
 	{ discrete, "Aspect ratio",			{&menu_screenratios},	{4.0}, {0.0},	{0.0}, {Ratios} },
-	{ discrete,	"Renderer",				{&vid_renderer},		{2.0}, {0.0},	{0.0}, {Renderers} }, // [ZDoomGL]
 	{ discrete, "Fullscreen",			{&fullscreen},			{2.0}, {0.0},	{0.0}, {YesNo} },
 	{ discrete, "Enable 5:4 aspect ratio",{&vid_tft},			{2.0}, {0.0},	{0.0}, {YesNo} },
 	{ redtext,	" ",					{NULL},					{0.0}, {0.0},	{0.0}, {NULL} },
@@ -962,9 +949,9 @@ static menuitem_t ModesItems[] = {
 };
 
 #define VM_ASPECTITEM	1
-#define VM_RESSTART		6
-#define VM_ENTERLINE	16
-#define VM_TESTLINE		18
+#define VM_RESSTART		5
+#define VM_ENTERLINE	15
+#define VM_TESTLINE		17
 
 menu_t ModesMenu =
 {
@@ -1061,6 +1048,7 @@ static menuitem_t DMFlagsItems[] = {
 	{ bitflag,	"Allow spying",			{&dmflags2},	{1}, {0}, {0}, {(value_t *)DF2_DISALLOW_SPYING} },
 	{ bitflag,	"Chasecam cheat",		{&dmflags2},	{0}, {0}, {0}, {(value_t *)DF2_CHASECAM} },
 	{ bitflag,	"Check ammo for weapon switch",	{&dmflags2},	{1}, {0}, {0}, {(value_t *)DF2_DONTCHECKAMMO} },
+	{ bitflag,	"Killing boss brain kills all its monsters",	{&dmflags2},	{0}, {0}, {0}, {(value_t *)DF2_KILLBOSSMONST} },
 
 	{ redtext,	" ",					{NULL},			{0}, {0}, {0}, {NULL} },
 	{ whitetext,"Deathmatch Settings",	{NULL},			{0}, {0}, {0}, {NULL} },
@@ -2345,7 +2333,6 @@ void M_OptButtonHandler(EMenuKey key, bool repeat)
 					ytop *= CleanYfac_1;
 					rowheight *= CleanYfac_1;
 					maxitems = (screen->GetHeight() - rowheight - ytop) / rowheight + 1;
-
 
 					CurrentMenu->scrollpos = MAX (0,CurrentMenu->numitems - maxitems + CurrentMenu->scrolltop);
 					CurrentItem = CurrentMenu->numitems - 1;

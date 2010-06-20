@@ -40,7 +40,6 @@
 #include "r_blend.h"
 #include "s_sound.h"
 
-struct subsector_t;
 //
 // NOTES: AActor
 //
@@ -261,7 +260,7 @@ enum
 	MF4_NOEXTREMEDEATH	= 0x10000000,	// this projectile or weapon never gibs its victim
 	MF4_EXTREMEDEATH	= 0x20000000,	// this projectile or weapon always gibs its victim
 	MF4_FRIGHTENED		= 0x40000000,	// Monster runs away from player
-	/*					= 0x80000000,	*/
+	MF4_BOSSSPAWNED		= 0x80000000,	// Spawned by a boss spawn cube
 	
 // --- mobj.flags5 ---
 
@@ -930,15 +929,7 @@ public:
 		return GetClass()->ActorInfo->FindState(2, names, exact);
 	}
 
-
 	bool HasSpecialDeathStates () const;
-
-	TArray<TObjPtr<AActor> >		dynamiclights;
-	void *				lightassociations;
-	bool				hasmodel;
-	subsector_t *		subsector;
-
-	size_t PropagateMark();
 };
 
 class FActorIterator
