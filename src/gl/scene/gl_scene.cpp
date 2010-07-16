@@ -731,16 +731,17 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 			DBaseStatusBar::AddBlend (0.8431f, 0.7333f, 0.2706f, cnt > 128 ? 0.5f : cnt / 256.f, blend);
 		}
 		
-		// FIXME!
-		cnt = DamageToAlpha[MIN (113, player->damagecount)];
-		
-		if (cnt)
+		if (CPlayer->mo->DamageFade.a != 0)
 		{
-			if (cnt > 175) cnt = 175; // too strong and it gets too opaque
-			
-			DBaseStatusBar::AddBlend (player->mo->DamageFade.r / 255.f, 
-				player->mo->DamageFade.g / 255.f, 
-				player->mo->DamageFade.b / 255.f, cnt / 255.f, blend);
+			cnt = DamageToAlpha[MIN (113, CPlayer->damagecount * CPlayer->mo->DamageFade.a / 255)];
+				
+			if (cnt)
+			{
+				if (cnt > 175) cnt = 175; // too strong and it gets too opaque
+
+				APlayerPawn *mo = CPlayer->mo;
+				AddBlend (mo->DamageFade.r / 255.f, mo->DamageFade.g / 255.f, mo->DamageFade.b / 255.f, cnt / 255.f, blend);
+			}
 		}
 		
 		if (player->poisoncount)
