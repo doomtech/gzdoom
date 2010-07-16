@@ -740,7 +740,7 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 				if (cnt > 175) cnt = 175; // too strong and it gets too opaque
 
 				APlayerPawn *mo = player->mo;
-				AddBlend (mo->DamageFade.r / 255.f, mo->DamageFade.g / 255.f, mo->DamageFade.b / 255.f, cnt / 255.f, blend);
+				DBaseStatusBar::AddBlend (mo->DamageFade.r / 255.f, mo->DamageFade.g / 255.f, mo->DamageFade.b / 255.f, cnt / 255.f, blend);
 			}
 		}
 		
