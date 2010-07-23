@@ -88,6 +88,11 @@ struct vertex_t
 		return x == other.x && y == other.y;
 	}
 
+	void clear()
+	{
+		x = y = 0;
+	}
+
 	angle_t GetClipAngle();
 };
 
@@ -943,6 +948,10 @@ struct side_t
 
 	DInterpolation *SetInterpolation(int position);
 	void StopInterpolation(int position);
+
+	vertex_t *V1() const;
+	vertex_t *V2() const;
+
 	//For GL
 	FLightNode * lighthead[2];				// all blended lights that may affect this wall
 	bool dirty;								// GL info needs to be recalculated
@@ -964,6 +973,7 @@ enum slopetype_t
 	ST_POSITIVE,
 	ST_NEGATIVE
 };
+
 
 struct line_t
 {
@@ -1011,19 +1021,20 @@ struct msecnode_t
 	bool visited;	// killough 4/4/98, 4/7/98: used in search algorithms
 };
 
+struct FPolyNode;
+
 //
 // A SubSector.
 // References a Sector.
 // Basically, this is a list of LineSegs indicating the visible walls that
 // define (all or some) sides of a convex BSP leaf.
 //
-struct FPolyObj;
 struct subsector_t
 {
 	sector_t	*sector;
 	DWORD		numlines;
 	DWORD		firstline;
-	FPolyObj	*poly;
+	FPolyNode	*polys;
 	int			validcount;
 	fixed_t		CenterX, CenterY;
 
@@ -1059,45 +1070,7 @@ struct seg_t
 	float			sidefrac;		// relative position of seg's ending vertex on owning sidedef
 };
 
-// ===== Polyobj data =====
-struct FPolyObj
-{
-	int			numsegs;
-	seg_t		**segs;
-	int			numlines;
-	line_t		**lines;
-	int			numvertices;
-	vertex_t	**vertices;
-	fixed_t		startSpot[2];
-	vertex_t	*originalPts;	// used as the base for the rotations
-	vertex_t	*prevPts; 		// use to restore the old point values
-	angle_t		angle;
-	int			tag;			// reference tag assigned in HereticEd
-	int			bbox[4];
-	int			validcount;
-	int			crush; 			// should the polyobj attempt to crush mobjs?
-	bool		bHurtOnTouch;	// should the polyobj hurt anything it touches?
-	int			seqType;
-	fixed_t		size;			// polyobj size (area of POLY_AREAUNIT == size of FRACUNIT)
-	DThinker	*specialdata;	// pointer to a thinker, if the poly is moving
-	TObjPtr<DInterpolation> interpolation;
-
-	~FPolyObj();
-	DInterpolation *SetInterpolation();
-	void StopInterpolation();
-};
-extern FPolyObj *polyobjs;		// list of all poly-objects on the level
-
-inline FArchive &operator<< (FArchive &arc, FPolyObj *&poly)
-{
-	return arc.SerializePointer (polyobjs, (BYTE **)&poly, sizeof(FPolyObj));
-}
-
-inline FArchive &operator<< (FArchive &arc, const FPolyObj *&poly)
-{
-	return arc.SerializePointer (polyobjs, (BYTE **)&poly, sizeof(FPolyObj));
-}
-
+	
 
 //
 // BSP node.
@@ -1110,21 +1083,13 @@ struct node_t
 	fixed_t		dx;
 	fixed_t		dy;
 	fixed_t		bbox[2][4];		// Bounding box for each child.
+	float		len;
 	union
 	{
 		void	*children[2];	// If bit 0 is set, it's a subsector.
 		int		intchildren[2];	// Used by nodebuilder.
 	};
 };
-
-
-struct polyblock_t
-{
-	FPolyObj *polyobj;
-	struct polyblock_t *prev;
-	struct polyblock_t *next;
-};
-
 
 
 // posts are runs of non masked source pixels

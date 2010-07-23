@@ -163,6 +163,8 @@ void GLWall::PutWall(bool translucent)
 				}
 				else if (sub)
 				{
+					// for polyobjects we cannot use the side's light list. 
+					// We must use the subsector's.
 					light = sub->lighthead[0] != NULL;
 				}
 			}
@@ -1490,8 +1492,27 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector, 
 		v1=seg->linedef->v2;
 		v2=seg->linedef->v1;
 	}
-	glseg.fracleft=0;
-	glseg.fracright=1;
+
+	if (polysub == NULL)
+	{
+		glseg.fracleft=0;
+		glseg.fracright=1;
+	}
+	else	// polyobjects must be rendered per seg.
+	{
+		if (abs(v1->x-v2->x) > abs(v1->y-v2->y))
+		{
+			glseg.fracleft = float(seg->v1->x - v1->x)/float(v2->x-v1->x);
+			glseg.fracright = float(seg->v2->x - v1->x)/float(v2->x-v1->x);
+		}
+		else
+		{
+			glseg.fracleft = float(seg->v1->y - v1->y)/float(v2->y-v1->y);
+			glseg.fracright = float(seg->v2->y - v1->y)/float(v2->y-v1->y);
+		}
+		v1=seg->v1;
+		v2=seg->v2;
+	}
 
 	if (gl_seamless)
 	{

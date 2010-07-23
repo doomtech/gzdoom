@@ -65,6 +65,7 @@
 #include "g_level.h"
 #include "md5.h"
 #include "compatibility.h"
+#include "po_man.h"
 
 #include "gl/gl_functions.h"
 
@@ -1527,7 +1528,6 @@ void P_LoadNodes (MapData * map)
 	memset (used, 0, sizeof(WORD)*numnodes);
 
 	mnp = new char[lumplen];
-
 	mn = (nodetype*)(mnp + nodetype::NF_LUMPOFFSET);
 	map->Read(ML_NODES, mnp);
 	no = nodes;
@@ -3384,6 +3384,7 @@ extern polyblock_t **PolyBlockMap;
 void P_FreeLevelData ()
 {
 	gl_CleanLevelData();
+	FPolyObj::ClearAllSubsectorLinks(); // can't be done as part of the polyobj deletion process.
 	SN_StopAllSequences ();
 	DThinker::DestroyAllThinkers ();
 	level.total_monsters = level.total_items = level.total_secrets =
