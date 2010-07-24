@@ -825,6 +825,7 @@ enum CBA_Flags
 {
 	CBAF_AIMFACING = 1,
 	CBAF_NORANDOM = 2,
+	CBAF_EXPLICITANGLE = 4,
 };
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomBulletAttack)
@@ -856,8 +857,20 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomBulletAttack)
 		S_Sound (self, CHAN_WEAPON, self->AttackSound, 1, ATTN_NORM);
 		for (i=0 ; i<NumBullets ; i++)
 		{
-			int angle = bangle + pr_cabullet.Random2() * (Spread_XY / 255);
-			int slope = bslope + pr_cabullet.Random2() * (Spread_Z / 255);
+			int angle = bangle;
+			int slope = bslope;
+
+			if (Flags & CBAF_EXPLICITANGLE)
+			{
+				angle += Spread_XY;
+				slope += Spread_Z;
+			}
+			else
+			{
+				angle += pr_cwbullet.Random2() * (Spread_XY / 255);
+				slope += pr_cwbullet.Random2() * (Spread_Z / 255);
+			}
+
 			int damage = DamagePerBullet;
 
 			if (!(Flags & CBAF_NORANDOM))
@@ -1194,7 +1207,8 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomPunch)
 enum
 {	
 	RAF_SILENT = 1,
-	RAF_NOPIERCE = 2
+	RAF_NOPIERCE = 2,
+	RAF_EXPLICITANGLE = 4,
 };
 
 //==========================================================================
@@ -1204,7 +1218,7 @@ enum
 //==========================================================================
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_RailAttack)
 {
-	ACTION_PARAM_START(8);
+	ACTION_PARAM_START(10);
 	ACTION_PARAM_INT(Damage, 0);
 	ACTION_PARAM_INT(Spawnofs_XY, 1);
 	ACTION_PARAM_BOOL(UseAmmo, 2);
@@ -1212,7 +1226,9 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_RailAttack)
 	ACTION_PARAM_COLOR(Color2, 4);
 	ACTION_PARAM_INT(Flags, 5);
 	ACTION_PARAM_FLOAT(MaxDiff, 6);
-	ACTION_PARAM_CLASS(PuffType, 7);	
+	ACTION_PARAM_CLASS(PuffType, 7);
+	ACTION_PARAM_ANGLE(Spread_XY, 8);
+	ACTION_PARAM_ANGLE(Spread_Z, 9);
 
 	if (!self->player) return;
 
@@ -1224,7 +1240,21 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_RailAttack)
 		if (!weapon->DepleteAmmo(weapon->bAltFire, true)) return;	// out of ammo
 	}
 
-	P_RailAttack (self, Damage, Spawnofs_XY, Color1, Color2, MaxDiff, (Flags & RAF_SILENT), PuffType, (!(Flags & RAF_NOPIERCE)));
+	angle_t angle;
+	angle_t slope;
+
+	if (Flags & RAF_EXPLICITANGLE)
+	{
+		angle = Spread_XY;
+		slope = Spread_Z;
+	}
+	else
+	{
+		angle = pr_crailgun.Random2() * (Spread_XY / 255);
+		slope = pr_crailgun.Random2() * (Spread_Z / 255);
+	}
+
+	P_RailAttack (self, Damage, Spawnofs_XY, Color1, Color2, MaxDiff, (Flags & RAF_SILENT), PuffType, (!(Flags & RAF_NOPIERCE)), angle, slope);
 }
 
 //==========================================================================
@@ -1236,12 +1266,13 @@ enum
 {
 	CRF_DONTAIM = 0,
 	CRF_AIMPARALLEL = 1,
-	CRF_AIMDIRECT = 2
+	CRF_AIMDIRECT = 2,
+	CRF_EXPLICITANGLE = 4,
 };
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomRailgun)
 {
-	ACTION_PARAM_START(8);
+	ACTION_PARAM_START(10);
 	ACTION_PARAM_INT(Damage, 0);
 	ACTION_PARAM_INT(Spawnofs_XY, 1);
 	ACTION_PARAM_COLOR(Color1, 2);
@@ -1250,6 +1281,8 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomRailgun)
 	ACTION_PARAM_INT(aim, 5);
 	ACTION_PARAM_FLOAT(MaxDiff, 6);
 	ACTION_PARAM_CLASS(PuffType, 7);
+	ACTION_PARAM_ANGLE(Spread_XY, 8);
+	ACTION_PARAM_ANGLE(Spread_Z, 9);
 
 	AActor *linetarget;
 
@@ -1316,7 +1349,21 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomRailgun)
 
 	angle_t angle = (self->angle - ANG90) >> ANGLETOFINESHIFT;
 
-	P_RailAttack (self, Damage, Spawnofs_XY, Color1, Color2, MaxDiff, (Flags & RAF_SILENT), PuffType, (!(Flags & RAF_NOPIERCE)));
+	angle_t angleoffset;
+	angle_t slopeoffset;
+
+	if (Flags & CRF_EXPLICITANGLE)
+	{
+		angleoffset = Spread_XY;
+		slopeoffset = Spread_Z;
+	}
+	else
+	{
+		angleoffset = pr_crailgun.Random2() * (Spread_XY / 255);
+		slopeoffset = pr_crailgun.Random2() * (Spread_Z / 255);
+	}
+
+	P_RailAttack (self, Damage, Spawnofs_XY, Color1, Color2, MaxDiff, (Flags & RAF_SILENT), PuffType, (!(Flags & RAF_NOPIERCE)), angleoffset, slopeoffset);
 
 	self->x = saved_x;
 	self->y = saved_y;
@@ -2494,23 +2541,38 @@ DEFINE_ACTION_FUNCTION(AActor, A_ClearTarget)
 
 //==========================================================================
 //
-// A_JumpIfTargetInLOS (state label, optional fixed fov, optional bool
-// projectiletarget)
+// A_JumpIfTargetInLOS (state label, optional fixed fov, optional int flags,
+// optional fixed dist_max, optional fixed dist_close)
 //
 // Jumps if the actor can see its target, or if the player has a linetarget.
 // ProjectileTarget affects how projectiles are treated. If set, it will use
 // the target of the projectile for seekers, and ignore the target for
 // normal projectiles. If not set, it will use the missile's owner instead
-// (the default).
+// (the default). ProjectileTarget is now flag JLOSF_PROJECTILE. dist_max
+// sets the maximum distance that actor can see, 0 means forever. dist_close
+// uses special behavior if certain flags are set, 0 means no checks.
 //
 //==========================================================================
 
+enum JLOS_flags
+{
+	JLOSF_PROJECTILE=1,
+	JLOSF_NOSIGHT=2,
+	JLOSF_CLOSENOFOV=4,
+	JLOSF_CLOSENOSIGHT=8,
+	JLOSF_CLOSENOJUMP=16,
+	JLOSF_DEADNOJUMP=32,
+	JLOSF_CHECKMASTER=64,
+};
+
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfTargetInLOS)
 {
-	ACTION_PARAM_START(3);
+	ACTION_PARAM_START(5);
 	ACTION_PARAM_STATE(jump, 0);
 	ACTION_PARAM_ANGLE(fov, 1);
-	ACTION_PARAM_BOOL(projtarg, 2);
+	ACTION_PARAM_INT(flags, 2);
+	ACTION_PARAM_FIXED(dist_max, 3);
+	ACTION_PARAM_FIXED(dist_close, 4);
 
 	angle_t an;
 	AActor *target;
@@ -2519,7 +2581,11 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfTargetInLOS)
 
 	if (!self->player)
 	{
-		if (self->flags & MF_MISSILE && projtarg)
+		if (flags & JLOSF_CHECKMASTER)
+		{
+			target = self->master;
+		}
+		else if (self->flags & MF_MISSILE && (flags & JLOSF_PROJECTILE))
 		{
 			if (self->flags2 & MF2_SEEKERMISSILE)
 				target = self->tracer;
@@ -2533,7 +2599,28 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfTargetInLOS)
 
 		if (!target) return; // [KS] Let's not call P_CheckSight unnecessarily in this case.
 
-		if (!P_CheckSight (self, target, SF_IGNOREVISIBILITY))
+		if ((flags & JLOSF_DEADNOJUMP) && (target->health <= 0)) return;
+
+		fixed_t distance = P_AproxDistance(target->x - self->x, target->y - self->y);
+		distance = P_AproxDistance(distance, target->z - self->z);
+
+		if (dist_max && (distance > dist_max)) return;
+
+		bool doCheckSight = !(flags & JLOSF_NOSIGHT);
+
+		if (dist_close && (distance < dist_close))
+		{
+			if (flags & JLOSF_CLOSENOJUMP)
+				return;
+
+			if (flags & JLOSF_CLOSENOFOV)
+				fov = 0;
+
+			if (flags & JLOSF_CLOSENOSIGHT)
+				doCheckSight = false;
+		}
+
+		if (doCheckSight && !P_CheckSight (self, target, SF_IGNOREVISIBILITY))
 			return;
 
 		if (fov && (fov < ANGLE_MAX))
@@ -2555,9 +2642,20 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfTargetInLOS)
 	{
 		// Does the player aim at something that can be shot?
 		P_BulletSlope(self, &target);
-	}
 
-	if (!target) return;
+		if (!target) return;
+
+		fixed_t distance = P_AproxDistance(target->x - self->x, target->y - self->y);
+		distance = P_AproxDistance(distance, target->z - self->z);
+
+		if (dist_max && (distance > dist_max)) return;
+
+		if (dist_close && (distance < dist_close))
+		{
+			if (flags & JLOSF_CLOSENOJUMP)
+				return;
+		}
+	}
 
 	ACTION_JUMP(jump);
 }
@@ -2565,24 +2663,30 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfTargetInLOS)
 
 //==========================================================================
 //
-// A_JumpIfInTargetLOS (state label, optional fixed fov, optional bool
-// projectiletarget)
+// A_JumpIfInTargetLOS (state label, optional fixed fov, optional int flags
+// optional fixed dist_max, optional fixed dist_close)
 //
 //==========================================================================
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfInTargetLOS)
 {
-	ACTION_PARAM_START(3);
+	ACTION_PARAM_START(5);
 	ACTION_PARAM_STATE(jump, 0);
 	ACTION_PARAM_ANGLE(fov, 1);
-	ACTION_PARAM_BOOL(projtarg, 2);
+	ACTION_PARAM_INT(flags, 2);
+	ACTION_PARAM_FIXED(dist_max, 3);
+	ACTION_PARAM_FIXED(dist_close, 4);
 
 	angle_t an;
 	AActor *target;
 
 	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
 
-	if (self->flags & MF_MISSILE && projtarg)
+	if (flags & JLOSF_CHECKMASTER)
+	{
+		target = self->master;
+	}
+	else if (self->flags & MF_MISSILE && (flags & JLOSF_PROJECTILE))
 	{
 		if (self->flags2 & MF2_SEEKERMISSILE)
 			target = self->tracer;
@@ -2596,7 +2700,28 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfInTargetLOS)
 
 	if (!target) return; // [KS] Let's not call P_CheckSight unnecessarily in this case.
 
-	if (!P_CheckSight (target, self, SF_IGNOREVISIBILITY))
+	if ((flags & JLOSF_DEADNOJUMP) && (target->health <= 0)) return;
+
+	fixed_t distance = P_AproxDistance(target->x - self->x, target->y - self->y);
+	distance = P_AproxDistance(distance, target->z - self->z);
+
+	if (dist_max && (distance > dist_max)) return;
+
+	bool doCheckSight = !(flags & JLOSF_NOSIGHT);
+
+	if (dist_close && (distance < dist_close))
+	{
+		if (flags & JLOSF_CLOSENOJUMP)
+			return;
+
+		if (flags & JLOSF_CLOSENOFOV)
+			fov = 0;
+
+		if (flags & JLOSF_CLOSENOSIGHT)
+			doCheckSight = false;
+	}
+
+	if (doCheckSight && !P_CheckSight (target, self, SF_IGNOREVISIBILITY))
 		return;
 
 	if (fov && (fov < ANGLE_MAX))
