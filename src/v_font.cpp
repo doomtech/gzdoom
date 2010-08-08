@@ -2380,10 +2380,6 @@ void V_InitFonts()
 		{
 			SmallFont2 = new FFont ("SmallFont2", "STBFN%.3d", HU_FONTSTART, HU_FONTSIZE, HU_FONTSTART);
 		}
-		else if (Wads.CheckNumForName ("FONTAY_S") >= 0) // Only used by Hexen
-		{
-			SmallFont = new FFont ("SmallFont", "FONTAY%02u", HU_FONTSTART, HU_FONTSIZE, 1);
-		}
 		else
 		{
 			SmallFont2 = SmallFont;

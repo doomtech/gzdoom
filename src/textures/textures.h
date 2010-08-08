@@ -91,10 +91,6 @@ struct patch_t
 	// the [0] is &columnofs[width] 
 };
 
-// Older versions of patch_t
-struct alphapatch_t { BYTE width; BYTE height; SBYTE leftoffset; SBYTE topoffset; WORD columnofs[8]; };
-struct betapatch_t  { WORD width; WORD height; SWORD leftoffset; SWORD topoffset; WORD columnofs[8]; };
-
 class FileReader;
 
 // All FTextures present their data to the world in 8-bit format, but if

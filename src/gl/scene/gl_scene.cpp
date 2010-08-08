@@ -948,7 +948,7 @@ sector_t * FGLRenderer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, flo
 // renders the view
 //
 //-----------------------------------------------------------------------------
-static FRandom pr_glhom("GLHOM-Flasher");
+static FRandom pr_glhom;
 EXTERN_CVAR(Int, r_clearbuffer)
 CVAR(Bool, gl_testdl, false, 0)
 static int dl = -1;

@@ -516,8 +516,8 @@ CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_NOINITCALL)
 		break;
 
 	case 5: // MBF compat mode
-		v = COMPATF_TRACE|COMPATF_SOUNDTARGET|COMPATF_MISSILECLIP|COMPATF_BOOMSCROLL|
-			COMPATF_MUSHROOM|COMPATF_MBFMONSTERMOVE|COMPATF_NOBLOCKFRIENDS;
+		v = COMPATF_TRACE|COMPATF_SOUNDTARGET|COMPATF_BOOMSCROLL|COMPATF_MISSILECLIP|COMPATF_MUSHROOM|
+			COMPATF_MBFMONSTERMOVE|COMPATF_NOBLOCKFRIENDS;
 		break;
 
 	case 6:	// Boom with some added settings to reenable spme 'broken' behavior
@@ -556,7 +556,7 @@ CVAR (Flag, compat_mushroom,	compatflags, COMPATF_MUSHROOM);
 CVAR (Flag, compat_mbfmonstermove,compatflags, COMPATF_MBFMONSTERMOVE);
 CVAR (Flag, compat_corpsegibs,	compatflags, COMPATF_CORPSEGIBS);
 CVAR (Flag, compat_noblockfriends,compatflags,COMPATF_NOBLOCKFRIENDS);
-CVAR (Flag, compat_spritesort,	compatflags, COMPATF_SPRITESORT);
+CVAR (Flag, compat_spritesort,	compatflags,COMPATF_SPRITESORT);
 CVAR (Flag, compat_hitscan,		compatflags,COMPATF_HITSCAN);
 CVAR (Flag, compat_light,		compatflags,COMPATF_LIGHT);
 

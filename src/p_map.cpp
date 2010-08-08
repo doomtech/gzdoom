@@ -3503,12 +3503,6 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 				{
 					flags |= DMG_NO_ARMOR;
 				}
-
-				// Kill dormant monsters with MDK
-				if (damageType == NAME_MDK)
-				{
-					flags |= DMG_FORCED;
-				}
 			
 				if (puff == NULL)
 				{ 

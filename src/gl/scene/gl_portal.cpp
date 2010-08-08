@@ -912,11 +912,8 @@ void GLMirrorPortal::DrawContents()
 	angle_t af = GLRenderer->FrustumAngle();
 	if (af<ANGLE_180) clipper.SafeAddClipRangeRealAngles(viewangle+af, viewangle-af);
 
-	// According to http://skulltag.net/forum/viewtopic.php?p=293802#p293802
 	angle_t a2 = linedef->v1->GetClipAngle();
 	angle_t a1 = linedef->v2->GetClipAngle();
-	/*angle_t a2=R_PointToAngle(mirrorline->v1->x, mirrorline->v1->y);
-	angle_t a1=R_PointToAngle(mirrorline->v2->x, mirrorline->v2->y);*/
 	clipper.SafeAddClipRange(a1,a2);
 
 	GLRenderer->DrawScene();

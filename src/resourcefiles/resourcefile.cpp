@@ -38,13 +38,7 @@
 #include "cmdlib.h"
 #include "w_wad.h"
 #include "doomerrors.h"
-#include "version.h"
-#include "c_cvars.h"
 
-CUSTOM_CVAR(Bool, loaddotdehfiles, false, CVAR_GLOBALCONFIG|CVAR_ARCHIVE|CVAR_NOINITCALL)
-{
-	Printf("This won't take effect until "GAMENAME" is restarted.\n");
-}
 
 
 //==========================================================================
@@ -169,15 +163,6 @@ void FResourceLump::CheckEmbedded()
 		// Mark all embedded WADs
 		Flags |= LUMPF_EMBEDDED;
 		memset(Name, 0, 8);
-	}
-	//if (this->
-	// Check for embedded dehacked files to be used along an embedded wad
-	// They are usually named "modname.deh" rather than "dehacked.txt",
-	// so ZDoom didn't pick them up automatically. Optional, just in case.
-	else if (loaddotdehfiles && ((c = strstr(FullName, ".deh")) || (c = strstr(FullName, ".bex"))))
-	{
-		Name[0] = 'D'; Name[1] = 'E'; Name[2] = 'H', Name[3] = 'A';
-		Name[4] = 'C'; Name[5] = 'K'; Name[6] = 'E', Name[7] = 'D';
 	}
 	/* later
 	else

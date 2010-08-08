@@ -5274,10 +5274,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\textures\oldtextures.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\src\textures\patchtexture.cpp"
 					>
 				</File>

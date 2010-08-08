@@ -780,8 +780,6 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomMissile)
 				ang = missile->angle >> ANGLETOFINESHIFT;
 				missile->velx = FixedMul (missilespeed, finecosine[ang]);
 				missile->vely = FixedMul (missilespeed, finesine[ang]);
-
-				missile->pitch = self->pitch;
 	
 				// handle projectile shooting projectiles - track the
 				// links back to a real owner
@@ -1095,7 +1093,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FireCustomMissile)
 	AWeapon * weapon=player->ReadyWeapon;
 	AActor *linetarget;
 
-	if (ACTION_CALL_FROM_WEAPON() && UseAmmo && weapon)
+	if (UseAmmo && weapon)
 	{
 		if (!weapon->DepleteAmmo(weapon->bAltFire, true)) return;	// out of ammo
 	}
@@ -1118,7 +1116,6 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FireCustomMissile)
 		// automatic handling of seeker missiles
 		if (misl)
 		{
-			misl->pitch = self->pitch;
 			if (linetarget && misl->flags2&MF2_SEEKERMISSILE) misl->tracer=linetarget;
 			if (!AimAtAngle)
 			{

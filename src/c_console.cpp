@@ -305,10 +305,6 @@ void C_InitConsole (int width, int height, bool ingame)
 		{
 			conback = TexMan.CheckForTexture ("CONBACK", FTexture::TEX_MiscPatch);
 
-			// Legacy uses CONSBACK
-			if (!conback.isValid())
-				conback = TexMan.CheckForTexture ("CONSBACK", FTexture::TEX_MiscPatch);
-
 			if (!conback.isValid())
 			{
 				conback = TexMan.GetTexture (gameinfo.titlePage, FTexture::TEX_MiscPatch);
