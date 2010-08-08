@@ -713,7 +713,7 @@ bool FMaterial::TrimBorders(int *rect)
 	if (w != Width[GLUSE_TEXTURE] || h != Height[GLUSE_TEXTURE])
 	{
 		// external Hires replacements cannot be trimmed.
-		delete [] buffer;
+		delete[] buffer;
 		return false;
 	}
 

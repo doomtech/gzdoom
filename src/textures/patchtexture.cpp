@@ -46,11 +46,17 @@
 // A texture that is just a single Doom format patch
 //
 //==========================================================================
+enum
+{
+	PATCH_NORMAL = 0,
+	PATCH_BETA = 1,
+	PATCH_ALPHA = 2,
+};
 
 class FPatchTexture : public FTexture
 {
 public:
-	FPatchTexture (int lumpnum, patch_t *header);
+	FPatchTexture (int lumpnum, patch_t *header, int format = PATCH_NORMAL);
 	~FPatchTexture ();
 
 	const BYTE *GetColumn (unsigned int column, const Span **spans_out);
@@ -61,7 +67,7 @@ protected:
 	BYTE *Pixels;
 	Span **Spans;
 	bool hackflag;
-
+	int Format;
 
 	virtual void MakeTexture ();
 	void HackHack (int newheight);
@@ -115,20 +121,82 @@ static bool CheckIfPatch(FileReader & file)
 	return false;
 }
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-FTexture *PatchTexture_TryCreate(FileReader & file, int lumpnum)
+static bool CheckIfAlphaPatch(FileReader & file)
 {
-	patch_t header;
-
-	if (!CheckIfPatch(file)) return NULL;
+	if (file.GetLength() < 13) return false;	// minimum length of a valid Doom patch
+	
+	BYTE *data = new BYTE[file.GetLength()];
 	file.Seek(0, SEEK_SET);
-	file >> header.width >> header.height >> header.leftoffset >> header.topoffset;
-	return new FPatchTexture(lumpnum, &header);
+	file.Read(data, file.GetLength());
+	
+	const alphapatch_t *foo = (const alphapatch_t *)data;
+	
+	int height = foo->height;
+	int width = foo->width;
+	
+	if (width < file.GetLength()/4)
+	{
+		return true;
+		bool gapAtStart = true;
+		int x;
+	
+		for (x = 0; x < width; ++x)
+		{
+			WORD ofs = LittleShort(foo->columnofs[x]);
+			if (ofs == (WORD)width * 2 + 4)
+			{
+				gapAtStart = false;
+			}
+			else if (ofs >= (WORD)(file.GetLength()))
+			{
+				delete [] data;
+				return false;
+			}
+		}
+		delete [] data;
+		return !gapAtStart;
+
+	}
+	delete [] data;
+	return false;
+}
+
+static bool CheckIfBetaPatch(FileReader & file)
+{
+	if (file.GetLength() < 13) return false;	// minimum length of a valid Doom patch
+	
+	BYTE *data = new BYTE[file.GetLength()];
+	file.Seek(0, SEEK_SET);
+	file.Read(data, file.GetLength());
+	
+	const betapatch_t *foo = (const betapatch_t *)data;
+	
+	int height = LittleShort(foo->height);
+	int width = LittleShort(foo->width);
+	
+	if (width < file.GetLength()/4)
+	{
+		bool gapAtStart = true;
+		int x;
+	
+		for (x = 0; x < width; ++x)
+		{
+			WORD ofs = LittleShort(foo->columnofs[x]);
+			if (ofs == (WORD)width * 2 + 8)
+			{
+				gapAtStart = false;
+			}
+			else if (ofs >= (WORD)(file.GetLength()))
+			{
+				delete [] data;
+				return false;
+			}
+		}
+		delete [] data;
+		return !gapAtStart;
+	}
+	delete [] data;
+	return false;
 }
 
 //==========================================================================
@@ -137,9 +205,53 @@ FTexture *PatchTexture_TryCreate(FileReader & file, int lumpnum)
 //
 //==========================================================================
 
-FPatchTexture::FPatchTexture (int lumpnum, patch_t * header)
+FTexture *PatchTexture_TryCreate(FileReader & file, int lumpnum)
+{
+	int format = PATCH_NORMAL;
+	if (!CheckIfPatch(file))
+	{
+		if (!CheckIfBetaPatch(file))
+		{
+			if (!CheckIfAlphaPatch(file))
+			{
+				return NULL;
+			}
+			else format = PATCH_ALPHA;
+		}
+		else format = PATCH_BETA;
+	}
+	file.Seek(0, SEEK_SET);
+	patch_t header;
+	if (format == PATCH_NORMAL)
+		file >> header.width >> header.height >> header.leftoffset >> header.topoffset;
+	else if (format == PATCH_BETA)
+	{
+		betapatch_t tempheader;
+		file >> tempheader.width >> tempheader.height >> tempheader.leftoffset >> tempheader.topoffset;
+		header.width = tempheader.width; header.height = tempheader.height;
+		header.leftoffset = tempheader.leftoffset; header.topoffset = tempheader.topoffset;
+	}
+	else if (format == PATCH_ALPHA)
+	{
+		alphapatch_t tempheader;
+		file >> tempheader.width >> tempheader.height >> tempheader.leftoffset >> tempheader.topoffset;
+		header.width = tempheader.width; header.height = tempheader.height;
+		header.leftoffset = tempheader.leftoffset; header.topoffset = tempheader.topoffset;
+	}
+	else return NULL;
+	return new FPatchTexture(lumpnum, &header, format);
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+FPatchTexture::FPatchTexture (int lumpnum, patch_t * header, int format)
 : FTexture(NULL, lumpnum), Pixels(0), Spans(0), hackflag(false)
 {
+	Format = format;
 	Width = header->width;
 	Height = header->height;
 	LeftOffset = header->leftoffset;
@@ -243,6 +355,8 @@ void FPatchTexture::MakeTexture ()
 
 	FMemLump lump = Wads.ReadLump (SourceLump);
 	const patch_t *patch = (const patch_t *)lump.GetMem();
+	const alphapatch_t *apatch = (const alphapatch_t *)lump.GetMem();
+	const betapatch_t *bpatch = (const betapatch_t *)lump.GetMem();
 
 	maxcol = (const column_t *)((const BYTE *)patch + Wads.LumpLength (SourceLump) - 3);
 
@@ -306,7 +420,20 @@ void FPatchTexture::MakeTexture ()
 	for (x = 0; x < Width; ++x)
 	{
 		BYTE *outtop = Pixels + x*Height;
-		const column_t *column = (const column_t *)((const BYTE *)patch + LittleLong(patch->columnofs[x]));
+		const column_t *column;
+		switch(Format) 
+		{
+		case PATCH_NORMAL: 
+			column = (const column_t *)((const BYTE *)patch + LittleLong(patch->columnofs[x]));
+			break;
+		case PATCH_BETA: 
+			column = (const column_t *)((const BYTE *)bpatch + LittleShort(bpatch->columnofs[x]));
+			break;
+		case PATCH_ALPHA: 
+			column = (const column_t *)((const BYTE *)apatch + LittleShort(apatch->columnofs[x]));
+			break;
+		}
+			
 		int top = -1;
 
 		while (column < maxcol && column->topdelta != 0xFF)
@@ -333,14 +460,14 @@ void FPatchTexture::MakeTexture ()
 				{
 					numspans++;
 
-					const BYTE *in = (const BYTE *)column + 3;
+					const BYTE *in = (const BYTE *)column + (Format ? 2 : 3);
 					for (int i = 0; i < len; ++i)
 					{
 						out[i] = remap[in[i]];
 					}
 				}
 			}
-			column = (const column_t *)((const BYTE *)column + column->length + 4);
+			column = (const column_t *)((const BYTE *)column + column->length + (Format ? 2 : 4));
 		}
 	}
 }

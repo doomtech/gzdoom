@@ -6286,7 +6286,8 @@ int DLevelScript::RunScript ()
 						state = actor->GetClass()->ActorInfo->FindStateByString (statename, !!STACK(1));
 						if (state != NULL)
 						{
-							actor->SetState (state);
+							if (!(actor->flags3 & MF3_ISMONSTER) || (actor->health > 0))
+								actor->SetState (state);
 							count++;
 						}
 					}

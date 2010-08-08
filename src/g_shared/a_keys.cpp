@@ -493,7 +493,10 @@ int P_GetMapColorForKey (AInventory * key)
 
 	for (i = 0; i < 256; i++)
 	{
-		if (locks[i] && locks[i]->check(key)) return locks[i]->rgb;
+		if (locks[i] && locks[i]->check(key))
+		{
+			return locks[i]->rgb;
+		}
 	}
 	return 0;
 }

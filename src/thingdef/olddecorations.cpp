@@ -156,6 +156,11 @@ void ParseOldDecoration(FScanner &sc, EDefinitionType def)
 
 	sc.MustGetString();
 	typeName = FName(sc.String);
+	// RTC-3057 hack!
+	if (typeName == NAME_Pistol)
+	{
+		typeName = "PistolPickup";
+	}
 	type = parent->CreateDerivedClass (typeName, parent->Size);
 	ResetBaggage(&bag, parent);
 	info = bag.Info = type->ActorInfo;

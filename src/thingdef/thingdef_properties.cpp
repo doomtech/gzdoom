@@ -67,6 +67,7 @@
 #include "r_translate.h"
 #include "a_morph.h"
 #include "colormatcher.h"
+#include "gstrings.h"
 
 
 //==========================================================================
@@ -302,6 +303,10 @@ DEFINE_PROPERTY(skip_super, 0, Actor)
 DEFINE_PROPERTY(tag, S, Actor)
 {
 	PROP_STRING_PARM(str, 0);
+	if (str[0]=='$') 
+	{
+		str=GStrings(str+1);
+	}
 	defaults->Tag = str;
 }
 

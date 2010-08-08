@@ -369,6 +369,7 @@ bool P_MorphMonster (AActor *actor, const PClass *spawntype, int duration, int s
 	morphed->UnmorphedMe = actor;
 	morphed->alpha = actor->alpha;
 	morphed->RenderStyle = actor->RenderStyle;
+	morphed->Inventory = actor->Inventory;
 
 	morphed->UnmorphTime = level.time + ((duration) ? duration : MORPHTICS) + pr_morphmonst();
 	morphed->MorphStyle = style;
