@@ -190,9 +190,9 @@ static void AddPolyobjs(subsector_t *sub, sector_t *sector)
 	{
 		pn = sortedpolys[i];
 		for(unsigned j=0; j<pn->segs.Size(); j++)
-		{
+		{	/* POLYBSP_FIXME: Here I'm really stuck
 			pn->segs[j].Subsector = sub;
-			AddLine (&pn->segs[j], sector, sub);
+			AddLine (&pn->segs[j], sector, sub);*/
 		}
 	}
 }
@@ -212,7 +212,7 @@ static inline void AddLines(subsector_t * sub, sector_t * sector)
 	}
 
 	int count = sub->numlines;
-	seg_t * line = &segs[sub->firstline];
+	seg_t * line = sub->firstline;
 
 	while (count--)
 	{
