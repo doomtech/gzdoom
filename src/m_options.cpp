@@ -2353,7 +2353,6 @@ void M_OptButtonHandler(EMenuKey key, bool repeat)
 					rowheight *= CleanYfac_1;
 					maxitems = (screen->GetHeight() - rowheight - ytop) / rowheight + 1;
 
-
 					CurrentMenu->scrollpos = MAX (0,CurrentMenu->numitems - maxitems + CurrentMenu->scrolltop);
 					CurrentItem = CurrentMenu->numitems - 1;
 				}
