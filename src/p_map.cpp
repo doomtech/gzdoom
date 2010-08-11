@@ -655,34 +655,14 @@ bool PIT_CheckLine (line_t *ld, const FBoundingBox &box, FCheckPosition &tm)
 	if (!(tm.thing->flags & MF_DROPOFF) &&
 		!(tm.thing->flags & (MF_NOGRAVITY|MF_NOCLIP)))
 	{
-		secplane_t *frontplane = &ld->frontsector->floorplane;
-		secplane_t *backplane  = &ld->backsector->floorplane;
+		secplane_t frontplane = ld->frontsector->floorplane;
+		secplane_t backplane  = ld->backsector->floorplane;
 #ifdef _3DFLOORS
 		// Check 3D floors as well
-		static secplane_t copyplane;
-		sector_t *floorsector = NULL;
-		secplane_t **changeplane = NULL;
-		for (floorsector = ld->frontsector, changeplane = &frontplane;
-			floorsector != ld->backsector;
-			floorsector = ld->backsector, changeplane = &backplane)
-		{
-			if (floorsector->e)	// apparently this can be called when the data is already gone-
-			for(unsigned int i=0;i<floorsector->e->XFloor.ffloors.Size();i++)
-			{
-				F3DFloor * rover= floorsector->e->XFloor.ffloors[i];
-				if(!(rover->flags & FF_SOLID) || !(rover->flags & FF_EXISTS)) continue;
-
-				if (rover->top.plane->ZatPoint(tm.thing->x, tm.thing->y) == tm.thing->floorz)
-				{
-					copyplane = *rover->top.plane;
-					if (copyplane.c<0) copyplane.FlipVert();
-					*changeplane = &copyplane;
-					break;
-				}
-			}
-		}
+		frontplane = P_FindFloorPlane(ld->frontsector, tm.thing->x, tm.thing->y, tm.thing->floorz);
+		backplane = P_FindFloorPlane(ld->backsector, tm.thing->x, tm.thing->y, tm.thing->floorz);
 #endif
-		if (frontplane->c < STEEPSLOPE || backplane->c < STEEPSLOPE)
+		if (frontplane.c < STEEPSLOPE || backplane.c < STEEPSLOPE)
 		{
 			const msecnode_t *node = tm.thing->touching_sectorlist;
 			bool allow = false;

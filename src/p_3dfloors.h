@@ -126,6 +126,8 @@ struct FLineOpening;
 
 void P_LineOpening_XFloors (FLineOpening &open, AActor * thing, const line_t *linedef, 
 							fixed_t x, fixed_t y, fixed_t refx, fixed_t refy);
+
+secplane_t P_FindFloorPlane(sector_t * sector, fixed_t x, fixed_t y, fixed_t z);
 							
 #else
 
@@ -156,6 +158,8 @@ struct FLineOpening;
 
 inline void P_LineOpening_XFloors (FLineOpening &open, AActor * thing, const line_t *linedef, 
 							fixed_t x, fixed_t y, fixed_t refx, fixed_t refy) {}
+
+secplane_t P_FindFloorPlane(sector_t * sector, fixed_t x, fixed_t y, fixed_t z){return sector->floorplane;}
 
 #endif
 
