@@ -6,12 +6,18 @@ endif( COMMAND cmake_policy )
 
 include( CheckCXXSourceCompiles )
 include( CheckFunctionExists )
+include( CheckCXXCompilerFlag )
 include( FindPkgConfig )
 include( FindOpenGL )
 
 option( NO_ASM "Disable assembly code" )
 if( CMAKE_COMPILER_IS_GNUCXX )
 	option( NO_STRIP "Do not strip Release or MinSizeRel builds" )
+	# At least some versions of Xcode fail if you strip with the linker
+	# instead of the separate strip utility.
+	if( APPLE )
+		set( NO_STRIP ON )
+	endif( APPLE )
 endif( CMAKE_COMPILER_IS_GNUCXX )
 
 if( CMAKE_SIZEOF_VOID_P MATCHES "8" )
@@ -33,7 +39,7 @@ set( MINOR_VERSIONS "50" "49" "48" "47" "46" "45" "44" "43" "42" "41"
 	"27" "26" "25" "24" "23" "22" "21" "20" "21" "19" "18" "17" "16"
 	"15" "14" "13" "12" "11" "10" "09" "08" "07" "06" "05" "04" "03"
 	"02" "01" "00" )
-set( MAJOR_VERSIONS "26" "24" "22" "20" )
+set( MAJOR_VERSIONS "30" "28" "26" "24" "22" "20" )
 set( FMOD_DIR_VERSIONS ${FMOD_DIR_VERSIONS} "../fmod" )
 foreach( majver ${MAJOR_VERSIONS} )
 	foreach( minver ${MINOR_VERSIONS} )
@@ -248,13 +254,6 @@ endif( FMOD_LIBRARY )
 
 # Search for NASM
 
-if( CMAKE_SYSTEM_PROCESSOR MATCHES powerpc )
-	if( NOT NO_ASM )
-		message( STATUS "Disabling assembly code for PowerPC." )
-		set( NO_ASM ON )
-	endif( NOT NO_ASM )
-endif( CMAKE_SYSTEM_PROCESSOR MATCHES powerpc )
-
 if( NOT NO_ASM )
 	if( UNIX AND X64 )
 		find_program( GAS_PATH as )
@@ -313,7 +312,12 @@ if( NOT NO_ASM )
 			set( ASM_FLAGS )
 			set( ASM_SOURCE_EXTENSION .s )
 		else( X64 )
-			set( ASM_FLAGS -f elf -DM_TARGET_LINUX -i${CMAKE_CURRENT_SOURCE_DIR}/ )
+			if( APPLE )
+				set( ASM_FLAGS -fmacho -DM_TARGET_MACHO )
+			else( APPLE )
+				set( ASM_FLAGS -felf )
+			endif( APPLE )
+			set( ASM_FLAGS "${ASM_FLAGS}" -DM_TARGET_LINUX -i${CMAKE_CURRENT_SOURCE_DIR}/ )
 			set( ASM_SOURCE_EXTENSION .asm )
 		endif( X64 )
 	else( UNIX )
@@ -342,6 +346,41 @@ if( NOT NO_ASM )
 		set( ASM_SOURCES ${ASM_SOURCES} "${ASM_OUTPUT_${infile}}" )
 	ENDMACRO( ADD_ASM_FILE )
 endif( NOT NO_ASM )
+
+# Decide on SSE setup
+
+set( SSE_MATTERS NO )
+
+# SSE only matters on 32-bit targets. We check compiler flags to know if we can do it.
+if( CMAKE_SIZEOF_VOID_P MATCHES "4" )
+	CHECK_CXX_COMPILER_FLAG( "-msse2 -mfpmath=sse" CAN_DO_MFPMATH )
+	CHECK_CXX_COMPILER_FLAG( -arch:SSE2 CAN_DO_ARCHSSE2 )
+	if( CAN_DO_MFPMATH )
+		set( SSE1_ENABLE "-msse -mfpmath=sse" )
+		set( SSE2_ENABLE "-msse2 -mfpmath=sse" )
+		set( SSE_MATTERS YES )
+	elseif( CAN_DO_ARCHSSE2 )
+		set( SSE1_ENABLE -arch:SSE )
+		set( SSE2_ENABLE -arch:SSE2 )
+		set( SSE_MATTERS YES )
+	endif( CAN_DO_MFPMATH )
+endif( CMAKE_SIZEOF_VOID_P MATCHES "4" )
+
+if( SSE_MATTERS )
+	if( WIN32 )
+		set( BACKPATCH 1 CACHE BOOL "Enable backpatching." )
+	else( WIN32 )
+		CHECK_FUNCTION_EXISTS(mprotect HAVE_MPROTECT)
+		if( HAVE_MPROTECT )
+			set( BACKPATCH 1 CACHE BOOL "Enable backpatching." )
+		else( HAVE_MPROTECT )
+			set( BACKPATCH 0 )
+		endif( HAVE_MPROTECT )
+	endif( WIN32 )
+	set( SSE 1 CACHE BOOL "Build SSE and SSE2 versions of key code." )
+else( SSE_MATTERS )
+	set( BACKPATCH 0 )
+endif( SSE_MATTERS )
 
 # Set up flags for GCC
 
@@ -438,6 +477,12 @@ if( NOT HAS_VA_COPY )
 	endif( HAS___VA_COPY )
 endif( NOT HAS_VA_COPY )
 
+# Flags
+
+if( BACKPATCH )
+	add_definitions( -DBACKPATCH )
+endif( BACKPATCH )
+
 # Update svnrevision.h
 
 add_custom_target( revision_check ALL
@@ -533,12 +578,18 @@ add_custom_command( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sc_man_scanner.h
 
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
-if( CMAKE_SYSTEM_PROCESSOR MATCHES powerpc )
+if( SSE_MATTERS )
+	if( SSE )
+		set( X86_SOURCES nodebuild_classify_sse2.cpp )
+		set_source_files_properties( nodebuild_classify_sse2.cpp PROPERTIES COMPILE_FLAGS "${SSE2_ENABLE}" )
+	else( SSE )
+		add_definitions( -DDISABLE_SSE )
+	endif( SSE )
+else( SSE_MATTERS )
+	add_definitions( -DDISABLE_SSE )
 	set( X86_SOURCES )
-	set( NOT_X86 ON )
-else( CMAKE_SYSTEM_PROCESSOR MATCHES powerpc )
-	set( X86_SOURCES nodebuild_classify_sse2.cpp )
-endif( CMAKE_SYSTEM_PROCESSOR MATCHES powerpc )
+endif( SSE_MATTERS )
+
 
 add_executable( zdoom WIN32
 	autostart.cpp
@@ -907,21 +958,12 @@ if( NOT WIN32 )
 		COMMAND chmod +x ${CMAKE_CURRENT_BINARY_DIR}/link-make
 		COMMAND /bin/sh -c ${CMAKE_CURRENT_BINARY_DIR}/link-make )
 endif( NOT WIN32 )
-
 if( CMAKE_COMPILER_IS_GNUCXX )
 	# GCC misoptimizes this file
 	set_source_files_properties( oplsynth/fmopl.cpp PROPERTIES COMPILE_FLAGS "-fno-tree-dominator-opts -fno-tree-fre" )
-	
-	# Compile this one file with SSE2 support.
-	set_source_files_properties( nodebuild_classify_sse2.cpp PROPERTIES COMPILE_FLAGS "-msse2 -mfpmath=sse" )
 
 	# Need to enable intrinsics for this file.
-	if( NOT NOT_X86 )
+	if( SSE_MATTERS )
 		set_source_files_properties( x86.cpp PROPERTIES COMPILE_FLAGS "-msse2 -mmmx" )
-	endif( NOT NOT_X86 )
+	endif( SSE_MATTERS )
 endif( CMAKE_COMPILER_IS_GNUCXX )
-
-if( MSVC )
-	# Compile this one file with SSE2 support.
-	set_source_files_properties( nodebuild_classify_sse2.cpp PROPERTIES COMPILE_FLAGS "/arch:SSE2" )
-endif( MSVC )
