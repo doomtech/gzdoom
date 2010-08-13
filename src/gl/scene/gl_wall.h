@@ -188,6 +188,8 @@ private:
 					  fixed_t fch1, fixed_t fch2, fixed_t ffh1, fixed_t ffh2,
 					  fixed_t bch1, fixed_t bch2, fixed_t bfh1, fixed_t bfh2);
 
+	void GetPlanePos(F3DFloor::planeref *planeref, int &left, int &right);
+
 	void BuildFFBlock(seg_t * seg, F3DFloor * rover,
 					  fixed_t ff_topleft, fixed_t ff_topright, 
 					  fixed_t ff_bottomleft, fixed_t ff_bottomright);
