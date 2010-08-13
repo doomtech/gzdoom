@@ -1188,9 +1188,9 @@ void GLWall::BuildFFBlock(seg_t * seg, F3DFloor * rover,
 //
 //==========================================================================
 
-inline void GLWall::GetPlanePos(F3DFloor::planeref *planeref, int &left, int &right)
+__forceinline void GLWall::GetPlanePos(F3DFloor::planeref *planeref, int &left, int &right)
 {
-	if (planeref->plane->a || planeref->plane->b)
+	if (planeref->plane->a | planeref->plane->b)
 	{
 		left=planeref->plane->ZatPoint(vertexes[0]);
 		right=planeref->plane->ZatPoint(vertexes[1]);
