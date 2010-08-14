@@ -1434,7 +1434,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
-	if (seg->linedef-lines==7013)
+	if (seg->linedef-lines==8)
 		__asm nop
 #endif
 #endif
@@ -1640,12 +1640,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 
 
 		/* mid texture */
-
-		// in all other cases this might create more problems than it solves.
-		bool drawfogboundary=((frontsector->ColorMap->Fade&0xffffff)!=0 && 
-							(backsector->ColorMap->Fade&0xffffff)==0 &&
-							!gl_fixedcolormap &&
-							(frontsector->GetTexture(sector_t::ceiling)!=skyflatnum || backsector->GetTexture(sector_t::ceiling)!=skyflatnum));
+		bool drawfogboundary = gl_CheckFog(frontsector, backsector);
 
 		gltexture=FMaterial::ValidateTexture(seg->sidedef->GetTexture(side_t::mid), true);
 		if (gltexture || drawfogboundary)
