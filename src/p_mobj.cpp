@@ -3179,7 +3179,6 @@ void AActor::Tick ()
 			floorz == z)
 		{
 			secplane_t floorplane = floorsector->floorplane;
-			static secplane_t copyplane;
 
 #ifdef _3DFLOORS
 			// Check 3D floors as well
