@@ -3901,7 +3901,9 @@ void P_SetupLevel (char *lumpname, int position)
 	gl_PreprocessLevel();
 
 	times[16].Clock();
-	if (ForceNodeBuild) P_LoopSidedefs (false);
+	// Screw it! I have no desire to track down all cases where this is necessary just to save a few
+	// microseconds in the case the second P_LoopSidedefs call is not needed.
+	/*if (ForceNodeBuild)*/ P_LoopSidedefs (false);
 	PO_Init ();	// Initialize the polyobjs
 	times[16].Unclock();
 
