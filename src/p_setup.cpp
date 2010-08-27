@@ -4095,11 +4095,13 @@ void P_SetupLevel (char *lumpname, int position)
 	}
 	MapThingsConverted.Clear();
 
+	/* still needed by the GL renderer
 	if (glsegextras != NULL)
 	{
 		delete[] glsegextras;
 		glsegextras = NULL;
 	}
+	*/
 }
 
 

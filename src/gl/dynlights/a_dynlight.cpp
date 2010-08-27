@@ -539,12 +539,16 @@ void ADynamicLight::CollectWithinRadius(subsector_t *subSec, float radius)
 			}
 		}
 
-		if (seg->PartnerSeg && seg->PartnerSeg->Subsector->validcount!=::validcount)
+		if (seg->PartnerSeg)
 		{
-			// check distance from x/y to seg and if within radius add PartnerSeg->Subsector (lather/rinse/repeat)
-			if (DistToSeg(seg) <= radius)
+			subsector_t *sub = seg->PartnerSeg->Subsector();
+			if (sub->validcount!=::validcount)
 			{
-				CollectWithinRadius(seg->PartnerSeg->Subsector, radius);
+				// check distance from x/y to seg and if within radius add PartnerSeg->Subsector (lather/rinse/repeat)
+				if (DistToSeg(seg) <= radius)
+				{
+					CollectWithinRadius(sub, radius);
+				}
 			}
 		}
 	}
