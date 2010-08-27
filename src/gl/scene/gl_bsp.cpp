@@ -349,7 +349,6 @@ static void DoSubsector(subsector_t * sub)
 	sector->MoreFlags |= SECF_DRAWN;
 	fakesector=gl_FakeFlat(sector, &fake, false);
 
-
 	if (sector->validcount != validcount)
 	{
 		GLRenderer->mVBO->CheckUpdate(sector);
