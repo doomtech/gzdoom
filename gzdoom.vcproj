@@ -805,6 +805,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\p_glnodes.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\p_interaction.cpp"
 				>
 			</File>
@@ -6541,6 +6545,10 @@
 		<Filter
 			Name="GL Renderer"
 			>
+			<File
+				RelativePath=".\src\gl\gl_functions.h"
+				>
+			</File>
 			<Filter
 				Name="System"
 				>
@@ -6862,10 +6870,6 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\data\gl_data.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\data\gl_nodes.cpp"
 					>
 				</File>
 				<File
