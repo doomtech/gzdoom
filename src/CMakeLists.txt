@@ -808,7 +808,6 @@ add_executable( zdoom WIN32
 	g_shared/shared_hud.cpp
 	g_shared/shared_sbar.cpp
 	gl/data/gl_sections.cpp
-	gl/data/gl_nodes.cpp
 	gl/data/gl_data.cpp
 	gl/data/gl_portaldata.cpp
 	gl/data/gl_setup.cpp
