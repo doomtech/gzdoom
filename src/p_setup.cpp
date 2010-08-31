@@ -3963,6 +3963,8 @@ void P_SetupLevel (char *lumpname, int position)
 
 	deathmatchstarts.Clear ();
 
+	gl_InitSegs();
+
 	if (!buildmap)
 	{
 		// [RH] Spawn slope creating things first.
