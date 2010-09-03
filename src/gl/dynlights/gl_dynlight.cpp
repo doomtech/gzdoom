@@ -69,6 +69,7 @@ void gl_ParseBrightmap(FScanner &sc, int);
 void gl_ParseHardwareShader(FScanner &sc, int deflump);
 void gl_ParseSkybox(FScanner &sc);
 void gl_ParseDetailTexture(FScanner &sc);
+void gl_ParseBillboards(FScanner &sc);
 void gl_ParseVavoomSkybox();
 
 //==========================================================================
@@ -856,6 +857,7 @@ static const char *CoreKeywords[]=
    "disable_fullbright",
    "hardwareshader",
    "detail",
+   "billboards",
    "#include",
    NULL
 };
@@ -878,6 +880,7 @@ enum
    TAG_DISABLE_FB,
    TAG_HARDWARESHADER,
    TAG_DETAIL,
+   TAG_BILLBOARDS,
    TAG_INCLUDE,
 };
 
@@ -1269,6 +1272,9 @@ void gl_DoParseDefs(FScanner &sc, int workingLump)
 		case TAG_DETAIL:
 			gl_ParseDetailTexture(sc);
 			break;
+		case TAG_BILLBOARDS:
+			gl_ParseBillboards(sc);
+			break;
 		case TAG_DISABLE_FB:
 			{
 				/* not implemented.
@@ -1358,3 +1364,64 @@ void AddStateLight(FState *State, const char *lname)
 		ParsedStateLights.Push(FName(lname));
 	}
 }
+
+
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
+void gl_ParseBillboards(FScanner &sc)
+{
+	// check for opening brace
+	sc.GetString();
+	if (sc.Compare("{"))
+	{
+		sc.GetString();
+		// Until end of block
+		while (!sc.Compare("}"))
+		{
+			// Identifier
+			bool billboardXY;
+			if (sc.Compare("x"))
+				billboardXY = false;
+			else if (sc.Compare("xy"))
+				billboardXY = true;
+			else sc.ScriptError("Expected 'x' or 'xy', got '%s'.\n", sc.String);
+			sc.GetString();
+			if (sc.Compare("{"))
+			{
+				sc.GetString();
+				// Until end of block
+				while (!sc.Compare("}"))
+				{
+					const PClass * infoc = PClass::FindClass(sc.String);
+					if (infoc != NULL)
+					{
+						AActor * info = (AActor*)infoc->Defaults;
+						if (billboardXY)
+						{
+							info->renderflags |= RF_FORCEXYBILLBOARD;
+							info->renderflags &= ~RF_FORCEYBILLBOARD;
+						}
+						else
+						{
+							info->renderflags |= RF_FORCEYBILLBOARD;
+							info->renderflags &= ~RF_FORCEXYBILLBOARD;
+						}
+					}
+					else sc.ScriptMessage("Non-existent actor class '%s'.\n", sc.String);
+					sc.GetString();
+				}
+			}
+			sc.GetString();
+		}
+	}
+	else
+	{
+		sc.ScriptError("Expected '{'.\n");
+	}
+}
+
+
