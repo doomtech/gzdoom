@@ -253,7 +253,7 @@ DWORD *MUSSong2::MakeEvents(DWORD *events, DWORD *max_event_p, DWORD max_time)
 	DWORD tot_time = 0;
 	DWORD time = 0;
 
-	if (Tempo) max_time = max_time * Division / Tempo;
+	max_time = max_time * Division / Tempo;
 
 	while (events < max_event_p && tot_time <= max_time)
 	{

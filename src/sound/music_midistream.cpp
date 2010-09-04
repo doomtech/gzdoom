@@ -809,7 +809,7 @@ int MIDIStreamer::FillBuffer(int buffer_num, int max_events, DWORD max_time)
 	}
 
 	// Play nothing while paused.
-	if (m_Status == STATE_Paused && Tempo)
+	if (m_Status == STATE_Paused)
 	{
 		// Be more responsive when unpausing by only playing each buffer
 		// for a third of the maximum time.
@@ -969,6 +969,7 @@ void MIDIStreamer::CreateSMF(TArray<BYTE> &file)
 	CheckCaps(MOD_MIDIPORT);
 	IgnoreLoops = true;
 	DoRestart();
+	Tempo = InitialTempo;
 
 	file.Reserve(sizeof(StaticMIDIhead));
 	memcpy(&file[0], StaticMIDIhead, sizeof(StaticMIDIhead));
