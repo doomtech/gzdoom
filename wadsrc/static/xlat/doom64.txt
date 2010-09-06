@@ -1,0 +1,223 @@
+include "xlat/base.txt"
+
+
+sector bitmask 0xf000 clear;
+sector bitmask 0xfe0 <<= 3;
+
+sector 1 = dLight_Flicker;
+sector 2 = dLight_StrobeFast;
+sector 3 = dLight_StrobeSlow;
+sector 4 = dLight_Strobe_Hurt;
+sector 5 = dDamage_Hellslime;
+sector 7 = dDamage_Nukage;
+sector 8 = dLight_Glow;
+sector 9 = SECRET_MASK nobitmask;
+sector 10 = dSector_DoorCloseIn30;
+sector 11 = dDamage_End;
+sector 12 = dLight_StrobeSlowSync;
+sector 13 = dLight_StrobeFastSync;
+sector 14 = dSector_DoorRaiseIn5Mins;
+sector 15 = dFriction_Low;
+sector 16 = dDamage_SuperHellslime;
+sector 17 = dLight_FireFlicker;
+sector 18 = dDamage_LavaWimpy;
+sector 19 = dDamage_LavaHefty;
+sector 20 = dScroll_EastLavaDamage;
+sector 21 = Light_Phased;
+sector 22 = LightSequenceStart;
+sector 23 = LightSequenceSpecial1;
+sector 24 =	LightSequenceSpecial2;
+
+lineflag 0 = ML_BLOCKING;
+lineflag 1 = ML_BLOCKMONSTERS;
+lineflag 2 = ML_TWOSIDED;
+lineflag 3 = ML_DONTPEGTOP;
+lineflag 4 = ML_DONTPEGBOTTOM;
+lineflag 5 = ML_SECRET;
+lineflag 6 = ML_SOUNDBLOCK;
+lineflag 7 = ML_DONTDRAW;
+lineflag 8 = ML_MAPPED;
+
+
+// Use is not directly part of the type, they are determined by use flags. The following translations
+// are temporary approximation based on the specs.
+  1 = 0,	Door_Raise (0, D_FAST, VDOORWAIT64, tag, SPLITDOOR)
+  2 = 0,	Door_Open (tag, D_SLOW, 0, 0, SPLITDOOR)
+  3 = 0,	Door_Close (tag, D_SLOW, 0, 0, SPLITDOOR)
+  4 = 0,	Door_Raise (tag, D_SLOW, VDOORWAIT64, 0, SPLITDOOR)
+  5 = 0,	Floor_RaiseToLowestCeiling (tag, F_SLOW)					// Floor Raise
+  6 = 0,	Ceiling_CrushAndRaiseA (tag, C_NORMAL, C_NORMAL, 10)		// Ceiling Crush/Raise Fast
+  7 = 0, 0()															// Unknown or non-existent
+  8 = 0,	Stairs_BuildUpDoom (tag, ST_SLOW, 8)						// Stairs Raise 8
+  9 = 0, 0()															// Unknown or non-existent
+ 10 = 0,	Plat_DownWaitUpStayLip (tag, P_TURBO, PLATWAIT64, 0)
+ 11 = 0, 0()															// Unknown or non-existent
+ 12 = 0, 0()															// Unknown or non-existent
+ 13 = 0, 0()															// Unknown or non-existent
+ 14 = 0, 0()															// Unknown or non-existent
+ 15 = 0, 0()															// Unknown or non-existent
+ 16 = 0,	Door_CloseWaitOpen (tag, D_SLOW, 280, 0, SPLITDOOR)
+ 17 = 0, 0()															// Unknown or non-existent
+ 18 = 0,	Floor_RaiseToNearest (tag, F_SLOW)							// Floor Raise/Nearest
+ 19 = 0,	Floor_LowerToHighest (tag, F_SLOW, 128)						// Floor Lower
+ 20 = 0, 0()															// Unknown or non-existent
+ 21 = 0,	Plat_DownWaitUpStayLip (tag, P_FAST, PLATWAIT)				// Platform Down/Up
+ 22 = 0, 0()															// Unknown or non-existent
+ 23 = 0,	Floor_LowerToLowest (tag, F_SLOW)							// Floor Lower/Lowest
+ 24 = 0, 0()															// Unknown or non-existent
+ 25 = 0,	Ceiling_CrushAndRaiseA (tag, C_SLOW, C_SLOW, 10)			// Ceiling Crush/Raise
+ 26 = 0, 0()															// Unknown or non-existent
+ 27 = 0, 0()															// Unknown or non-existent
+ 28 = 0, 0()															// Unknown or non-existent
+ 29 = 0, 0()															// Unknown or non-existent
+ 30 = 0, 0()															// Unknown or non-existent
+ 31 = 0,	Door_Raise (0, D_FAST, VDOORWAIT64, tag, SPLITDOOR)
+ 32 = 0, 0()															// Unknown or non-existent
+ 33 = 0, 0()															// Unknown or non-existent
+ 34 = 0, 0()															// Unknown or non-existent
+ 35 = 0, 0()															// Unknown or non-existent
+ 36 = 0,	Floor_LowerToHighest (tag, F_FAST, 136)						// Floor Lower/Fast
+ 37 = 0,	Floor_LowerToLowestTxTy (tag, F_SLOW)						// Floor Lower/Change
+ 38 = 0,	Floor_LowerToLowest (tag, F_MEDIUM)							// Floor Lower/Lowest
+ 39 = 0,	Teleport (tag)
+ 40 = 0, 0()															// Unknown or non-existent
+ 41 = 0, 0()															// Unknown or non-existent
+ 42 = 0, 0()															// Unknown or non-existent
+ 43 = 0, 0()															// Unknown or non-existent
+ 44 = 0, 0()															// Unknown or non-existent
+ 45 = 0, 0()															// Unknown or non-existent
+ 46 = 0, 0()															// Unknown or non-existent
+ 47 = 0, 0()															// Unknown or non-existent
+ 48 = 0, 0()															// Unknown or non-existent
+ 49 = 0, 0()															// Unknown or non-existent
+ 50 = 0, 0()															// Unknown or non-existent
+ 51 = 0, 0()															// Unknown or non-existent
+ 52 = 0,	Exit_Normal (0)												// Exit Level
+ 53 = 0,	Plat_PerpetualRaiseLip (tag, P_SLOW, PLATWAIT, 0)			// Platform Perpetual/Raise
+ 54 = 0,	Plat_Stop (tag)												// Platform Perpetual/Stop
+ 55 = 0, 0()															// Unknown or non-existent
+ 56 = 0, 0()															// Unknown or non-existent
+ 57 = 0,	Ceiling_CrushStop (tag)										// Ceiling Crush/Stop
+ 58 = 0, 0()															// Unknown or non-existent
+ 59 = 0, 0()															// Unknown or non-existent
+ 60 = 0, 0()															// Unknown or non-existent
+ 61 = 0, 0()															// Unknown or non-existent
+ 62 = 0, 0()															// Unknown or non-existent
+ 63 = 0, 0()															// Unknown or non-existent
+ 64 = 0, 0()															// Unknown or non-existent
+ 65 = 0, 0()															// Unknown or non-existent
+ 66 = 0, 0()															// Unknown or non-existent
+ 67 = 0, 0()															// Unknown or non-existent
+ 68 = 0, 0()															// Unknown or non-existent
+ 69 = 0, 0()															// Unknown or non-existent
+ 70 = 0, 0()															// Unknown or non-existent
+ 71 = 0, 0()															// Unknown or non-existent
+ 72 = 0, 0()															// Unknown or non-existent
+ 73 = 0, 0()															// Unknown or non-existent
+ 74 = 0, 0()															// Unknown or non-existent
+ 75 = 0, 0()															// Unknown or non-existent
+ 76 = 0, 0()															// Unknown or non-existent
+ 77 = 0, 0()															// Unknown or non-existent
+ 78 = 0, 0()															// Unknown or non-existent
+ 79 = 0, 0()															// Unknown or non-existent
+ 80 = 0, 0()															// Unknown or non-existent
+ 81 = 0, 0()															// Unknown or non-existent
+ 82 = 0, 0()															// Unknown or non-existent
+ 83 = 0, 0()															// Unknown or non-existent
+ 84 = 0, 0()															// Unknown or non-existent
+ 85 = 0, 0()															// Unknown or non-existent
+ 86 = 0, 0()															// Unknown or non-existent
+ 87 = 0, 0()															// Unknown or non-existent
+ 88 = 0, 0()															// Unknown or non-existent
+ 89 = 0, 0()															// Unknown or non-existent
+ 90 = 0, 0()															// Artifact Switch 1
+ 91 = 0, 0()															// Artifact Switch 2
+ 92 = 0, 0()															// Artifact Switch 3
+ 93 = 0, 0()															// Unknown or non-existent
+ 94 = 0,	NoiseAlert (0, 0)											// Alert Enemies
+ 95 = 0, 0()															// Unknown or non-existent
+ 96 = 0, 0()															// Unknown or non-existent
+ 97 = 0, 0()															// Unknown or non-existent
+ 98 = 0, 0()															// Unknown or non-existent
+ 99 = 0, 0()															// Unknown or non-existent
+100 = 0,	Stairs_BuildUpDoom (tag, ST_TURBO, 16, 0, 0)				// Stairs Raise/Fast 16
+101 = 0, 0()															// Unknown or non-existent
+102 = 0, 0()															// Unknown or non-existent
+103 = 0, 0()															// Unknown or non-existent
+104 = 0, 0()															// Unknown or non-existent
+105 = 0, 0()															// Unknown or non-existent
+106 = 0, 0()															// Unknown or non-existent
+107 = 0, 0()															// Unknown or non-existent
+108 = 0,	Door_Raise (tag, D_FAST, VDOORWAIT64, 0, SPLITDOOR)
+109 = 0,	Door_Open (tag, D_FAST, 0, 0, SPLITDOOR)
+110 = 0,	Door_Close (tag, D_FAST, 0, 0, SPLITDOOR)
+111 = 0, 0()															// Unknown or non-existent
+112 = 0, 0()															// Unknown or non-existent
+113 = 0, 0()															// Unknown or non-existent
+114 = 0, 0()															// Unknown or non-existent
+115 = 0, 0()															// Unknown or non-existent
+116 = 0, 0()															// Unknown or non-existent
+117 = 0,	Door_Raise (0, D_FAST, VDOORWAIT64, tag, SPLITDOOR)
+118 = 0,	Door_Raise (0, D_FAST, VDOORWAIT64, tag, SPLITDOOR)
+119 = 0, 0()															// Unknown or non-existent
+120 = 0, 0()															// Unknown or non-existent
+121 = 0,	Plat_DownWaitUpStayLip (tag, P_BLAZE, PLATWAIT64, 0)
+122 = 0,	Plat_DownWaitUpStayLip (tag, P_TURBO, PLATWAIT64, 0)		// Platform Up/Down
+123 = 0,	Plat_DownWaitUpStayLip (tag, P_TURBO, PLATWAIT64, 0)		// Platform Up/Down/Fast
+124 = 0,	Teleport_NewMap (tag)
+125 = 0,	Teleport (tag)
+/*
+    * 141: Kill Monsters in Sector Special 666
+    * 193: Custom Floor Move
+    * 200: Clear Camera
+    * 201: Set Camera
+    * 202: Invoke Dart
+    * 203: Delay
+    * 204: Set Level Integer
+    * 210: Custom Ceiling
+211 = 0, 0()															// Unknown or non-existent
+    * 212: Custom Floor
+213 = 0, 0()															// Unknown or non-existent
+    * 214: Floor/Ceiling Move
+215 = 0, 0()															// Unknown or non-existent
+216 = 0, 0()															// Unknown or non-existent
+217 = 0, 0()															// Unknown or non-existent
+    * 218: Set Line Flag
+    * 219: Set Line Texture
+    * 220: Set Sector Flag
+    * 221: Set Sector Special
+    * 222: Set Sector Light
+    * 223: Set Sector Flats
+    * 224: Spawn Thing
+    * 225: Quake/Shake
+    * 226: Custom Ceiling/Fast
+    * 227: Set Ceiling Height
+    * 228: Custom Floor/Fast
+    * 229: Set Floor Height
+    * 230: Set Line Special
+    * 231: Invoke Tracer
+    * 232: Ceiling Crush/Raise Once
+    * 233: Freeze Player
+234 = 0, 0()															// Unknown or non-existent
+    * 235: Set Light Data
+    * 236: Custom Platform Down/Up
+    * 237: Custom Platform Down/Up Fast
+    * 238: Custom Platform Up/Down
+    * 239: Custom Platform Up/Down Fast
+    * 240: Trigger Random Tagged Line
+    * 241: Ceiling/Floor Split
+    * 242: Remove Thing
+    * 243: Move Camera
+    * 244: Set Sector Floor Exact
+    * 245: Set Sector Ceiling Exact
+    * 246: Restart Macro
+    * 247: Custom Floor To Height
+248 = 0, 0()															// Unknown or non-existent
+    * 249: Telefrag
+250 = 0, 0()															// Unknown or non-existent
+251 = 0, 0()															// Unknown or non-existent
+    * 252: Custom Ceiling To Height
+    * 253: Enable Features
+    * 254: Map33 Special
+255 = 0, 0()															// Unknown or non-existent
+*/
