@@ -106,6 +106,11 @@ void SetupPlayerClasses ()
 		newclass.Type = PClass::FindClass (NAME_DoomPlayer);
 		PlayerClasses.Push (newclass);
 	}
+	else if (gameinfo.gametype == GAME_Doom64)
+	{
+		newclass.Type = PClass::FindClass (NAME_Doom64Player);
+		PlayerClasses.Push (newclass);
+	}
 	else if (gameinfo.gametype == GAME_Heretic)
 	{
 		newclass.Type = PClass::FindClass (NAME_HereticPlayer);

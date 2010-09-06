@@ -242,7 +242,7 @@ bool P_ActivateLine (line_t *line, AActor *mo, int side, int activationType)
 	}
 	// some old WADs use this method to create walls that change the texture when shot.
 	else if (activationType == SPAC_Impact &&					// only for shootable triggers
-		(level.flags2 & LEVEL2_DUMMYSWITCHES) &&					// this is only a compatibility setting for an old hack!
+		(level.flags2 & LEVEL2_DUMMYSWITCHES) &&				// this is only a compatibility setting for an old hack!
 		!repeat &&												// only non-repeatable triggers
 		(special<Generic_Floor || special>Generic_Crusher) &&	// not for Boom's generalized linedefs
 		special &&												// not for lines without a special
@@ -256,7 +256,7 @@ bool P_ActivateLine (line_t *line, AActor *mo, int side, int activationType)
 // end of changed code
 	if (developer && buttonSuccess)
 	{
-		Printf ("Line special %d activated\n", special);
+		Printf ("Line special %d activated on line %i\n", special, line - lines);
 	}
 	return true;
 }

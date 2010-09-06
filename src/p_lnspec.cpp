@@ -196,19 +196,19 @@ FUNC(LS_Polyobj_Stop)
 FUNC(LS_Door_Close)
 // Door_Close (tag, speed, lighttag)
 {
-	return EV_DoDoor (DDoor::doorClose, ln, it, arg0, SPEED(arg1), 0, 0, arg2);
+	return EV_DoDoor (DDoor::doorClose, ln, it, arg0, SPEED(arg1), 0, 0, arg2, !!(arg4 & 64));
 }
 
 FUNC(LS_Door_Open)
 // Door_Open (tag, speed, lighttag)
 {
-	return EV_DoDoor (DDoor::doorOpen, ln, it, arg0, SPEED(arg1), 0, 0, arg2);
+	return EV_DoDoor (DDoor::doorOpen, ln, it, arg0, SPEED(arg1), 0, 0, arg2, !!(arg4 & 64));
 }
 
 FUNC(LS_Door_Raise)
 // Door_Raise (tag, speed, delay, lighttag)
 {
-	return EV_DoDoor (DDoor::doorRaise, ln, it, arg0, SPEED(arg1), TICS(arg2), 0, arg3);
+	return EV_DoDoor (DDoor::doorRaise, ln, it, arg0, SPEED(arg1), TICS(arg2), 0, arg3, !!(arg4 & 64));
 }
 
 FUNC(LS_Door_LockedRaise)
@@ -221,7 +221,7 @@ FUNC(LS_Door_LockedRaise)
 FUNC(LS_Door_CloseWaitOpen)
 // Door_CloseWaitOpen (tag, speed, delay, lighttag)
 {
-	return EV_DoDoor (DDoor::doorCloseWaitOpen, ln, it, arg0, SPEED(arg1), OCTICS(arg2), 0, arg3);
+	return EV_DoDoor (DDoor::doorCloseWaitOpen, ln, it, arg0, SPEED(arg1), OCTICS(arg2), 0, arg3, !!(arg4 & 64));
 }
 
 FUNC(LS_Door_Animated)
@@ -239,7 +239,7 @@ FUNC(LS_Generic_Door)
 	int tag, lightTag;
 	DDoor::EVlDoor type;
 
-	switch (arg2 & 127)
+	switch (arg2 & 127)//63)
 	{
 		case 0: type = DDoor::doorRaise;			break;
 		case 1: type = DDoor::doorOpen;				break;
@@ -258,7 +258,7 @@ FUNC(LS_Generic_Door)
 		tag = arg0;
 		lightTag = 0;
 	}
-	return EV_DoDoor (type, ln, it, tag, SPEED(arg1), OCTICS(arg3), arg4, lightTag);
+	return EV_DoDoor (type, ln, it, tag, SPEED(arg1), OCTICS(arg3), arg4, lightTag, !!(arg2 & 64));
 }
 
 FUNC(LS_Floor_LowerByValue)

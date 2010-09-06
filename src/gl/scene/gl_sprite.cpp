@@ -694,7 +694,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 	}
 	else 
 	{
-		Colormap=rendersector->ColorMap;
+		Colormap=rendersector->ExtraColorMaps[LIGHT_THING];
 		if (fullbright)
 		{
 			if (rendersector == &sectors[rendersector->sectornum] || in_area != area_below)	
@@ -870,7 +870,7 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 		TArray<lightlist_t> & lightlist=sector->e->XFloor.lightlist;
 		int lightbottom;
 
-		Colormap = sector->ColorMap;
+		Colormap = sector->ExtraColorMaps[LIGHT_THING];
 		for(unsigned int i=0;i<lightlist.Size();i++)
 		{
 			if (i<lightlist.Size()-1) lightbottom = lightlist[i+1].plane.ZatPoint(particle->x,particle->y);

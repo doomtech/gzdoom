@@ -554,7 +554,7 @@ public:
 	};
 
 	DDoor (sector_t *sector);
-	DDoor (sector_t *sec, EVlDoor type, fixed_t speed, int delay, int lightTag);
+	DDoor (sector_t *sec, EVlDoor type, fixed_t speed, int delay, int lightTag, bool splitdoor = false);
 
 	void Serialize (FArchive &arc);
 	void Tick ();
@@ -564,6 +564,12 @@ protected:
 	fixed_t		m_BotDist, m_OldFloorDist;
 	vertex_t	*m_BotSpot;
 	fixed_t 	m_Speed;
+
+	// To manage Doom 64 split doors, we need a bit more stuff...
+	bool		b_Split;		// Whether the door is split or not
+	fixed_t		m_BottomDist;	// Equivalent of m_TopDist for the bottom part
+	fixed_t		m_OriginalDist;	// The starting position for a door that opens, or the middle otherwise
+	void StopInterpolation();	// Since we need to interpolate the bottom as well
 
 	// 1 = up, 0 = waiting at top, -1 = down
 	int 		m_Direction;
@@ -580,17 +586,17 @@ protected:
 
 	friend bool	EV_DoDoor (DDoor::EVlDoor type, line_t *line, AActor *thing,
 						   int tag, int speed, int delay, int lock,
-						   int lightTag);
+						   int lightTag, bool split);
 	friend void P_SpawnDoorCloseIn30 (sector_t *sec);
 	friend void P_SpawnDoorRaiseIn5Mins (sector_t *sec);
 private:
 	DDoor ();
-
+	TObjPtr<DInterpolation> SplitInterpolation;	// Bottom part interpolation
 };
 
 bool EV_DoDoor (DDoor::EVlDoor type, line_t *line, AActor *thing,
 				int tag, int speed, int delay, int lock,
-				int lightTag);
+				int lightTag, bool split = false);
 void P_SpawnDoorCloseIn30 (sector_t *sec);
 void P_SpawnDoorRaiseIn5Mins (sector_t *sec);
 

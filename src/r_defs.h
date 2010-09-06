@@ -437,6 +437,15 @@ struct FTransform
 	fixed_t base_angle, base_yoffs;
 };
 
+enum
+{
+	LIGHT_FLOOR,
+	LIGHT_CEILING,
+	LIGHT_THING,
+	LIGHT_WALLUPPER,
+	LIGHT_WALLLOWER
+};
+
 struct sector_t
 {
 	// Member functions
@@ -648,6 +657,7 @@ struct sector_t
 
 	// [RH] give floor and ceiling even more properties
 	FDynamicColormap *ColorMap;	// [RH] Per-sector colormap
+	FDynamicColormap *ExtraColorMaps[5];
 
 	BYTE		lightlevel;
 
@@ -948,7 +958,7 @@ struct line_t
 	DWORD		flags;
 	DWORD		activation;	// activation type
 	int			special;
-	fixed_t		Alpha;		// <--- translucency (0=invisibile, FRACUNIT=opaque)
+	fixed_t		Alpha;		// <--- translucency (0=invisible, FRACUNIT=opaque)
 	int			id;			// <--- same as tag or set with Line_SetIdentification
 	int			args[5];	// <--- hexen-style arguments (expanded to ZDoom's full width)
 	int			firstid, nextid;
@@ -1199,6 +1209,12 @@ public:
 	int			sprite;
 	int			crouchsprite;
 	int			namespc;	// namespace for this skin
+};
+
+// Doom 64 Lights
+struct light_t
+{
+	FDynamicColormap *ColorMap;
 };
 
 #endif
