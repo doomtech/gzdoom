@@ -202,9 +202,6 @@ enum SPAC
 	SPAC_MPush = 1<<9,		// monsters can push
 	SPAC_UseBack = 1<<10,	// Can be used from the backside
 
-	// For Doom 64:
-	SPAC_Macro = 1<<11,		// cannot be used directly, instead called by a macro
-
 	SPAC_PlayerActivate = (SPAC_Cross|SPAC_Use|SPAC_Impact|SPAC_Push|SPAC_AnyCross|SPAC_UseThrough|SPAC_UseBack),
 };
 
@@ -438,6 +435,14 @@ enum EMapThingFlags
 	MTF_FRIENDLY		= 0x2000,
 	MTF_STANDSTILL		= 0x4000,
 	MTF_STRIFESOMETHING	= 0x8000,
+
+	// Internal version of Doom 64 flags
+	MTF_DONTSPAWN		= 0x010000,	// Spawned when triggered.
+	MTF_ONTOUCH			= 0x020000,	// Triggers
+	MTF_ONDEATH			= 0x040000,
+	MTF_SECRET			= 0x080000,	// Secret pickup
+	MTF_NOINFIGHTING	= 0x100000,
+
 
 	// BOOM and DOOM compatible versions of some of the above
 

@@ -1407,6 +1407,11 @@ static void DoGiveInventory(AActor * receiver, DECLARE_PARAMINFO)
 			item->flags&=~MF_COUNTITEM;
 			level.total_items--;
 		}
+		if (item->flags5 & MF5_COUNTSECRET)
+		{
+			item->flags5&=~MF5_COUNTSECRET;
+			level.total_secrets--;
+		}
 		if (!item->CallTryPickup (receiver))
 		{
 			item->Destroy ();
@@ -2946,9 +2951,11 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ChangeFlag)
 	{
 		bool kill_before, kill_after;
 		INTBOOL item_before, item_after;
+		INTBOOL secret_before, secret_after;
 
 		kill_before = self->CountsAsKill();
 		item_before = self->flags & MF_COUNTITEM;
+		secret_before = self->flags5 & MF5_COUNTSECRET;
 
 		if (fd->structoffset == -1)
 		{
@@ -2974,6 +2981,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ChangeFlag)
 		}
 		kill_after = self->CountsAsKill();
 		item_after = self->flags & MF_COUNTITEM;
+		secret_after = self->flags5 & MF5_COUNTSECRET;
 		// Was this monster previously worth a kill but no longer is?
 		// Or vice versa?
 		if (kill_before != kill_after)
@@ -2997,6 +3005,18 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ChangeFlag)
 			else
 			{ // It no longer counts as an item
 				level.total_items--;
+			}
+		}
+		// and same for secrets
+		if (secret_before != secret_after)
+		{
+			if (secret_after)
+			{ // It counts as a secret now.
+				level.total_secrets++;
+			}
+			else
+			{ // It no longer counts as a secret
+				level.total_secrets--;
 			}
 		}
 	}

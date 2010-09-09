@@ -821,6 +821,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\p_macro.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\p_map.cpp"
 				>
 			</File>
@@ -1455,6 +1459,10 @@
 			</File>
 			<File
 				RelativePath=".\src\p_local.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\p_macro.h"
 				>
 			</File>
 			<File

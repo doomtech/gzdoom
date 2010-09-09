@@ -923,6 +923,14 @@ void AInventory::Touch (AActor *toucher)
 		}
 		level.found_items++;
 	}
+	if (flags5 & MF5_COUNTSECRET)
+	{
+		if (toucher->player != NULL)
+		{
+			toucher->player->secretcount++;
+		}
+		level.found_secrets++;
+	}
 
 	//Added by MC: Check if item taken was the roam destination of any bot
 	for (int i = 0; i < MAXPLAYERS; i++)

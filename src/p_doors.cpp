@@ -54,14 +54,21 @@ void DDoor::Serialize (FArchive &arc)
 		<< m_TopWait
 		<< m_TopCountdown
 		<< m_LightTag;
-
-	if (SaveVersion > 2600) // adjust
-	{
-		arc << b_Split << m_BottomDist << m_OriginalDist << SplitInterpolation;
-	}
 }
 
-void DDoor::StopInterpolation()
+IMPLEMENT_CLASS (DSplitDoor)
+
+DSplitDoor::DSplitDoor ()
+{
+}
+
+void DSplitDoor::Serialize (FArchive &arc)
+{
+	Super::Serialize (arc);
+	arc << m_BottomDist << m_OriginalDist << SplitInterpolation;
+}
+
+void DSplitDoor::StopInterpolation()
 {
 	Super::StopInterpolation();
 	if (SplitInterpolation != NULL)
@@ -70,6 +77,299 @@ void DDoor::StopInterpolation()
 		SplitInterpolation = NULL;
 	}
 }
+
+void DSplitDoor::Tick ()
+{
+	EResult res;
+	EResult sres;
+
+	m_BotDist = m_OriginalDist;
+
+	switch (m_Direction)
+	{
+	case 0:
+		// WAITING
+		if (!--m_TopCountdown)
+		{
+			switch (m_Type)
+			{
+			case doorRaise:
+				m_Direction = -1; // time to go back down
+				DoorSound (false);
+				break;
+				
+			case doorCloseWaitOpen:
+				m_Direction = 1;
+				DoorSound (true);
+				break;
+				
+			default:
+				break;
+			}
+		}
+		break;
+		
+	case 2:
+		//	INITIAL WAIT
+		if (!--m_TopCountdown)
+		{
+			switch (m_Type)
+			{
+			case doorRaiseIn5Mins:
+				m_Direction = 1;
+				m_Type = doorRaise;
+				DoorSound (true);
+				break;
+				
+			default:
+				break;
+			}
+		}
+		break;
+		
+	case -1:
+		// DOWN
+		m_BotDist = m_OriginalDist;
+		res = MoveCeiling (m_Speed, m_BotDist, -1, m_Direction, false);
+		sres = MoveFloor(m_Speed, m_OriginalDist, -1, -m_Direction, false);
+
+		// killough 10/98: implement gradual lighting effects
+		// Todo: Do split doors need something here?
+		if (m_LightTag != 0 && m_TopDist != -m_Sector->floorplane.d)
+		{
+			EV_LightTurnOnPartway (m_LightTag, FixedDiv (m_Sector->ceilingplane.d + m_Sector->floorplane.d,
+				m_TopDist + m_Sector->floorplane.d));
+		}
+
+		if (res == pastdest && sres == pastdest)
+		{
+			SN_StopSequence (m_Sector, CHAN_CEILING);
+			switch (m_Type)
+			{
+			case doorRaise:
+			case doorClose:
+				m_Sector->ceilingdata = NULL;	//jff 2/22/98
+				m_Sector->floordata = NULL;
+				Destroy ();						// unlink and free
+				break;
+				
+			case doorCloseWaitOpen:
+				m_Direction = 0;
+				m_TopCountdown = m_TopWait;
+				break;
+				
+			default:
+				break;
+			}
+		}
+		else if (res == crushed && sres == crushed)
+		{
+			switch (m_Type)
+			{
+			case doorClose:				// DO NOT GO BACK UP!
+				break;
+				
+			default:
+				m_Direction = 1;
+				DoorSound (true);
+				break;
+			}
+		}
+		break;
+		
+	case 1:
+		// UP
+		res = MoveCeiling (m_Speed, m_TopDist, -1, m_Direction, false);
+		sres = MoveFloor(m_Speed, m_BottomDist, -1, -m_Direction, false);
+		
+		// killough 10/98: implement gradual lighting effects
+		if (m_LightTag != 0 && m_TopDist != -m_Sector->floorplane.d)
+		{
+			EV_LightTurnOnPartway (m_LightTag, FixedDiv (m_Sector->ceilingplane.d + m_Sector->floorplane.d,
+				m_TopDist + m_Sector->floorplane.d));
+		}
+
+		if (res == pastdest && sres == pastdest)
+		{
+			SN_StopSequence (m_Sector, CHAN_CEILING);
+			switch (m_Type)
+			{
+			case doorRaise:
+				m_Direction = 0; // wait at top
+				m_TopCountdown = m_TopWait;
+				break;
+				
+			case doorCloseWaitOpen:
+			case doorOpen:
+				m_Sector->ceilingdata = NULL;	//jff 2/22/98
+				m_Sector->floordata = NULL;
+				Destroy ();						// unlink and free
+				break;
+				
+			default:
+				break;
+			}
+		}
+		else if (res == crushed && sres == crushed)
+		{
+			switch (m_Type)
+			{
+			case doorRaise:
+				m_Direction = -1;
+				DoorSound(false);
+				break;
+
+			default:
+				break;
+			}
+		}
+		break;
+	}
+}
+
+DSplitDoor::DSplitDoor (sector_t *sec, EVlDoor type, fixed_t speed, int delay, int lightTag)
+	: DDoor (sec, type, speed, delay, lightTag)
+{
+	SplitInterpolation = sec->SetInterpolation(sector_t::FloorMove, true);
+	sec->floordata = this;
+
+	vertex_t *spot, *sspot = NULL;
+	fixed_t height, depth = 0;
+
+	if (i_compatflags & COMPATF_NODOORLIGHT)
+	{
+		m_LightTag = 0;
+	}
+
+	switch (type)
+	{
+	case doorClose:
+		m_Direction = -1;
+		height = sec->FindLowestCeilingSurrounding (&spot);
+		depth = sec->FindHighestFloorSurrounding (&sspot);
+		m_TopDist = m_BottomDist
+			// Average height, use that or ((m_Sector->floorplane.d)>>1) + ((sec->ceilingplane.d)>>1);
+			= ((sec->ceilingplane.PointToDist (spot, height - 4*FRACUNIT))>>1)
+			+ ((sec->floorplane.PointToDist (spot, depth))>>1);
+		DoorSound (false);
+		break;
+
+	case doorOpen:
+	case doorRaise:
+		m_Direction = 1;
+		height = sec->FindLowestCeilingSurrounding (&spot);
+		depth = sec->FindHighestFloorSurrounding (&sspot);
+		m_TopDist = sec->ceilingplane.PointToDist (spot, height - 4*FRACUNIT);
+		m_BottomDist = sec->floorplane.PointToDist (sspot, depth);
+		m_OriginalDist = sec->floorplane.d;
+		if (m_TopDist != sec->ceilingplane.d)
+			DoorSound (true);
+		break;
+
+	case doorCloseWaitOpen:
+		m_TopDist = sec->ceilingplane.d;
+		m_BottomDist = sec->floorplane.d;
+		m_OriginalDist = sec->floorplane.d;
+		m_Direction = -1;
+		DoorSound (false);
+		break;
+	}
+
+	height = sec->FindLowestCeilingPoint(&m_BotSpot);
+	m_BotDist = sec->ceilingplane.PointToDist (m_BotSpot, height);
+	m_OldFloorDist = sec->floorplane.d;
+}
+
+bool EV_DoSplitDoor (DDoor::EVlDoor type, line_t *line, AActor *thing,
+				int tag, int speed, int delay, int lightTag)
+{
+	bool		rtn = false;
+	int 		secnum;
+	sector_t*	sec;
+
+	if (tag == 0)
+	{		// [RH] manual door
+		if (!line)
+			return false;
+
+		// if the wrong side of door is pushed, give oof sound
+		if (line->sidedef[1] == NULL)			// killough
+		{
+			S_Sound (thing, CHAN_VOICE, "*usefail", 1, ATTN_NORM);
+			return false;
+		}
+
+		// get the sector on the second side of activating linedef
+		sec = line->sidedef[1]->sector;
+		secnum = int(sec-sectors);
+
+		// if door already has a thinker, use it
+		if (sec->PlaneMoving(sector_t::ceiling))
+		{
+			if (sec->ceilingdata->IsKindOf (RUNTIME_CLASS(DSplitDoor)))
+			{
+				DSplitDoor *door = barrier_cast<DSplitDoor *>(sec->ceilingdata);
+
+				// ONLY FOR "RAISE" DOORS, NOT "OPEN"s
+				if (door->m_Type == DDoor::doorRaise && type == DDoor::doorRaise)
+				{
+					if (door->m_Direction == -1)
+					{
+						door->m_Direction = 1;	// go back up
+						door->DoorSound (true);	// [RH] Make noise
+					}
+					else if (!(line->activation & (SPAC_Push|SPAC_MPush)))
+						// [RH] activate push doors don't go back down when you
+						//		run into them (otherwise opening them would be
+						//		a real pain).
+					{
+						if (!thing->player || thing->player->isbot)
+							return false;	// JDC: bad guys never close doors
+											//Added by MC: Neither do bots.
+
+						door->m_Direction = -1;	// start going down immediately
+
+						// [RH] If this sector doesn't have a specific sound
+						// attached to it, start the door close sequence.
+						// Otherwise, just let the current one continue.
+						// FIXME: This should be check if the sound sequence has separate up/down
+						// paths, not if it was manually set.
+						if ((sec->seqType < 0 && sec->SeqName == NAME_None) || SN_CheckSequence(sec, CHAN_CEILING) == NULL)
+						{
+							door->DoorSound (false);
+						}
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+				}
+			}
+			return false;
+		}
+		if (new DSplitDoor (sec, type, speed, delay, lightTag))
+			rtn = true;
+	}
+	else
+	{	// [RH] Remote door
+
+		secnum = -1;
+		while ((secnum = P_FindSectorFromTag (tag,secnum)) >= 0)
+		{
+			sec = &sectors[secnum];
+			// if the ceiling already moving, don't start the door action
+			if (sec->PlaneMoving(sector_t::ceiling) && sec->PlaneMoving(sector_t::floor))
+				continue;
+
+			if (new DSplitDoor (sec, type, speed, delay, lightTag))
+				rtn = true;
+		}
+				
+	}
+	return rtn;
+}
+
 
 
 //
@@ -82,9 +382,8 @@ void DDoor::StopInterpolation()
 void DDoor::Tick ()
 {
 	EResult res;
-	EResult sres;
 
-	if (!b_Split && m_Sector->floorplane.d != m_OldFloorDist)
+	if (m_Sector->floorplane.d != m_OldFloorDist)
 	{
 		if (!m_Sector->floordata || !m_Sector->floordata->IsKindOf(RUNTIME_CLASS(DPlat)) ||
 			!(barrier_cast<DPlat*>(m_Sector->floordata))->IsLift())
@@ -93,17 +392,6 @@ void DDoor::Tick ()
 			m_BotDist = m_Sector->ceilingplane.PointToDist (m_BotSpot,
 				m_Sector->floorplane.ZatPoint (m_BotSpot));
 		}
-	}
-
-	if (b_Split)// && (m_Sector->ceilingplane.d != m_OriginalDist))
-	{
-		m_BotDist = m_OriginalDist;
-/*		if (!m_Sector->ceilingdata)
-		{
-			//m_SOldCeilingDist = m_Sector->ceilingplane.d;
-			m_STopDist = m_Sector->floorplane.PointToDist (m_STopSpot,
-				m_Sector->ceilingplane.ZatPoint (m_STopSpot));
-		}*/
 	}
 
 	switch (m_Direction)
@@ -150,19 +438,16 @@ void DDoor::Tick ()
 		
 	case -1:
 		// DOWN
-		if (b_Split) m_BotDist = m_OriginalDist;
 		res = MoveCeiling (m_Speed, m_BotDist, -1, m_Direction, false);
-		if (b_Split) sres = MoveFloor(m_Speed, m_OriginalDist, -1, -m_Direction, false);
 
 		// killough 10/98: implement gradual lighting effects
-		// Todo: Do split doors need something here?
 		if (m_LightTag != 0 && m_TopDist != -m_Sector->floorplane.d)
 		{
 			EV_LightTurnOnPartway (m_LightTag, FixedDiv (m_Sector->ceilingplane.d + m_Sector->floorplane.d,
 				m_TopDist + m_Sector->floorplane.d));
 		}
 
-		if (res == pastdest && (!b_Split || sres == pastdest))
+		if (res == pastdest)
 		{
 			SN_StopSequence (m_Sector, CHAN_CEILING);
 			switch (m_Type)
@@ -170,7 +455,6 @@ void DDoor::Tick ()
 			case doorRaise:
 			case doorClose:
 				m_Sector->ceilingdata = NULL;	//jff 2/22/98
-				if (b_Split) m_Sector->floordata = NULL;
 				Destroy ();						// unlink and free
 				break;
 				
@@ -183,7 +467,7 @@ void DDoor::Tick ()
 				break;
 			}
 		}
-		else if (res == crushed && (!b_Split || sres == crushed))
+		else if (res == crushed)
 		{
 			switch (m_Type)
 			{
@@ -201,7 +485,6 @@ void DDoor::Tick ()
 	case 1:
 		// UP
 		res = MoveCeiling (m_Speed, m_TopDist, -1, m_Direction, false);
-		if (b_Split) sres = MoveFloor(m_Speed, m_BottomDist, -1, -m_Direction, false);
 		
 		// killough 10/98: implement gradual lighting effects
 		if (m_LightTag != 0 && m_TopDist != -m_Sector->floorplane.d)
@@ -210,7 +493,7 @@ void DDoor::Tick ()
 				m_TopDist + m_Sector->floorplane.d));
 		}
 
-		if (res == pastdest && (!b_Split || sres == pastdest))
+		if (res == pastdest)
 		{
 			SN_StopSequence (m_Sector, CHAN_CEILING);
 			switch (m_Type)
@@ -223,7 +506,6 @@ void DDoor::Tick ()
 			case doorCloseWaitOpen:
 			case doorOpen:
 				m_Sector->ceilingdata = NULL;	//jff 2/22/98
-				if (b_Split) m_Sector->floordata = NULL;
 				Destroy ();						// unlink and free
 				break;
 				
@@ -231,7 +513,7 @@ void DDoor::Tick ()
 				break;
 			}
 		}
-		else if (res == crushed && (!b_Split || sres == crushed))
+		else if (res == crushed)
 		{
 			switch (m_Type)
 			{
@@ -347,22 +629,12 @@ DDoor::DDoor (sector_t *sector)
 //		and made them more general to support the new specials.
 
 // [RH] SpawnDoor: Helper function for EV_DoDoor
-DDoor::DDoor (sector_t *sec, EVlDoor type, fixed_t speed, int delay, int lightTag, bool splitdoor)
+DDoor::DDoor (sector_t *sec, EVlDoor type, fixed_t speed, int delay, int lightTag)
 	: DMovingCeiling (sec),
-  	  m_Type (type), m_Speed (speed), m_TopWait (delay), m_LightTag (lightTag), b_Split (splitdoor)
+  	  m_Type (type), m_Speed (speed), m_TopWait (delay), m_LightTag (lightTag)
 {
-	if (b_Split)
-	{
-		SplitInterpolation = sec->SetInterpolation(sector_t::FloorMove, true);
-		sec->floordata = this;
-	}
-	else
-	{
-		SplitInterpolation = NULL;
-	}
-
-	vertex_t *spot, *sspot = NULL;
-	fixed_t height, depth = 0;
+	vertex_t *spot;
+	fixed_t height;
 
 	if (i_compatflags & COMPATF_NODOORLIGHT)
 	{
@@ -376,11 +648,6 @@ DDoor::DDoor (sector_t *sec, EVlDoor type, fixed_t speed, int delay, int lightTa
 		height = sec->FindLowestCeilingSurrounding (&spot);
 		m_TopDist = sec->ceilingplane.PointToDist (spot, height - 4*FRACUNIT);
 		DoorSound (false);
-		if (b_Split)
-		{
-			depth = sec->FindHighestFloorSurrounding (&sspot);
-			m_TopDist = m_BottomDist = ((m_Sector->floorplane.d)>>1) + ((sec->ceilingplane.d)>>1);
-		}
 		break;
 
 	case doorOpen:
@@ -390,21 +657,10 @@ DDoor::DDoor (sector_t *sec, EVlDoor type, fixed_t speed, int delay, int lightTa
 		m_TopDist = sec->ceilingplane.PointToDist (spot, height - 4*FRACUNIT);
 		if (m_TopDist != sec->ceilingplane.d)
 			DoorSound (true);
-		if (b_Split)
-		{
-			depth = sec->FindHighestFloorSurrounding (&sspot);
-			m_BottomDist = sec->floorplane.PointToDist (sspot, depth);
-			m_OriginalDist = sec->floorplane.d;
-		}
 		break;
 
 	case doorCloseWaitOpen:
 		m_TopDist = sec->ceilingplane.d;
-		if (b_Split)
-		{
-			m_BottomDist = sec->floorplane.d;
-			m_OriginalDist = sec->floorplane.d;
-		}
 		m_Direction = -1;
 		DoorSound (false);
 		break;
@@ -414,17 +670,11 @@ DDoor::DDoor (sector_t *sec, EVlDoor type, fixed_t speed, int delay, int lightTa
 		height = sec->FindLowestCeilingSurrounding (&spot);
 		m_TopDist = sec->ceilingplane.PointToDist (spot, height - 4*FRACUNIT);
 		m_TopCountdown = 5 * 60 * TICRATE;
-		if (b_Split)
-		{
-			depth = sec->FindHighestFloorSurrounding (&sspot);
-			m_BottomDist = sec->floorplane.PointToDist (sspot, depth);
-			m_OriginalDist = sec->floorplane.d;
-		}
 		break;
 	}
 
-	if (!b_Split && (!m_Sector->floordata || !m_Sector->floordata->IsKindOf(RUNTIME_CLASS(DPlat)) ||
-		!(barrier_cast<DPlat*>(m_Sector->floordata))->IsLift()))
+	if (!m_Sector->floordata || !m_Sector->floordata->IsKindOf(RUNTIME_CLASS(DPlat)) ||
+		!(barrier_cast<DPlat*>(m_Sector->floordata))->IsLift())
 	{
 		height = sec->FindHighestFloorPoint (&m_BotSpot);
 		m_BotDist = sec->ceilingplane.PointToDist (m_BotSpot, height);
@@ -438,7 +688,7 @@ DDoor::DDoor (sector_t *sec, EVlDoor type, fixed_t speed, int delay, int lightTa
 }
 
 bool EV_DoDoor (DDoor::EVlDoor type, line_t *line, AActor *thing,
-				int tag, int speed, int delay, int lock, int lightTag, bool split)
+				int tag, int speed, int delay, int lock, int lightTag)
 {
 	bool		rtn = false;
 	int 		secnum;
@@ -508,7 +758,7 @@ bool EV_DoDoor (DDoor::EVlDoor type, line_t *line, AActor *thing,
 			}
 			return false;
 		}
-		if (new DDoor (sec, type, speed, delay, lightTag, split))
+		if (new DDoor (sec, type, speed, delay, lightTag))
 			rtn = true;
 	}
 	else
@@ -519,10 +769,10 @@ bool EV_DoDoor (DDoor::EVlDoor type, line_t *line, AActor *thing,
 		{
 			sec = &sectors[secnum];
 			// if the ceiling already moving, don't start the door action
-			if (sec->PlaneMoving(sector_t::ceiling) && (!split || sec->PlaneMoving(sector_t::floor)))
+			if (sec->PlaneMoving(sector_t::ceiling))
 				continue;
 
-			if (new DDoor (sec, type, speed, delay, lightTag, split))
+			if (new DDoor (sec, type, speed, delay, lightTag))
 				rtn = true;
 		}
 				
@@ -551,7 +801,6 @@ void P_SpawnDoorCloseIn30 (sector_t *sec)
 	door->m_OldFloorDist = sec->floorplane.d;
 	door->m_TopDist = sec->ceilingplane.d;
 	door->m_LightTag = 0;
-	door->b_Split = false;
 }
 
 //
@@ -560,7 +809,7 @@ void P_SpawnDoorCloseIn30 (sector_t *sec)
 void P_SpawnDoorRaiseIn5Mins (sector_t *sec)
 {
 	sec->special = 0;
-	new DDoor (sec, DDoor::doorRaiseIn5Mins, 2*FRACUNIT, TICRATE*30/7, 0, false);
+	new DDoor (sec, DDoor::doorRaiseIn5Mins, 2*FRACUNIT, TICRATE*30/7, 0);
 }
 
 // Strife's animated doors. Based on Doom's unused sliding doors, but significantly improved.

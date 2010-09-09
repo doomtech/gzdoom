@@ -244,17 +244,17 @@ map MAP28 "The Absolution"
 
 map MAP29 "Outpost Omega"
 {
-	next = MAP30
+	next = MAP05
 }
 
 map MAP30 "The Lair"
 {
-	next = MAP31
+	next = MAP13
 }
 
 map MAP31 "In The Void"
 {
-	next = MAP32
+	next = MAP19
 }
 
 map MAP32 "Hectic"

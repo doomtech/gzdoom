@@ -4,6 +4,26 @@ include "xlat/base.txt"
 sector bitmask 0xf000 clear;
 sector bitmask 0xfe0 <<= 3;
 
+   /*
+    * 1: Flickering Lights
+    * 2: Strobe Fast
+    * 3: Strobe Slow
+    * 4: Strobe Fast??
+    * 8: Glowing Light
+    * 9: Slow Glowing Light
+    * 11: Random Glowing Light
+    * 12: Sync Strobe Slow
+    * 13: Sync Strobe Fast
+    * 17: Fire Flicker
+    * 208: Super Fast Strobe
+    * 205: Start Sequence Lighting
+    * 666: Demon Disposer - Sector with this flagged triggered by a linedef with special 141 will
+                            instantly kill everything that is inside it.
+    * 204 - 207: Fake special used to redirect a sequenced light back to the beginning.
+    */
+
+// Light effects are far too dark. It doesn't seem to use the same method as Doom to 
+// compute minimal and maximal intensity...
 sector 1 = dLight_Flicker;
 sector 2 = dLight_StrobeFast;
 sector 3 = dLight_StrobeSlow;
@@ -11,22 +31,24 @@ sector 4 = dLight_Strobe_Hurt;
 sector 5 = dDamage_Hellslime;
 sector 7 = dDamage_Nukage;
 sector 8 = dLight_Glow;
-sector 9 = SECRET_MASK nobitmask;
-sector 10 = dSector_DoorCloseIn30;
-sector 11 = dDamage_End;
+sector 9 = nLight_GlowSlow;
+
+sector 11 = nLight_GlowRandom;
 sector 12 = dLight_StrobeSlowSync;
 sector 13 = dLight_StrobeFastSync;
-sector 14 = dSector_DoorRaiseIn5Mins;
-sector 15 = dFriction_Low;
-sector 16 = dDamage_SuperHellslime;
+
 sector 17 = dLight_FireFlicker;
-sector 18 = dDamage_LavaWimpy;
-sector 19 = dDamage_LavaHefty;
-sector 20 = dScroll_EastLavaDamage;
-sector 21 = Light_Phased;
-sector 22 = LightSequenceStart;
-sector 23 = LightSequenceSpecial1;
-sector 24 =	LightSequenceSpecial2;
+// MAP10 contains sectors tagged 18. Anybody knows what they do? The specs don't say.
+
+// Those are very probably incorrect but it'll keep them from scrolling
+sector 204 = LightSequenceStart; 
+sector 205 = LightSequenceStart; 
+sector 206 = LightSequenceStart; 
+sector 207 = LightSequenceStart; 
+
+sector 208 = dLight_StrobeFast; // todo: make a "super fast" strobe
+
+// sector 666 is an instant death for enemies, to use with a a modified version of P_Massacre()
 
 lineflag 0 = ML_BLOCKING;
 lineflag 1 = ML_BLOCKMONSTERS;
@@ -38,13 +60,12 @@ lineflag 6 = ML_SOUNDBLOCK;
 lineflag 7 = ML_DONTDRAW;
 lineflag 8 = ML_MAPPED;
 
-
 // Use is not directly part of the type, they are determined by use flags. The following translations
 // are temporary approximation based on the specs.
-  1 = 0,	Door_Raise (0, D_FAST, VDOORWAIT64, tag, SPLITDOOR)
-  2 = 0,	Door_Open (tag, D_SLOW, 0, 0, SPLITDOOR)
-  3 = 0,	Door_Close (tag, D_SLOW, 0, 0, SPLITDOOR)
-  4 = 0,	Door_Raise (tag, D_SLOW, VDOORWAIT64, 0, SPLITDOOR)
+  1 = 0,	Door_Split (0, D_FAST, VDOORWAIT64, SPLIT_OPEN, tag)
+  2 = 0,	Door_Split (tag, D_SLOW, 0, SPLIT_OPEN, 0)
+  3 = 0,	Door_Split (tag, D_SLOW, 0, SPLIT_CLOSE, 0)
+  4 = 0,	Door_Split (tag, D_SLOW, VDOORWAIT64, SPLIT_OPEN, 0)
   5 = 0,	Floor_RaiseToLowestCeiling (tag, F_SLOW)					// Floor Raise
   6 = 0,	Ceiling_CrushAndRaiseA (tag, C_NORMAL, C_NORMAL, 10)		// Ceiling Crush/Raise Fast
   7 = 0, 0()															// Unknown or non-existent
@@ -56,7 +77,7 @@ lineflag 8 = ML_MAPPED;
  13 = 0, 0()															// Unknown or non-existent
  14 = 0, 0()															// Unknown or non-existent
  15 = 0, 0()															// Unknown or non-existent
- 16 = 0,	Door_CloseWaitOpen (tag, D_SLOW, 280, 0, SPLITDOOR)
+ 16 = 0,	Door_Split (tag, D_SLOW, 280, SPLIT_CLOSE, 0)
  17 = 0, 0()															// Unknown or non-existent
  18 = 0,	Floor_RaiseToNearest (tag, F_SLOW)							// Floor Raise/Nearest
  19 = 0,	Floor_LowerToHighest (tag, F_SLOW, 128)						// Floor Lower
@@ -71,7 +92,7 @@ lineflag 8 = ML_MAPPED;
  28 = 0, 0()															// Unknown or non-existent
  29 = 0, 0()															// Unknown or non-existent
  30 = 0, 0()															// Unknown or non-existent
- 31 = 0,	Door_Raise (0, D_FAST, VDOORWAIT64, tag, SPLITDOOR)
+ 31 = 0,	Door_Split (0, D_FAST, 0, SPLIT_OPEN, tag)
  32 = 0, 0()															// Unknown or non-existent
  33 = 0, 0()															// Unknown or non-existent
  34 = 0, 0()															// Unknown or non-existent
@@ -148,17 +169,17 @@ lineflag 8 = ML_MAPPED;
 105 = 0, 0()															// Unknown or non-existent
 106 = 0, 0()															// Unknown or non-existent
 107 = 0, 0()															// Unknown or non-existent
-108 = 0,	Door_Raise (tag, D_FAST, VDOORWAIT64, 0, SPLITDOOR)
-109 = 0,	Door_Open (tag, D_FAST, 0, 0, SPLITDOOR)
-110 = 0,	Door_Close (tag, D_FAST, 0, 0, SPLITDOOR)
+108 = 0,	Door_Split (tag, D_FAST, VDOORWAIT64, SPLIT_OPEN, 0)
+109 = 0,	Door_Split (tag, D_FAST, 0, SPLIT_OPEN, 0)
+110 = 0,	Door_Split (tag, D_FAST, 0, SPLIT_CLOSE, 0)
 111 = 0, 0()															// Unknown or non-existent
 112 = 0, 0()															// Unknown or non-existent
 113 = 0, 0()															// Unknown or non-existent
 114 = 0, 0()															// Unknown or non-existent
 115 = 0, 0()															// Unknown or non-existent
 116 = 0, 0()															// Unknown or non-existent
-117 = 0,	Door_Raise (0, D_FAST, VDOORWAIT64, tag, SPLITDOOR)
-118 = 0,	Door_Raise (0, D_FAST, VDOORWAIT64, tag, SPLITDOOR)
+117 = 0,	Door_Split (0, D_FAST, VDOORWAIT64, SPLIT_OPEN, tag)
+118 = 0,	Door_Split (0, D_FAST, VDOORWAIT64, SPLIT_OPEN, tag)
 119 = 0, 0()															// Unknown or non-existent
 120 = 0, 0()															// Unknown or non-existent
 121 = 0,	Plat_DownWaitUpStayLip (tag, P_BLAZE, PLATWAIT64, 0)
@@ -166,9 +187,81 @@ lineflag 8 = ML_MAPPED;
 123 = 0,	Plat_DownWaitUpStayLip (tag, P_TURBO, PLATWAIT64, 0)		// Platform Up/Down/Fast
 124 = 0,	Teleport_NewMap (tag)
 125 = 0,	Teleport (tag)
+126 = 0, 0()															// Unknown or non-existent
+127 = 0, 0()															// Unknown or non-existent
+128 = 0, 0()															// Unknown or non-existent
+129 = 0, 0()															// Unknown or non-existent
+130 = 0, 0()															// Unknown or non-existent
+131 = 0, 0()															// Unknown or non-existent
+132 = 0, 0()															// Unknown or non-existent
+133 = 0, 0()															// Unknown or non-existent
+134 = 0, 0()															// Unknown or non-existent
+135 = 0, 0()															// Unknown or non-existent
+136 = 0, 0()															// Unknown or non-existent
+137 = 0, 0()															// Unknown or non-existent
+138 = 0, 0()															// Unknown or non-existent
+139 = 0, 0()															// Unknown or non-existent
+140 = 0, 0()															// Unknown or non-existent
+141 = 0,	Thing_Destroy(0, 1, 666)
+142 = 0, 0()															// Unknown or non-existent
+143 = 0, 0()															// Unknown or non-existent
+144 = 0, 0()															// Unknown or non-existent
+145 = 0, 0()															// Unknown or non-existent
+146 = 0, 0()															// Unknown or non-existent
+147 = 0, 0()															// Unknown or non-existent
+148 = 0, 0()															// Unknown or non-existent
+149 = 0, 0()															// Unknown or non-existent
+150 = 0, 0()															// Unknown or non-existent
+151 = 0, 0()															// Unknown or non-existent
+152 = 0, 0()															// Unknown or non-existent
+153 = 0, 0()															// Unknown or non-existent
+154 = 0, 0()															// Unknown or non-existent
+155 = 0, 0()															// Unknown or non-existent
+156 = 0, 0()															// Unknown or non-existent
+157 = 0, 0()															// Unknown or non-existent
+158 = 0, 0()															// Unknown or non-existent
+159 = 0, 0()															// Unknown or non-existent
+160 = 0, 0()															// Unknown or non-existent
+161 = 0, 0()															// Unknown or non-existent
+162 = 0, 0()															// Unknown or non-existent
+163 = 0, 0()															// Unknown or non-existent
+164 = 0, 0()															// Unknown or non-existent
+165 = 0, 0()															// Unknown or non-existent
+166 = 0, 0()															// Unknown or non-existent
+167 = 0, 0()															// Unknown or non-existent
+168 = 0, 0()															// Unknown or non-existent
+169 = 0, 0()															// Unknown or non-existent
+170 = 0, 0()															// Unknown or non-existent
+171 = 0, 0()															// Unknown or non-existent
+172 = 0, 0()															// Unknown or non-existent
+173 = 0, 0()															// Unknown or non-existent
+174 = 0, 0()															// Unknown or non-existent
+175 = 0, 0()															// Unknown or non-existent
+176 = 0, 0()															// Unknown or non-existent
+177 = 0, 0()															// Unknown or non-existent
+178 = 0, 0()															// Unknown or non-existent
+179 = 0, 0()															// Unknown or non-existent
+180 = 0, 0()															// Unknown or non-existent
+181 = 0, 0()															// Unknown or non-existent
+182 = 0, 0()															// Unknown or non-existent
+183 = 0, 0()															// Unknown or non-existent
+184 = 0, 0()															// Unknown or non-existent
+185 = 0, 0()															// Unknown or non-existent
+186 = 0, 0()															// Unknown or non-existent
+187 = 0, 0()															// Unknown or non-existent
+188 = 0, 0()															// Unknown or non-existent
+189 = 0, 0()															// Unknown or non-existent
+190 = 0, 0()															// Unknown or non-existent
+191 = 0, 0()															// Unknown or non-existent
+192 = 0, 0()															// Unknown or non-existent
 /*
-    * 141: Kill Monsters in Sector Special 666
     * 193: Custom Floor Move
+194 = 0, 0()															// Unknown or non-existent
+195 = 0, 0()															// Unknown or non-existent
+196 = 0, 0()															// Unknown or non-existent
+197 = 0, 0()															// Unknown or non-existent
+198 = 0, 0()															// Unknown or non-existent
+199 = 0, 0()															// Unknown or non-existent
     * 200: Clear Camera
     * 201: Set Camera
     * 202: Invoke Dart

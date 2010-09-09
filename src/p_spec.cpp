@@ -348,6 +348,7 @@ bool P_TestActivateLine (line_t *line, AActor *mo, int side, int activationType)
 			switch (line->special)
 			{
 			case Door_Raise:
+			case Door_Split:
 				if (line->args[0] == 0 && line->args[1] < 64)
 					noway = false;
 				break;
@@ -363,6 +364,7 @@ bool P_TestActivateLine (line_t *line, AActor *mo, int side, int activationType)
 				switch (line->special)
 				{
 				case Door_Raise:
+				case Door_Split:
 					if (line->args[1] >= 64)
 					{
 						break;
@@ -1051,6 +1053,16 @@ void P_SpawnSpecials (void)
 			sector->special &= 0xff00;
 			break;
 			
+		case nLight_GlowSlow:
+			new DGlowSlow (sector);
+			sector->special &= 0xff00;
+			break;
+			
+		case nLight_GlowRandom:
+			new DGlowRandom (sector);
+			sector->special &= 0xff00;
+			break;
+			
 		case dSector_DoorCloseIn30:
 			// DOOR CLOSE IN 30 SECONDS
 			P_SpawnDoorCloseIn30 (sector);
@@ -1249,7 +1261,7 @@ void P_SpawnSpecials (void)
 				break;
 
 			//case Init_Color:
-			// handled in P_LoadSideDefs2()
+			// handled in P_LoadSideDefsHexen()
 
 			case Init_Damage:
 				{

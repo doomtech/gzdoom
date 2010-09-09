@@ -297,16 +297,11 @@ void P_TranslateLineDef (line_t *ld, maplinedefdoom64_t *mld)
 	tmp.v2 = mld->v2;
 	tmp.flags = (WORD) (mld->flags & 0x1FF);	// flags from 0x200 and above not supported
 
-	if (mld->special & 0x100)					// This is a macro line! It doesn't work normally
-	{
-		ld->activation |= SPAC_Macro;
-		//ld->macro = mld->special & 0xFF;
-		tmp.special = 0;
-	}
-	else 
-	{
-		tmp.special = mld->special & 0xFF;			// the upper byte is used for SPAC flags
-	}
+	// Todo: address this point from the specs:
+	// * Unpeg Top Linedef flag also aligns the y offset of all textures to the nearest 64 grid
+
+	if (mld->special & 0x100) tmp.special = 0;		// This is a macro line! It doesn't work normally
+	else tmp.special = mld->special & 0xFF;			// the upper byte is used for SPAC flags
 
 	tmp.tag = mld->tag;
 	tmp.sidenum[0] = mld->sidenum[0];
@@ -326,8 +321,8 @@ void P_TranslateLineDef (line_t *ld, maplinedefdoom64_t *mld)
 		// in custom maps, so we're probably looking at another change needed for proper support.
  		//KEYSPAM
 
-		// cross
-		if (mld->special & 0x1000)	ld->activation |= (SPAC_Cross|SPAC_MCross|SPAC_PCross);
+		// cross - more investigation needed to check monster and projectile crossing
+		if (mld->special & 0x1000)	ld->activation |= SPAC_Cross;// |SPAC_MCross|SPAC_PCross);
 
 		// shootable
 		if (mld->special & 0x2000)	ld->activation |= SPAC_Impact;
@@ -341,7 +336,16 @@ void P_TranslateLineDef (line_t *ld, maplinedefdoom64_t *mld)
 		// Special 125 is forbidden to player
 		if ((mld->special & 0xFF) == 125) ld->activation &= ~SPAC_PlayerActivate;
 	}
-	//DEBUGSPAM
+
+	// Handle macros here because they can't be xlated 
+	if (mld->special & 0x100)
+	{
+		ld->special = Macro_Command;
+		ld->args[0] = mld->special & 0xFF;
+		ld->args[1] = mld->tag;
+		ld->args[2] = 0;
+	}
+	DEBUGSPAM
 }
 
 // Now that ZDoom again gives the option of using Doom's original teleport

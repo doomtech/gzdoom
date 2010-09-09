@@ -901,6 +901,7 @@ void FParser::SF_Spawn(void)
 				{
 					if (t_return.value.mobj->flags&MF_COUNTKILL) level.total_monsters--;
 					if (t_return.value.mobj->flags&MF_COUNTITEM) level.total_items--;
+					if (t_return.value.mobj->flags5&MF5_COUNTSECRET) level.total_secrets--;
 					t_return.value.mobj->Destroy();
 					t_return.value.mobj = NULL;
 				}
@@ -924,6 +925,7 @@ void FParser::SF_RemoveObj(void)
 		{
 			if (mo->flags&MF_COUNTKILL && mo->health>0) level.total_monsters--;
 			if (mo->flags&MF_COUNTITEM) level.total_items--;
+			if (mo->flags5&MF5_COUNTSECRET) level.total_secrets--;
 			mo->Destroy();
 		}
 	}
@@ -2570,6 +2572,11 @@ static void FS_GiveInventory (AActor *actor, const char * type, int amount)
 		level.total_items--;
 		item->flags&=~MF_COUNTITEM;
 	}
+	if (item->flags5&MF5_COUNTSECRET) 
+	{
+		level.total_secrets--;
+		item->flags5&=~MF5_COUNTSECRET;
+	}
 	if (info->IsDescendantOf (RUNTIME_CLASS(ABasicArmorPickup)) ||
 		info->IsDescendantOf (RUNTIME_CLASS(ABasicArmorBonus)))
 	{
@@ -3350,7 +3357,9 @@ void FParser::SF_SpawnExplosion()
 		{
 			if (spawn->flags&MF_COUNTKILL) level.total_monsters--;
 			if (spawn->flags&MF_COUNTITEM) level.total_items--;
+			if (spawn->flags5&MF5_COUNTSECRET) level.total_secrets--;
 			spawn->flags&=~(MF_COUNTKILL|MF_COUNTITEM);
+			spawn->flags5&=~MF5_COUNTSECRET;
 			t_return.value.i = spawn->SetState(spawn->FindState(NAME_Death));
 			if(spawn->DeathSound) S_Sound (spawn, CHAN_BODY, spawn->DeathSound, 1, ATTN_NORM);
 		}
