@@ -777,6 +777,9 @@ struct sector_t
 
 };
 
+// Colormap macro for compatibility with both Doom 64 colored sectors and classic ZDoom colored sectors
+#define COLORMAP(sector, pos) (sector->ExtraColorMaps[pos]->Color.d == 0xffffff ? sector->ColorMap : sector->ExtraColorMaps[pos])
+
 FArchive &operator<< (FArchive &arc, sector_t::splane &p);
 
 

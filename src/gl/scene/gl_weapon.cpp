@@ -245,7 +245,7 @@ void FGLRenderer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 		}
 		else 
 		{
-			cm=fakesec->ExtraColorMaps[LIGHT_THING];
+			cm = COLORMAP(fakesec, LIGHT_THING);
 			if (glset.nocoloredspritelighting) cm.ClearColor();
 		}
 	}

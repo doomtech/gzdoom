@@ -1505,7 +1505,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 	glseg.y1= FIXED2FLOAT(v1->y);
 	glseg.x2= FIXED2FLOAT(v2->x);
 	glseg.y2= FIXED2FLOAT(v2->y);
-	Colormap=frontsector->ExtraColorMaps[LIGHT_WALLUPPER];
+	Colormap = COLORMAP(frontsector, LIGHT_WALLUPPER);
 	flags = (!gl_isBlack(Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE)? GLWF_FOGGY : 0;
 
 	int rel = 0;

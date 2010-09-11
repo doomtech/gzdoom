@@ -694,7 +694,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 	}
 	else 
 	{
-		Colormap=rendersector->ExtraColorMaps[LIGHT_THING];
+		Colormap = COLORMAP(rendersector, LIGHT_THING);
 		if (fullbright)
 		{
 			if (rendersector == &sectors[rendersector->sectornum] || in_area != area_below)	
