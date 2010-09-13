@@ -787,6 +787,15 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 						  fixed_t bch1, fixed_t bch2, fixed_t bfh1, fixed_t bfh2)
 								
 {
+	// Horrible hack because Doom 64 is full of mid textures that shouldn't
+	// be displayed for some reason. Not sure about the best way to detect them.
+	if (level.flags2 & LEVEL2_DOOM64HACK)
+	{
+		if (seg->linedef->sidedef[1] >= 0 && 
+			(seg->linedef->sidedef[0]->GetTexture(side_t::mid)
+			!= seg->linedef->sidedef[1]->GetTexture(side_t::mid)))
+			return;
+	}
 	fixed_t topleft,bottomleft,topright,bottomright;
 	GLSeg glsave=glseg;
 	fixed_t texturetop, texturebottom;
