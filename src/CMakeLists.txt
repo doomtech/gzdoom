@@ -667,15 +667,14 @@ add_executable( zdoom WIN32
 	hu_scores.cpp
 	i_net.cpp
 	info.cpp
+	keysections.cpp
 	lumpconfigfile.cpp
 	m_alloc.cpp
 	m_argv.cpp
 	m_bbox.cpp
 	m_cheat.cpp
 	m_joy.cpp
-	m_menu.cpp
 	m_misc.cpp
-	m_options.cpp
 	m_png.cpp
 	m_random.cpp
 	md5.cpp
@@ -806,6 +805,19 @@ add_executable( zdoom WIN32
 	g_shared/sbar_mugshot.cpp
 	g_shared/shared_hud.cpp
 	g_shared/shared_sbar.cpp
+	menu/colorpickermenu.cpp
+	menu/joystickmenu.cpp
+	menu/listmenu.cpp
+	menu/loadsavemenu.cpp
+	menu/menu.cpp
+	menu/menudef.cpp
+	menu/menuinput.cpp
+	menu/messagebox.cpp
+	menu/optionmenu.cpp
+	menu/playerdisplay.cpp
+	menu/playermenu.cpp
+	menu/readthis.cpp
+	menu/videomenu.cpp
 	gl/data/gl_sections.cpp
 	gl/data/gl_data.cpp
 	gl/data/gl_portaldata.cpp
@@ -852,7 +864,6 @@ add_executable( zdoom WIN32
 	gl/shaders/gl_texshader.cpp
 	gl/system/gl_interface.cpp
 	gl/system/gl_framebuffer.cpp
-	gl/system/gl_menu.cpp
 	gl/system/gl_wipe.cpp
 	gl/models/gl_models_md3.cpp
 	gl/models/gl_models_md2.cpp

@@ -665,6 +665,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\keysections.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\lumpconfigfile.cpp"
 				>
 			</File>
@@ -689,15 +693,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\m_menu.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\m_misc.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\m_options.cpp"
 				>
 			</File>
 			<File
@@ -1379,10 +1375,6 @@
 			</File>
 			<File
 				RelativePath=".\src\m_joy.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\m_menu.h"
 				>
 			</File>
 			<File
@@ -6573,10 +6565,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\gl\system\gl_menu.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\system\gl_system.h"
 					>
 				</File>
@@ -7091,6 +7079,70 @@
 			</File>
 			<File
 				RelativePath=".\src\resourcefiles\resourcefile.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Menu"
+			>
+			<File
+				RelativePath=".\src\menu\colorpickermenu.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\menu\joystickmenu.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\menu\listmenu.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\menu\loadsavemenu.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\menu\menu.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\menu\menu.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\menu\menudef.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\menu\menuinput.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\menu\messagebox.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\menu\optionmenu.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\menu\optionmenuitems.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\menu\playerdisplay.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\menu\playermenu.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\menu\readthis.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\menu\videomenu.cpp"
 				>
 			</File>
 		</Filter>
