@@ -135,6 +135,7 @@ OptionValue "FogMode"
 
 OptionMenu "GLTextureGLOptions"
 {
+	Title "TEXTURE OPTIONS"
 	Option "Textures enabled",			gl_texture,						"YesNo"
 	Option "Texture Filter mode",		gl_texture_filter,				"FilterModes"
 	Option "Anisotropic filter",		gl_texture_filter_anisotropic,	"Anisotropy"
@@ -151,6 +152,7 @@ OptionMenu "GLTextureGLOptions"
 
 OptionMenu "GLLightOptions"
 {
+	Title "DYNAMIC LIGHTS"
 	Option "Dynamic Lights enabled",	gl_lights,						"YesNo"
 	Option "Enable light definitions",	gl_attachedlights,				"YesNo"
 	Option "Clip lights",				gl_lights_checkside,			"YesNo"
@@ -164,6 +166,7 @@ OptionMenu "GLLightOptions"
 
 OptionMenu "GLPrefOptions"
 {
+	Title "OPENGL PREFERENCES"
 	Option "Sector light mode",			gl_lightmode,					"LightingModes"
 	Option "Fog mode",					gl_fogmode,						"FogMode"
 	Option "Environment map on mirrors",gl_mirror_envmap,				"OnOff"
