@@ -264,9 +264,12 @@ DSplitDoor::DSplitDoor (sector_t *sec, EVlDoor type, fixed_t speed, int delay, i
 
 		// Average? It seems from the chainsaw compartment in Staging Area that 
 		// split doors can actually go lower than the highest surrounding floor.
-		depth = sec->FindLowestFloorSurrounding (&sspot);
-		m_BottomDist += sec->floorplane.PointToDist (sspot, depth);
-		m_BottomDist>>=1;
+		if (depth != sec->FindLowestFloorSurrounding (&sspot))
+		{
+			depth = sec->FindLowestFloorSurrounding (&sspot);
+			m_BottomDist += sec->floorplane.PointToDist (sspot, depth);
+			m_BottomDist>>=1;
+		}
 
 		m_OriginalDist = sec->floorplane.d;
 		if (m_TopDist != sec->ceilingplane.d)
