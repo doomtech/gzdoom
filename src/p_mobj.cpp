@@ -5728,6 +5728,7 @@ void PrintMiscActorInfo(AActor * query)
 		toprint.AppendFormat("\nIts speed is %f and velocity is x:%f, y:%f, z:%f, combined:%f.\n",
 			FIXED2FLOAT(query->Speed), FIXED2FLOAT(query->velx), FIXED2FLOAT(query->vely), FIXED2FLOAT(query->velz),
 			sqrt(pow(FIXED2FLOAT(query->velx), 2) + pow(FIXED2FLOAT(query->vely), 2) + pow(FIXED2FLOAT(query->velz), 2)));
+		if (query->target) toprint.AppendFormat("It is targeting a %s.\n", query->target->GetTag());
 		Printf(toprint);
 	}
 }

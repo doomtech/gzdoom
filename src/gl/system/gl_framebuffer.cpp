@@ -68,8 +68,6 @@ EXTERN_CVAR (Float, vid_brightness)
 EXTERN_CVAR (Float, vid_contrast)
 EXTERN_CVAR (Bool, vid_vsync)
 
-void gl_SetupMenu();
-
 FGLRenderer *GLRenderer;
 
 //==========================================================================
@@ -114,7 +112,6 @@ void OpenGLFrameBuffer::InitializeState()
 
 	gl.LoadExtensions();
 	Super::InitializeState();
-	gl_SetupMenu();
 	if (first)
 	{
 		first=false;

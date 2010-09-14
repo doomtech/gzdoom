@@ -41,10 +41,12 @@ sector 17 = dLight_FireFlicker;
 // MAP10 contains sectors tagged 18. Anybody knows what they do? The specs don't say.
 
 // Those are very probably incorrect but it'll keep them from scrolling
-sector 204 = LightSequenceStart; 
-sector 205 = LightSequenceStart; 
-sector 206 = LightSequenceStart; 
-sector 207 = LightSequenceStart; 
+// MAP01 has a light sequence going from tag 25 to tag 40, starting with a sector with effect 205.
+// The other sectors have no specials.
+sector 204 = 164; //LightSequenceStart; 
+sector 205 = 165; //LightSequenceStart; 
+sector 206 = 166; //LightSequenceStart; 
+sector 207 = 167; //LightSequenceStart; 
 
 sector 208 = dLight_StrobeFast; // todo: make a "super fast" strobe
 
@@ -113,7 +115,7 @@ lineflag 8 = ML_MAPPED;
  49 = 0, 0()															// Unknown or non-existent
  50 = 0, 0()															// Unknown or non-existent
  51 = 0, 0()															// Unknown or non-existent
- 52 = 0,	Exit_Normal (0)												// Exit Level
+ 52 = 0,	Exit_Normal (0)
  53 = 0,	Plat_PerpetualRaiseLip (tag, P_SLOW, PLATWAIT, 0)			// Platform Perpetual/Raise
  54 = 0,	Plat_Stop (tag)												// Platform Perpetual/Stop
  55 = 0, 0()															// Unknown or non-existent
