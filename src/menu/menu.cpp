@@ -64,13 +64,7 @@ CVAR (Bool, show_obituaries, true, CVAR_ARCHIVE)
 
 
 CVAR (Float, snd_menuvolume, 0.6f, CVAR_ARCHIVE)
-EXTERN_CVAR (Int, vid_renderer) // Only for FIXME below
-CUSTOM_CVAR(Int, m_use_mouse, 1, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-{
-	// FIXME: The mouse does not work right in OpenGL mode,
-	// so it's temporarily disabled with this ugly kludge...
-	if (vid_renderer && m_use_mouse) m_use_mouse = 0;
-}
+CVAR(Int, m_use_mouse, 1, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Int, m_show_backbutton, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 DMenu *DMenu::CurrentMenu;
