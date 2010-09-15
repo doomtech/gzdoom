@@ -70,6 +70,8 @@ EXTERN_CVAR (Bool, vid_vsync)
 
 FGLRenderer *GLRenderer;
 
+void gl_SetupMenu();
+
 //==========================================================================
 //
 //
@@ -86,6 +88,7 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(void *hMonitor, int width, int height, int 
 	LastCamera = NULL;
 
 	InitializeState();
+	gl_SetupMenu();
 	gl_GenerateGlobalBrightmapFromColormap();
 	DoSetGamma();
 	needsetgamma = true;

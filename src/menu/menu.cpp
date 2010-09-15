@@ -104,12 +104,16 @@ DMenu::DMenu(DMenu *parent)
 	
 bool DMenu::Responder (event_t *ev) 
 { 
+	bool res = false;
 	if (ev->type == EV_GUI_Event)
 	{
 		if (ev->subtype == EV_GUI_LButtonDown)
 		{
-			MouseEventBack(MOUSE_Click, ev->data1, ev->data2);
-			if (MouseEvent(MOUSE_Click, ev->data1, ev->data2))
+			res = MouseEventBack(MOUSE_Click, ev->data1, ev->data2);
+			// make the menu's mouse handler believe that the current coordinate is outside the valid range
+			if (res) ev->data2 = -1;	
+			res |= MouseEvent(MOUSE_Click, ev->data1, ev->data2);
+			if (res)
 			{
 				SetCapture();
 			}
@@ -120,8 +124,9 @@ bool DMenu::Responder (event_t *ev)
 			BackbuttonTime = BACKBUTTON_TIME;
 			if (mMouseCapture || m_use_mouse == 1)
 			{
-				MouseEventBack(MOUSE_Move, ev->data1, ev->data2);
-				return MouseEvent(MOUSE_Move, ev->data1, ev->data2);
+				res = MouseEventBack(MOUSE_Move, ev->data1, ev->data2);
+				if (res) ev->data2 = -1;	
+				res |= MouseEvent(MOUSE_Move, ev->data1, ev->data2);
 			}
 		}
 		else if (ev->subtype == EV_GUI_LButtonUp)
@@ -129,8 +134,9 @@ bool DMenu::Responder (event_t *ev)
 			if (mMouseCapture)
 			{
 				ReleaseCapture();
-				MouseEventBack(MOUSE_Release, ev->data1, ev->data2);
-				return MouseEvent(MOUSE_Release, ev->data1, ev->data2);
+				res = MouseEventBack(MOUSE_Release, ev->data1, ev->data2);
+				if (res) ev->data2 = -1;	
+				res |= MouseEvent(MOUSE_Release, ev->data1, ev->data2);
 			}
 		}
 	}
@@ -211,7 +217,7 @@ bool DMenu::MouseEventBack(int type, int x, int y)
 				if (m_use_mouse == 2) mBackbuttonSelected = false;
 				MenuEvent(MKEY_Back, true);
 			}
-			return true;
+			return mBackbuttonSelected;
 		}
 	}
 	return false;
@@ -946,47 +952,4 @@ CCMD(reset2saved)
 	GameConfig->DoGlobalSetup ();
 	GameConfig->DoGameSetup (GameNames[gameinfo.gametype]);
 	R_SetViewSize (screenblocks);
-}
-
-// OpenGL stuff moved here
-// GL related CVARs
-CVAR(Bool, gl_portals, true, 0)
-CVAR(Bool, gl_noquery, false, 0)
-CVAR(Bool,gl_mirrors,true,0)    // This is for debugging only!
-CVAR(Bool,gl_mirror_envmap, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
-CVAR(Bool, gl_render_segs, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-CVAR(Bool, gl_seamless, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-CVAR(Bool, gl_vid_compatibility, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
-
-CUSTOM_CVAR(Int, r_mirror_recursions,4,CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
-{
-    if (self<0) self=0;
-    if (self>10) self=10;
-}
-bool gl_plane_reflection_i; // This is needed in a header that cannot include the CVAR stuff...
-CUSTOM_CVAR(Bool, gl_plane_reflection, true, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
-{
-    gl_plane_reflection_i = self;
-}
-
-CUSTOM_CVAR(Bool, gl_render_precise, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-{
-    //gl_render_segs=self;
-    gl_seamless=self;
-}
-
-CUSTOM_CVAR (Float, vid_brightness, 0.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-{
-    if (screen != NULL)
-    {
-        screen->SetGamma(Gamma); //Brightness (self);
-    }
-}
-
-CUSTOM_CVAR (Float, vid_contrast, 1.f, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-{
-    if (screen != NULL)
-    {
-        screen->SetGamma(Gamma); //SetContrast (self);
-    }
 }
