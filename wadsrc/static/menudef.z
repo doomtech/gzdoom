@@ -120,6 +120,14 @@ OptionValue "HqResizeModes"
    6, "hq4x"
 }
 
+OptionValue "HqResizeModes2"
+{
+   0, "Off"
+   1, "Scale2x"
+   2, "Scale3x"
+   3, "Scale4x"
+}
+
 OptionValue "HqResizeTargets"
 {
    0, "Everything"
@@ -133,6 +141,12 @@ OptionValue "FogMode"
 	2, "Radial"
 }
 
+OptionValue "FogMode2"
+{
+	0, "Off"
+	1, "Standard"
+}
+
 OptionMenu "GLTextureGLOptions"
 {
 	Title "TEXTURE OPTIONS"
@@ -141,7 +155,14 @@ OptionMenu "GLTextureGLOptions"
 	Option "Anisotropic filter",		gl_texture_filter_anisotropic,	"Anisotropy"
 	Option "Texture Format",			gl_texture_format,				"TextureFormats"
 	Option "Enable hires textures",		gl_texture_usehires,			"YesNo"
-	Option "High Quality Resize mode",	gl_texture_hqresize,			"HqResizeModes"
+	IfOption(Windows)	// should be MSVC
+	{
+		Option "High Quality Resize mode",	gl_texture_hqresize,			"HqResizeModes"
+	}
+	IfOption(Unix, Mac) // should be GCC
+	{
+		Option "High Quality Resize mode",	gl_texture_hqresize,			"HqResizeModes2"
+	}
 	Option "Resize textures",			gl_texture_hqresize_textures,	"OnOff"
 	Option "Resize sprites",			gl_texture_hqresize_sprites,	"OnOff"
 	Option "Resize fonts",				gl_texture_hqresize_fonts,		"OnOff"

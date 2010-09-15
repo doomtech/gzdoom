@@ -6565,6 +6565,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\gl\system\gl_menu.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\gl\system\gl_system.h"
 					>
 				</File>
