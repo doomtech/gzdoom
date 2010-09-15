@@ -68,6 +68,7 @@ private:
 	bool backside;
 	size_t delaycounter;
 	size_t pos;
+	bool playerfreeze;
 };
 
 bool IsSectorWaitSpecial(int i);

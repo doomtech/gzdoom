@@ -4,7 +4,8 @@
 IMPLEMENT_CLASS (DMacroThinker)
 
 DMacroThinker::DMacroThinker() : DThinker(), currentsequence(0), currentstatus(0), started(false), 
-								 delaycounter(0), pos(0), line(NULL), actor(NULL), backside(false)
+								 delaycounter(0), pos(0), line(NULL), actor(NULL), backside(false),
+								 playerfreeze(false)
 {
 }
 
@@ -129,22 +130,20 @@ void DMacroThinker::Tick()
 {
 	Super::Tick();
 
-	// Handle Macro_Delay special
+	// Handle Macro_Delay
 	if (delaycounter)
 	{
 		delaycounter--;
+		if (playerfreeze && !delaycounter)
+		{
+			players[consoleplayer].cheats &= ~CF_TOTALLYFROZEN;
+			playerfreeze = false;
+		}
 		return;
 	}
 
 	if (started)
 	{
-		// Handle Macro_Delay
-		if (delaycounter)
-		{
-			delaycounter--;
-			return;
-		}
-
 		// Move to next sequence if needed
 		if (currentstatus == DMacroThinker::done)
 		{
@@ -191,20 +190,26 @@ void DMacroThinker::Tick()
 				if (specials[pos]->special == Macro_Delay)
 				{
 					delaycounter = specials[pos]->tag;
-					pos++;
-					return;
+					// Player freeze?
+					if (specials[pos]->args[1])
+					{
+						playerfreeze = true;
+						players[consoleplayer].cheats |= CF_TOTALLYFROZEN;
+					}
 				}
-				else LineSpecials[specials[pos]->special](line, actor, backside, specials[pos]->args[0],
-					specials[pos]->args[1], specials[pos]->args[2], specials[pos]->args[3], specials[pos]->args[4]);
+				else
+				{
+					LineSpecials[specials[pos]->special](line, actor, backside, specials[pos]->args[0],
+						specials[pos]->args[1], specials[pos]->args[2], 
+						specials[pos]->args[3], specials[pos]->args[4]);
 
-				// Look if we need to bother waiting for more
-				if (IsSectorWaitSpecial(specials[pos]->special)) needwait = true;
-
-				// Have we reached the end? If so, stop
+					// Look if we need to bother waiting for more
+					if (IsSectorWaitSpecial(specials[pos]->special)) needwait = true;
+				}
 				pos++;
-				if (pos == specials.Size())
-					started = false;
 			}
+			// Have we reached the end? If so, stop
+			if (pos == specials.Size()) started = false;
 			if (needwait) currentstatus = DMacroThinker::waiting;
 			else currentstatus = DMacroThinker::done;
 		}
