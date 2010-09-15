@@ -73,7 +73,7 @@ LISTMENU "MainMenu"
 	}
 	IfGame(Doom64)
 	{
-		Position 112, 125
+		Position 112, 120
 	}
 	
 	IfGame(Doom, Strife, Chex)
@@ -247,14 +247,7 @@ ListMenu "SkillMenu"
 
 ListMenu "GameFilesMenu"
 {
-	IfGame(Heretic, Hexen)
-	{
-		Position 110, 60
-	}
-	IfGame(Doom64)
-	{
-		Position 112, 140
-	}
+	Position 110, 60
 	TextItem "$MNU_LOADGAME", "l", "LoadGameMenu"
 	TextItem "$MNU_SAVEGAME", "s", "SaveGameMenu"
 }

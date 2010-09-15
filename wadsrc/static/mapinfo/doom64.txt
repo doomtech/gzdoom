@@ -99,7 +99,6 @@ skill hard64
 	Key = "n"
 }*/
 
-
 clearepisodes
 episode map01
 {

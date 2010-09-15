@@ -149,8 +149,7 @@ DEFINE_SPECIAL(Macro_Command, 163, 2, 3, 3)		// Doom 64 macros
 DEFINE_SPECIAL(Macro_SetValue, 164, 1, 1, 1)	// Doom 64 parameterized function hack
 DEFINE_SPECIAL(Macro_Delay, 165, 1, 1, 1)		// Doom 64 macro delay
 DEFINE_SPECIAL(Thing_Enable, 166, 1, 1, 1)		// Doom 64 delayed spawn enabler
-
-
+DEFINE_SPECIAL(Generic_Update, 167, 2, 2, 2)	// Doom 64 functions for changing linedefs, sectors, etc.
 
 // [RH] Begin new specials for ZDoom
 DEFINE_SPECIAL(Generic_Crusher2, 169, 5, 5, 5)
