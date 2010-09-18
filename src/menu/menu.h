@@ -3,7 +3,6 @@
 
 
 #include "dobject.h"
-#include "lists.h"
 #include "d_player.h"
 #include "r_translate.h"
 #include "c_cvars.h"
@@ -54,7 +53,7 @@ struct FGameStartup
 
 extern FGameStartup GameStartupInfo;
 
-struct FSaveGameNode : public Node
+struct FSaveGameNode
 {
 	char Title[SAVESTRINGSIZE];
 	FString Filename;

@@ -59,14 +59,6 @@ OptionValue "Colormaps"
 	1, "Blend"
 }
 
-OptionValue "LightingModes2"
-{
-	0, "Standard"
-	1, "Bright"
-	3, "Doom"
-	4, "Legacy"
-}
-
 OptionValue "LightingModes"
 {
 	0, "Standard"
@@ -114,18 +106,9 @@ OptionValue "HqResizeModes"
    1, "Scale2x"
    2, "Scale3x"
    3, "Scale4x"
-// [BB] hqnx scaling is only supported with the MS compiler.
    4, "hq2x"
    5, "hq3x"
    6, "hq4x"
-}
-
-OptionValue "HqResizeModes2"
-{
-   0, "Off"
-   1, "Scale2x"
-   2, "Scale3x"
-   3, "Scale4x"
 }
 
 OptionValue "HqResizeTargets"
@@ -141,12 +124,6 @@ OptionValue "FogMode"
 	2, "Radial"
 }
 
-OptionValue "FogMode2"
-{
-	0, "Off"
-	1, "Standard"
-}
-
 OptionMenu "GLTextureGLOptions"
 {
 	Title "TEXTURE OPTIONS"
@@ -155,14 +132,7 @@ OptionMenu "GLTextureGLOptions"
 	Option "Anisotropic filter",		gl_texture_filter_anisotropic,	"Anisotropy"
 	Option "Texture Format",			gl_texture_format,				"TextureFormats"
 	Option "Enable hires textures",		gl_texture_usehires,			"YesNo"
-	IfOption(Windows)	// should be MSVC
-	{
-		Option "High Quality Resize mode",	gl_texture_hqresize,			"HqResizeModes"
-	}
-	IfOption(Unix, Mac) // should be GCC
-	{
-		Option "High Quality Resize mode",	gl_texture_hqresize,			"HqResizeModes2"
-	}
+	Option "High Quality Resize mode",	gl_texture_hqresize,			"HqResizeModes"
 	Option "Resize textures",			gl_texture_hqresize_textures,	"OnOff"
 	Option "Resize sprites",			gl_texture_hqresize_sprites,	"OnOff"
 	Option "Resize fonts",				gl_texture_hqresize_fonts,		"OnOff"
@@ -225,40 +195,37 @@ OptionMenu "OpenGLOptions"
 OptionMenu "VideoOptions"
 {
 	Title "DISPLAY OPTIONS"
-	Submenu "Message Options", 			"MessageOptions"
+	
 	Submenu "OpenGL Options", 			"OpenGLOptions"
+	Submenu "Message Options", 			"MessageOptions"
 	Submenu "Scoreboard Options", 		"ScoreboardOptions"
 	StaticText " "
-	Slider "Screen size",				"screenblocks", 				3.0, 12.0, 1.0
+	Slider "Screen size",				"screenblocks", 3.0, 12.0, 1.0, 0
 
 	Slider "Gamma correction",			"Gamma", 						1.0, 3.0, 0.1
 	Slider "Brightness",				"vid_brightness",				-0.8,0.8, 0.05
 	Slider "Contrast",					"vid_contrast",	   				0.1, 3.0, 0.1
 
-	Option "Vertical Sync",				"vid_vsync", 					"OnOff"
+	Option "Vertical Sync",				"vid_vsync", "OnOff"
 
 	StaticText " "
-	Option "Crosshair",					"crosshair",					"Crosshairs"
-	Option "Display nametags",			"displaynametags",				"DisplayTagsTypes"
-	Option "Nametag color",				"nametagcolor",					"TextColors", "displaynametags"
-	Option "Stretch status bar",		"st_scale",						"OnOff"
-	Option "Alternative HUD",			"hud_althud",					"OnOff"
-	Option "Screen wipe style",			"wipetype",						"Wipes"
+	Option "Screen wipe style",			"wipetype", "Wipes"
 
 	IfOption(Windows)
 	{
-		Option	"Show ENDOOM screen",	"showendoom",					"Endoom"
-		//Option "DirectDraw palette hack", "vid_palettehack",			"OnOff"
-		//Option "Use attached surfaces", "vid_attachedsurfaces",		"OnOff"
+		Option	"Show ENDOOM screen",	"showendoom", "Endoom"
 	}
 	
-	StaticText " "
-	Option "Stretch short skies",				"r_stretchsky", "OnOff"
-	Option "Use fuzz effect",					"r_drawfuzz", "YesNo"
-	Option "Use fake contrast",					"r_fakecontrast", "Contrast"
-	Option "Rocket Trails",						"cl_rockettrails", "RocketTrailTypes"
-	Option "Blood Type",						"cl_bloodtype", "BloodTypes"
-	Option "Bullet Puff Type",					"cl_pufftype", "PuffTypes"
-	Option "Interpolate monster movement",		"nomonsterinterpolation", "NoYes"
+	Option "Stretch short skies",		"r_stretchsky", "OnOff"
+	Option "Use fuzz effect",			"r_drawfuzz", "YesNo"
+	Slider "Lost Soul translucency",	"transsouls", 0.25, 1.0, 0.05, 2
+	Option "Use fake contrast",			"r_fakecontrast", "Contrast"
+	Option "Rocket Trails",				"cl_rockettrails", "RocketTrailTypes"
+	Option "Blood Type",				"cl_bloodtype", "BloodTypes"
+	Option "Bullet Puff Type",			"cl_pufftype", "PuffTypes"
+	Slider "Number of particles",		"r_maxparticles", 100, 10000, 100, 0
+	Option "Show player sprites",		"r_drawplayersprites", "OnOff"
+	Option "Death camera",				"r_deathcamera", "OnOff"
+	Option "Teleporter zoom",			"telezoom", "OnOff"
+	Option "Interpolate monster movement",	"nomonsterinterpolation", "NoYes"
 }
-
