@@ -1038,7 +1038,7 @@ void FDrawInfo::DrawFloodedPlane(wallseg * ws, float planez, sector_t * sec, boo
 
 	plane.GetFromSector(sec, ceiling);
 
-	gltexture=FMaterial::ValidateTexture(plane.texture, true);
+	gltexture = FMaterial::ValidateTexture(plane.texture, true);
 	if (!gltexture) return;
 
 	if (gl_fixedcolormap) 
@@ -1048,13 +1048,13 @@ void FDrawInfo::DrawFloodedPlane(wallseg * ws, float planez, sector_t * sec, boo
 	}
 	else
 	{
-		Colormap=sec->ColorMap;
+		Colormap = sec->ColorMaps[LIGHT_GLOBAL];
 		if (gltexture->tex->isFullbright())
 		{
 			Colormap.LightColor.r = Colormap.LightColor.g = Colormap.LightColor.b = 0xff;
-			lightlevel=255;
+			lightlevel = 255;
 		}
-		else lightlevel=abs(ceiling? GetCeilingLight(sec) : GetFloorLight(sec));
+		else lightlevel = abs(ceiling? GetCeilingLight(sec) : GetFloorLight(sec));
 	}
 
 	int rel = extralight * gl_weaponlight;

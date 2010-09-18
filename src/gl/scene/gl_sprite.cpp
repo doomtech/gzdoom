@@ -870,7 +870,7 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 		TArray<lightlist_t> & lightlist=sector->e->XFloor.lightlist;
 		int lightbottom;
 
-		Colormap = sector->ExtraColorMaps[LIGHT_THING];
+		Colormap = sector->ColorMaps[LIGHT_THING];
 		for(unsigned int i=0;i<lightlist.Size();i++)
 		{
 			if (i<lightlist.Size()-1) lightbottom = lightlist[i+1].plane.ZatPoint(particle->x,particle->y);

@@ -390,7 +390,7 @@ bool gl_CheckFog(sector_t *frontsector, sector_t *backsector)
 	// Check for fog boundaries. This needs a few more checks for the sectors
 	bool frontfog, backfog;
 
-	PalEntry fogcolor = frontsector->ColorMap->Fade;
+	PalEntry fogcolor = frontsector->ColorMaps[LIGHT_GLOBAL]->Fade;
 
 	if ((fogcolor.d & 0xffffff) == 0)
 	{
@@ -413,7 +413,7 @@ bool gl_CheckFog(sector_t *frontsector, sector_t *backsector)
 
 	if (backsector == NULL) return frontfog;
 
-	fogcolor = backsector->ColorMap->Fade;
+	fogcolor = backsector->ColorMaps[LIGHT_GLOBAL]->Fade;
 
 	if ((fogcolor.d & 0xffffff) == 0)
 	{

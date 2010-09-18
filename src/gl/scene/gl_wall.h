@@ -112,7 +112,7 @@ public:
 	float alpha;
 	FMaterial *gltexture;
 
-	FColormap Colormap;
+	FColormap Colormap, ColormapU, ColormapL;
 	ERenderStyle RenderStyle;
 	
 	fixed_t viewdistance;

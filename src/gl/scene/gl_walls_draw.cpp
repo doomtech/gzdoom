@@ -59,6 +59,7 @@
 #include "gl/utility/gl_templates.h"
 
 EXTERN_CVAR(Bool, gl_seamless)
+CVAR(Int, gl_doom64experiment, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 
 //==========================================================================
 //
@@ -246,9 +247,15 @@ void GLWall::RenderWall(int textured, float * color2, ADynamicLight * light)
 
 	// the rest of the code is identical for textured rendering and lights
 
+
+	// Doom 64 experiment
+	float coloru[3] = { ColormapU.LightColor.r/255.f, ColormapU.LightColor.g/255.f, ColormapU.LightColor.b/255.f };
+	float colorl[3] = { ColormapL.LightColor.r/255.f, ColormapL.LightColor.g/255.f, ColormapL.LightColor.b/255.f };
+
 	gl.Begin(GL_TRIANGLE_FAN);
 
 	// lower left corner
+	if (gl_doom64experiment) gl.Color3f(colorl[0], colorl[1], colorl[2]); // Doom 64 experiment
 	if (glowing) gl.VertexAttrib2f(VATTR_GLOWDISTANCE, zceil[0] - zbottom[0], zbottom[0] - zfloor[0]);
 	if (textured&1) gl.TexCoord2f(tcs[0].u,tcs[0].v);
 	gl.Vertex3f(glseg.x1,zbottom[0],glseg.y1);
@@ -256,6 +263,7 @@ void GLWall::RenderWall(int textured, float * color2, ADynamicLight * light)
 	if (split && glseg.fracleft==0) SplitLeftEdge(tcs, glowing);
 
 	// upper left corner
+	if (gl_doom64experiment) gl.Color3f(coloru[0], coloru[1], coloru[2]); // Doom 64 experiment
 	if (glowing) gl.VertexAttrib2f(VATTR_GLOWDISTANCE, zceil[0] - ztop[0], ztop[0] - zfloor[0]);
 	if (textured&1) gl.TexCoord2f(tcs[1].u,tcs[1].v);
 	gl.Vertex3f(glseg.x1,ztop[0],glseg.y1);
@@ -266,6 +274,7 @@ void GLWall::RenderWall(int textured, float * color2, ADynamicLight * light)
 	if (color2) gl.Color4fv(color2);
 
 	// upper right corner
+	if (gl_doom64experiment) gl.Color3f(coloru[0], coloru[1], coloru[2]); // Doom 64 experiment
 	if (glowing) gl.VertexAttrib2f(VATTR_GLOWDISTANCE, zceil[1] - ztop[1], ztop[1] - zfloor[1]);
 	if (textured&1) gl.TexCoord2f(tcs[2].u,tcs[2].v);
 	gl.Vertex3f(glseg.x2,ztop[1],glseg.y2);
@@ -273,6 +282,7 @@ void GLWall::RenderWall(int textured, float * color2, ADynamicLight * light)
 	if (split && glseg.fracright==1) SplitRightEdge(tcs, glowing);
 
 	// lower right corner
+	if (gl_doom64experiment) gl.Color3f(colorl[0], colorl[1], colorl[2]); // Doom 64 experiment
 	if (glowing) gl.VertexAttrib2f(VATTR_GLOWDISTANCE, zceil[1] - zbottom[1], zbottom[1] - zfloor[1]);
 	if (textured&1) gl.TexCoord2f(tcs[3].u,tcs[3].v); 
 	gl.Vertex3f(glseg.x2,zbottom[1],glseg.y2);

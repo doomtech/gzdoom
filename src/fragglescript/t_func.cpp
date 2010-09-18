@@ -4232,7 +4232,8 @@ void FParser::SF_SetColor(void)
 		// set all sectors with tag
 		while ((i = T_FindSectorFromTag(tagnum, i)) >= 0)
 		{
-			sectors[i].ColorMap = GetSpecialLights (color, sectors[i].ColorMap->Fade, 0);
+			sectors[i].ColorMaps[LIGHT_GLOBAL] = 
+				GetSpecialLights (color, sectors[i].ColorMaps[LIGHT_GLOBAL]->Fade, 0);
 		}
 	}
 }

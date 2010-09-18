@@ -506,7 +506,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 			type = RENDERWALL_HORIZON;
 			hi.plane.GetFromSector(fs, true);
 			hi.lightlevel = GetCeilingLight(fs);
-			hi.colormap = fs->ColorMap;
+			hi.colormap = fs->ColorMaps[LIGHT_GLOBAL];
 
 			if (fs->e->XFloor.ffloors.Size())
 			{
@@ -535,7 +535,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 			type = RENDERWALL_HORIZON;
 			hi.plane.GetFromSector(fs, false);
 			hi.lightlevel = GetFloorLight(fs);
-			hi.colormap = fs->ColorMap;
+			hi.colormap = fs->ColorMaps[LIGHT_GLOBAL];
 
 			if (fs->e->XFloor.ffloors.Size())
 			{
@@ -1514,7 +1514,9 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 	glseg.y1= FIXED2FLOAT(v1->y);
 	glseg.x2= FIXED2FLOAT(v2->x);
 	glseg.y2= FIXED2FLOAT(v2->y);
-	Colormap = COLORMAP(frontsector, LIGHT_WALLUPPER);
+	Colormap = COLORMAP(frontsector, LIGHT_WALLBOTH);
+	ColormapU = COLORMAP(frontsector, LIGHT_WALLUPPER);
+	ColormapL = COLORMAP(frontsector, LIGHT_WALLLOWER);
 	flags = (!gl_isBlack(Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE)? GLWF_FOGGY : 0;
 
 	int rel = 0;
@@ -1748,7 +1750,7 @@ void GLWall::ProcessLowerMiniseg(seg_t *seg, sector_t * frontsector, sector_t * 
 
 		alpha=1.0f;
 		RenderStyle=STYLE_Normal;
-		Colormap=frontsector->ColorMap;
+		Colormap=frontsector->ColorMaps[LIGHT_GLOBAL];
 
 		topflat=frontsector->GetTexture(sector_t::ceiling);	// for glowing textures
 		bottomflat=frontsector->GetTexture(sector_t::floor);

@@ -439,11 +439,14 @@ struct FTransform
 
 enum
 {
+	LIGHT_GLOBAL,
 	LIGHT_FLOOR,
 	LIGHT_CEILING,
 	LIGHT_THING,
 	LIGHT_WALLUPPER,
-	LIGHT_WALLLOWER
+	LIGHT_WALLLOWER,
+	LIGHT_WALLBOTH,
+	LIGHT_MAX
 };
 
 struct sector_t
@@ -656,8 +659,7 @@ struct sector_t
 	secplane_t	floorplane, ceilingplane;
 
 	// [RH] give floor and ceiling even more properties
-	FDynamicColormap *ColorMap;	// [RH] Per-sector colormap
-	FDynamicColormap *ExtraColorMaps[5];
+	FDynamicColormap *ColorMaps[7];	// [RH] Per-sector colormaps
 
 	BYTE		lightlevel;
 
@@ -777,8 +779,10 @@ struct sector_t
 
 };
 
-// Colormap macro for compatibility with both Doom 64 colored sectors and classic ZDoom colored sectors
-#define COLORMAP(sector, pos) (sector->ExtraColorMaps[pos]->Color.d == 0xffffff ? sector->ColorMap : sector->ExtraColorMaps[pos])
+// Colormap macro for compatibility with both Doom 64 colored sectors and classic ZDoom colored sectors:
+// returns the main colormap if it is set to a non-white value, the precise colormap otherwise.
+#define COLORMAP(sector, pos) \
+	(sector->ColorMaps[LIGHT_GLOBAL]->Color.d == 0xffffff ? sector->ColorMaps[pos] : sector->ColorMaps[LIGHT_GLOBAL])
 
 FArchive &operator<< (FArchive &arc, sector_t::splane &p);
 
@@ -960,6 +964,7 @@ struct line_t
 	fixed_t 	dx, dy;		// precalculated v2 - v1 for side checking
 	DWORD		flags;
 	DWORD		activation;	// activation type
+	DWORD		moreflags;	// More flags, for Doom 64 support
 	int			special;
 	fixed_t		Alpha;		// <--- translucency (0=invisible, FRACUNIT=opaque)
 	int			id;			// <--- same as tag or set with Line_SetIdentification
