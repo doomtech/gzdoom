@@ -80,6 +80,7 @@ bool IsSectorWaitSpecial(int i)
 	case Light_Glow:
 	case Light_Flicker:
 	case Light_Strobe:
+	case Sector_Transform:
 	case Generic_Crusher2:
 	case Plat_UpNearestWaitDownStay:
 	case Ceiling_LowerToHighestFloor:
@@ -387,3 +388,75 @@ bool EV_Line_CopyTexture(int tag1, int tag2)
 	}
 	return true;
 }
+
+bool EV_Sector_CopyFlag(int tag1, int tag2)
+{
+	// Let's use the first sector we find as the model
+	int im = P_FindSectorFromTag(tag2, -1);
+	if (im > numsectors || im < 0)
+		return false;
+
+	// Now look for sectors to change
+	int secnum = -1;
+	while ((secnum = P_FindSectorFromTag (tag1, secnum)) >= 0)
+	{
+		DPrintf("Changing flags for sector number %i\n", secnum);
+		sectors[secnum].Flags = sectors[im].Flags;
+	}
+	return true;
+}
+
+bool EV_Sector_CopySpecial(int tag1, int tag2)
+{
+	// Let's use the first sector we find as the model
+	int im = P_FindSectorFromTag(tag2, -1);
+	if (im > numsectors || im < 0)
+		return false;
+
+	// Now look for sectors to change
+	int secnum = -1;
+	while ((secnum = P_FindSectorFromTag (tag1, secnum)) >= 0)
+	{
+		DPrintf("Changing special for sector number %i\n", secnum);
+		sectors[secnum].special = sectors[im].special;
+	}
+	return true;
+}
+
+bool EV_Sector_CopyLight(int tag1, int tag2)
+{
+	// Let's use the first sector we find as the model
+	int im = P_FindSectorFromTag(tag2, -1);
+	if (im > numsectors || im < 0)
+		return false;
+
+	// Now look for sectors to change
+	int secnum = -1;
+	while ((secnum = P_FindSectorFromTag (tag1, secnum)) >= 0)
+	{
+		DPrintf("Changing light for sector number %i\n", secnum);
+		sectors[secnum].lightlevel = sectors[im].lightlevel;
+		for (int i = LIGHT_GLOBAL; i < LIGHT_MAX; ++i)
+			sectors[secnum].ColorMaps[i] = sectors[im].ColorMaps[i];
+	}
+	return true;
+}
+
+bool EV_Sector_CopyTexture(int tag1, int tag2)
+{
+	// Let's use the first sector we find as the model
+	int im = P_FindSectorFromTag(tag2, -1);
+	if (im > numsectors || im < 0)
+		return false;
+
+	// Now look for sectors to change
+	int secnum = -1;
+	while ((secnum = P_FindSectorFromTag (tag1, secnum)) >= 0)
+	{
+		DPrintf("Changing textures for sector number %i\n", secnum);
+		sectors[secnum].SetTexture(sector_t::floor, sectors[im].GetTexture(sector_t::floor));
+		sectors[secnum].SetTexture(sector_t::ceiling, sectors[im].GetTexture(sector_t::ceiling));
+	}
+	return true;
+}
+
