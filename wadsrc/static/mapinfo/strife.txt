@@ -52,6 +52,9 @@ gameinfo
 	menufontcolor_highlight = "GREEN"
 	menufontcolor_selection = "GOLD"
 	menubackbutton = "M_BACK_S"
+	PlayerClasses = "StrifePlayer"
+	pausesign = "PAUSED"
+	gibfactor = 0.5
 }
 
 skill baby

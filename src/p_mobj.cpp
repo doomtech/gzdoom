@@ -258,9 +258,18 @@ void AActor::Serialize (FArchive &arc)
 		<< args[0] << args[1] << args[2] << args[3] << args[4]
 		<< goal
 		<< waterlevel
-		<< MinMissileChance
-		<< SpawnFlags
-		<< Inventory
+		<< MinMissileChance;
+		if (SaveVersion >= 2826)
+		{
+			arc	<< SpawnFlags;
+		}
+		else
+		{
+			WORD w;
+			arc << w;
+			SpawnFlags = w;
+		}
+	arc	<< Inventory
 		<< InventoryID
 		<< id
 		<< FloatBobPhase
@@ -728,6 +737,7 @@ AInventory *AActor::DropInventory (AInventory *item)
 	drop->vely = vely + 5 * finesine[an];
 	drop->velz = velz + FRACUNIT;
 	drop->flags &= ~MF_NOGRAVITY;	// Don't float
+	drop->ClearCounters();	// do not count for statistics again
 	return drop;
 }
 
@@ -2458,7 +2468,7 @@ void P_NightmareRespawn (AActor *mobj)
 	if (!P_TestMobjLocation (mo))
 	{
 		//[GrafZahl] MF_COUNTKILL still needs to be checked here.
-		if (mo->CountsAsKill()) level.total_monsters--;
+		mo->ClearCounters();
 		mo->Destroy ();
 		return;		// no respawn
 	}
@@ -5009,11 +5019,7 @@ bool P_CheckMissileSpawn (AActor* th)
 			if (th->BlockingMobj == NULL || !(th->flags2 & MF2_RIP) || (th->BlockingMobj->flags5 & MF5_DONTRIP))
 			{
 				// If this is a monster spawned by A_CustomMissile subtract it from the counter.
-				if (th->CountsAsKill())
-				{
-					th->flags&=~MF_COUNTKILL;
-					level.total_monsters--;
-				}
+				th->ClearCounters();
 				// [RH] Don't explode missiles that spawn on top of horizon lines
 				if (th->BlockingLine != NULL && th->BlockingLine->special == Line_Horizon)
 				{
@@ -5533,6 +5539,11 @@ int AActor::TakeSpecialDamage (AActor *inflictor, AActor *source, int damage, FN
 	return (death == NULL) ? -1 : damage;
 }
 
+int AActor::GibHealth()
+{
+	return -abs(GetClass()->Meta.GetMetaInt (AMETA_GibHealth, FixedMul(SpawnHealth(), gameinfo.gibfactor)));
+}
+
 void AActor::Crash()
 {
 	if (((flags & MF_CORPSE) || (flags6 & MF6_KILLED)) &&
@@ -5547,10 +5558,7 @@ void AActor::Crash()
 		}
 		if (crashstate == NULL)
 		{
-			int gibhealth = -abs(GetClass()->Meta.GetMetaInt (AMETA_GibHealth,
-				gameinfo.gametype & GAME_DoomChex ? -SpawnHealth() : -SpawnHealth()/2));
-
-			if (health < gibhealth)
+			if (health < GibHealth())
 			{ // Extreme death
 				crashstate = FindState (NAME_Crash, NAME_Extreme);
 			}
@@ -5638,6 +5646,28 @@ const char *AActor::GetTag(const char *def) const
 	else
 	{
 		return GetClass()->TypeName.GetChars();
+	}
+}
+
+
+void AActor::ClearCounters()
+{
+	if (CountsAsKill())
+	{
+		level.total_monsters--;
+		flags &= ~MF_COUNTKILL;
+	}
+	// Same, for items
+	if (flags & MF_COUNTITEM)
+	{
+		level.total_items--;
+		flags &= ~MF_COUNTITEM;
+	}
+	// And finally for secrets
+	if (flags5 & MF5_COUNTSECRET)
+	{
+		level.total_secrets--;
+		flags5 &= ~MF5_COUNTSECRET;
 	}
 }
 

@@ -563,15 +563,33 @@ void P_PlayerInSpecialSector (player_t *player, sector_t * sector)
 
 	if (sector->special & SECRET_MASK)
 	{
-		player->secretcount++;
-		level.found_secrets++;
 		sector->special &= ~SECRET_MASK;
-		if (player->mo->CheckLocalView (consoleplayer))
+		P_GiveSecret(player->mo, true, true);
+	}
+}
+
+
+//============================================================================
+//
+// P_GiveSecret
+//
+//============================================================================
+
+void P_GiveSecret(AActor *actor, bool printmessage, bool playsound)
+{
+	if (actor != NULL)
+	{
+		if (actor->player != NULL)
 		{
-			C_MidPrint (SmallFont, secretmessage);
-			S_Sound (CHAN_AUTO, "misc/secret", 1, ATTN_NORM);
+			actor->player->secretcount++;
+		}
+		if (actor->CheckLocalView (consoleplayer))
+		{
+			if (printmessage) C_MidPrint (SmallFont, secretmessage);
+			if (playsound) S_Sound (CHAN_AUTO, "misc/secret", 1, ATTN_NORM);
 		}
 	}
+	level.found_secrets++;
 }
 
 //============================================================================
@@ -993,6 +1011,153 @@ void P_SpawnPortal(line_t *line, int sectortag, int plane, int alpha)
 	}
 }
 
+void P_SpawnSectorSpecial (sector_t * sector)
+{
+	// [RH] All secret sectors are marked with a BOOM-ish bitfield
+	if (sector->special & SECRET_MASK)
+		level.total_secrets++;
+
+	switch (sector->special & 0xff)
+	{
+		// [RH] Normal DOOM/Hexen specials. We clear off the special for lights
+		//	  here instead of inside the spawners.
+
+	case dLight_Flicker:
+		// FLICKERING LIGHTS
+		new DLightFlash (sector);
+		sector->special &= 0xff00;
+		break;
+
+	case dLight_StrobeFast:
+		// STROBE FAST
+		new DStrobe (sector, STROBEBRIGHT, FASTDARK, false);
+		sector->special &= 0xff00;
+		break;
+			
+	case dLight_StrobeSlow:
+		// STROBE SLOW
+		new DStrobe (sector, STROBEBRIGHT, SLOWDARK, false);
+		sector->special &= 0xff00;
+		break;
+
+	case dLight_Strobe_Hurt:
+	case sLight_Strobe_Hurt:
+		// STROBE FAST/DEATH SLIME
+		new DStrobe (sector, STROBEBRIGHT, FASTDARK, false);
+		break;
+
+	case nLight_StrobeSuperFast:
+		// STROBE FAST
+		new DStrobe (sector, 255, sector->lightlevel, TURBODARK, FASTDARK);
+		sector->special &= 0xff00;
+		break;
+			
+	case dLight_Glow:
+		// GLOWING LIGHT
+		new DGlow (sector);
+		sector->special &= 0xff00;
+		break;
+			
+	case nLight_GlowSlow:
+		new DGlowSlow (sector);
+		sector->special &= 0xff00;
+		break;
+			
+	case nLight_GlowRandom:
+		new DGlowRandom (sector);
+		sector->special &= 0xff00;
+		break;
+			
+	case dSector_DoorCloseIn30:
+		// DOOR CLOSE IN 30 SECONDS
+		P_SpawnDoorCloseIn30 (sector);
+		break;
+			
+	case dLight_StrobeSlowSync:
+		// SYNC STROBE SLOW
+		new DStrobe (sector, STROBEBRIGHT, SLOWDARK, true);
+		sector->special &= 0xff00;
+		break;
+
+	case dLight_StrobeFastSync:
+		// SYNC STROBE FAST
+		new DStrobe (sector, STROBEBRIGHT, FASTDARK, true);
+		sector->special &= 0xff00;
+		break;
+
+	case dSector_DoorRaiseIn5Mins:
+		// DOOR RAISE IN 5 MINUTES
+		P_SpawnDoorRaiseIn5Mins (sector);
+		break;
+			
+	case dLight_FireFlicker:
+		// fire flickering
+		new DFireFlicker (sector);
+		sector->special &= 0xff00;
+		break;
+
+	case dFriction_Low:
+		sector->friction = FRICTION_LOW;
+		sector->movefactor = 0x269;
+		sector->special &= 0xff00;
+		sector->special |= FRICTION_MASK;
+		break;
+		
+	// [RH] Hexen-like phased lighting
+	case LightSequenceStart:
+		new DPhased (sector);
+		break;
+
+	case Light_Phased:
+		new DPhased (sector, 48, 63 - (sector->lightlevel & 63));
+		break;
+
+	case Sky2:
+		sector->sky = PL_SKYFLAT;
+		break;
+
+	case dScroll_EastLavaDamage:
+		new DScroller (DScroller::sc_floor, (-FRACUNIT/2)<<3,
+			0, -1, int(sector-sectors), 0);
+		break;
+
+	case Sector_Hidden:
+		sector->MoreFlags |= SECF_HIDDEN;
+		sector->special &= 0xff00;
+		break;
+
+	default:
+		if ((sector->special & 0xff) >= Scroll_North_Slow &&
+			(sector->special & 0xff) <= Scroll_SouthWest_Fast)
+		{ // Hexen scroll special
+			static const char hexenScrollies[24][2] =
+			{
+				{  0,  1 }, {  0,  2 }, {  0,  4 },
+				{ -1,  0 }, { -2,  0 }, { -4,  0 },
+				{  0, -1 }, {  0, -2 }, {  0, -4 },
+				{  1,  0 }, {  2,  0 }, {  4,  0 },
+				{  1,  1 }, {  2,  2 }, {  4,  4 },
+				{ -1,  1 }, { -2,  2 }, { -4,  4 },
+				{ -1, -1 }, { -2, -2 }, { -4, -4 },
+				{  1, -1 }, {  2, -2 }, {  4, -4 }
+			};
+
+			int i = (sector->special & 0xff) - Scroll_North_Slow;
+			fixed_t dx = hexenScrollies[i][0] * (FRACUNIT/2);
+			fixed_t dy = hexenScrollies[i][1] * (FRACUNIT/2);
+			new DScroller (DScroller::sc_floor, dx, dy, -1, int(sector-sectors), 0);
+		}
+		else if ((sector->special & 0xff) >= Carry_East5 &&
+				 (sector->special & 0xff) <= Carry_East35)
+		{ // Heretic scroll special
+		  // Only east scrollers also scroll the texture
+			new DScroller (DScroller::sc_floor,
+				(-FRACUNIT/2)<<((sector->special & 0xff) - Carry_East5),
+				0, -1, int(sector-sectors), 0);
+		}
+		break;
+	}
+}
 
 //
 // P_SpawnSpecials
@@ -1013,145 +1178,7 @@ void P_SpawnSpecials (void)
 	{
 		if (sector->special == 0)
 			continue;
-
-		// [RH] All secret sectors are marked with a BOOM-ish bitfield
-		if (sector->special & SECRET_MASK)
-			level.total_secrets++;
-
-		switch (sector->special & 0xff)
-		{
-			// [RH] Normal DOOM/Hexen specials. We clear off the special for lights
-			//	  here instead of inside the spawners.
-
-		case dLight_Flicker:
-			// FLICKERING LIGHTS
-			new DLightFlash (sector);
-			sector->special &= 0xff00;
-			break;
-
-		case dLight_StrobeFast:
-			// STROBE FAST
-			new DStrobe (sector, STROBEBRIGHT, FASTDARK, false);
-			sector->special &= 0xff00;
-			break;
-			
-		case dLight_StrobeSlow:
-			// STROBE SLOW
-			new DStrobe (sector, STROBEBRIGHT, SLOWDARK, false);
-			sector->special &= 0xff00;
-			break;
-
-		case dLight_Strobe_Hurt:
-		case sLight_Strobe_Hurt:
-			// STROBE FAST/DEATH SLIME
-			new DStrobe (sector, STROBEBRIGHT, FASTDARK, false);
-			break;
-
-		case dLight_Glow:
-			// GLOWING LIGHT
-			new DGlow (sector);
-			sector->special &= 0xff00;
-			break;
-			
-		case nLight_GlowSlow:
-			new DGlowSlow (sector);
-			sector->special &= 0xff00;
-			break;
-			
-		case nLight_GlowRandom:
-			new DGlowRandom (sector);
-			sector->special &= 0xff00;
-			break;
-			
-		case dSector_DoorCloseIn30:
-			// DOOR CLOSE IN 30 SECONDS
-			P_SpawnDoorCloseIn30 (sector);
-			break;
-			
-		case dLight_StrobeSlowSync:
-			// SYNC STROBE SLOW
-			new DStrobe (sector, STROBEBRIGHT, SLOWDARK, true);
-			sector->special &= 0xff00;
-			break;
-
-		case dLight_StrobeFastSync:
-			// SYNC STROBE FAST
-			new DStrobe (sector, STROBEBRIGHT, FASTDARK, true);
-			sector->special &= 0xff00;
-			break;
-
-		case dSector_DoorRaiseIn5Mins:
-			// DOOR RAISE IN 5 MINUTES
-			P_SpawnDoorRaiseIn5Mins (sector);
-			break;
-			
-		case dLight_FireFlicker:
-			// fire flickering
-			new DFireFlicker (sector);
-			sector->special &= 0xff00;
-			break;
-
-		case dFriction_Low:
-			sector->friction = FRICTION_LOW;
-			sector->movefactor = 0x269;
-			sector->special &= 0xff00;
-			sector->special |= FRICTION_MASK;
-			break;
-
-		  // [RH] Hexen-like phased lighting
-		case LightSequenceStart:
-			new DPhased (sector);
-			break;
-
-		case Light_Phased:
-			new DPhased (sector, 48, 63 - (sector->lightlevel & 63));
-			break;
-
-		case Sky2:
-			sector->sky = PL_SKYFLAT;
-			break;
-
-		case dScroll_EastLavaDamage:
-			new DScroller (DScroller::sc_floor, (-FRACUNIT/2)<<3,
-				0, -1, int(sector-sectors), 0);
-			break;
-
-		case Sector_Hidden:
-			sector->MoreFlags |= SECF_HIDDEN;
-			sector->special &= 0xff00;
-			break;
-
-		default:
-			if ((sector->special & 0xff) >= Scroll_North_Slow &&
-				(sector->special & 0xff) <= Scroll_SouthWest_Fast)
-			{ // Hexen scroll special
-				static const char hexenScrollies[24][2] =
-				{
-					{  0,  1 }, {  0,  2 }, {  0,  4 },
-					{ -1,  0 }, { -2,  0 }, { -4,  0 },
-					{  0, -1 }, {  0, -2 }, {  0, -4 },
-					{  1,  0 }, {  2,  0 }, {  4,  0 },
-					{  1,  1 }, {  2,  2 }, {  4,  4 },
-					{ -1,  1 }, { -2,  2 }, { -4,  4 },
-					{ -1, -1 }, { -2, -2 }, { -4, -4 },
-					{  1, -1 }, {  2, -2 }, {  4, -4 }
-				};
-
-				int i = (sector->special & 0xff) - Scroll_North_Slow;
-				fixed_t dx = hexenScrollies[i][0] * (FRACUNIT/2);
-				fixed_t dy = hexenScrollies[i][1] * (FRACUNIT/2);
-				new DScroller (DScroller::sc_floor, dx, dy, -1, int(sector-sectors), 0);
-			}
-			else if ((sector->special & 0xff) >= Carry_East5 &&
-					 (sector->special & 0xff) <= Carry_East35)
-			{ // Heretic scroll special
-			  // Only east scrollers also scroll the texture
-				new DScroller (DScroller::sc_floor,
-					(-FRACUNIT/2)<<((sector->special & 0xff) - Carry_East5),
-					0, -1, int(sector-sectors), 0);
-			}
-			break;
-		}
+		P_SpawnSectorSpecial(sector);
 	}
 	
 	// Init other misc stuff
@@ -1934,6 +1961,15 @@ DPusher::DPusher (DPusher::EPusher type, line_t *l, int magnitude, int angle,
 	}
 	m_Affectee = affectee;
 }
+
+int DPusher::CheckForSectorMatch (EPusher type, int tag)
+{
+	if (m_Type == type && sectors[m_Affectee].tag == tag)
+		return m_Affectee;
+	else
+		return -1;
+}
+
 
 /////////////////////////////
 //

@@ -1755,6 +1755,9 @@ void P_LoadSectorsDoom64 (MapData * map)
 		ss->friction = ORIG_FRICTION;
 		ss->movefactor = ORIG_FRICTION_FACTOR;
 		ss->sectornum = i;
+
+		// Remember what special it is created with, so that it may be copied
+		ss->oldspecial = ss->special;
 	}
 	delete[] msp;
 }
@@ -4637,8 +4640,7 @@ void P_SetupLevel (char *lumpname, int position)
 			{
 				if (mo->Sector->special == dDamage_End)
 				{
-					level.total_monsters--;
-					mo->flags&=~(MF_COUNTKILL);
+					mo->ClearCounters();
 				}
 			}
 		}

@@ -122,13 +122,7 @@ public:
 	DPusher ();
 	DPusher (EPusher type, line_t *l, int magnitude, int angle, AActor *source, int affectee);
 	void Serialize (FArchive &arc);
-	int CheckForSectorMatch (EPusher type, int tag)
-	{
-		if (m_Type == type && sectors[m_Affectee].tag == tag)
-			return m_Affectee;
-		else
-			return -1;
-	}
+	int CheckForSectorMatch (EPusher type, int tag);
 	void ChangeValues (int magnitude, int angle)
 	{
 		angle_t ang = ((angle_t)(angle<<24)) >> ANGLETOFINESHIFT;
@@ -174,6 +168,7 @@ bool	CheckIfExitIsGood (AActor *self, level_info_t *info);
 
 // at map load
 void	P_SpawnSpecials (void);
+void	P_SpawnSectorSpecial(sector_t * sector);
 
 // every tic
 void	P_UpdateSpecials (void);
@@ -186,6 +181,8 @@ void 	P_PlayerInSpecialSector (player_t *player, sector_t * sector=NULL);
 void	P_PlayerOnSpecialFlat (player_t *player, int floorType);
 
 void	P_SetSectorFriction (int tag, int amount, bool alterFlag);
+
+void P_GiveSecret(AActor *actor, bool printmessage, bool playsound);
 
 //
 // getSide()
@@ -390,9 +387,24 @@ private:
 	int PhaseHelper (sector_t *sector, int index, int light, sector_t *prev);
 };
 
+class DLightGradualTransform : public DLighting
+{
+	DECLARE_CLASS (DLightGradualTransform, DLighting)
+public:
+	DLightGradualTransform (sector_t *sector);
+	DLightGradualTransform (sector_t *sector, sector_t *target);
+	void		Serialize (FArchive &arc);
+	void		Tick ();
+protected:
+	sector_t* 	m_TargetSector;
+private:
+	DLightGradualTransform ();
+};
+
 #define GLOWSPEED				8
 #define GLOWSLOWSPEED			5
 #define STROBEBRIGHT			5
+#define TURBODARK				4
 #define FASTDARK				15
 #define SLOWDARK				TICRATE
 

@@ -168,6 +168,7 @@ void DMacroThinker::Tick()
 					int secnum = -1;
 
 					while ((secnum = P_FindSectorFromTag (specials[i]->tag, secnum)) >= 0)
+					{
 						if (sectors[secnum].floordata   || // Are all these different
 							sectors[secnum].ceilingdata || // categories really needed?
 							sectors[secnum].lightingdata|| // Should lighting be removed?
@@ -176,6 +177,7 @@ void DMacroThinker::Tick()
 							// Unfinished business, so no need to continue this tick
 							return;
 						}
+					}
 				}
 			}
 			// If we arrived there, then none of the tagged sectors had an ongoing effect, so we're done
@@ -418,7 +420,12 @@ bool EV_Sector_CopySpecial(int tag1, int tag2)
 	while ((secnum = P_FindSectorFromTag (tag1, secnum)) >= 0)
 	{
 		DPrintf("Changing special for sector number %i\n", secnum);
-		sectors[secnum].special = sectors[im].special;
+		if (!sectors[im].special)
+		{
+			sectors[secnum].special = sectors[im].oldspecial;
+			P_SpawnSectorSpecial(&sectors[secnum]);
+		}
+		else sectors[secnum].special = sectors[im].special;
 	}
 	return true;
 }
@@ -460,3 +467,20 @@ bool EV_Sector_CopyTexture(int tag1, int tag2)
 	return true;
 }
 
+bool EV_Sector_TransformLight(int tag1, int tag2)
+{
+	// Let's use the first sector we find as the model
+	int im = P_FindSectorFromTag(tag2, -1);
+	Printf("Using sector %i as the model for gradual light changes\n", im);
+	if (im > numsectors || im < 0)
+		return false;
+
+	// Now look for sectors to change
+	int secnum = -1;
+	while ((secnum = P_FindSectorFromTag (tag1, secnum)) >= 0)
+	{
+		Printf("Gradual transforms for sector %i\n", secnum);
+		new DLightGradualTransform(&sectors[secnum], &sectors[im]);
+	}
+	return true;
+}

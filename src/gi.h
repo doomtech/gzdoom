@@ -75,10 +75,12 @@ struct gameinfo_t
 	bool drawreadthis;
 	bool noloopfinalemusic;
 	bool intermissioncounter;
+	bool nightmarefast;
 	TArray<FName> creditPages;
 	TArray<FName> finalePages;
 	TArray<FName> infoPages;
 	TArray<FName> DefaultWeaponSlots[10];
+	TArray<FName> PlayerClasses;
 
 	FString titleMusic;
 	float titleTime;
@@ -91,6 +93,7 @@ struct gameinfo_t
 	char SkyFlatName[9];
 	char ArmorIcon1[9];
 	char ArmorIcon2[9];
+	char PauseSign[9];
 	char Endoom[9];
 	fixed_t Armor2Percent;
 	FString quitSound;
@@ -119,6 +122,7 @@ struct gameinfo_t
 	FName mFontColorHighlight;
 	FName mFontColorSelection;
 	char mBackButton[9];
+	fixed_t gibfactor;
 
 	const char *GetFinalePage(unsigned int num) const;
 };

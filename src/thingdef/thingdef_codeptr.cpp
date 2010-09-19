@@ -1402,16 +1402,7 @@ static void DoGiveInventory(AActor * receiver, DECLARE_PARAMINFO)
 			item->Amount = amount;
 		}
 		item->flags |= MF_DROPPED;
-		if (item->flags & MF_COUNTITEM)
-		{
-			item->flags&=~MF_COUNTITEM;
-			level.total_items--;
-		}
-		if (item->flags5 & MF5_COUNTSECRET)
-		{
-			item->flags5&=~MF5_COUNTSECRET;
-			level.total_secrets--;
-		}
+		item->ClearCounters();
 		if (!item->CallTryPickup (receiver))
 		{
 			item->Destroy ();
@@ -1546,7 +1537,7 @@ static bool InitSpawnedItem(AActor *self, AActor *mo, int flags)
 			if (!(flags&SIXF_NOCHECKPOSITION) && !P_TestMobjLocation(mo))
 			{
 				// The monster is blocked so don't spawn it at all!
-				if (mo->CountsAsKill()) level.total_monsters--;
+				mo->ClearCounters();
 				mo->Destroy();
 				return false;
 			}

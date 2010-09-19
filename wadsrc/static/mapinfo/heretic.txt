@@ -51,6 +51,10 @@ gameinfo
 	menufontcolor_highlight = "YELLOW"
 	menufontcolor_selection = "DARKGREEN"
 	menubackbutton = "M_BACK_H"
+	playerclasses = "HereticPlayer"
+	nightmarefast = true
+	pausesign = "PAUSED"
+	gibfactor = 0.5
 }
 
 skill baby

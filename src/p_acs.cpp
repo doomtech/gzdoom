@@ -434,11 +434,7 @@ static void DoGiveInv (AActor *actor, const PClass *info, int amount)
 	AInventory *item = static_cast<AInventory *>(Spawn (info, 0,0,0, NO_REPLACE));
 
 	// This shouldn't count for the item statistics!
-	if (item->flags & MF_COUNTITEM)
-	{
-		level.total_items--;
-		item->flags &= ~MF_COUNTITEM;
-	}
+	item->ClearCounters();
 	if (item->flags5 & MF5_COUNTSECRET)
 	{
 		level.total_secrets--;
@@ -2291,15 +2287,7 @@ int DLevelScript::DoSpawn (int type, fixed_t x, fixed_t y, fixed_t z, int tid, i
 			{
 				// If this is a monster, subtract it from the total monster
 				// count, because it already added to it during spawning.
-				if (actor->CountsAsKill())
-				{
-					level.total_monsters--;
-				}
-				// Same, for items
-				if (actor->flags & MF_COUNTITEM)
-				{
-					level.total_items--;
-				}
+				actor->ClearCounters();
 				// And finally for secrets
 				if (actor->flags5 & MF5_COUNTSECRET)
 				{

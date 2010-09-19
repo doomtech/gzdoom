@@ -48,7 +48,7 @@ sector 205 = 165; //LightSequenceStart;
 sector 206 = 166; //LightSequenceStart; 
 sector 207 = 167; //LightSequenceStart; 
 
-sector 208 = dLight_StrobeFast; // todo: make a "super fast" strobe
+sector 208 = nLight_StrobeSuperFast;
 
 // sector 666 is an instant death for enemies, to use with a modified version of P_Massacre()
 
@@ -293,7 +293,7 @@ lineflag 8 = ML_MAPPED;
 232 = 0, 0() // Ceiling Crush/Raise Once
 233 = 0, Macro_Delay(tag, 1) // Freeze Player
 234 = 0, 0()															// Unknown or non-existent
-235 = 0, Sector_Transform(tag, 0, 235) // Set Light Data
+235 = 0, Sector_Transform(0, tag, 235) // Set Light Data
 236 = 0, 0() // Custom Platform Down/Up
 237 = 0, 0() // Custom Platform Down/Up Fast
 238 = 0, 0() // Custom Platform Up/Down

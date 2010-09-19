@@ -1237,14 +1237,28 @@ FUNC(LS_Thing_Remove)
 FUNC(LS_Thing_Destroy)
 // Thing_Destroy (tid, extreme, tag)
 {
-	if (arg0 == 0)
+	AActor *actor;
+
+	if (arg0 == 0 && arg2 == 0)
 	{
 		P_Massacre ();
+	}
+	else if (arg0 == 0)
+	{
+		TThinkerIterator<AActor> iterator;
+		
+		actor = iterator.Next ();
+		while (actor)
+		{
+			AActor *temp = iterator.Next ();
+			if (actor->flags & MF_SHOOTABLE && actor->Sector->tag == arg2)
+				P_DamageMobj (actor, NULL, it, arg1 ? TELEFRAG_DAMAGE : actor->health, NAME_None);
+			actor = temp;
+		}
 	}
 	else
 	{
 		FActorIterator iterator (arg0);
-		AActor *actor;
 
 		actor = iterator.Next ();
 		while (actor)
@@ -3129,11 +3143,7 @@ FUNC(LS_Sector_Transform)
 		return LS_Ceiling_RaiseByValue(ln, it, backSide, arg0, arg1, level.customvalue, 0, 0);
 	case 228:
 	case 212: return LS_Floor_MoveToValue(ln, it, backSide, arg0, arg1, level.customvalue, 0, 0);
-	case 235:
-		return LS_Sector_SetColor(ln, it, backSide, arg0,
-			lights[level.customvalue].ColorMap()->Color.r,
-			lights[level.customvalue].ColorMap()->Color.g,
-			lights[level.customvalue].ColorMap()->Color.b, 0);
+	case 235: return EV_Sector_TransformLight(arg1, level.customvalue);
 	}
 	return true;
 }

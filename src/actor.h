@@ -323,6 +323,7 @@ enum
 	MF6_BLOCKEDBYSOLIDACTORS = 0x00080000, // Blocked by solid actors, even if not solid itself
 	MF6_ADDITIVEPOISONDAMAGE	= 0x00100000,
 	MF6_ADDITIVEPOISONDURATION	= 0x00200000,
+	MF6_NOMENU			= 0x00400000,	// Player class should not appear in the class selection menu.
 
 // --- mobj.renderflags ---
 
@@ -707,6 +708,7 @@ public:
 
 	// Return starting health adjusted by skill level
 	int SpawnHealth();
+	int GibHealth();
 
 	// Check for monsters that count as kill but excludes all friendlies.
 	bool CountsAsKill() const
@@ -941,6 +943,7 @@ public:
 	virtual bool UpdateWaterLevel (fixed_t oldz, bool splash=true);
 	bool isFast();
 	void SetIdle();
+	void ClearCounters();
 
 	FState *FindState (FName label) const
 	{
