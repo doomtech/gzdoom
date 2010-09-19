@@ -922,8 +922,7 @@ void FParser::SF_RemoveObj(void)
 		AActor * mo = actorvalue(t_argv[0]);
 		if(mo)  // nullptr check
 		{
-			if (mo->flags&MF_COUNTKILL && mo->health>0) level.total_monsters--;
-			if (mo->flags&MF_COUNTITEM) level.total_items--;
+			mo->ClearCounters();
 			mo->Destroy();
 		}
 	}
@@ -2565,11 +2564,7 @@ static void FS_GiveInventory (AActor *actor, const char * type, int amount)
 	AInventory *item = static_cast<AInventory *>(Spawn (info, 0,0,0, NO_REPLACE));
 
 	// This shouldn't count for the item statistics!
-	if (item->flags&MF_COUNTITEM) 
-	{
-		level.total_items--;
-		item->flags&=~MF_COUNTITEM;
-	}
+	item->ClearCounters();
 	if (info->IsDescendantOf (RUNTIME_CLASS(ABasicArmorPickup)) ||
 		info->IsDescendantOf (RUNTIME_CLASS(ABasicArmorBonus)))
 	{
@@ -3348,9 +3343,7 @@ void FParser::SF_SpawnExplosion()
 		t_return.value.i=0;
 		if (spawn)
 		{
-			if (spawn->flags&MF_COUNTKILL) level.total_monsters--;
-			if (spawn->flags&MF_COUNTITEM) level.total_items--;
-			spawn->flags&=~(MF_COUNTKILL|MF_COUNTITEM);
+			spawn->ClearCounters();
 			t_return.value.i = spawn->SetState(spawn->FindState(NAME_Death));
 			if(spawn->DeathSound) S_Sound (spawn, CHAN_BODY, spawn->DeathSound, 1, ATTN_NORM);
 		}

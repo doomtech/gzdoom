@@ -4041,8 +4041,7 @@ void P_SetupLevel (char *lumpname, int position)
 			{
 				if (mo->Sector->special == dDamage_End)
 				{
-					level.total_monsters--;
-					mo->flags&=~(MF_COUNTKILL);
+					mo->ClearCounters();
 				}
 			}
 		}
