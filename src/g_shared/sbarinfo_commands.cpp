@@ -361,7 +361,7 @@ class CommandDrawSwitchableImage : public CommandDrawImage
 				}
 			}
 			// [BL] I have word that MSVC++ wants this static_cast ;)  Shut up MSVC!
-			for(unsigned int i = 0;i < static_cast<unsigned int> (conditionAnd ? 3 : 1);i++)
+			for(unsigned int i = 0;i < (conditionAnd ? 3u : 1u);i++)
 			{
 				sc.MustGetToken(',');
 				sc.MustGetToken(TK_StringConst);
@@ -684,7 +684,7 @@ class CommandDrawString : public SBarInfoCommand
 					if(statusBar->CPlayer->userinfo.PlayerClass != cache)
 					{
 						cache = statusBar->CPlayer->userinfo.PlayerClass;
-						str = statusBar->CPlayer->cls->Meta.GetMetaString(APMETA_DisplayName);
+						str = GetPrintableDisplayName(statusBar->CPlayer->cls);
 						RealignString();
 					}
 					break;
@@ -1565,6 +1565,8 @@ class CommandAspectRatio : public SBarInfoCommandFlowControl
 		}
 		void	Tick(const SBarInfoMainBlock *block, const DSBarInfo *statusBar, bool hudChanged)
 		{
+			SBarInfoCommandFlowControl::Tick(block, statusBar, hudChanged);
+
 			SetTruth(CheckRatio(screen->GetWidth(), screen->GetHeight()) == ratio, block, statusBar);
 		}
 	protected:
