@@ -258,7 +258,7 @@ static bool CheckExtension(const char *ext)
 
 //==========================================================================
 //
-// 
+// This experimental build will require GL 3.3 plus GL_EXT_direct_state_access to run
 //
 //==========================================================================
 
@@ -268,35 +268,30 @@ static void APIENTRY LoadExtensions()
 
 	const char *version = (const char*)glGetString(GL_VERSION);
 
-	// Don't even start if it's lower than 1.2
-	if (strcmp(version, "1.2") < 0) 
+	// Don't even start if it's lower than 3.3
+	if (strcmp(version, "3.3") < 0) 
 	{
-		I_FatalError("Unsupported OpenGL version.\nAt least GL 1.2 is required to run "GAMENAME".\n");
+		I_FatalError("Unsupported OpenGL version.\nAt least GL 3.3 is required to run "GAMENAME".\n");
+	}
+	if (!CheckExtension("GL_EXT_direct_state_access"))
+	{
+		// Both AMD and NVidia support this in their latest drivers so don't bother if it isn't there.
+		I_FatalError("GL_EXT_direct_state_access extension not found.\n");
 	}
 
 	// This loads any function pointers and flags that require a vaild render context to
 	// initialize properly
 
-	gl->shadermodel = 0;	// assume no shader support
+	gl->shadermodel = 4;	// assume no shader support
 	gl->vendorstring=(char*)glGetString(GL_VENDOR);
 
 	// First try the regular function
 	gl->BlendEquation = (PFNGLBLENDEQUATIONPROC)wglGetProcAddress("glBlendEquation");
-	// If that fails try the EXT version
-	if (!gl->BlendEquation) gl->BlendEquation = (PFNGLBLENDEQUATIONPROC)wglGetProcAddress("glBlendEquationEXT");
-	// If that fails use a no-op dummy
-	if (!gl->BlendEquation) gl->BlendEquation = glBlendEquationDummy;
 
-	if (CheckExtension("GL_ARB_texture_non_power_of_two")) gl->flags|=RFL_NPOT_TEXTURE;
 	if (CheckExtension("GL_ARB_texture_compression")) gl->flags|=RFL_TEXTURE_COMPRESSION;
 	if (CheckExtension("GL_EXT_texture_compression_s3tc")) gl->flags|=RFL_TEXTURE_COMPRESSION_S3TC;
 	if (strstr(gl->vendorstring, "NVIDIA")) gl->flags|=RFL_NVIDIA;
 	else if (strstr(gl->vendorstring, "ATI Technologies")) gl->flags|=RFL_ATI;
-
-	if (strcmp(version, "2.0") >= 0) gl->flags|=RFL_GL_20;
-	if (strcmp(version, "2.1") >= 0) gl->flags|=RFL_GL_21;
-	if (strcmp(version, "3.0") >= 0) gl->flags|=RFL_GL_30;
-
 
 #ifndef unix
 	PFNWGLSWAPINTERVALEXTPROC vs = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
@@ -306,116 +301,77 @@ static void APIENTRY LoadExtensions()
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE,&gl->max_texturesize);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	
-	if (gl->flags & RFL_GL_20)
-	{
-		gl->DeleteShader = (PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader");
-		gl->DeleteProgram = (PFNGLDELETEPROGRAMPROC)wglGetProcAddress("glDeleteProgram");
-		gl->DetachShader = (PFNGLDETACHSHADERPROC)wglGetProcAddress("glDetachShader");
-		gl->CreateShader = (PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader");
-		gl->ShaderSource = (PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource");
-		gl->CompileShader = (PFNGLCOMPILESHADERPROC)wglGetProcAddress("glCompileShader");
-		gl->CreateProgram = (PFNGLCREATEPROGRAMPROC)wglGetProcAddress("glCreateProgram");
-		gl->AttachShader = (PFNGLATTACHSHADERPROC)wglGetProcAddress("glAttachShader");
-		gl->LinkProgram = (PFNGLLINKPROGRAMPROC)wglGetProcAddress("glLinkProgram");
-		gl->UseProgram = (PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram");
-		gl->ValidateProgram = (PFNGLVALIDATEPROGRAMPROC)wglGetProcAddress("glValidateProgram");
+	gl->DeleteShader = (PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader");
+	gl->DeleteProgram = (PFNGLDELETEPROGRAMPROC)wglGetProcAddress("glDeleteProgram");
+	gl->DetachShader = (PFNGLDETACHSHADERPROC)wglGetProcAddress("glDetachShader");
+	gl->CreateShader = (PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader");
+	gl->ShaderSource = (PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource");
+	gl->CompileShader = (PFNGLCOMPILESHADERPROC)wglGetProcAddress("glCompileShader");
+	gl->CreateProgram = (PFNGLCREATEPROGRAMPROC)wglGetProcAddress("glCreateProgram");
+	gl->AttachShader = (PFNGLATTACHSHADERPROC)wglGetProcAddress("glAttachShader");
+	gl->LinkProgram = (PFNGLLINKPROGRAMPROC)wglGetProcAddress("glLinkProgram");
+	gl->UseProgram = (PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram");
+	gl->ValidateProgram = (PFNGLVALIDATEPROGRAMPROC)wglGetProcAddress("glValidateProgram");
 
-		gl->VertexAttrib1f = (PFNGLVERTEXATTRIB1FPROC)wglGetProcAddress("glVertexAttrib1f");
-		gl->VertexAttrib2f = (PFNGLVERTEXATTRIB2FPROC)wglGetProcAddress("glVertexAttrib2f");
-		gl->VertexAttrib4f = (PFNGLVERTEXATTRIB4FPROC)wglGetProcAddress("glVertexAttrib4f");
-		gl->VertexAttrib2fv = (PFNGLVERTEXATTRIB4FVPROC)wglGetProcAddress("glVertexAttrib2fv");
-		gl->VertexAttrib3fv = (PFNGLVERTEXATTRIB4FVPROC)wglGetProcAddress("glVertexAttrib3fv");
-		gl->VertexAttrib4fv = (PFNGLVERTEXATTRIB4FVPROC)wglGetProcAddress("glVertexAttrib4fv");
-		gl->VertexAttrib4ubv = (PFNGLVERTEXATTRIB4UBVPROC)wglGetProcAddress("glVertexAttrib4ubv");
-		gl->GetAttribLocation = (PFNGLGETATTRIBLOCATIONPROC)wglGetProcAddress("glGetAttribLocation");
-		gl->BindAttribLocation = (PFNGLBINDATTRIBLOCATIONPROC)wglGetProcAddress("glBindAttribLocation");
+	gl->VertexAttrib1f = (PFNGLVERTEXATTRIB1FPROC)wglGetProcAddress("glVertexAttrib1f");
+	gl->VertexAttrib2f = (PFNGLVERTEXATTRIB2FPROC)wglGetProcAddress("glVertexAttrib2f");
+	gl->VertexAttrib4f = (PFNGLVERTEXATTRIB4FPROC)wglGetProcAddress("glVertexAttrib4f");
+	gl->VertexAttrib2fv = (PFNGLVERTEXATTRIB4FVPROC)wglGetProcAddress("glVertexAttrib2fv");
+	gl->VertexAttrib3fv = (PFNGLVERTEXATTRIB4FVPROC)wglGetProcAddress("glVertexAttrib3fv");
+	gl->VertexAttrib4fv = (PFNGLVERTEXATTRIB4FVPROC)wglGetProcAddress("glVertexAttrib4fv");
+	gl->VertexAttrib4ubv = (PFNGLVERTEXATTRIB4UBVPROC)wglGetProcAddress("glVertexAttrib4ubv");
+	gl->GetAttribLocation = (PFNGLGETATTRIBLOCATIONPROC)wglGetProcAddress("glGetAttribLocation");
+	gl->BindAttribLocation = (PFNGLBINDATTRIBLOCATIONPROC)wglGetProcAddress("glBindAttribLocation");
 
+	gl->Uniform1f = (PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f");
+	gl->Uniform2f = (PFNGLUNIFORM2FPROC)wglGetProcAddress("glUniform2f");
+	gl->Uniform3f = (PFNGLUNIFORM3FPROC)wglGetProcAddress("glUniform3f");
+	gl->Uniform4f = (PFNGLUNIFORM4FPROC)wglGetProcAddress("glUniform4f");
+	gl->Uniform1i = (PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i");
+	gl->Uniform2i = (PFNGLUNIFORM2IPROC)wglGetProcAddress("glUniform2i");
+	gl->Uniform3i = (PFNGLUNIFORM3IPROC)wglGetProcAddress("glUniform3i");
+	gl->Uniform4i = (PFNGLUNIFORM4IPROC)wglGetProcAddress("glUniform4i");
+	gl->Uniform1fv = (PFNGLUNIFORM1FVPROC)wglGetProcAddress("glUniform1fv");
+	gl->Uniform2fv = (PFNGLUNIFORM2FVPROC)wglGetProcAddress("glUniform2fv");
+	gl->Uniform3fv = (PFNGLUNIFORM3FVPROC)wglGetProcAddress("glUniform3fv");
+	gl->Uniform4fv = (PFNGLUNIFORM4FVPROC)wglGetProcAddress("glUniform4fv");
+	gl->Uniform1iv = (PFNGLUNIFORM1IVPROC)wglGetProcAddress("glUniform1iv");
+	gl->Uniform2iv = (PFNGLUNIFORM2IVPROC)wglGetProcAddress("glUniform2iv");
+	gl->Uniform3iv = (PFNGLUNIFORM3IVPROC)wglGetProcAddress("glUniform3iv");
+	gl->Uniform4iv = (PFNGLUNIFORM4IVPROC)wglGetProcAddress("glUniform4iv");
 
-		gl->Uniform1f = (PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f");
-		gl->Uniform2f = (PFNGLUNIFORM2FPROC)wglGetProcAddress("glUniform2f");
-		gl->Uniform3f = (PFNGLUNIFORM3FPROC)wglGetProcAddress("glUniform3f");
-		gl->Uniform4f = (PFNGLUNIFORM4FPROC)wglGetProcAddress("glUniform4f");
-		gl->Uniform1i = (PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i");
-		gl->Uniform2i = (PFNGLUNIFORM2IPROC)wglGetProcAddress("glUniform2i");
-		gl->Uniform3i = (PFNGLUNIFORM3IPROC)wglGetProcAddress("glUniform3i");
-		gl->Uniform4i = (PFNGLUNIFORM4IPROC)wglGetProcAddress("glUniform4i");
-		gl->Uniform1fv = (PFNGLUNIFORM1FVPROC)wglGetProcAddress("glUniform1fv");
-		gl->Uniform2fv = (PFNGLUNIFORM2FVPROC)wglGetProcAddress("glUniform2fv");
-		gl->Uniform3fv = (PFNGLUNIFORM3FVPROC)wglGetProcAddress("glUniform3fv");
-		gl->Uniform4fv = (PFNGLUNIFORM4FVPROC)wglGetProcAddress("glUniform4fv");
-		gl->Uniform1iv = (PFNGLUNIFORM1IVPROC)wglGetProcAddress("glUniform1iv");
-		gl->Uniform2iv = (PFNGLUNIFORM2IVPROC)wglGetProcAddress("glUniform2iv");
-		gl->Uniform3iv = (PFNGLUNIFORM3IVPROC)wglGetProcAddress("glUniform3iv");
-		gl->Uniform4iv = (PFNGLUNIFORM4IVPROC)wglGetProcAddress("glUniform4iv");
-		
-		gl->UniformMatrix2fv = (PFNGLUNIFORMMATRIX2FVPROC)wglGetProcAddress("glUniformMatrix2fv");
-		gl->UniformMatrix3fv = (PFNGLUNIFORMMATRIX3FVPROC)wglGetProcAddress("glUniformMatrix3fv");
-		gl->UniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC)wglGetProcAddress("glUniformMatrix4fv");
-		
-		gl->GetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)wglGetProcAddress("glGetProgramInfoLog");
-		gl->GetShaderInfoLog = (PFNGLGETSHADERINFOLOGPROC)wglGetProcAddress("glGetShaderInfoLog");
-		gl->GetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)wglGetProcAddress("glGetUniformLocation");
-		gl->GetActiveUniform = (PFNGLGETACTIVEUNIFORMPROC)wglGetProcAddress("glGetActiveUniform");
-		gl->GetUniformfv = (PFNGLGETUNIFORMFVPROC)wglGetProcAddress("glGetUniformfv");
-		gl->GetUniformiv = (PFNGLGETUNIFORMIVPROC)wglGetProcAddress("glGetUniformiv");
-		gl->GetShaderSource = (PFNGLGETSHADERSOURCEPROC)wglGetProcAddress("glGetShaderSource");
+	gl->UniformMatrix2fv = (PFNGLUNIFORMMATRIX2FVPROC)wglGetProcAddress("glUniformMatrix2fv");
+	gl->UniformMatrix3fv = (PFNGLUNIFORMMATRIX3FVPROC)wglGetProcAddress("glUniformMatrix3fv");
+	gl->UniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC)wglGetProcAddress("glUniformMatrix4fv");
 
-		gl->EnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glEnableVertexAttribArray");
-		gl->DisableVertexAttribArray= (PFNGLDISABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glDisableVertexAttribArray");
-		gl->VertexAttribPointer		= (PFNGLVERTEXATTRIBPOINTERPROC)wglGetProcAddress("glVertexAttribPointer");
+	gl->GetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)wglGetProcAddress("glGetProgramInfoLog");
+	gl->GetShaderInfoLog = (PFNGLGETSHADERINFOLOGPROC)wglGetProcAddress("glGetShaderInfoLog");
+	gl->GetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)wglGetProcAddress("glGetUniformLocation");
+	gl->GetActiveUniform = (PFNGLGETACTIVEUNIFORMPROC)wglGetProcAddress("glGetActiveUniform");
+	gl->GetUniformfv = (PFNGLGETUNIFORMFVPROC)wglGetProcAddress("glGetUniformfv");
+	gl->GetUniformiv = (PFNGLGETUNIFORMIVPROC)wglGetProcAddress("glGetUniformiv");
+	gl->GetShaderSource = (PFNGLGETSHADERSOURCEPROC)wglGetProcAddress("glGetShaderSource");
 
-		// what'S the equivalent of this in GL 2.0???
-		gl->GetObjectParameteriv = (PFNGLGETOBJECTPARAMETERIVARBPROC)wglGetProcAddress("glGetObjectParameterivARB");
+	gl->EnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glEnableVertexAttribArray");
+	gl->DisableVertexAttribArray= (PFNGLDISABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glDisableVertexAttribArray");
+	gl->VertexAttribPointer		= (PFNGLVERTEXATTRIBPOINTERPROC)wglGetProcAddress("glVertexAttribPointer");
 
-		// Rules:
-		// SM4 will always use shaders. No option to switch them off is needed here.
-		// SM3 has shaders optional but they are off by default (they will have a performance impact
-		// SM2 only uses shaders for colormaps on camera textures and has no option to use them in general.
-		//     On SM2 cards the shaders will be too slow and show visual bugs (at least on GF 6800.)
-		if (strcmp((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION), "1.3") >= 0) gl->shadermodel = 4;
-		else if (CheckExtension("GL_NV_GPU_shader4")) gl->shadermodel = 4;	// for pre-3.0 drivers that support GF8xxx.
-		else if (CheckExtension("GL_EXT_GPU_shader4")) gl->shadermodel = 4;	// for pre-3.0 drivers that support GF8xxx.
-		else if (CheckExtension("GL_NV_vertex_program3")) gl->shadermodel = 3;
-		else if (!strstr(gl->vendorstring, "NVIDIA")) gl->shadermodel = 3;
-		else gl->shadermodel = 2;	// Only for older NVidia cards which had notoriously bad shader support.
+	// what'S the equivalent of this in GL 2.0???
+	gl->GetObjectParameteriv = (PFNGLGETOBJECTPARAMETERIVARBPROC)wglGetProcAddress("glGetObjectParameterivARB");
 
-		// Command line overrides for testing and problem cases.
-		if (Args->CheckParm("-sm2") && gl->shadermodel > 2) gl->shadermodel = 2;
-		else if (Args->CheckParm("-sm3") && gl->shadermodel > 3) gl->shadermodel = 3;
-	}
+    gl->GenQueries         = (PFNGLGENQUERIESPROC)wglGetProcAddress("glGenQueries");
+    gl->DeleteQueries      = (PFNGLDELETEQUERIESPROC)wglGetProcAddress("glDeleteQueries");
+    gl->GetQueryObjectuiv  = (PFNGLGETQUERYOBJECTUIVPROC)wglGetProcAddress("glGetQueryObjectuiv");
+    gl->BeginQuery         = (PFNGLBEGINQUERYPROC)wglGetProcAddress("glBeginQuery");
+    gl->EndQuery           = (PFNGLENDQUERYPROC)wglGetProcAddress("glEndQuery");
 
-	if (CheckExtension("GL_ARB_occlusion_query"))
-	{
-        gl->GenQueries         = (PFNGLGENQUERIESARBPROC)wglGetProcAddress("glGenQueriesARB");
-        gl->DeleteQueries      = (PFNGLDELETEQUERIESARBPROC)wglGetProcAddress("glDeleteQueriesARB");
-        gl->GetQueryObjectuiv  = (PFNGLGETQUERYOBJECTUIVARBPROC)wglGetProcAddress("glGetQueryObjectuivARB");
-        gl->BeginQuery         = (PFNGLBEGINQUERYARBPROC)wglGetProcAddress("glBeginQueryARB");
-        gl->EndQuery           = (PFNGLENDQUERYPROC)wglGetProcAddress("glEndQueryARB");
-		gl->flags|=RFL_OCCLUSION_QUERY;
-	}
-
-	if (gl->flags & RFL_GL_21)
-	{
-		gl->BindBuffer				= (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBuffer");
-		gl->DeleteBuffers			= (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffers");
-		gl->GenBuffers				= (PFNGLGENBUFFERSPROC)wglGetProcAddress("glGenBuffers");
-		gl->BufferData				= (PFNGLBUFFERDATAPROC)wglGetProcAddress("glBufferData");
-		gl->BufferSubData			= (PFNGLBUFFERSUBDATAPROC)wglGetProcAddress("glBufferSubData");
-		gl->MapBuffer				= (PFNGLMAPBUFFERPROC)wglGetProcAddress("glMapBuffer");
-		gl->UnmapBuffer				= (PFNGLUNMAPBUFFERPROC)wglGetProcAddress("glUnmapBuffer");
-		gl->flags |= RFL_VBO;
-	}
-	else if (CheckExtension("GL_ARB_vertex_buffer_object"))
-	{
-		gl->BindBuffer				= (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBufferARB");
-		gl->DeleteBuffers			= (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffersARB");
-		gl->GenBuffers				= (PFNGLGENBUFFERSPROC)wglGetProcAddress("glGenBuffersARB");
-		gl->BufferData				= (PFNGLBUFFERDATAPROC)wglGetProcAddress("glBufferDataARB");
-		gl->BufferSubData			= (PFNGLBUFFERSUBDATAPROC)wglGetProcAddress("glBufferSubDataARB");
-		gl->MapBuffer				= (PFNGLMAPBUFFERPROC)wglGetProcAddress("glMapBufferARB");
-		gl->UnmapBuffer				= (PFNGLUNMAPBUFFERPROC)wglGetProcAddress("glUnmapBufferARB");
-		gl->flags |= RFL_VBO;
-	}
+	gl->BindBuffer				= (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBuffer");
+	gl->DeleteBuffers			= (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffers");
+	gl->GenBuffers				= (PFNGLGENBUFFERSPROC)wglGetProcAddress("glGenBuffers");
+	gl->BufferData				= (PFNGLBUFFERDATAPROC)wglGetProcAddress("glBufferData");
+	gl->BufferSubData			= (PFNGLBUFFERSUBDATAPROC)wglGetProcAddress("glBufferSubData");
+	gl->MapBuffer				= (PFNGLMAPBUFFERPROC)wglGetProcAddress("glMapBuffer");
+	gl->UnmapBuffer				= (PFNGLUNMAPBUFFERPROC)wglGetProcAddress("glUnmapBuffer");
 
 	if (CheckExtension("GL_ARB_map_buffer_range")) 
 	{
@@ -424,35 +380,19 @@ static void APIENTRY LoadExtensions()
 		gl->flags|=RFL_MAP_BUFFER_RANGE;
 	}
 
-	if (CheckExtension("GL_ARB_framebuffer_object"))
-	{
-		gl->GenFramebuffers			= (PFNGLGENFRAMEBUFFERSPROC)wglGetProcAddress("glGenFramebuffers");
-		gl->DeleteFramebuffers		= (PFNGLDELETEFRAMEBUFFERSPROC)wglGetProcAddress("glDeleteFramebuffers");
-		gl->BindFramebuffer			= (PFNGLBINDFRAMEBUFFERPROC)wglGetProcAddress("glBindFramebuffer");
-		gl->FramebufferTexture2D	= (PFNGLFRAMEBUFFERTEXTURE2DPROC)wglGetProcAddress("glFramebufferTexture2D");
-		gl->GenRenderbuffers		= (PFNGLGENRENDERBUFFERSPROC)wglGetProcAddress("glGenRenderbuffers");
-		gl->DeleteRenderbuffers		= (PFNGLDELETERENDERBUFFERSPROC)wglGetProcAddress("glDeleteRenderbuffers");
-		gl->BindRenderbuffer		= (PFNGLBINDRENDERBUFFERPROC)wglGetProcAddress("glBindRenderbuffer");
-		gl->RenderbufferStorage		= (PFNGLRENDERBUFFERSTORAGEPROC)wglGetProcAddress("glRenderbufferStorage");
-		gl->FramebufferRenderbuffer	= (PFNGLFRAMEBUFFERRENDERBUFFERPROC)wglGetProcAddress("glFramebufferRenderbuffer");
+	gl->GenFramebuffers			= (PFNGLGENFRAMEBUFFERSPROC)wglGetProcAddress("glGenFramebuffers");
+	gl->DeleteFramebuffers		= (PFNGLDELETEFRAMEBUFFERSPROC)wglGetProcAddress("glDeleteFramebuffers");
+	gl->BindFramebuffer			= (PFNGLBINDFRAMEBUFFERPROC)wglGetProcAddress("glBindFramebuffer");
+	gl->FramebufferTexture2D	= (PFNGLFRAMEBUFFERTEXTURE2DPROC)wglGetProcAddress("glFramebufferTexture2D");
+	gl->GenRenderbuffers		= (PFNGLGENRENDERBUFFERSPROC)wglGetProcAddress("glGenRenderbuffers");
+	gl->DeleteRenderbuffers		= (PFNGLDELETERENDERBUFFERSPROC)wglGetProcAddress("glDeleteRenderbuffers");
+	gl->BindRenderbuffer		= (PFNGLBINDRENDERBUFFERPROC)wglGetProcAddress("glBindRenderbuffer");
+	gl->RenderbufferStorage		= (PFNGLRENDERBUFFERSTORAGEPROC)wglGetProcAddress("glRenderbufferStorage");
+	gl->FramebufferRenderbuffer	= (PFNGLFRAMEBUFFERRENDERBUFFERPROC)wglGetProcAddress("glFramebufferRenderbuffer");
 
-		gl->flags|=RFL_FRAMEBUFFER;
-	}
-#if 0
-	else if (CheckExtension("GL_EXT_framebuffer_object") && 
-			 CheckExtension("GL_EXT_packed_depth_stencil"))
-	{
-		gl->GenFramebuffers			= (PFNGLGENFRAMEBUFFERSPROC)wglGetProcAddress("glGenFramebuffersEXT");
-		gl->BindFramebuffer			= (PFNGLBINDFRAMEBUFFERPROC)wglGetProcAddress("glBindFramebufferEXT");
-		gl->FramebufferTexture2D	= (PFNGLFRAMEBUFFERTEXTURE2DPROC)wglGetProcAddress("glFramebufferTexture2DEXT");
-		gl->GenRenderbuffers		= (PFNGLGENRENDERBUFFERSPROC)wglGetProcAddress("glGenRenderbuffersEXT");
-		gl->BindRenderbuffer		= (PFNGLBINDRENDERBUFFERPROC)wglGetProcAddress("glBindRenderbufferEXT");
-		gl->RenderbufferStorage		= (PFNGLRENDERBUFFERSTORAGEPROC)wglGetProcAddress("glRenderbufferStorageEXT");
-		gl->FramebufferRenderbuffer	= (PFNGLFRAMEBUFFERRENDERBUFFERPROC)wglGetProcAddress("glFramebufferRenderbufferEXT");
-
-		gl->flags|=RFL_FRAMEBUFFER;
-	}
-#endif
+	gl->BindMultiTexture		= (PFNGLBINDMULTITEXTUREEXTPROC)wglGetProcAddress("glBindMultiTextureEXT");
+	gl->TextureImage2D			= (PFNGLTEXTUREIMAGE2DEXTPROC)wglGetProcAddress("glTextureImage2DEXT");
+	gl->GenerateTextureMipmap	= (PFNGLGENERATETEXTUREMIPMAPEXTPROC)wglGetProcAddress("glGenerateTextureMipmapEXT");
 
 #if 0
 	if (CheckExtension("GL_ARB_texture_buffer_object") && 
@@ -465,8 +405,6 @@ static void APIENTRY LoadExtensions()
 		gl->flags|=RFL_TEXTUREBUFFER;
 	}
 #endif
-
-
 
 	gl->ActiveTexture = (PFNGLACTIVETEXTUREPROC)wglGetProcAddress("glActiveTextureARB");
 	gl->MultiTexCoord2f = (PFNGLMULTITEXCOORD2FPROC) wglGetProcAddress("glMultiTexCoord2fARB");
@@ -511,228 +449,96 @@ static void APIENTRY PrintStartupLog()
 //==========================================================================
 
 #ifndef unix
-static bool SetupPixelFormat(HDC hDC, bool allowsoftware, bool nostencil, int multisample)
+static bool SetupPixelFormat(HDC hDC, bool, bool, int multisample)
 {
 	int colorDepth;
 	HDC deskDC;
 	int attributes[26];
-	int pixelFormat;
+	int pixelFormat=-1;
 	unsigned int numFormats;
 	float attribsFloat[] = {0.0f, 0.0f};
-	int stencil;
 	
 	deskDC = GetDC(GetDesktopWindow());
 	colorDepth = GetDeviceCaps(deskDC, BITSPIXEL);
 	ReleaseDC(GetDesktopWindow(), deskDC);
 
-	/*
-	if (!nostencil && colorDepth < 32)
+	if (wglChoosePixelFormatARB)
 	{
-		Printf("R_OPENGL: Desktop not in 32 bit mode!\n");
-		return false;
-	}
-	*/
-
-	if (!nostencil)
-	{
-		for (stencil=1;stencil>=0;stencil--)
+		attributes[0]	=	WGL_RED_BITS_ARB; //bits
+		attributes[1]	=	8;
+		attributes[2]	=	WGL_GREEN_BITS_ARB; //bits
+		attributes[3]	=	8;
+		attributes[4]	=	WGL_BLUE_BITS_ARB; //bits
+		attributes[5]	=	8;
+		attributes[6]	=	WGL_ALPHA_BITS_ARB;
+		attributes[7]	=	8;
+		attributes[8]	=	WGL_DEPTH_BITS_ARB;
+		attributes[9]	=	24;
+		attributes[10]	=	WGL_STENCIL_BITS_ARB;
+		attributes[11]	=	8;
+	
+		attributes[12]	=	WGL_DRAW_TO_WINDOW_ARB;	//required to be true
+		attributes[13]	=	true;
+		attributes[14]	=	WGL_SUPPORT_OPENGL_ARB;
+		attributes[15]	=	true;
+		attributes[16]	=	WGL_DOUBLE_BUFFER_ARB;
+		attributes[17]	=	true;
+	
+		attributes[18]	=	WGL_ACCELERATION_ARB;	//required to be FULL_ACCELERATION_ARB
+		attributes[19]	=	WGL_FULL_ACCELERATION_ARB;
+	
+		if (multisample > 0)
 		{
-			if (wglChoosePixelFormatARB && stencil)
-			{
-				attributes[0]	=	WGL_RED_BITS_ARB; //bits
-				attributes[1]	=	8;
-				attributes[2]	=	WGL_GREEN_BITS_ARB; //bits
-				attributes[3]	=	8;
-				attributes[4]	=	WGL_BLUE_BITS_ARB; //bits
-				attributes[5]	=	8;
-				attributes[6]	=	WGL_ALPHA_BITS_ARB;
-				attributes[7]	=	8;
-				attributes[8]	=	WGL_DEPTH_BITS_ARB;
-				attributes[9]	=	24;
-				attributes[10]	=	WGL_STENCIL_BITS_ARB;
-				attributes[11]	=	8;
-			
-				attributes[12]	=	WGL_DRAW_TO_WINDOW_ARB;	//required to be true
-				attributes[13]	=	true;
-				attributes[14]	=	WGL_SUPPORT_OPENGL_ARB;
-				attributes[15]	=	true;
-				attributes[16]	=	WGL_DOUBLE_BUFFER_ARB;
-				attributes[17]	=	true;
-			
-				attributes[18]	=	WGL_ACCELERATION_ARB;	//required to be FULL_ACCELERATION_ARB
-				if (allowsoftware)
-				{
-					attributes[19]	=	WGL_NO_ACCELERATION_ARB;
-				}
-				else
-				{
-					attributes[19]	=	WGL_FULL_ACCELERATION_ARB;
-				}
-			
-				if (multisample > 0)
-				{
-					attributes[20]	=	WGL_SAMPLE_BUFFERS_ARB;
-					attributes[21]	=	true;
-					attributes[22]	=	WGL_SAMPLES_ARB;
-					attributes[23]	=	multisample;
-				}
-				else
-				{
-					attributes[20]	=	0;
-					attributes[21]	=	0;
-					attributes[22]	=	0;
-					attributes[23]	=	0;
-				}
-			
-				attributes[24]	=	0;
-				attributes[25]	=	0;
-			
-				if (!wglChoosePixelFormatARB(hDC, attributes, attribsFloat, 1, &pixelFormat, &numFormats))
-				{
-					Printf("R_OPENGL: Couldn't choose pixel format. Retrying in compatibility mode\n");
-					goto oldmethod;
-				}
-			
-				if (numFormats == 0)
-				{
-					Printf("R_OPENGL: No valid pixel formats found. Retrying in compatibility mode\n");
-					goto oldmethod;
-				}
-
-				break;
-			}
-			else
-			{
-			oldmethod:
-				// If wglChoosePixelFormatARB is not found we have to do it the old fashioned way.
-				static PIXELFORMATDESCRIPTOR pfd = {
-					sizeof(PIXELFORMATDESCRIPTOR),
-						1,
-						PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
-						PFD_TYPE_RGBA,
-						32, // color depth
-						0, 0, 0, 0, 0, 0,
-						0,
-						0,
-						0,
-						0, 0, 0, 0,
-						32, // z depth
-						stencil*8, // stencil buffer
-						0,
-						PFD_MAIN_PLANE,
-						0,
-						0, 0, 0
-				};
-
-				pixelFormat = ChoosePixelFormat(hDC, &pfd);
-				DescribePixelFormat(hDC, pixelFormat, sizeof(pfd), &pfd);
-
-				if (pfd.dwFlags & PFD_GENERIC_FORMAT)
-				{
-					if (!allowsoftware)
-					{
-						if (stencil==0)
-						{
-							// not accelerated!
-							Printf("R_OPENGL: OpenGL driver not accelerated!  Falling back to software renderer.\n");
-							return false;
-						}
-						else
-						{
-							Printf("R_OPENGL: OpenGL driver not accelerated! Retrying in compatibility mode\n");
-							continue;
-						}
-					}
-				}
-				break;
-			}
+			attributes[20]	=	WGL_SAMPLE_BUFFERS_ARB;
+			attributes[21]	=	true;
+			attributes[22]	=	WGL_SAMPLES_ARB;
+			attributes[23]	=	multisample;
+		}
+		else
+		{
+			attributes[20]	=	0;
+			attributes[21]	=	0;
+			attributes[22]	=	0;
+			attributes[23]	=	0;
+		}
+	
+		attributes[24]	=	0;
+		attributes[25]	=	0;
+	
+		if (!wglChoosePixelFormatARB(hDC, attributes, attribsFloat, 1, &pixelFormat, &numFormats))
+		{
+			Printf("R_OPENGL: Couldn't choose pixel format. Falling back to software renderer\n");
+			return false;
+		}
+	
+		if (numFormats == 0)
+		{
+			Printf("R_OPENGL: No valid pixel formats found. Falling back to software renderer\n");
+			return false;
 		}
 	}
-	else
+	if (pixelFormat == -1 || !SetPixelFormat(hDC, pixelFormat, NULL))
 	{
-		// Use the cheapest mode available and let's hope the driver can handle this...
-		stencil=0;
-
-		// If wglChoosePixelFormatARB is not found we have to do it the old fashioned way.
-		static PIXELFORMATDESCRIPTOR pfd = {
-			sizeof(PIXELFORMATDESCRIPTOR),
-				1,
-				PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
-				PFD_TYPE_RGBA,
-				16, // color depth
-				0, 0, 0, 0, 0, 0,
-				0,
-				0,
-				0,
-				0, 0, 0, 0,
-				16, // z depth
-				0, // stencil buffer
-				0,
-				PFD_MAIN_PLANE,
-				0,
-				0, 0, 0
-		};
-
-		pixelFormat = ChoosePixelFormat(hDC, &pfd);
-		DescribePixelFormat(hDC, pixelFormat, sizeof(pfd), &pfd);
-
-		if (pfd.dwFlags & PFD_GENERIC_FORMAT)
-		{
-			if (!allowsoftware)
-			{
-				Printf("R_OPENGL: OpenGL driver not accelerated! Falling back to software renderer.\n");
-				return false;
-			}
-		}
-	}
-	if (stencil==0)
-	{
-		gl->flags|=RFL_NOSTENCIL;
-	}
-
-	if (!SetPixelFormat(hDC, pixelFormat, NULL))
-	{
-		Printf("R_OPENGL: Couldn't set pixel format.\n");
+		Printf("R_OPENGL: Couldn't set pixel format. Falling back to software renderer\n");
 		return false;
 	}
 	return true;
 }
 #else
 
-static bool SetupPixelFormat(bool allowsoftware, bool nostencil, int multisample)
+static bool SetupPixelFormat(bool, bool, int multisample)
 {
-	int stencil;
-	
-	if (!nostencil)
-	{
-		stencil=1;
-		SDL_GL_SetAttribute( SDL_GL_RED_SIZE,  8 );
-		SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE,  8 );
-		SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE,  8 );
-		SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE,  8 );
-		SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE,  24 );
-		SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE,  8 );
+	SDL_GL_SetAttribute( SDL_GL_RED_SIZE,  8 );
+	SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE,  8 );
+	SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE,  8 );
+	SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE,  8 );
+	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE,  24 );
+	SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE,  8 );
 //		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER,  1 );
-		if (multisample > 0) {
-			SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1 );
-			SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, multisample );
-		}
-	}
-	else
+	if (multisample > 0) 
 	{
-		// Use the cheapest mode available and let's hope the driver can handle this...
-		stencil=0;
-
-		SDL_GL_SetAttribute( SDL_GL_RED_SIZE,  4 );
-		SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE,  4 );
-		SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE,  4 );
-		SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE,  4 );
-		SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE,  16 );
-		//SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER,  1 )*/
-	}
-	if (stencil==0)
-	{
-		gl->flags|=RFL_NOSTENCIL;
+		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1 );
+		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, multisample );
 	}
 	return true;
 }
@@ -748,12 +554,12 @@ static bool SetupPixelFormat(bool allowsoftware, bool nostencil, int multisample
 #ifndef unix
 CVAR(Bool, gl_debug, false, 0)
 
-static bool APIENTRY InitHardware (HWND Window, bool allowsoftware, bool nostencil, int multisample)
+static bool APIENTRY InitHardware (HWND Window, bool, bool, int multisample)
 {
 	m_Window=Window;
 	m_hDC = GetDC(Window);
 
-	if (!SetupPixelFormat(m_hDC, allowsoftware, nostencil, multisample))
+	if (!SetupPixelFormat(m_hDC, false, false, multisample))
 	{
 		Printf ("R_OPENGL: Reverting to software mode...\n");
 		return false;
@@ -772,10 +578,6 @@ static bool APIENTRY InitHardware (HWND Window, bool allowsoftware, bool nostenc
 
 		m_hRC = wglCreateContextAttribsARB(m_hDC, 0, ctxAttribs);
 	}
-	if (m_hRC == 0)
-	{
-		m_hRC = wglCreateContext(m_hDC);
-	}
 
 	if (m_hRC == NULL)
 	{
@@ -790,7 +592,7 @@ static bool APIENTRY InitHardware (HWND Window, bool allowsoftware, bool nostenc
 #else
 static bool APIENTRY InitHardware (bool allowsoftware, bool nostencil, int multisample)
 {
-	if (!SetupPixelFormat(allowsoftware, nostencil, multisample))
+	if (!SetupPixelFormat(false, false, multisample))
 	{
 		Printf ("R_OPENGL: Reverting to software mode...\n");
 		return false;
@@ -864,26 +666,6 @@ static BOOL APIENTRY SetVSync(int)
 {
 	// empty placeholder
 	return false;
-}
-
-//==========================================================================
-//
-// 
-//
-//==========================================================================
-
-static void APIENTRY glBlendEquationDummy (GLenum mode)
-{
-	// If this is not supported all non-existent modes are
-	// made to draw nothing.
-	if (mode == GL_FUNC_ADD)
-	{
-		glColorMask(true, true, true, true);
-	}
-	else
-	{
-		glColorMask(false, false, false, false);
-	}
 }
 
 //==========================================================================
@@ -1065,7 +847,6 @@ void APIENTRY GetContext(RenderContext & gl)
 	gl.Finish = glFinish;
 	gl.Flush = glFlush;
 
-	gl.BlendEquation = glBlendEquationDummy;
 	gl.SetVSync = SetVSync;
 
 #ifndef unix

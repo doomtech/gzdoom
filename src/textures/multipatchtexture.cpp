@@ -241,10 +241,10 @@ FMultiPatchTexture::FMultiPatchTexture (const void *texdef, FPatchLookup *patchl
 	strncpy (Name, (const char *)mtexture.d->name, 8);
 	Name[8] = 0;
 
-	CalcBitSize ();
-
 	xScale = mtexture.d->ScaleX ? mtexture.d->ScaleX*(FRACUNIT/8) : FRACUNIT;
 	yScale = mtexture.d->ScaleY ? mtexture.d->ScaleY*(FRACUNIT/8) : FRACUNIT;
+
+	CalcBitSize ();
 
 	if (mtexture.d->Flags & MAPTEXF_WORLDPANNING)
 	{
@@ -1283,8 +1283,6 @@ FMultiPatchTexture::FMultiPatchTexture (FScanner &sc, int usetype)
 		NumParts = parts.Size();
 		Parts = new TexPart[NumParts];
 		memcpy(Parts, &parts[0], NumParts * sizeof(*Parts));
-
-		//CalcBitSize ();
 
 		// If this texture is just a wrapper around a single patch, we can simply
 		// forward GetPixels() and GetColumn() calls to that patch.

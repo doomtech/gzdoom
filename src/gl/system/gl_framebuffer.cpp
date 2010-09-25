@@ -122,15 +122,6 @@ void OpenGLFrameBuffer::InitializeState()
 #ifdef _MSC_VER
 		gl.PrintStartupLog();
 #endif
-
-		if (gl.flags&RFL_NPOT_TEXTURE)
-		{
-			Printf("Support for non power 2 textures enabled.\n");
-		}
-		if (gl.flags&RFL_OCCLUSION_QUERY)
-		{
-			Printf("Occlusion query enabled.\n");
-		}
 	}
 	gl.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	gl.ClearDepth(1.0f);

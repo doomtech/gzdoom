@@ -291,7 +291,7 @@ SDLGLFB::SDLGLFB (void *, int width, int height, int, int, bool fullscreen)
 
 	UpdatePending = false;
 	
-	if (!gl.InitHardware(false, gl_vid_compatibility, localmultisample))
+	if (!gl.InitHardware(false, false, localmultisample))
 	{
 		vid_renderer = 0;
 		return;

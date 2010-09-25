@@ -218,7 +218,6 @@ void FIMGZTexture::MakeTexture ()
 	int dest_adv = Height;
 	int dest_rew = Width * Height - 1;
 
-	CalcBitSize ();
 	Pixels = new BYTE[Width*Height];
 	dest_p = Pixels;
 

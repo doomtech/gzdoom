@@ -72,11 +72,7 @@ unsigned int FHardwareTexture::lastbound[FHardwareTexture::MAX_TEXTURES];
 int FHardwareTexture::GetTexDimension(int value)
 {
 	if (value > gl.max_texturesize) return gl.max_texturesize;
-	if (gl.flags&RFL_NPOT_TEXTURE) return value;
-
-	int i=1;
-	while (i<value) i+=i;
-	return i;
+	return value;
 }
 
 //===========================================================================
@@ -204,15 +200,7 @@ FHardwareTexture::FHardwareTexture(int _width, int _height, bool _mipmap, bool w
 	texwidth=_width;
 	texheight=_height;
 
-	if (wrap || (gl.flags&RFL_NPOT_TEXTURE))
-	{
-		scaleyfac=scalexfac=1.f;
-	}
-	else
-	{
-		scalexfac=MIN<float>(1.f,(float)texwidth/FHardwareTexture::GetTexDimension(texwidth));
-		scaleyfac=MIN<float>(1.f,(float)texheight/FHardwareTexture::GetTexDimension(texheight));
-	}
+	scaleyfac=scalexfac=1.f;
 
 	int cm_arraysize = CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size();
 	glTexID = new unsigned[cm_arraysize];

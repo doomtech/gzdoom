@@ -6693,6 +6693,14 @@
 				Name="Textures"
 				>
 				<File
+					RelativePath=".\src\gl\textures\gl3_hwtexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\textures\gl3_hwtexture.h"
+					>
+				</File>
+				<File
 					RelativePath=".\src\gl\textures\gl_bitmap.cpp"
 					>
 				</File>

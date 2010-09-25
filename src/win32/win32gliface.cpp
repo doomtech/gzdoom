@@ -437,7 +437,7 @@ Win32GLFrameBuffer::Win32GLFrameBuffer(void *hMonitor, int width, int height, in
 		I_RestoreWindowedPos();
 	}
 
-	if (!gl.InitHardware(Window, false, gl_vid_compatibility, localmultisample))
+	if (!gl.InitHardware(Window, false, false, localmultisample))
 	{
 		vid_renderer = 0;
 		return;
