@@ -388,7 +388,15 @@ static void APIENTRY LoadExtensions()
 	gl->DeleteRenderbuffers		= (PFNGLDELETERENDERBUFFERSPROC)wglGetProcAddress("glDeleteRenderbuffers");
 	gl->BindRenderbuffer		= (PFNGLBINDRENDERBUFFERPROC)wglGetProcAddress("glBindRenderbuffer");
 	gl->RenderbufferStorage		= (PFNGLRENDERBUFFERSTORAGEPROC)wglGetProcAddress("glRenderbufferStorage");
+	gl->NamedRenderbufferStorage= (PFNGLNAMEDRENDERBUFFERSTORAGEEXTPROC)wglGetProcAddress("glNamedRenderbufferStorageEXT");
 	gl->FramebufferRenderbuffer	= (PFNGLFRAMEBUFFERRENDERBUFFERPROC)wglGetProcAddress("glFramebufferRenderbuffer");
+
+	gl->GenSamplers = (PFNGLGENSAMPLERSPROC)wglGetProcAddress("GenSamplers");
+    gl->DeleteSamplers = (PFNGLDELETESAMPLERSPROC)wglGetProcAddress("DeleteSamplers");
+    gl->BindSampler = (PFNGLBINDSAMPLERPROC)wglGetProcAddress("BindSampler");
+    gl->SamplerParameteri = (PFNGLSAMPLERPARAMETERIPROC)wglGetProcAddress("SamplerParameteri");
+    gl->SamplerParameterf = (PFNGLSAMPLERPARAMETERFPROC)wglGetProcAddress("SamplerParameterf");
+
 
 	gl->BindMultiTexture		= (PFNGLBINDMULTITEXTUREEXTPROC)wglGetProcAddress("glBindMultiTextureEXT");
 	gl->TextureImage2D			= (PFNGLTEXTUREIMAGE2DEXTPROC)wglGetProcAddress("glTextureImage2DEXT");
