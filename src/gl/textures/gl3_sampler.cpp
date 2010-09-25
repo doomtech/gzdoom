@@ -1,10 +1,10 @@
 /*
-** gl3_hwtexture.cpp
-**
-** Encapsulates the GL object describing one hardware texture
+** gltexture.cpp
+** Low level OpenGL texture handling. These classes are also
+** containers for the various translations a texture can have.
 **
 **---------------------------------------------------------------------------
-** Copyright 2004-2010 Christoph Oelckers
+** Copyright 2004-2005 Christoph Oelckers
 ** All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without
@@ -40,36 +40,44 @@
 */
 
 #include "gl/system/gl_system.h"
+#include "gl/textures/gl3_sampler.h"
 
-#include "gl/renderer/gl_renderer.h"
-#include "gl/textures/gl3_hwtexture.h"
 
 //===========================================================================
 // 
 //	Static texture data
 //
 //===========================================================================
-unsigned int FGL3HardwareTexture::lastbound[FGL3HardwareTexture::MAX_TEXTURE_UNITS];
+unsigned int FGL3Sampler::lastbound[FGL3Sampler::MAX_TEXTURE_UNITS];
 
-static int TexFormatMap[] = {
-	GL_RGBA8,
-	GL_RGB5_A1,
-	GL_RGBA4,
-	GL_RGBA2,
-	GL_COMPRESSED_RGBA_ARB,
-	GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
-	GL_COMPRESSED_RGBA_S3TC_DXT3_EXT,
-	GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,
+static int MapWrapMode[] =
+{
+	GL_CLAMP_TO_EDGE,
+	GL_REPEAT,
+	GL_MIRRORED_REPEAT
+};
 
-	GL_ALPHA8,
-	GL_R8,
-	GL_RG8,
-	GL_R32F,
-	GL_RG32F,
-	GL_RGBA32F,
+static int MapWrapCoord[] = 
+{
+	GL_TEXTURE_WRAP_S,
+	GL_TEXTURE_WRAP_T,
+	GL_TEXTURE_WRAP_R,
+};
 
-	GL_BGRA,
-	GL_ABGR_EXT,
+struct TexFilter_t
+{
+	int minfilter;
+	int magfilter;
+} ;
+
+static TexFilter_t TexFilter[]=
+{
+	{GL_NEAREST,					GL_NEAREST},
+	{GL_NEAREST_MIPMAP_NEAREST,		GL_NEAREST},
+	{GL_LINEAR,						GL_LINEAR},
+	{GL_LINEAR_MIPMAP_NEAREST,		GL_LINEAR},
+	{GL_LINEAR_MIPMAP_LINEAR,		GL_LINEAR},
+	{GL_NEAREST_MIPMAP_LINEAR,		GL_NEAREST},
 };
 
 //===========================================================================
@@ -77,49 +85,45 @@ static int TexFormatMap[] = {
 //	Creates a texture
 //
 //===========================================================================
-
-FGL3HardwareTexture::FGL3HardwareTexture(bool mip) 
+FGL3Sampler::FGL3Sampler() 
 {
-	mMipmapped = mip;
-	gl.GenTextures(1,&mGlTexId);
+	gl.GenSamplers(1, &glSamplerID);
 }
+
 
 //===========================================================================
 // 
 //	Destroys the texture
 //
 //===========================================================================
-
-FGL3HardwareTexture::~FGL3HardwareTexture() 
+FGL3Sampler::~FGL3Sampler() 
 { 
-	if (mGlTexId != 0) 
+	if (glSamplerID != 0) 
 	{
 		for(int i = 0; i < MAX_TEXTURE_UNITS; i++)
 		{
-			if (lastbound[i] == mGlTexId)
+			if (lastbound[i] == glSamplerID)
 			{
 				lastbound[i] = 0;
 			}
 		}
-		gl.DeleteTextures(1,&mGlTexId);
+		gl.DeleteSamplers(1, &glSamplerID);
 	}
 }
 
+
 //===========================================================================
 // 
-//	Binds this texture to a texture unit
+//	Binds this sampler
 //
 //===========================================================================
 
-bool FGL3HardwareTexture::Bind(int texunit)
+bool FGL3Sampler::Bind(int texunit)
 {
-	if (mGlTexId!=0)
+	if (lastbound[texunit] != glSamplerID)
 	{
-		if (lastbound[texunit] != mGlTexId)
-		{
-			lastbound[texunit] = mGlTexId;
-			gl.BindMultiTexture(GL_TEXTURE0 + texunit, GL_TEXTURE_2D, mGlTexId);
-		}
+		gl.BindSampler(GL_TEXTURE0 + texunit, glSamplerID);
+		lastbound[texunit] = glSamplerID;
 		return true;
 	}
 	return false;
@@ -127,26 +131,19 @@ bool FGL3HardwareTexture::Bind(int texunit)
 
 //===========================================================================
 // 
-//	(static) unbinds texture from given unit
+//	Binds this sampler
 //
 //===========================================================================
 
-void FGL3HardwareTexture::Unbind(int texunit)
+void FGL3Sampler::Unbind(int texunit)
 {
 	if (lastbound[texunit] != 0)
 	{
-		gl.BindMultiTexture(GL_TEXTURE0 + texunit, GL_TEXTURE_2D, 0);
-		lastbound[texunit] = 0;
+		gl.BindSampler(GL_TEXTURE0 + texunit, 0);
 	}
 }
 
-//===========================================================================
-// 
-//	(static) unbinds textures from all texture units
-//
-//===========================================================================
-
-void FGL3HardwareTexture::UnbindAll()
+void FGL3Sampler::UnbindAll()
 {
 	for(int texunit = 0; texunit < MAX_TEXTURE_UNITS; texunit++)
 	{
@@ -156,51 +153,24 @@ void FGL3HardwareTexture::UnbindAll()
 
 //===========================================================================
 // 
-//	Binds this texture's surface to the current framebuffer
+//	states
 //
 //===========================================================================
 
-void FGL3HardwareTexture::BindToCurrentFrameBuffer()
+void FGL3Sampler::SetTextureFilter(int mode)
 {
-	gl.FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mGlTexId, 0);
+	assert(mode < TEXFILTER_MAX);
+
+	gl.SamplerParameteri(glSamplerID, GL_TEXTURE_MIN_FILTER, TexFilter[mode].minfilter);
+	gl.SamplerParameteri(glSamplerID, GL_TEXTURE_MAG_FILTER, TexFilter[mode].magfilter);
 }
 
-
-//===========================================================================
-// 
-//	Loads the texture image into the hardware
-//
-// NOTE: For some strange reason I was unable to find the source buffer
-// should be one line higher than the actual texture. I got extremely
-// strange crashes deep inside the GL driver when I didn't do it!
-//
-//===========================================================================
-
-void FGL3HardwareTexture::CreateTexture(unsigned texformat, unsigned char *buffer,unsigned bufferformat, int w, int h)
+void FGL3Sampler::SetWrapMode(int coord, int wrapmode)
 {
-	bool deletebuffer = false;
-
-	assert(texformat < HWT_MAX_TEX_FORMATS);
-	assert(bufferformat < HWT_MAX_TEX_FORMATS);
-	if (texformat >= HWT_MAX_TEX_FORMATS || bufferformat >= HWT_MAX_TEX_FORMATS) return;
-
-	texformat = TexFormatMap[texformat];
-	bufferformat = TexFormatMap[bufferformat];
-
-	if (buffer == NULL)
-	{
-		// The texture must at least be initialized if no data is present.
-		mMipmapped = false;
-		buffer = (unsigned char *)calloc(4,w * (h+1));
-		deletebuffer=true;
-		bufferformat = GL_RGBA;
-	}
-	gl.TextureImage2D(mGlTexId, GL_TEXTURE_2D, 0, texformat, w, h, 0, bufferformat, GL_UNSIGNED_BYTE, buffer);
-	if (deletebuffer) free(buffer);
-
-	if (mMipmapped)
-	{
-		gl.GenerateTextureMipmap(mGlTexId, GL_TEXTURE_2D);
-	}
+	gl.SamplerParameteri(glSamplerID, MapWrapCoord[coord], MapWrapMode[wrapmode]);
 }
 
+void FGL3Sampler::SetAnisotropy(float factor)
+{
+	gl.SamplerParameterf(glSamplerID, GL_TEXTURE_MAX_ANISOTROPY_EXT, factor);
+}
