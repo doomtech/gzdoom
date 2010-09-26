@@ -51,6 +51,7 @@
 #include "gl/renderer/gl_renderer.h"
 #include "gl/textures/gl_texture.h"
 #include "gl/textures/gl_material.h"
+#include "gl/base/textures/hw_texture.h"
 
 //==========================================================================
 //
@@ -240,6 +241,7 @@ FTexture::MiscGLInfo::MiscGLInfo() throw()
 
 	Material = NULL;
 	SystemTexture = NULL;
+	SystemTexture3 = NULL;
 	Brightmap = NULL;
 	DecalTexture = NULL;
 }
@@ -251,6 +253,9 @@ FTexture::MiscGLInfo::~MiscGLInfo()
 
 	if (SystemTexture != NULL) delete SystemTexture;
 	SystemTexture = NULL;
+
+	if (SystemTexture3 != NULL) delete SystemTexture3;
+	SystemTexture3 = NULL;
 
 	// this is managed by the texture manager so it may not be deleted here.
 	//if (Brightmap != NULL) delete Brightmap;

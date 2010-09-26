@@ -35,6 +35,7 @@ class FArchive;
 class FTextureManager;
 class FTerrainTypeArray;
 class FGLTexture;
+class HWTexture;
 class FMaterial;
 
 class FTextureID
@@ -279,6 +280,7 @@ public:
 	{
 		FMaterial *Material;
 		FGLTexture *SystemTexture;
+		HWTexture *SystemTexture3;
 		FTexture *Brightmap;
 		FTexture *DecalTexture;					// This is needed for decals of UseType TEX_MiscPatch-
 		PalEntry GlowColor;

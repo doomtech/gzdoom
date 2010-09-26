@@ -42,14 +42,13 @@
 #include "gl/system/gl_system.h"
 
 #include "gl/renderer/gl_renderer.h"
-#include "gl/textures/gl3_hwtexture.h"
+#include "gl/gl3/textures/gl3_systexture.h"
 
 //===========================================================================
 // 
-//	Static texture data
+//	Map engine identifiers to OpenGL
 //
 //===========================================================================
-unsigned int FGL3HardwareTexture::lastbound[FGL3HardwareTexture::MAX_TEXTURE_UNITS];
 
 static int TexFormatMap[] = {
 	GL_RGBA8,
@@ -78,9 +77,9 @@ static int TexFormatMap[] = {
 //
 //===========================================================================
 
-FGL3HardwareTexture::FGL3HardwareTexture(bool mip) 
+GL3SystemTexture::GL3SystemTexture(bool mip) 
+: HWSystemTexture(mip)
 {
-	mMipmapped = mip;
 	gl.GenTextures(1,&mGlTexId);
 }
 
@@ -90,81 +89,14 @@ FGL3HardwareTexture::FGL3HardwareTexture(bool mip)
 //
 //===========================================================================
 
-FGL3HardwareTexture::~FGL3HardwareTexture() 
+GL3SystemTexture::~GL3SystemTexture() 
 { 
+	HWRenderer->TextureDeleted(this);
 	if (mGlTexId != 0) 
 	{
-		for(int i = 0; i < MAX_TEXTURE_UNITS; i++)
-		{
-			if (lastbound[i] == mGlTexId)
-			{
-				lastbound[i] = 0;
-			}
-		}
 		gl.DeleteTextures(1,&mGlTexId);
 	}
 }
-
-//===========================================================================
-// 
-//	Binds this texture to a texture unit
-//
-//===========================================================================
-
-bool FGL3HardwareTexture::Bind(int texunit)
-{
-	if (mGlTexId!=0)
-	{
-		if (lastbound[texunit] != mGlTexId)
-		{
-			lastbound[texunit] = mGlTexId;
-			gl.BindMultiTexture(GL_TEXTURE0 + texunit, GL_TEXTURE_2D, mGlTexId);
-		}
-		return true;
-	}
-	return false;
-}
-
-//===========================================================================
-// 
-//	(static) unbinds texture from given unit
-//
-//===========================================================================
-
-void FGL3HardwareTexture::Unbind(int texunit)
-{
-	if (lastbound[texunit] != 0)
-	{
-		gl.BindMultiTexture(GL_TEXTURE0 + texunit, GL_TEXTURE_2D, 0);
-		lastbound[texunit] = 0;
-	}
-}
-
-//===========================================================================
-// 
-//	(static) unbinds textures from all texture units
-//
-//===========================================================================
-
-void FGL3HardwareTexture::UnbindAll()
-{
-	for(int texunit = 0; texunit < MAX_TEXTURE_UNITS; texunit++)
-	{
-		Unbind(texunit);
-	}
-}
-
-//===========================================================================
-// 
-//	Binds this texture's surface to the current framebuffer
-//
-//===========================================================================
-
-void FGL3HardwareTexture::BindToCurrentFrameBuffer()
-{
-	gl.FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mGlTexId, 0);
-}
-
 
 //===========================================================================
 // 
@@ -176,7 +108,7 @@ void FGL3HardwareTexture::BindToCurrentFrameBuffer()
 //
 //===========================================================================
 
-void FGL3HardwareTexture::CreateTexture(unsigned texformat, unsigned char *buffer,unsigned bufferformat, int w, int h)
+void GL3SystemTexture::CreateTexture(unsigned texformat, unsigned char *buffer,unsigned bufferformat, int w, int h)
 {
 	bool deletebuffer = false;
 

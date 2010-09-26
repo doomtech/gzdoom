@@ -14,6 +14,9 @@ struct pspdef_t;
 class FShaderManager;
 class GLPortal;
 
+class HWSystemTexture;
+class HWSampler;
+
 extern int extralight;
 
 enum SectorRenderFlags
@@ -141,6 +144,21 @@ public:
 		double originx, double originy, double scalex, double scaley,
 		angle_t rotation, FDynamicColormap *colormap, int lightlevel);
 
+	// GL3 stuff
+
+	static const unsigned int MAX_TEXTURE_UNITS = 32;
+	HWSystemTexture *mLastBoundTextures[MAX_TEXTURE_UNITS];
+	HWSampler *mLastBoundSamplers[MAX_TEXTURE_UNITS];
+	HWSampler *mDefaultSamplers[2][4];
+
+	HWSystemTexture *CreateSystemTexture(bool mipmapped);
+	HWSampler *CreateSampler();
+	bool SetTexture(unsigned int texunit, HWSystemTexture *tex);
+	bool SetSampler(unsigned int texunit, HWSampler *sampler);
+	bool SetSampler(unsigned int texunit, bool mipmap, int clampmode);
+	void TextureDeleted(HWSystemTexture *tex);
+	void SamplerDeleted(HWSampler *sampler);
+
 };
 
 // Global functions. Make them members of GLRenderer later?
@@ -174,5 +192,6 @@ struct TexFilter_s
 
 
 extern FGLRenderer *GLRenderer;
+extern FGLRenderer *HWRenderer;
 
 #endif

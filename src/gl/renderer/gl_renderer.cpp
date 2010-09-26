@@ -66,6 +66,9 @@
 #include "gl/utility/gl_clock.h"
 #include "gl/utility/gl_templates.h"
 
+#include "gl/gl3/textures/gl3_systexture.h"
+#include "gl/gl3/textures/gl3_sampler.h"
+
 //===========================================================================
 // 
 // Renderer interface
@@ -91,6 +94,11 @@ void FGLRenderer::Initialize()
 	mFBID = 0;
 	SetupLevel();
 	mShaderManager = new FShaderManager;
+
+
+	memset(mLastBoundTextures, 0, sizeof(*mLastBoundTextures) * MAX_TEXTURE_UNITS);
+	memset(mLastBoundSamplers, 0, sizeof(*mLastBoundSamplers) * MAX_TEXTURE_UNITS);
+
 }
 
 FGLRenderer::~FGLRenderer() 
@@ -631,3 +639,65 @@ void FGLRenderer::FillSimplePoly(FTexture *texture, FVector2 *points, int npoint
 	gl.End();
 }
 
+
+
+HWSystemTexture *FGLRenderer::CreateSystemTexture(bool mipmapped)
+{
+	return new GL3SystemTexture(mipmapped);
+}
+
+HWSampler *FGLRenderer::CreateSampler()
+{
+	return new GL3Sampler();
+}
+
+bool FGLRenderer::SetTexture(unsigned int texunit, HWSystemTexture *tex)
+{
+	if (texunit < MAX_TEXTURE_UNITS && tex != mLastBoundTextures[texunit])
+	{
+		mLastBoundTextures[texunit] = tex;
+		gl.BindMultiTexture(GL_TEXTURE0 + texunit, GL_TEXTURE_2D, 
+			tex==NULL? 0 : static_cast<GL3SystemTexture*>(tex)->GetId());
+		return true;
+	}
+	return false;
+}
+
+bool FGLRenderer::SetSampler(unsigned int texunit, HWSampler *sampler)
+{
+	if (texunit < MAX_TEXTURE_UNITS && sampler != mLastBoundSamplers[texunit])
+	{
+		mLastBoundSamplers[texunit] = sampler;
+		gl.BindSampler(GL_TEXTURE0 + texunit, 
+			sampler==NULL? 0 : static_cast<GL3Sampler*>(sampler)->GetId());
+		return true;
+	}
+	return false;
+}
+
+bool FGLRenderer::SetSampler(unsigned int texunit, bool mipmap, int clampmode)
+{
+	return SetSampler(texunit, mDefaultSamplers[mipmap][clampmode&3]);
+}
+
+void FGLRenderer::TextureDeleted(HWSystemTexture *tex)
+{
+	for(unsigned i=0;i<MAX_TEXTURE_UNITS;i++)
+	{
+		if (mLastBoundTextures[i] == tex)
+		{
+			SetTexture(i, NULL);
+		}
+	}
+}
+
+void FGLRenderer::SamplerDeleted(HWSampler *sampler)
+{
+	for(unsigned i=0;i<MAX_TEXTURE_UNITS;i++)
+	{
+		if (mLastBoundSamplers[i] == sampler)
+		{
+			SetSampler(i, NULL);
+		}
+	}
+}

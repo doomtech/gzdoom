@@ -40,15 +40,15 @@
 */
 
 #include "gl/system/gl_system.h"
-#include "gl/textures/gl3_sampler.h"
+#include "gl/renderer/gl_renderer.h"
+#include "gl/gl3/textures/gl3_sampler.h"
 
 
 //===========================================================================
 // 
-//	Static texture data
+//	map values to GL
 //
 //===========================================================================
-unsigned int FGL3Sampler::lastbound[FGL3Sampler::MAX_TEXTURE_UNITS];
 
 static int MapWrapMode[] =
 {
@@ -85,7 +85,7 @@ static TexFilter_t TexFilter[]=
 //	Creates a texture
 //
 //===========================================================================
-FGL3Sampler::FGL3Sampler() 
+GL3Sampler::GL3Sampler() 
 {
 	gl.GenSamplers(1, &glSamplerID);
 }
@@ -96,58 +96,12 @@ FGL3Sampler::FGL3Sampler()
 //	Destroys the texture
 //
 //===========================================================================
-FGL3Sampler::~FGL3Sampler() 
+GL3Sampler::~GL3Sampler() 
 { 
+	HWRenderer->SamplerDeleted(this);
 	if (glSamplerID != 0) 
 	{
-		for(int i = 0; i < MAX_TEXTURE_UNITS; i++)
-		{
-			if (lastbound[i] == glSamplerID)
-			{
-				lastbound[i] = 0;
-			}
-		}
 		gl.DeleteSamplers(1, &glSamplerID);
-	}
-}
-
-
-//===========================================================================
-// 
-//	Binds this sampler
-//
-//===========================================================================
-
-bool FGL3Sampler::Bind(int texunit)
-{
-	if (lastbound[texunit] != glSamplerID)
-	{
-		gl.BindSampler(GL_TEXTURE0 + texunit, glSamplerID);
-		lastbound[texunit] = glSamplerID;
-		return true;
-	}
-	return false;
-}
-
-//===========================================================================
-// 
-//	Binds this sampler
-//
-//===========================================================================
-
-void FGL3Sampler::Unbind(int texunit)
-{
-	if (lastbound[texunit] != 0)
-	{
-		gl.BindSampler(GL_TEXTURE0 + texunit, 0);
-	}
-}
-
-void FGL3Sampler::UnbindAll()
-{
-	for(int texunit = 0; texunit < MAX_TEXTURE_UNITS; texunit++)
-	{
-		Unbind(texunit);
 	}
 }
 
@@ -157,7 +111,7 @@ void FGL3Sampler::UnbindAll()
 //
 //===========================================================================
 
-void FGL3Sampler::SetTextureFilter(int mode)
+void GL3Sampler::SetTextureFilter(int mode)
 {
 	assert(mode < TEXFILTER_MAX);
 
@@ -165,12 +119,16 @@ void FGL3Sampler::SetTextureFilter(int mode)
 	gl.SamplerParameteri(glSamplerID, GL_TEXTURE_MAG_FILTER, TexFilter[mode].magfilter);
 }
 
-void FGL3Sampler::SetWrapMode(int coord, int wrapmode)
+void GL3Sampler::SetWrapMode(int coord, int wrapmode)
 {
 	gl.SamplerParameteri(glSamplerID, MapWrapCoord[coord], MapWrapMode[wrapmode]);
 }
 
-void FGL3Sampler::SetAnisotropy(float factor)
+void GL3Sampler::SetAnisotropy(float factor)
 {
 	gl.SamplerParameterf(glSamplerID, GL_TEXTURE_MAX_ANISOTROPY_EXT, factor);
+}
+
+void GL3Sampler::Apply()
+{
 }

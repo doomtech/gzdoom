@@ -6693,14 +6693,6 @@
 				Name="Textures"
 				>
 				<File
-					RelativePath=".\src\gl\textures\gl3_hwtexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\textures\gl3_hwtexture.h"
-					>
-				</File>
-				<File
 					RelativePath=".\src\gl\textures\gl_bitmap.cpp"
 					>
 				</File>
@@ -7052,6 +7044,54 @@
 					RelativePath=".\src\gl\hqnx\Image.h"
 					>
 				</File>
+			</Filter>
+			<Filter
+				Name="_Base"
+				>
+				<Filter
+					Name="Textures"
+					>
+					<File
+						RelativePath=".\src\gl\base\textures\hw_sampler.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\base\textures\hw_systexture.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\base\textures\hw_texture.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\base\textures\hw_texture.h"
+						>
+					</File>
+				</Filter>
+			</Filter>
+			<Filter
+				Name="_GL3"
+				>
+				<Filter
+					Name="Textures"
+					>
+					<File
+						RelativePath=".\src\gl\gl3\textures\gl3_sampler.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\gl3\textures\gl3_sampler.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\gl3\textures\gl3_systexture.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\src\gl\gl3\textures\gl3_systexture.h"
+						>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 		<Filter
