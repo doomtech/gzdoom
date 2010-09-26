@@ -198,6 +198,7 @@ void GLWall::PutWall(bool translucent)
 	// portals don't go into the draw list.
 	// Instead they are added to the portal manager
 	case RENDERWALL_HORIZON:
+		//@sync-portal
 		horizon=UniqueHorizons.Get(horizon);
 		portal=GLPortal::FindPortal(horizon);
 		if (!portal) portal=new GLHorizonPortal(horizon);
@@ -205,12 +206,14 @@ void GLWall::PutWall(bool translucent)
 		break;
 
 	case RENDERWALL_SKYBOX:
+		//@sync-portal
 		portal=GLPortal::FindPortal(skybox);
 		if (!portal) portal=new GLSkyboxPortal(skybox);
 		portal->AddLine(this);
 		break;
 
 	case RENDERWALL_SECTORSTACK:
+		//@sync-portal
 		stack=UniqueStacks.Get(stack);	// map all stacks with the same displacement together
 		portal=GLPortal::FindPortal(stack);
 		if (!portal) portal=new GLSectorStackPortal(stack);
@@ -220,6 +223,7 @@ void GLWall::PutWall(bool translucent)
 	case RENDERWALL_PLANEMIRROR:
 		if (GLPortal::PlaneMirrorMode * planemirror->c <=0)
 		{
+			//@sync-portal
 			planemirror=UniquePlaneMirrors.Get(planemirror);
 			portal=GLPortal::FindPortal(planemirror);
 			if (!portal) portal=new GLPlaneMirrorPortal(planemirror);
@@ -228,6 +232,7 @@ void GLWall::PutWall(bool translucent)
 		break;
 
 	case RENDERWALL_MIRROR:
+		//@sync-portal
 		portal=GLPortal::FindPortal(seg->linedef);
 		if (!portal) portal=new GLMirrorPortal(seg->linedef);
 		portal->AddLine(this);
@@ -240,6 +245,7 @@ void GLWall::PutWall(bool translucent)
 		break;
 
 	case RENDERWALL_SKY:
+		//@sync-portal
 		sky=UniqueSkies.Get(sky);
 		portal=GLPortal::FindPortal(sky);
 		if (!portal) portal=new GLSkyPortal(sky);
@@ -1708,20 +1714,20 @@ void GLWall::ProcessLowerMiniseg(seg_t *seg, sector_t * frontsector, sector_t * 
 	fixed_t bfh = backsector->GetPlaneTexZ(sector_t::floor); 
 	if (bfh>ffh)
 	{
-		this->seg=seg;
-		this->sub=NULL;
+		this->seg = seg;
+		this->sub = NULL;
 
 		vertex_t * v1=seg->v1;
 		vertex_t * v2=seg->v2;
 		vertexes[0]=v1;
 		vertexes[1]=v2;
 
-		glseg.x1= FIXED2FLOAT(v1->x);
-		glseg.y1= FIXED2FLOAT(v1->y);
-		glseg.x2= FIXED2FLOAT(v2->x);
-		glseg.y2= FIXED2FLOAT(v2->y);
-		glseg.fracleft=0;
-		glseg.fracright=1;
+		glseg.x1 = FIXED2FLOAT(v1->x);
+		glseg.y1 = FIXED2FLOAT(v1->y);
+		glseg.x2 = FIXED2FLOAT(v2->x);
+		glseg.y2 = FIXED2FLOAT(v2->y);
+		glseg.fracleft = 0;
+		glseg.fracright = 1;
 
 		flags = (!gl_isBlack(Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE)? GLWF_FOGGY : 0;
 
@@ -1729,16 +1735,16 @@ void GLWall::ProcessLowerMiniseg(seg_t *seg, sector_t * frontsector, sector_t * 
 		lightlevel = frontsector->lightlevel;
 		rellight = 0;
 
-		alpha=1.0f;
-		RenderStyle=STYLE_Normal;
-		Colormap=frontsector->ColorMap;
+		alpha = 1.0f;
+		RenderStyle = STYLE_Normal;
+		Colormap = frontsector->ColorMap;
 
-		topflat=frontsector->GetTexture(sector_t::ceiling);	// for glowing textures
-		bottomflat=frontsector->GetTexture(sector_t::floor);
+		topflat = frontsector->GetTexture(sector_t::ceiling);	// for glowing textures
+		bottomflat = frontsector->GetTexture(sector_t::floor);
 
 		zfloor[0] = zfloor[1] = FIXED2FLOAT(ffh);
 
-		gltexture=FMaterial::ValidateTexture(frontsector->GetTexture(sector_t::floor), true);
+		gltexture = FMaterial::ValidateTexture(frontsector->GetTexture(sector_t::floor), true);
 
 		if (gltexture) 
 		{

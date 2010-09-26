@@ -295,8 +295,6 @@ void FGLRenderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 
 	FMaterial * gltex = FMaterial::ValidateTexture(img);
 
-	const PatchTextureInfo * pti;
-
 	if (parms.colorOverlay && (parms.colorOverlay & 0xffffff) == 0)
 	{
 		// Right now there's only black. Should be implemented properly later
@@ -314,20 +312,18 @@ void FGLRenderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 				GLTranslationPalette * pal = static_cast<GLTranslationPalette*>(parms.remap->GetNative());
 				if (pal) translation = -pal->GetIndex();
 			}
-			pti = gltex->BindPatch(CM_DEFAULT, translation);
+			gltex->BindPatch(CM_DEFAULT, translation);
 		}
 		else 
 		{
 			// This is an alpha texture
-			pti = gltex->BindPatch(CM_SHADE, 0);
+			gltex->BindPatch(CM_SHADE, 0);
 		}
 
-		if (!pti) return;
-
-		u1 = pti->GetUL();
-		v1 = pti->GetVT();
-		u2 = pti->GetUR();
-		v2 = pti->GetVB();
+		u1 = gltex->GetUL();
+		v1 = gltex->GetVT();
+		u2 = gltex->GetUR();
+		v2 = gltex->GetVB();
 	}
 	else
 	{

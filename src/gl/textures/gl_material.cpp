@@ -664,9 +664,11 @@ FMaterial::FMaterial(FTexture * tx, bool forceexpand)
 	Height[GLUSE_SPRITE] = Height[GLUSE_PATCH];
 	LeftOffset[GLUSE_SPRITE] = LeftOffset[GLUSE_PATCH];
 	TopOffset[GLUSE_SPRITE] = TopOffset[GLUSE_PATCH];
-	pti.SpriteU[0] = pti.SpriteV[0] = 0;
-	pti.SpriteU[1] = Width[GLUSE_PATCH] / (float)FHardwareTexture::GetTexDimension(Width[GLUSE_PATCH]);
-	pti.SpriteV[1] = Height[GLUSE_PATCH] / (float)FHardwareTexture::GetTexDimension(Height[GLUSE_PATCH]);
+	SpriteU[0] = SpriteV[0] = 0;
+	spriteright = SpriteU[1] = Width[GLUSE_PATCH] / (float)FHardwareTexture::GetTexDimension(Width[GLUSE_PATCH]);
+	spritebottom = SpriteV[1] = Height[GLUSE_PATCH] / (float)FHardwareTexture::GetTexDimension(Height[GLUSE_PATCH]);
+	
+	
 
 	mTextureLayers.ShrinkToFit();
 	mMaxBound = -1;
@@ -716,10 +718,10 @@ FMaterial::FMaterial(FTexture * tx, bool forceexpand)
 				LeftOffset[GLUSE_SPRITE] -= trim[0];
 				TopOffset[GLUSE_SPRITE] -= trim[1];
 
-				pti.SpriteU[0] = pti.SpriteU[1] * (trim[0] / (float)Width[GLUSE_PATCH]);
-				pti.SpriteV[0] = pti.SpriteV[1] * (trim[1] / (float)Height[GLUSE_PATCH]);
-				pti.SpriteU[1] *= (trim[0]+trim[2]+2) / (float)Width[GLUSE_PATCH]; 
-				pti.SpriteV[1] *= (trim[1]+trim[3]+2) / (float)Height[GLUSE_PATCH]; 
+				SpriteU[0] = SpriteU[1] * (trim[0] / (float)Width[GLUSE_PATCH]);
+				SpriteV[0] = SpriteV[1] * (trim[1] / (float)Height[GLUSE_PATCH]);
+				SpriteU[1] *= (trim[0]+trim[2]+2) / (float)Width[GLUSE_PATCH]; 
+				SpriteV[1] *= (trim[1]+trim[3]+2) / (float)Height[GLUSE_PATCH]; 
 			}
 		}
 	}
@@ -885,7 +887,7 @@ void FMaterial::Bind(int cm, int clampmode, int translation)
 //
 //===========================================================================
 
-const PatchTextureInfo * FMaterial::BindPatch(int cm, int translation)
+void FMaterial::BindPatch(int cm, int translation)
 {
 	int usebright = false;
 	int shaderindex = mShaderIndex;
@@ -893,9 +895,9 @@ const PatchTextureInfo * FMaterial::BindPatch(int cm, int translation)
 
 	int softwarewarp = gl_RenderState.SetupShader(tex->bHasCanvas, shaderindex, cm, tex->gl_info.shaderspeed);
 
-	pti.glpatch = mBaseLayer->BindPatch(0, cm, translation, softwarewarp);
+	const FHardwareTexture *glpatch = mBaseLayer->BindPatch(0, cm, translation, softwarewarp);
 	// The only multitexture effect usable on sprites is the brightmap.
-	if (pti.glpatch != NULL && shaderindex == 3)
+	if (glpatch != NULL && shaderindex == 3)
 	{
 		mTextureLayers[0].texture->gl_info.SystemTexture->BindPatch(1, CM_DEFAULT, 0, 0);
 		maxbound = 1;
@@ -906,7 +908,6 @@ const PatchTextureInfo * FMaterial::BindPatch(int cm, int translation)
 		FHardwareTexture::Unbind(i);
 		mMaxBound = maxbound;
 	}
-	return &pti;
 }
 
 
@@ -934,22 +935,6 @@ void FMaterial::Precache()
 			if (cached == 0) Bind(CM_DEFAULT, -1, 0);
 		}
 	}
-}
-
-//===========================================================================
-// 
-//
-//
-//===========================================================================
-
-const PatchTextureInfo *FMaterial::GetPatchTextureInfo()
-{
-	if (mBaseLayer->CreatePatch())
-	{
-		pti.glpatch = mBaseLayer->glpatch;
-		return &pti;
-	}
-	return NULL;
 }
 
 //===========================================================================
@@ -1063,6 +1048,7 @@ FMaterial * FMaterial::ValidateTexture(FTexture * tex)
 		FMaterial *gltex = tex->gl_info.Material;
 		if (gltex == NULL) 
 		{
+			//@sync-tex
 			gltex = new FMaterial(tex, false);
 		}
 		return gltex;

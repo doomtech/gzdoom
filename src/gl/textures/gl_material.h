@@ -32,40 +32,6 @@ struct FTexCoordInfo
 	fixed_t TextureAdjustWidth() const;
 };
 
-// Two intermediate classes which wrap the low level textures.
-// These ones are returned by the Bind* functions to ensure
-// that the coordinate functions aren't used without the texture
-// being initialized.
-// Unfortunately it is necessary to maintain 2 of these.
-// On older graphics cards which don't support non-power of 2 textures
-// these are not interchangable so if a texture happens to be used
-// both as sprite and texture there need to be different versions.
-
-class PatchTextureInfo
-{
-	friend class FMaterial;
-protected:
-	const FHardwareTexture * glpatch;
-	float SpriteU[2], SpriteV[2];
-	float scalexfac, scaleyfac;
-
-public:
-	float GetUL() const { return glpatch->GetUL(); }
-	float GetVT() const { return glpatch->GetVT(); }
-	float GetUR() const { return glpatch->GetUR(); }
-	float GetVB() const { return glpatch->GetVB(); }
-	float GetU(float upix) const { return glpatch->GetU(upix); }
-	float GetV(float vpix) const { return glpatch->GetV(vpix); }
-	float GetWidth () const { return glpatch->GetWidth (); }
-	float GetHeight() const { return glpatch->GetHeight(); }
-
-	float GetSpriteUL() const { return SpriteU[0]; }
-	float GetSpriteVT() const { return SpriteV[0]; }
-	float GetSpriteUR() const { return SpriteU[1]; }
-	float GetSpriteVB() const { return SpriteV[1]; }
-};
-
-
 //===========================================================================
 // 
 // this is the texture maintenance class for OpenGL. 
@@ -143,13 +109,15 @@ class FMaterial
 	TArray<FTextureLayer> mTextureLayers;
 	int mShaderIndex;
 
-	PatchTextureInfo pti;
 	short LeftOffset[3];
 	short TopOffset[3];
 	short Width[3];
 	short Height[3];
 	short RenderWidth[2];
 	short RenderHeight[2];
+
+	float SpriteU[2], SpriteV[2];
+	float spriteright, spritebottom;
 
 	void SetupShader(int shaderindex, int &cm);
 	FGLTexture * ValidateSysTexture(FTexture * tex, bool expand);
@@ -167,9 +135,7 @@ public:
 	}
 
 	void Bind(int cm, int clamp=0, int translation=0);
-	const PatchTextureInfo * BindPatch(int cm, int translation=0);
-
-	const PatchTextureInfo * GetPatchTextureInfo();// { return mBaseLayer->GetPatchTextureInfo(); }
+	void BindPatch(int cm, int translation=0);
 
 	unsigned char * CreateTexBuffer(int cm, int translation, int & w, int & h, bool expand = false, bool allowhires=true) const
 	{
@@ -243,6 +209,21 @@ public:
 	{
 		return Height[i] / FIXED2FLOAT(tex->yScale);
 	}
+
+	// Get right/bottom UV coordinates for patch drawing
+	float GetUL() const { return 0; }
+	float GetVT() const { return 0; }
+	float GetUR() const { return spriteright; }
+	float GetVB() const { return spritebottom; }
+	float GetU(float upix) const { return upix/(float)Width[GLUSE_PATCH] * spriteright; }
+	float GetV(float vpix) const { return vpix/(float)Height[GLUSE_PATCH] * spritebottom; }
+
+	float GetSpriteUL() const { return SpriteU[0]; }
+	float GetSpriteVT() const { return SpriteV[0]; }
+	float GetSpriteUR() const { return SpriteU[1]; }
+	float GetSpriteVB() const { return SpriteV[1]; }
+
+
 
 	bool GetTransparent() const
 	{
