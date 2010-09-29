@@ -62,6 +62,7 @@
 				ExceptionHandling="1"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
+				FloatingPointModel="2"
 				ForceConformanceInForLoopScope="true"
 				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
@@ -6586,6 +6587,14 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\system\gl_system.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\system\gl_threads.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\system\gl_threads.h"
 					>
 				</File>
 				<File
