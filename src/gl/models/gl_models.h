@@ -238,10 +238,18 @@ public:
 
 class FVoxelVertexBuffer;
 
+struct FVoxelVertex
+{
+	float x,y,z;
+	BYTE r,g,b,d;
+};
+
 class FVoxelModel : public FModel
 {
 protected:
 	int mLumpnum;
+	TArray<FVoxelVertex> mVertices;
+	TArray<int> mIndices;
 	FVoxelVertexBuffer *mVBO;
 	
 	FVoxelModel();
@@ -255,22 +263,6 @@ public:
 	virtual void RenderFrame(FTexture * skin, int frame, int cm, Matrix3x4 *m2v, int translation=0);
 	virtual void RenderFrameInterpolated(FTexture * skin, int frame, int frame2, double inter, int cm, Matrix3x4 *m2v, int translation=0);
 };
-
-class FVoxModel : public FVoxelModel
-{
-public:
-	FVoxModel();
-	const char *CreateBuffer() { return NULL; }
-	virtual bool Load(const char * fn, int lumpnum, const char * buffer, int length);
-};
-
-class FKVXModel : public FVoxelModel
-{
-	FKVXModel();
-	const char *CreateBuffer() { return NULL; }
-	virtual bool Load(const char * fn, int lumpnum, const char * buffer, int length);
-};
-
 
 
 
