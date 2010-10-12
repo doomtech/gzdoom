@@ -106,7 +106,6 @@ static fixed_t MaxVisForFloor;
 static FRandom pr_torchflicker ("TorchFlicker");
 static FRandom pr_hom;
 static TArray<InterpolationViewer> PastViewers;
-static int centerxwide;
 static bool polyclipped;
 static bool r_showviewer;
 bool r_dontmaplines;
@@ -138,6 +137,7 @@ float			LastFOV;
 int				WidescreenRatio;
 
 fixed_t			GlobVis;
+fixed_t			viewingrangerecip;
 fixed_t			FocalTangent;
 fixed_t			FocalLengthX;
 fixed_t			FocalLengthY;
@@ -154,6 +154,8 @@ float			WallTMapScale2;
 extern "C" {
 int 			centerx;
 int				centery;
+int				centerxwide;
+
 }
 
 DCanvas			*RenderTarget;		// [RH] canvas to render to
@@ -460,6 +462,9 @@ void R_InitTextureMapping ()
 	FocalLengthX = FixedDiv (centerxfrac, hitan);
 	FocalLengthY = Scale (centerxfrac, yaspectmul, hitan);
 	FocalLengthXfloat = (float)FocalLengthX / 65536.f;
+
+	// This is 1/FocalTangent before the widescreen extension of FOV.
+	viewingrangerecip = DivScale32(1, finetangent[FINEANGLES/4+(FieldOfView/2)]);
 
 	// Now generate xtoviewangle for sky texture mapping.
 	// [RH] Do not generate viewangletox, because texture mapping is no
