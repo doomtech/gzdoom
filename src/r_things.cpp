@@ -441,7 +441,7 @@ void R_InitSpriteDefs ()
 				}
 				else
 				{
-					Voxels.Push(vox);
+					vox->VoxelIndex = Voxels.Push(vox);
 					if (vh->Frame == ' ' || vh->Frame == '\0')
 					{ // voxel applies to every sprite frame
 						for (j = 0; j < MAX_SPRITE_FRAMES; ++j)

@@ -64,6 +64,8 @@ CVAR(Bool, gl_interpolate_model_frames, true, CVAR_ARCHIVE)
 CVAR(Bool, gl_light_models, true, CVAR_ARCHIVE)
 EXTERN_CVAR(Int, gl_fogmode)
 
+extern TDeletingArray<FVoxel *> Voxels;
+
 
 class DeletingModelArray : public TArray<FModel *>
 {
@@ -176,7 +178,7 @@ static int ModelFrameHash(FSpriteModelFrame * smf)
 
 static FModel * FindModel(const char * path, const char * modelfile)
 {
-	FModel * model;
+	FModel * model = NULL;
 	FString fullname;
 
 	fullname.Format("%s%s", path, modelfile);
@@ -190,7 +192,7 @@ static FModel * FindModel(const char * path, const char * modelfile)
 
 	for(int i = 0; i< (int)Models.Size(); i++)
 	{
-		if (!stricmp(fullname, Models[i]->filename)) return Models[i];
+		if (!Models[i]->mFileName.CompareNoCase(fullname)) return Models[i];
 	}
 
 	int len = Wads.LumpLength(lump);
@@ -209,20 +211,31 @@ static FModel * FindModel(const char * path, const char * modelfile)
 	{
 		model = new FMD3Model;
 	}
+
+	if (model != NULL)
+	{
+		if (!model->Load(path, lump, buffer, len))
+		{
+			delete model;
+			return NULL;
+		}
+	}
 	else
 	{
-		Printf("LoadModel: Unknown model format in '%s'\n", fullname.GetChars());
-		delete buffer;
-		return NULL;
+		// try loading as a voxel
+		FVoxel *voxel = R_LoadKVX(lump);
+		if (voxel != NULL)
+		{
+			model = new FVoxelModel(voxel, true);
+		}
+		else
+		{
+			Printf("LoadModel: Unknown model format in '%s'\n", fullname.GetChars());
+			return NULL;
+		}
 	}
 
-	if (!model->Load(path, lump, buffer, len))
-	{
-		delete model;
-		delete buffer;
-		return NULL;
-	}
-	model->filename = copystring(fullname);
+	model->mFileName = fullname;
 	Models.Push(model);
 	return model;
 }
@@ -243,6 +256,13 @@ void gl_InitModels()
 	FSpriteModelFrame smf;
 
 	lastLump = 0;
+
+	// First, create models for each voxel attached to sprite frames
+	for (unsigned i = 0; i < Voxels.Size(); i++)
+	{
+		FVoxelModel *md = new FVoxelModel(Voxels[i], false);
+		Models.Push(md);
+	}
 
 	memset(&smf, 0, sizeof(smf));
 	while ((Lump = Wads.FindLump("MODELDEF", &lastLump)) != -1)

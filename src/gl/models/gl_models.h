@@ -21,8 +21,8 @@ FTexture * LoadSkin(const char * path, const char * fn);
 class FModel
 {
 public:
-	FModel() { filename = NULL; }
-	virtual ~FModel() { if (filename!=NULL) delete [] filename; }
+	FModel() { }
+	virtual ~FModel() { }
 
 	virtual bool Load(const char * fn, int lumpnum, const char * buffer, int length) = 0;
 	virtual int FindFrame(const char * name) = 0;
@@ -34,7 +34,7 @@ public:
 
 
 
-	char * filename;
+	FString mFileName;
 };
 
 class FDMDModel : public FModel
@@ -247,18 +247,20 @@ struct FVoxelVertex
 class FVoxelModel : public FModel
 {
 protected:
-	int mLumpnum;
+	FVoxel *mVoxel;
+	bool mOwningVoxel;	// if created through MODELDEF deleting this object must also delete the voxel object
 	TArray<FVoxelVertex> mVertices;
 	TArray<int> mIndices;
 	FVoxelVertexBuffer *mVBO;
 	
-	FVoxelModel();
-	~FVoxelModel();
 
 public:
+	FVoxelModel(FVoxel *voxel, bool owned);
+	~FVoxelModel();
+	bool Load(const char * fn, int lumpnum, const char * buffer, int length);
+	void Initialize();
 	void MakeGLData();
 	void CleanGLData();
-	virtual const char *CreateBuffer() = 0;
 	virtual int FindFrame(const char * name);
 	virtual void RenderFrame(FTexture * skin, int frame, int cm, Matrix3x4 *m2v, int translation=0);
 	virtual void RenderFrameInterpolated(FTexture * skin, int frame, int frame2, double inter, int cm, Matrix3x4 *m2v, int translation=0);
