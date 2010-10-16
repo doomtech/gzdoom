@@ -449,7 +449,7 @@ void R_InitSpriteDefs ()
 							if (sprtemp[j].Voxel == NULL)
 							{
 								sprtemp[j].Voxel = vox;
-								sprtemp[j].VoxelSpin = vh->Spin;
+								vox->Spin = sprtemp[j].VoxelSpin = vh->Spin;
 							}
 						}
 						maxframe = MAX_SPRITE_FRAMES-1;
@@ -458,7 +458,7 @@ void R_InitSpriteDefs ()
 					{ // voxel applies to a specific frame
 						j = vh->Frame - 'A';
 						sprtemp[j].Voxel = vox;
-						sprtemp[j].VoxelSpin = vh->Spin;
+						vox->Spin = sprtemp[j].VoxelSpin = vh->Spin;
 						maxframe = MAX<int>(maxframe, j);
 					}
 				}

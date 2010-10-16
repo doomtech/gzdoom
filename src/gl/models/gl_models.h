@@ -252,6 +252,7 @@ protected:
 	TArray<FVoxelVertex> mVertices;
 	TArray<int> mIndices;
 	FVoxelVertexBuffer *mVBO;
+	FTexture *mPalette;
 	
 
 public:
@@ -264,6 +265,7 @@ public:
 	virtual int FindFrame(const char * name);
 	virtual void RenderFrame(FTexture * skin, int frame, int cm, Matrix3x4 *m2v, int translation=0);
 	virtual void RenderFrameInterpolated(FTexture * skin, int frame, int frame2, double inter, int cm, Matrix3x4 *m2v, int translation=0);
+	FTexture *GetPaletteTexture() const { return mPalette; }
 };
 
 

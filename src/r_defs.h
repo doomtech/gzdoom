@@ -1244,6 +1244,7 @@ struct FVoxel
 {
 	int NumMips;
 	int VoxelIndex;
+	int Spin;		// degrees/halfsec to spin voxel
 	BYTE *Palette;
 	FVoxelMipLevel Mips[MAXVOXMIPS];
 

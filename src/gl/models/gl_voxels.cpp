@@ -46,6 +46,7 @@
 #include "g_game.h"
 #include "doomstat.h"
 #include "g_level.h"
+#include "textures/bitmap.h"
 //#include "gl/gl_intern.h"
 
 #include "gl/renderer/gl_renderer.h"
@@ -55,6 +56,104 @@
 #include "gl/utility/gl_geometric.h"
 #include "gl/utility/gl_convert.h"
 
+
+//===========================================================================
+//
+// Creates a 16x16 texture from the palette so that we can
+// use the existing palette manipulation code to render the voxel
+// Otherwise all shaders had to be duplicated and the non-shader code
+// would be a lot less efficient.
+//
+//===========================================================================
+
+class FVoxelTexture : public FTexture
+{
+public:
+
+	FVoxelTexture(FVoxel *voxel);
+	~FVoxelTexture();
+	const BYTE *GetColumn (unsigned int column, const Span **spans_out);
+	const BYTE *GetPixels ();
+	void Unload ();
+
+	int CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf);
+	bool UseBasePalette() { return false; }
+
+protected:
+	FVoxel *SourceVox;
+
+};
+
+//===========================================================================
+//
+// 
+//
+//===========================================================================
+
+FVoxelTexture::FVoxelTexture(FVoxel *vox)
+{
+	SourceVox = vox;
+	Width = 16;
+	Height = 16;
+	WidthBits = 4;
+	HeightBits = 4;
+	WidthMask = 15;
+	gl_info.bNoFilter = true;
+}
+
+//===========================================================================
+//
+// 
+//
+//===========================================================================
+
+FVoxelTexture::~FVoxelTexture()
+{
+}
+
+const BYTE *FVoxelTexture::GetColumn (unsigned int column, const Span **spans_out)
+{
+	// not needed
+	return NULL;
+}
+
+const BYTE *FVoxelTexture::GetPixels ()
+{
+	// not needed
+	return NULL;
+}
+
+void FVoxelTexture::Unload ()
+{
+}
+
+//===========================================================================
+//
+// FVoxelTexture::CopyTrueColorPixels
+//
+// This creates a dummy 16x16 paletted bitmap and converts that using the
+// voxel palette
+//
+//===========================================================================
+
+int FVoxelTexture::CopyTrueColorPixels(FBitmap *bmp, int x, int y, int rotate, FCopyInfo *inf)
+{
+	PalEntry pe[256];
+	BYTE bitmap[256];
+	BYTE *pp = SourceVox->Palette;
+
+	for(int i=0;i<256;i++, pp+=3)
+	{
+		bitmap[i] = (BYTE)i;
+		pe[i].r = (pp[0] << 2) | (pp[0] >> 4);
+		pe[i].g = (pp[1] << 2) | (pp[1] >> 4);
+		pe[i].b = (pp[2] << 2) | (pp[2] >> 4);
+		pe[i].a = 255;
+    }
+    
+	bmp->CopyPixelData(x, y, bitmap, Width, Height, 1, 16, rotate, pe, inf);
+	return 0;
+}	
 
 
 //===========================================================================
@@ -68,6 +167,7 @@ FVoxelModel::FVoxelModel(FVoxel *voxel, bool owned)
 	mVoxel = voxel;
 	mOwningVoxel = owned;
 	mVBO = NULL;
+	mPalette = new FVoxelTexture(voxel);
 	Initialize();
 }
 
@@ -80,6 +180,7 @@ FVoxelModel::FVoxelModel(FVoxel *voxel, bool owned)
 FVoxelModel::~FVoxelModel()
 {
 	CleanGLData();
+	delete mPalette;
 	if (mOwningVoxel) delete mVoxel;
 }
 

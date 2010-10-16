@@ -262,6 +262,18 @@ void gl_InitModels()
 	{
 		FVoxelModel *md = new FVoxelModel(Voxels[i], false);
 		Models.Push(md);
+
+		memset(&smf, 0, sizeof(smf));
+		smf.models[0] = md;
+		smf.skins[0] = md->GetPaletteTexture();
+		smf.xscale = smf.yscale = smf.zscale = 1.f;
+		if (Voxels[i]->Spin != 0)
+		{
+			smf.yrotate = 1.f;
+			smf.rotationSpeed = Voxels[i]->Spin / 3500.f;
+			smf.flags |= MDL_ROTATING;
+		}
+		SpriteModelFrames.Push(smf);
 	}
 
 	memset(&smf, 0, sizeof(smf));
@@ -487,11 +499,10 @@ void gl_InitModels()
 // gl_FindModelFrame
 //
 //===========================================================================
+EXTERN_CVAR (Bool, r_drawvoxels)
 
 FSpriteModelFrame * gl_FindModelFrame(const PClass * ti, int sprite, int frame)
 {
-
-
 	if (GetDefaultByType(ti)->hasmodel)
 	{
 		FSpriteModelFrame smf;
@@ -508,6 +519,20 @@ FSpriteModelFrame * gl_FindModelFrame(const PClass * ti, int sprite, int frame)
 			FSpriteModelFrame * smff = &SpriteModelFrames[hash];
 			if (smff->type==ti && smff->sprite==sprite && smff->frame==frame) return smff;
 			hash=smff->hashnext;
+		}
+	}
+
+	// Check for voxel replacements
+	if (r_drawvoxels)
+	{
+		spritedef_t *sprdef = &sprites[sprite];
+		if (frame < sprdef->numframes)
+		{
+			spriteframe_t *sprframe = &SpriteFrames[sprdef->spriteframes + frame];
+			if (sprframe->Voxel != NULL)
+			{
+				return &SpriteModelFrames[sprframe->Voxel->VoxelIndex];
+			}
 		}
 	}
 	return NULL;
