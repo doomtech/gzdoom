@@ -244,6 +244,29 @@ struct FVoxelVertex
 	BYTE u,v;
 };
 
+struct FVoxelVertexHash
+{
+	// Returns the hash value for a key.
+	hash_t Hash(const FVoxelVertex &key) { return (hash_t)FLOAT2FIXED(key.x+256*key.y+65536*key.z); }
+
+	// Compares two keys, returning zero if they are the same.
+	int Compare(const FVoxelVertex &left, const FVoxelVertex &right) 
+	{ 
+		return left.x != right.x || left.y != right.y || left.z != right.z || left.u != right.u || left.v != right.v;
+	}
+};
+
+struct FIndexInit
+{
+	void Init(unsigned int &value)
+	{
+		value = 0xffffffff;
+	}
+};
+
+typedef TMap<FVoxelVertex, unsigned int, FVoxelVertexHash, FIndexInit> FVoxelMap;
+
+
 class FVoxelModel : public FModel
 {
 protected:
@@ -254,9 +277,9 @@ protected:
 	FVoxelVertexBuffer *mVBO;
 	FTexture *mPalette;
 	
-	void MakeSlabPolys(int x, int y, kvxslab_t *voxptr);
-	void AddFace(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3, int x4, int y4, int z4, BYTE color);
-	void AddVertex(FVoxelVertex &vert);
+	void MakeSlabPolys(int x, int y, kvxslab_t *voxptr, FVoxelMap &check);
+	void AddFace(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3, int x4, int y4, int z4, BYTE color, FVoxelMap &check);
+	void AddVertex(FVoxelVertex &vert, FVoxelMap &check);
 
 public:
 	FVoxelModel(FVoxel *voxel, bool owned);
