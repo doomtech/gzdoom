@@ -208,33 +208,34 @@ void FVoxelModel::AddVertex(FVoxelVertex &vert, FVoxelMap &check)
 
 void FVoxelModel::AddFace(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3, int x4, int y4, int z4, BYTE col, FVoxelMap &check)
 {
-	float PivotX = FIXED2FLOAT(mVoxel->Mips[0].PivotX);
-	float PivotY = FIXED2FLOAT(mVoxel->Mips[0].PivotX);
-	float PivotZ = FIXED2FLOAT(mVoxel->Mips[0].PivotX);
+	float PivotX = mVoxel->Mips[0].PivotX / 256.f;
+	float PivotY = mVoxel->Mips[0].PivotY / 256.f;
+	float PivotZ = mVoxel->Mips[0].PivotZ / 256.f;
 	int h = mVoxel->Mips[0].SizeZ;
 	FVoxelVertex vert;
+
 
 	vert.u = ((col & 15) * 255 / 16) + 7;
 	vert.v = ((col / 16) * 255 / 16) + 7;
 
 	vert.x = -x1 + PivotX;
-	vert.z = y1 - PivotX;
-	vert.y = h - z1 + PivotX;
+	vert.z = y1 - PivotY;
+	vert.y = - z1 + PivotZ;
 	AddVertex(vert, check);
 
 	vert.x = -x2 + PivotX;
-	vert.z = y2 - PivotX;
-	vert.y = h - z2 + PivotX;
+	vert.z = y2 - PivotY;
+	vert.y = - z2 + PivotZ;
 	AddVertex(vert, check);
 
 	vert.x = -x4 + PivotX;
-	vert.z = y4 - PivotX;
-	vert.y = h - z4 + PivotX;
+	vert.z = y4 - PivotY;
+	vert.y = - z4 + PivotZ;
 	AddVertex(vert, check);
 
 	vert.x = -x3 + PivotX;
-	vert.z = y3 - PivotX;
-	vert.y = h - z3 + PivotX;
+	vert.z = y3 - PivotY;
+	vert.y = - z3 + PivotZ;
 	AddVertex(vert, check);
 
 }

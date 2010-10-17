@@ -270,7 +270,7 @@ void gl_InitModels()
 		if (Voxels[i]->Spin != 0)
 		{
 			smf.yrotate = 1.f;
-			smf.rotationSpeed = Voxels[i]->Spin / 3500.f;
+			smf.rotationSpeed = Voxels[i]->Spin / 27.77f;
 			smf.flags |= MDL_ROTATING;
 		}
 		SpriteModelFrames.Push(smf);
