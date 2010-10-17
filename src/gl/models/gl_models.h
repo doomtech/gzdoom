@@ -241,7 +241,7 @@ class FVoxelVertexBuffer;
 struct FVoxelVertex
 {
 	float x,y,z;
-	BYTE r,g,b,d;
+	BYTE u,v;
 };
 
 class FVoxelModel : public FModel
@@ -250,10 +250,13 @@ protected:
 	FVoxel *mVoxel;
 	bool mOwningVoxel;	// if created through MODELDEF deleting this object must also delete the voxel object
 	TArray<FVoxelVertex> mVertices;
-	TArray<int> mIndices;
+	TArray<unsigned int> mIndices;
 	FVoxelVertexBuffer *mVBO;
 	FTexture *mPalette;
 	
+	void MakeSlabPolys(int x, int y, kvxslab_t *voxptr);
+	void AddFace(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3, int x4, int y4, int z4, BYTE color);
+	void AddVertex(FVoxelVertex &vert);
 
 public:
 	FVoxelModel(FVoxel *voxel, bool owned);

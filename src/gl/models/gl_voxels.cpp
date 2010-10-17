@@ -190,8 +190,150 @@ FVoxelModel::~FVoxelModel()
 //
 //===========================================================================
 
+#if 0 // for later
+struct FVoxelVertexHash
+{
+	// Returns the hash value for a key.
+	hash_t Hash(const FVoxelVertex &key) { return (hash_t)FLOAT2FIXED(key.x+256*key.y+65536*key.z); }
+
+	// Compares two keys, returning zero if they are the same.
+	int Compare(const FVoxelVertex &left, const FVoxelVertex &right) 
+	{ 
+		return left.x != right.x || left.y != right.y || left.z != right.z || left.u != right.u || left.v != right.v;
+	}
+};
+
+struct FIndexInit
+{
+	void Init(unsigned int &value)
+	{
+		value = 0xffffffff;
+	}
+};
+
+
+typedef TMap<FVoxelVertex, unsigned int, FVoxelVertexHash, FIndexInit> FVoxelMap;
+
+#endif
+
+//===========================================================================
+//
+// 
+//
+//===========================================================================
+
+void FVoxelModel::AddVertex(FVoxelVertex &vert)
+{
+	// should use the map to optimize the indices later
+	mIndices.Push(mVertices.Push(vert));
+}
+
+//===========================================================================
+//
+// 
+//
+//===========================================================================
+
+void FVoxelModel::AddFace(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3, int x4, int y4, int z4, BYTE col)
+{
+	float PivotX = FIXED2FLOAT(mVoxel->Mips[0].PivotX);
+	float PivotY = FIXED2FLOAT(mVoxel->Mips[0].PivotX);
+	float PivotZ = FIXED2FLOAT(mVoxel->Mips[0].PivotX);
+	int h = mVoxel->Mips[0].SizeZ;
+	FVoxelVertex vert;
+
+	vert.u = ((col & 15) * 255 / 16) + 7;
+	vert.v = ((col / 16) * 255 / 16) + 7;
+
+	vert.x = x1 - PivotX;
+	vert.z = y1 - PivotX;
+	vert.y = h - z1 + PivotX;
+	AddVertex(vert);
+
+	vert.x = x2 - PivotX;
+	vert.z = y2 - PivotX;
+	vert.y = h - z2 + PivotX;
+	AddVertex(vert);
+
+	vert.x = x4 - PivotX;
+	vert.z = y4 - PivotX;
+	vert.y = h - z4 + PivotX;
+	AddVertex(vert);
+
+	vert.x = x3 - PivotX;
+	vert.z = y3 - PivotX;
+	vert.y = h - z3 + PivotX;
+	AddVertex(vert);
+
+}
+
+//===========================================================================
+//
+// 
+//
+//===========================================================================
+
+void FVoxelModel::MakeSlabPolys(int x, int y, kvxslab_t *voxptr)
+{
+	const BYTE *col = voxptr->col;
+	int zleng = voxptr->zleng;
+	int ztop = voxptr->ztop;
+	int cull = voxptr->backfacecull;
+
+	if (cull & 16)
+	{
+		AddFace(x, y, ztop, x+1, y, ztop, x, y+1, ztop, x+1, y+1, ztop, *col);
+	}
+
+	for(int z = ztop; z < ztop+zleng; z++, col++)
+	{
+		if (cull & 1)
+		{
+			AddFace(x, y, z, x, y+1, z, x, y, z+1, x, y+1, z+1, *col);
+		}
+		if (cull & 2)
+		{
+			AddFace(x+1, y+1, z, x+1, y, z, x+1, y+1, z+1, x+1, y, z+1, *col);
+		}
+		if (cull & 4)
+		{
+			AddFace(x, y, z, x+1, y, z, x, y, z+1, x+1, y, z+1, *col);
+		}
+		if (cull & 8)
+		{
+			AddFace(x+1, y+1, z, x, y+1, z, x+1, y+1, z+1, x, y+1, z+1, *col);
+		}
+	}
+	if (cull & 32)
+	{
+		int z = ztop+zleng-1;
+		AddFace(x+1, y, z+1, x, y, z+1, x+1, y+1, z+1, x, y+1, z+1, *col);
+	}
+}
+
+//===========================================================================
+//
+// 
+//
+//===========================================================================
+
 void FVoxelModel::Initialize()
 {
+	FVoxelMipLevel *mip = &mVoxel->Mips[0];
+	for (int x = 0; x < mip->SizeX; x++)
+	{
+		BYTE *slabxoffs = &mip->SlabData[mip->OffsetX[x]];
+		short *xyoffs = &mip->OffsetXY[x * (mip->SizeY + 1)];
+		for (int y = 0; y < mip->SizeY; y++)
+		{
+			kvxslab_t *voxptr = (kvxslab_t *)(slabxoffs + xyoffs[y]);
+			kvxslab_t *voxend = (kvxslab_t *)(slabxoffs + xyoffs[y+1]);
+			for (; voxptr < voxend; voxptr = (kvxslab_t *)((BYTE *)voxptr + voxptr->zleng + 3))
+			{
+				MakeSlabPolys(x, y, voxptr);
+			}
+		}
+	}
 }
 
 //===========================================================================
@@ -250,6 +392,14 @@ int FVoxelModel::FindFrame(const char * name)
 
 void FVoxelModel::RenderFrame(FTexture * skin, int frame, int cm, Matrix3x4 *m2v, int translation)
 {
+	gl.Begin(GL_QUADS);
+	for(unsigned i=0;i < mIndices.Size(); i++)
+	{
+		FVoxelVertex *vert = &mVertices[mIndices[i]];
+		gl.TexCoord2f(vert->u/255.f, vert->v/255.f);
+		gl.Vertex3fv(&vert->x);
+	}
+	gl.End();
 }
 
 //===========================================================================
