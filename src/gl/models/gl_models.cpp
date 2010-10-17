@@ -550,7 +550,6 @@ void gl_RenderFrameModels( const FSpriteModelFrame *smf,
 						   const int curTics,
 						   const PClass *ti,
 						   int cm,
-						   Matrix3x4 *modeltoworld,
 						   Matrix3x4 *normaltransform,
 						   int translation)
 {
@@ -608,9 +607,9 @@ void gl_RenderFrameModels( const FSpriteModelFrame *smf,
 		if (mdl!=NULL)
 		{
 			if ( smfNext && smf->modelframes[i] != smfNext->modelframes[i] )
-				mdl->RenderFrameInterpolated(smf->skins[i], smf->modelframes[i], smfNext->modelframes[i], inter, cm, modeltoworld, translation);
+				mdl->RenderFrameInterpolated(smf->skins[i], smf->modelframes[i], smfNext->modelframes[i], inter, cm, translation);
 			else
-				mdl->RenderFrame(smf->skins[i], smf->modelframes[i], cm, modeltoworld, translation);
+				mdl->RenderFrame(smf->skins[i], smf->modelframes[i], cm, translation);
 		}
 	}
 }
@@ -621,8 +620,6 @@ void gl_RenderModel(GLSprite * spr, int cm)
 
 
 	// Setup transformation.
-	gl.MatrixMode(GL_MODELVIEW);
-	gl.PushMatrix();
 	gl.DepthFunc(GL_LEQUAL);
 	// [BB] In case the model should be rendered translucent, do back face culling.
 	// This solves a few of the problems caused by the lack of depth sorting.
@@ -663,89 +660,77 @@ void gl_RenderModel(GLSprite * spr, int cm)
 		rotateOffset = float((time - xs_FloorToInt(time)) *360.f );
 	}
 
-	if (gl_fogmode != 2 && (GLRenderer->mLightCount == 0 || !gl_light_models))
+	bool modifymat = gl_fogmode != 2 && (GLRenderer->mLightCount == 0 || !gl_light_models);
+	if (modifymat)
 	{
-		// Model space => World space
-		gl.Translatef(spr->x, spr->z, spr->y );
-
-		gl.Rotatef(-angle, 0, 1, 0);
-
-		// [BB] Workaround for the missing pitch information.
-		if (pitch != 0)	gl.Rotatef(pitch, 0, 0, 1);
-
-		// Model rotation.
-		// [BB] Added Doomsday like rotation of the weapon pickup models.
-		// The rotation angle is based on the elapsed time.
-
-		if( smf->flags & MDL_ROTATING )
-		{
-			gl.Translatef(smf->rotationCenterX, smf->rotationCenterY, smf->rotationCenterZ);
-			gl.Rotatef(rotateOffset, smf->xrotate, smf->yrotate, smf->zrotate);
-			gl.Translatef(-smf->rotationCenterX, -smf->rotationCenterY, -smf->rotationCenterZ);
-		} 		
-
-		// Scaling and model space offset.
-		gl.Scalef(scaleFactorX, scaleFactorZ, scaleFactorY);
-
-		// [BB] Apply zoffset here, needs to be scaled by 1 / smf->zscale, so that zoffset doesn't depend on the z-scaling.
-		gl.Translatef(0., smf->zoffset / smf->zscale, 0.);
-
-		gl_RenderFrameModels( smf, spr->actor->state, spr->actor->tics, RUNTIME_TYPE(spr->actor), cm, NULL, NULL, translation );
+		gl.MatrixMode(GL_MODELVIEW);
+		gl.PushMatrix();
 	}
 	else
 	{
-		Matrix3x4 ModelToWorld;
-		Matrix3x4 NormalTransform;
-
-		// For radial fog we need to pass coordinates in world space in order to calculate distances.
-		// That means that the local transformations cannot be part of the modelview matrix
-
-		ModelToWorld.MakeIdentity();
-
-		// Model space => World space
-		ModelToWorld.Translate(spr->x, spr->z, spr->y);
-		ModelToWorld.Rotate(0,1,0, -angle);
-
-		// [BB] Workaround for the missing pitch information.
-		if (pitch != 0) ModelToWorld.Rotate(0,0,1,pitch);
-
-		// Model rotation.
-		// [BB] Added Doomsday like rotation of the weapon pickup models.
-		// The rotation angle is based on the elapsed time.
-
-		if( smf->flags & MDL_ROTATING )
-		{
-			ModelToWorld.Translate(-smf->rotationCenterX, -smf->rotationCenterY, -smf->rotationCenterZ);
-			ModelToWorld.Rotate(smf->xrotate, smf->yrotate, smf->zrotate, rotateOffset);
-			ModelToWorld.Translate(smf->rotationCenterX, smf->rotationCenterY, smf->rotationCenterZ);
-		}
-
-		ModelToWorld.Scale(scaleFactorX, scaleFactorZ, scaleFactorY);
-
-		// [BB] Apply zoffset here, needs to be scaled by 1 / smf->zscale, so that zoffset doesn't depend on the z-scaling.
-		ModelToWorld.Translate(0., smf->zoffset / smf->zscale, 0.);
-
-		if (!gl_light_models)
-		{
-			gl_RenderFrameModels( smf, spr->actor->state, spr->actor->tics, RUNTIME_TYPE(spr->actor), cm, &ModelToWorld, NULL, translation );
-		}
-		else
-		{
-			// The normal transform matrix only contains the inverse rotations and scalings but not the translations
-			NormalTransform.MakeIdentity();
-
-			NormalTransform.Scale(1.f/scaleFactorX, 1.f/scaleFactorZ, 1.f/scaleFactorY);
-			if( smf->flags & MDL_ROTATING ) NormalTransform.Rotate(smf->xrotate, smf->yrotate, smf->zrotate, -rotateOffset);
-			if (pitch != 0) NormalTransform.Rotate(0,0,1,-pitch);
-			if (angle != 0) NormalTransform.Rotate(0,1,0, angle);
-
-			gl_RenderFrameModels( smf, spr->actor->state, spr->actor->tics, RUNTIME_TYPE(spr->actor), cm, &ModelToWorld, &NormalTransform, translation );
-		}
-
+		gl.ActiveTexture(GL_TEXTURE7);	// Hijack the otherwise unused seventh texture matrix for the model to world transformation.
+		gl.MatrixMode(GL_TEXTURE);
+		gl.LoadIdentity();
 	}
 
-	gl.MatrixMode(GL_MODELVIEW);
-	gl.PopMatrix();
+	// Model space => World space
+	gl.Translatef(spr->x, spr->z, spr->y );
+
+	gl.Rotatef(-angle, 0, 1, 0);
+
+	// [BB] Workaround for the missing pitch information.
+	if (pitch != 0)	gl.Rotatef(pitch, 0, 0, 1);
+
+	// Model rotation.
+	// [BB] Added Doomsday like rotation of the weapon pickup models.
+	// The rotation angle is based on the elapsed time.
+
+	if( smf->flags & MDL_ROTATING )
+	{
+		gl.Translatef(smf->rotationCenterX, smf->rotationCenterY, smf->rotationCenterZ);
+		gl.Rotatef(rotateOffset, smf->xrotate, smf->yrotate, smf->zrotate);
+		gl.Translatef(-smf->rotationCenterX, -smf->rotationCenterY, -smf->rotationCenterZ);
+	} 		
+
+	// Scaling and model space offset.
+	gl.Scalef(scaleFactorX, scaleFactorZ, scaleFactorY);
+
+	// [BB] Apply zoffset here, needs to be scaled by 1 / smf->zscale, so that zoffset doesn't depend on the z-scaling.
+	gl.Translatef(0., smf->zoffset / smf->zscale, 0.);
+
+	if (!modifymat) gl.ActiveTexture(GL_TEXTURE0);
+
+#if 0
+	if (gl_light_models)
+	{
+		// The normal transform matrix only contains the inverse rotations and scalings but not the translations
+		NormalTransform.MakeIdentity();
+
+		NormalTransform.Scale(1.f/scaleFactorX, 1.f/scaleFactorZ, 1.f/scaleFactorY);
+		if( smf->flags & MDL_ROTATING ) NormalTransform.Rotate(smf->xrotate, smf->yrotate, smf->zrotate, -rotateOffset);
+		if (pitch != 0) NormalTransform.Rotate(0,0,1,-pitch);
+		if (angle != 0) NormalTransform.Rotate(0,1,0, angle);
+
+		gl_RenderFrameModels( smf, spr->actor->state, spr->actor->tics, RUNTIME_TYPE(spr->actor), cm, &ModelToWorld, &NormalTransform, translation );
+	}
+#endif
+
+	gl_RenderFrameModels( smf, spr->actor->state, spr->actor->tics, RUNTIME_TYPE(spr->actor), cm, NULL, translation );
+
+	if (modifymat)
+	{
+		gl.MatrixMode(GL_MODELVIEW);
+		gl.PopMatrix();
+	}
+	else
+	{
+		gl.ActiveTexture(GL_TEXTURE7);
+		gl.MatrixMode(GL_TEXTURE);
+		gl.LoadIdentity();
+		gl.ActiveTexture(GL_TEXTURE0);
+		gl.MatrixMode(GL_MODELVIEW);
+	}
+
 	gl.DepthFunc(GL_LESS);
 	if (!( spr->actor->RenderStyle == LegacyRenderStyles[STYLE_Normal] ))
 		gl.Disable(GL_CULL_FACE);
@@ -799,7 +784,7 @@ void gl_RenderHUDModel(pspdef_t *psp, fixed_t ofsx, fixed_t ofsy, int cm)
 	// [BB] For some reason the jDoom models need to be rotated.
 	gl.Rotatef(90., 0, 1, 0);
 
-	gl_RenderFrameModels( smf, psp->state, psp->tics, playermo->player->ReadyWeapon->GetClass(), cm, NULL, NULL, 0 );
+	gl_RenderFrameModels( smf, psp->state, psp->tics, playermo->player->ReadyWeapon->GetClass(), cm, NULL, 0 );
 
 	gl.MatrixMode(GL_MODELVIEW);
 	gl.PopMatrix();

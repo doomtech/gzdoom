@@ -363,7 +363,7 @@ int FVoxelModel::FindFrame(const char * name)
 //
 //===========================================================================
 
-void FVoxelModel::RenderFrame(FTexture * skin, int frame, int cm, Matrix3x4 *m2v, int translation)
+void FVoxelModel::RenderFrame(FTexture * skin, int frame, int cm, int translation)
 {
 	FMaterial * tex = FMaterial::ValidateTexture(skin);
 	tex->Bind(cm, 0, translation);
@@ -384,8 +384,8 @@ void FVoxelModel::RenderFrame(FTexture * skin, int frame, int cm, Matrix3x4 *m2v
 //
 //===========================================================================
 
-void FVoxelModel::RenderFrameInterpolated(FTexture * skin, int frame, int frame2, double inter, int cm, Matrix3x4 *m2v, int translation)
+void FVoxelModel::RenderFrameInterpolated(FTexture * skin, int frame, int frame2, double inter, int cm, int translation)
 {
-	RenderFrame(skin, frame, cm, m2v, translation);
+	RenderFrame(skin, frame, cm, translation);
 }
 
