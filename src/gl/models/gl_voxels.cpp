@@ -346,25 +346,30 @@ void FVoxelModel::MakeSlabPolys(int x, int y, kvxslab_t *voxptr, FVoxelMap &chec
 	{
 		AddFace(x, y, ztop, x+1, y, ztop, x, y+1, ztop, x+1, y+1, ztop, *col, check);
 	}
-
-	for(int z = ztop; z < ztop+zleng; z++, col++)
+	int z = ztop;
+	while (z < ztop+zleng)
 	{
+		int c = 0;
+		while (z+c < ztop+zleng && col[c] == col[0]) c++;
+
 		if (cull & 1)
 		{
-			AddFace(x, y, z, x, y+1, z, x, y, z+1, x, y+1, z+1, *col, check);
+			AddFace(x, y, z, x, y+1, z, x, y, z+c, x, y+1, z+c, *col, check);
 		}
 		if (cull & 2)
 		{
-			AddFace(x+1, y+1, z, x+1, y, z, x+1, y+1, z+1, x+1, y, z+1, *col, check);
+			AddFace(x+1, y+1, z, x+1, y, z, x+1, y+1, z+c, x+1, y, z+c, *col, check);
 		}
 		if (cull & 4)
 		{
-			AddFace(x, y, z, x+1, y, z, x, y, z+1, x+1, y, z+1, *col, check);
+			AddFace(x, y, z, x+1, y, z, x, y, z+c, x+1, y, z+c, *col, check);
 		}
 		if (cull & 8)
 		{
-			AddFace(x+1, y+1, z, x, y+1, z, x+1, y+1, z+1, x, y+1, z+1, *col, check);
+			AddFace(x+1, y+1, z, x, y+1, z, x+1, y+1, z+c, x, y+1, z+c, *col, check);
 		}
+		z+=c;
+		col+=c;
 	}
 	if (cull & 32)
 	{
