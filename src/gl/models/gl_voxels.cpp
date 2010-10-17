@@ -245,22 +245,22 @@ void FVoxelModel::AddFace(int x1, int y1, int z1, int x2, int y2, int z2, int x3
 	vert.u = ((col & 15) * 255 / 16) + 7;
 	vert.v = ((col / 16) * 255 / 16) + 7;
 
-	vert.x = x1 - PivotX;
+	vert.x = -x1 + PivotX;
 	vert.z = y1 - PivotX;
 	vert.y = h - z1 + PivotX;
 	AddVertex(vert);
 
-	vert.x = x2 - PivotX;
+	vert.x = -x2 + PivotX;
 	vert.z = y2 - PivotX;
 	vert.y = h - z2 + PivotX;
 	AddVertex(vert);
 
-	vert.x = x4 - PivotX;
+	vert.x = -x4 + PivotX;
 	vert.z = y4 - PivotX;
 	vert.y = h - z4 + PivotX;
 	AddVertex(vert);
 
-	vert.x = x3 - PivotX;
+	vert.x = -x3 + PivotX;
 	vert.z = y3 - PivotX;
 	vert.y = h - z3 + PivotX;
 	AddVertex(vert);
@@ -392,6 +392,9 @@ int FVoxelModel::FindFrame(const char * name)
 
 void FVoxelModel::RenderFrame(FTexture * skin, int frame, int cm, Matrix3x4 *m2v, int translation)
 {
+	FMaterial * tex = FMaterial::ValidateTexture(skin);
+	tex->Bind(cm, 0, translation);
+
 	gl.Begin(GL_QUADS);
 	for(unsigned i=0;i < mIndices.Size(); i++)
 	{
