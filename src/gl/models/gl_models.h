@@ -241,7 +241,7 @@ class FVoxelVertexBuffer;
 struct FVoxelVertex
 {
 	float x,y,z;
-	BYTE u,v;
+	float u,v;
 };
 
 struct FVoxelVertexHash

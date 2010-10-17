@@ -363,10 +363,12 @@ void FFlatVertexBuffer::BindVBO()
 	{
 		UnmapVBO();
 		gl.BindBuffer(GL_ARRAY_BUFFER, vbo_id);
+		gl.BindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glVertexPointer(3,GL_FLOAT, sizeof(FFlatVertex), &VTO->x);
 		glTexCoordPointer(2,GL_FLOAT, sizeof(FFlatVertex), &VTO->u);
 		gl.EnableClientState(GL_VERTEX_ARRAY);
 		gl.EnableClientState(GL_TEXTURE_COORD_ARRAY);
+		gl.DisableClientState(GL_INDEX_ARRAY);
 	}
 }
 
