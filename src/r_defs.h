@@ -25,6 +25,7 @@
 
 #include "doomdef.h"
 #include "templates.h"
+#include "memarena.h"
 
 // Some more or less basic data types
 // we depend on.
@@ -1112,8 +1113,6 @@ struct column_t
 
 typedef BYTE lighttable_t;	// This could be wider for >8 bit display.
 
-struct FVoxel;
-
 // A vissprite_t is a thing
 //	that will be drawn during a refresh.
 // I.e. a sprite object that is partly visible.
@@ -1138,8 +1137,8 @@ struct vissprite_t
 	fixed_t			floorclip;
 	union
 	{
-		FTexture	*pic;
-		FVoxel		*voxel;
+		FTexture	  *pic;
+		struct FVoxel *voxel;
 	};
 	BYTE			bIsVoxel:1;		// [RH] Use voxel instead of pic
 	BYTE			bSplitSprite:1;	// [RH] Sprite was split by a drawseg
@@ -1168,10 +1167,9 @@ enum
 //
 struct spriteframe_t
 {
-	FVoxel *Voxel;			// voxel to use for this frame
+	struct FVoxelDef *Voxel;// voxel to use for this frame
 	FTextureID Texture[16];	// texture to use for view angles 0-15
 	WORD Flip;				// flip (1 = flip) to use for view angles 0-15.
-	SWORD VoxelSpin;		// degrees/halfsec to spin voxel
 };
 
 //
@@ -1244,13 +1242,44 @@ struct FVoxel
 {
 	int NumMips;
 	int VoxelIndex;
-	int Spin;		// degrees/halfsec to spin voxel
 	BYTE *Palette;
 	FVoxelMipLevel Mips[MAXVOXMIPS];
 
 	FVoxel();
 	~FVoxel();
 	void Remap();
+};
+
+struct FVoxelDef
+{
+	FVoxel *Voxel;
+	int PlacedSpin;			// degrees/sec to spin actors without MF_DROPPED set
+	int DroppedSpin;		// degrees/sec to spin actors with MF_DROPPED set
+	int VoxeldefIndex;
+	fixed_t Scale;
+};
+
+// [RH] A c-buffer. Used for keeping track of offscreen voxel spans.
+
+struct FCoverageBuffer
+{
+	struct Span
+	{
+		Span *NextSpan;
+		short Start, Stop;
+	};
+
+	FCoverageBuffer(int size);
+	~FCoverageBuffer();
+
+	void Clear();
+	void InsertSpan(int listnum, int start, int stop);
+	Span *AllocSpan();
+
+	FMemArena SpanArena;
+	Span **Spans;	// [0..NumLists-1] span lists
+	Span *FreeSpans;
+	unsigned int NumLists;
 };
 
 #endif

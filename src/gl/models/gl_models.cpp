@@ -65,6 +65,7 @@ CVAR(Bool, gl_light_models, true, CVAR_ARCHIVE)
 EXTERN_CVAR(Int, gl_fogmode)
 
 extern TDeletingArray<FVoxel *> Voxels;
+extern TDeletingArray<FVoxelDef *> VoxelDefs;
 
 
 class DeletingModelArray : public TArray<FModel *>
@@ -257,23 +258,43 @@ void gl_InitModels()
 
 	lastLump = 0;
 
-	// First, create models for each voxel attached to sprite frames
+	// First, create models for each voxel
 	for (unsigned i = 0; i < Voxels.Size(); i++)
 	{
 		FVoxelModel *md = new FVoxelModel(Voxels[i], false);
-		Models.Push(md);
-
+		Voxels[i]->VoxelIndex = Models.Push(md);
+	}
+	// now create GL model frames for the voxeldefs
+	for (unsigned i = 0; i < VoxelDefs.Size(); i++)
+	{
+		FVoxelModel *md = (FVoxelModel*)Models[VoxelDefs[i]->Voxel->VoxelIndex];
 		memset(&smf, 0, sizeof(smf));
 		smf.models[0] = md;
 		smf.skins[0] = md->GetPaletteTexture();
-		smf.xscale = smf.yscale = smf.zscale = 1.f;
-		if (Voxels[i]->Spin != 0)
+		smf.xscale = smf.yscale = smf.zscale = FIXED2FLOAT(VoxelDefs[i]->Scale);
+		if (VoxelDefs[i]->PlacedSpin != 0)
 		{
 			smf.yrotate = 1.f;
-			smf.rotationSpeed = Voxels[i]->Spin / 27.77f;
+			smf.rotationSpeed = VoxelDefs[i]->PlacedSpin / 55.55f;
 			smf.flags |= MDL_ROTATING;
 		}
-		SpriteModelFrames.Push(smf);
+		VoxelDefs[i]->VoxeldefIndex = SpriteModelFrames.Push(smf);
+		if (VoxelDefs[i]->PlacedSpin != VoxelDefs[i]->DroppedSpin)
+		{
+			if (VoxelDefs[i]->DroppedSpin != 0)
+			{
+				smf.yrotate = 1.f;
+				smf.rotationSpeed = VoxelDefs[i]->DroppedSpin / 55.55f;
+				smf.flags |= MDL_ROTATING;
+			}
+			else
+			{
+				smf.yrotate = 0;
+				smf.rotationSpeed = 0;
+				smf.flags &= ~MDL_ROTATING;
+			}
+			SpriteModelFrames.Push(smf);
+		}
 	}
 
 	memset(&smf, 0, sizeof(smf));
@@ -501,7 +522,7 @@ void gl_InitModels()
 //===========================================================================
 EXTERN_CVAR (Bool, r_drawvoxels)
 
-FSpriteModelFrame * gl_FindModelFrame(const PClass * ti, int sprite, int frame)
+FSpriteModelFrame * gl_FindModelFrame(const PClass * ti, int sprite, int frame, bool dropped)
 {
 	if (GetDefaultByType(ti)->hasmodel)
 	{
@@ -531,7 +552,9 @@ FSpriteModelFrame * gl_FindModelFrame(const PClass * ti, int sprite, int frame)
 			spriteframe_t *sprframe = &SpriteFrames[sprdef->spriteframes + frame];
 			if (sprframe->Voxel != NULL)
 			{
-				return &SpriteModelFrames[sprframe->Voxel->VoxelIndex];
+				int index = sprframe->Voxel->VoxeldefIndex;
+				if (dropped && sprframe->Voxel->DroppedSpin !=sprframe->Voxel->PlacedSpin) index++;
+				return &SpriteModelFrames[index];
 			}
 		}
 	}
@@ -595,7 +618,7 @@ void gl_RenderFrameModels( const FSpriteModelFrame *smf,
 					}
 				}
 				if ( inter != 0.0 )
-					smfNext = gl_FindModelFrame(ti, nextState->sprite, nextState->Frame);
+					smfNext = gl_FindModelFrame(ti, nextState->sprite, nextState->Frame, false);
 			}
 		}
 	}
@@ -746,7 +769,7 @@ void gl_RenderModel(GLSprite * spr, int cm)
 void gl_RenderHUDModel(pspdef_t *psp, fixed_t ofsx, fixed_t ofsy, int cm)
 {
 	AActor * playermo=players[consoleplayer].camera;
-	FSpriteModelFrame *smf = gl_FindModelFrame(playermo->player->ReadyWeapon->GetClass(), psp->state->sprite, psp->state->GetFrame());
+	FSpriteModelFrame *smf = gl_FindModelFrame(playermo->player->ReadyWeapon->GetClass(), psp->state->sprite, psp->state->GetFrame(), false);
 
 	// [BB] No model found for this sprite, so we can't render anything.
 	if ( smf == NULL )
@@ -805,7 +828,7 @@ bool gl_IsHUDModelForPlayerAvailable (player_t * player)
 		return false;
 
 	FState* state = player->psprites[0].state;
-	FSpriteModelFrame *smf = gl_FindModelFrame(player->ReadyWeapon->GetClass(), state->sprite, state->GetFrame());
+	FSpriteModelFrame *smf = gl_FindModelFrame(player->ReadyWeapon->GetClass(), state->sprite, state->GetFrame(), false);
 	return ( smf != NULL );
 }
 

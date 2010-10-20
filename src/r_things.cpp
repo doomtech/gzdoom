@@ -112,6 +112,11 @@ TArray<spriteframe_t> SpriteFrames;
 DWORD			NumStdSprites;		// The first x sprites that don't belong to skins.
 
 TDeletingArray<FVoxel *> Voxels;	// used only to auto-delete voxels on exit.
+TDeletingArray<FVoxelDef *> VoxelDefs;
+
+int OffscreenBufferWidth, OffscreenBufferHeight;
+BYTE *OffscreenColorBuffer;
+FCoverageBuffer *OffscreenCoverageBuffer;
 
 struct spriteframewithrotate : public spriteframe_t
 {
@@ -313,7 +318,6 @@ static void R_InstallSprite (int num)
 		memcpy (SpriteFrames[framestart+frame].Texture, sprtemp[frame].Texture, sizeof(sprtemp[frame].Texture));
 		SpriteFrames[framestart+frame].Flip = sprtemp[frame].Flip;
 		SpriteFrames[framestart+frame].Voxel = sprtemp[frame].Voxel;
-		SpriteFrames[framestart+frame].VoxelSpin = sprtemp[frame].VoxelSpin;
 	}
 
 	// Let the textures know about the rotations
@@ -383,18 +387,50 @@ void R_InitSpriteDefs ()
 		if (Wads.GetLumpNamespace(i) == ns_voxels)
 		{
 			char name[9];
+			size_t namelen;
+			int spin;
+			int sign;
+
 			Wads.GetLumpName(name, i);
 			name[8] = 0;
-			if (strlen(name) >= 4 &&
-				(name[4] == ' ' || name[4] == '\0' || (name[4] >= 'A' && name[4] < 'A' + MAX_SPRITE_FRAMES)))
-			{
-				memcpy(&vhashes[i].Name, name, 4);
-				vhashes[i].Frame = name[4];
-				vhashes[i].Spin = atoi(name+5);
-				size_t bucket = vhashes[i].Name % vmax;
-				vhashes[i].Next = vhashes[bucket].Head;
-				vhashes[bucket].Head = i;
+			namelen = strlen(name);
+			if (namelen < 4)
+			{ // name is too short
+				continue;
 			}
+			if (name[4] != '\0' && name[4] != ' ' && (name[4] < 'A' || name[4] >= 'A' + MAX_SPRITE_FRAMES))
+			{ // frame char is invalid
+				continue;
+			}
+			spin = 0;
+			sign = 2;	// 2 to convert from deg/halfsec to deg/sec
+			j = 5;
+			if (j < namelen && name[j] == '-')
+			{ // a minus sign is okay, but only before any digits
+				j++;
+				sign = -2;
+			}
+			for (; j < namelen; ++j)
+			{ // the remainder to the end of the name must be digits
+				if (name[j] >= '0' && name[j] <= '9')
+				{
+					spin = spin * 10 + name[j] - '0';
+				}
+				else
+				{
+					break;
+				}
+			}
+			if (j < namelen)
+			{ // the spin part is invalid
+				continue;
+			}
+			memcpy(&vhashes[i].Name, name, 4);
+			vhashes[i].Frame = name[4];
+			vhashes[i].Spin = spin * sign;
+			size_t bucket = vhashes[i].Name % vmax;
+			vhashes[i].Next = vhashes[bucket].Head;
+			vhashes[bucket].Head = i;
 		}
 	}
 
@@ -406,7 +442,6 @@ void R_InitSpriteDefs ()
 		{
 			sprtemp[j].Flip = 0;
 			sprtemp[j].Voxel = NULL;
-			sprtemp[j].VoxelSpin = 0;
 		}
 				
 		maxframe = -1;
@@ -441,15 +476,22 @@ void R_InitSpriteDefs ()
 				}
 				else
 				{
-					vox->VoxelIndex = Voxels.Push(vox);
+					FVoxelDef *voxdef = new FVoxelDef;
+
+					voxdef->Voxel = vox;
+					voxdef->Scale = FRACUNIT;
+					voxdef->DroppedSpin = voxdef->PlacedSpin = vh->Spin;
+
+					Voxels.Push(vox);
+					VoxelDefs.Push(voxdef);
+
 					if (vh->Frame == ' ' || vh->Frame == '\0')
 					{ // voxel applies to every sprite frame
 						for (j = 0; j < MAX_SPRITE_FRAMES; ++j)
 						{
 							if (sprtemp[j].Voxel == NULL)
 							{
-								sprtemp[j].Voxel = vox;
-								vox->Spin = sprtemp[j].VoxelSpin = vh->Spin;
+								sprtemp[j].Voxel = voxdef;
 							}
 						}
 						maxframe = MAX_SPRITE_FRAMES-1;
@@ -457,8 +499,7 @@ void R_InitSpriteDefs ()
 					else
 					{ // voxel applies to a specific frame
 						j = vh->Frame - 'A';
-						sprtemp[j].Voxel = vox;
-						vox->Spin = sprtemp[j].VoxelSpin = vh->Spin;
+						sprtemp[j].Voxel = voxdef;
 						maxframe = MAX<int>(maxframe, j);
 					}
 				}
@@ -1033,6 +1074,19 @@ void R_DeinitSprites()
 		spritesortersize = 0;
 		spritesorter = NULL;
 	}
+
+	// Free offscreen buffer
+	if (OffscreenColorBuffer != NULL)
+	{
+		delete[] OffscreenColorBuffer;
+		OffscreenColorBuffer = NULL;
+	}
+	if (OffscreenCoverageBuffer != NULL)
+	{
+		delete OffscreenCoverageBuffer;
+		OffscreenCoverageBuffer = NULL;
+	}
+	OffscreenBufferHeight = OffscreenBufferWidth = 0;
 }
 
 //
@@ -1248,6 +1302,75 @@ void R_DrawVisSprite (vissprite_t *vis)
 	NetUpdate ();
 }
 
+void R_DrawVisVoxel(vissprite_t *spr, int minslabz, int maxslabz, short *cliptop, short *clipbot)
+{
+	ESPSResult mode;
+	int flags = 0;
+
+	// Do setup for blending.
+	dc_colormap = spr->colormap;
+	mode = R_SetPatchStyle(spr->RenderStyle, spr->alpha, spr->Translation, spr->FillColor);
+
+	if (mode == DontDraw)
+	{
+		return;
+	}
+	if (colfunc == fuzzcolfunc || colfunc == R_FillColumnP)
+	{
+		flags = DVF_OFFSCREEN | DVF_SPANSONLY;
+	}
+	else if (colfunc != basecolfunc)
+	{
+		flags = DVF_OFFSCREEN;
+	}
+	if (flags != 0)
+	{
+		R_CheckOffscreenBuffer(RenderTarget->GetWidth(), RenderTarget->GetHeight(), !!(flags & DVF_SPANSONLY));
+	}
+
+	// Render the voxel, either directly to the screen or offscreen.
+	R_DrawVoxel(spr->gx, spr->gy, spr->gz, spr->angle, spr->xscale, spr->yscale, spr->voxel, spr->colormap, cliptop, clipbot,
+		minslabz, maxslabz, flags);
+
+	// Blend the voxel, if that's what we need to do.
+	if (flags != 0)
+	{
+		for (int x = 0; x < viewwidth; ++x)
+		{
+			if (!(flags & DVF_SPANSONLY) && (x & 3) == 0)
+			{
+				rt_initcols(OffscreenColorBuffer + x * OffscreenBufferHeight);
+			}
+			for (FCoverageBuffer::Span *span = OffscreenCoverageBuffer->Spans[x]; span != NULL; span = span->NextSpan)
+			{
+				if (flags & DVF_SPANSONLY)
+				{
+					dc_x = x;
+					dc_yl = span->Start;
+					dc_yh = span->Stop - 1;
+					dc_count = span->Stop - span->Start;
+					dc_dest = ylookup[span->Start] + x + dc_destorg;
+					colfunc();
+				}
+				else
+				{
+					unsigned int **tspan = &dc_ctspan[x & 3];
+					(*tspan)[0] = span->Start;
+					(*tspan)[1] = span->Stop - 1;
+					*tspan += 2;
+				}
+			}
+			if (!(flags & DVF_SPANSONLY) && (x & 3) == 3)
+			{
+				rt_draw4cols(x - 3);
+			}
+		}
+	}
+
+	R_FinishSetPatchStyle();
+	NetUpdate();
+}
+
 //
 // R_ProjectSprite
 // Generates a vissprite for a thing if it might be visible.
@@ -1263,15 +1386,14 @@ void R_ProjectSprite (AActor *thing, int fakeside)
 	fixed_t 			tx, tx2;
 	fixed_t 			tz;
 
-	fixed_t 			xscale;
+	fixed_t 			xscale, yscale;
 	
 	int 				x1;
 	int 				x2;
 
 	FTextureID			picnum;
 	FTexture			*tex;
-	FVoxel				*voxel;
-	int					voxelspin;
+	FVoxelDef			*voxel;
 	
 	WORD 				flip;
 	
@@ -1370,7 +1492,6 @@ void R_ProjectSprite (AActor *thing, int fakeside)
 			if (r_drawvoxels)
 			{
 				voxel = sprframe->Voxel;
-				voxelspin = sprframe->VoxelSpin;
 			}
 		}
 	}
@@ -1408,8 +1529,10 @@ void R_ProjectSprite (AActor *thing, int fakeside)
 	}
 	else
 	{
-		gzt = fz + MulScale8(thing->scaleY, voxel->Mips[0].PivotZ) - thing->floorclip;
-		gzb = fz + MulScale8(thing->scaleY, voxel->Mips[0].PivotZ - (voxel->Mips[0].SizeZ << 8));
+		xscale = FixedMul(thing->scaleX, voxel->Scale);
+		yscale = FixedMul(thing->scaleY, voxel->Scale);
+		gzt = fz + MulScale8(yscale, voxel->Voxel->Mips[0].PivotZ) - thing->floorclip;
+		gzb = fz + MulScale8(yscale, voxel->Voxel->Mips[0].PivotZ - (voxel->Voxel->Mips[0].SizeZ << 8));
 		if (gzt <= gzb)
 			return;
 	}
@@ -1511,8 +1634,8 @@ void R_ProjectSprite (AActor *thing, int fakeside)
 	{
 		vis = R_NewVisSprite();
 
-		vis->xscale = thing->scaleX;
-		vis->yscale = thing->scaleY;
+		vis->xscale = xscale;
+		vis->yscale = yscale;
 		vis->x1 = WindowLeft;
 		vis->x2 = WindowRight;
 		vis->idepth = (unsigned)DivScale32(1, MAX(tz, MINZ)) >> 1;
@@ -1520,14 +1643,13 @@ void R_ProjectSprite (AActor *thing, int fakeside)
 
 		fz -= thing->floorclip;
 
-		if (voxelspin == 0)
+		vis->angle = thing->angle;
+
+		int voxelspin = (thing->flags & MF_DROPPED) ? voxel->DroppedSpin : voxel->PlacedSpin;
+		if (voxelspin != 0)
 		{
-			vis->angle = thing->angle;
-		}
-		else
-		{
-			double ang = double(I_FPSTime()) * voxelspin / 500;
-			vis->angle = angle_t(ang * (4294967296.f / 360));
+			double ang = double(I_FPSTime()) * voxelspin / 1000;
+			vis->angle += angle_t(ang * (4294967296.f / 360));
 		}
 
 		// These are irrelevant for voxels.
@@ -1556,7 +1678,7 @@ void R_ProjectSprite (AActor *thing, int fakeside)
 
 	if (voxel != NULL)
 	{
-		vis->voxel = voxel;
+		vis->voxel = voxel->Voxel;
 		vis->bIsVoxel = true;
 	}
 	else
@@ -2462,8 +2584,7 @@ void R_DrawSprite (vissprite_t *spr)
 		}
 		int minvoxely = spr->gzt <= hzt ? 0 : (spr->gzt - hzt) / spr->yscale;
 		int maxvoxely = spr->gzb > hzb ? INT_MAX : (spr->gzt - hzb) / spr->yscale;
-		R_DrawVoxel(spr->gx, spr->gy, spr->gz, spr->angle, spr->xscale, spr->yscale, spr->voxel, spr->colormap, cliptop, clipbot,
-			minvoxely, maxvoxely);
+		R_DrawVisVoxel(spr, minvoxely, maxvoxely, cliptop, clipbot);
 	}
 }
 
@@ -2816,12 +2937,12 @@ void R_DrawParticle (vissprite_t *vis)
 static fixed_t distrecip(fixed_t y)
 {
 	y >>= 3;
-	return y == 0 ? 0 : DivScale32(centerxwide, y);
+	return y == 0 ? 0 : SafeDivScale32(centerxwide, y);
 }
 
 void R_DrawVoxel(fixed_t dasprx, fixed_t daspry, fixed_t dasprz, angle_t dasprang,
 	fixed_t daxscale, fixed_t dayscale, FVoxel *voxobj,
-	lighttable_t *colormap, short *daumost, short *dadmost, int minslabz, int maxslabz)
+	lighttable_t *colormap, short *daumost, short *dadmost, int minslabz, int maxslabz, int flags)
 {
 	int i, j, k, x, y, syoff, ggxstart, ggystart, nxoff;
 	fixed_t cosang, sinang, sprcosang, sprsinang;
@@ -3050,9 +3171,241 @@ void R_DrawVoxel(fixed_t dasprx, fixed_t daspry, fixed_t dasprz, angle_t daspran
 					if (z2 > dadmost[lx]) z2 = dadmost[lx];
 					z2 -= z1; if (z2 <= 0) continue;
 
-					R_DrawSlab(rx, yplc, z2, yinc, col, ylookup[z1] + lx + dc_destorg);
+					if (!(flags & DVF_OFFSCREEN))
+					{
+						// Draw directly to the screen.
+						R_DrawSlab(rx, yplc, z2, yinc, col, ylookup[z1] + lx + dc_destorg);
+					}
+					else
+					{
+						// Record the area covered and possibly draw to an offscreen buffer.
+						dc_yl = z1;
+						dc_yh = z1 + z2 - 1;
+						dc_count = z2;
+						dc_iscale = yinc;
+						for (int x = 0; x < rx; ++x)
+						{
+							OffscreenCoverageBuffer->InsertSpan(lx + x, z1, z1 + z2);
+							if (!(flags & DVF_SPANSONLY))
+							{
+								dc_x = lx + x;
+								rt_initcols(OffscreenColorBuffer + (dc_x & ~3) * OffscreenBufferHeight);
+								dc_source = col;
+								dc_texturefrac = yplc;
+								hcolfunc_pre();
+							}
+						}
+					}
 				}
 			}
 		}
 	}
 }
+
+//==========================================================================
+//
+// FCoverageBuffer Constructor
+//
+//==========================================================================
+
+FCoverageBuffer::FCoverageBuffer(int lists)
+	: Spans(NULL), FreeSpans(NULL)
+{
+	NumLists = lists;
+	Spans = new Span *[lists];
+	memset(Spans, 0, sizeof(Span*)*lists);
+}
+
+//==========================================================================
+//
+// FCoverageBuffer Destructor
+//
+//==========================================================================
+
+FCoverageBuffer::~FCoverageBuffer()
+{
+	if (Spans != NULL)
+	{
+		delete[] Spans;
+	}
+}
+
+//==========================================================================
+//
+// FCoverageBuffer :: Clear
+//
+//==========================================================================
+
+void FCoverageBuffer::Clear()
+{
+	SpanArena.FreeAll();
+	memset(Spans, 0, sizeof(Span*)*NumLists);
+	FreeSpans = NULL;
+}
+
+//==========================================================================
+//
+// FCoverageBuffer :: InsertSpan
+//
+// start is inclusive.
+// stop is exclusive.
+//
+//==========================================================================
+
+void FCoverageBuffer::InsertSpan(int listnum, int start, int stop)
+{
+	assert(unsigned(listnum) < NumLists);
+	assert(start < stop);
+
+	Span **span_p = &Spans[listnum];
+	Span *span;
+
+	if (*span_p == NULL || (*span_p)->Start > stop)
+	{ // This list is empty or the first entry is after this one, so we can just insert the span.
+		goto addspan;
+	}
+
+	// Insert the new span in order, merging with existing ones.
+	while (*span_p != NULL)
+	{
+		if ((*span_p)->Stop < start)							// =====		(existing span)
+		{ // Span ends before this one starts.					//		  ++++	(new span)
+			span_p = &(*span_p)->NextSpan;
+			continue;
+		}
+
+		// Does the new span overlap or abut the existing one?
+		if ((*span_p)->Start <= start)
+		{
+			if ((*span_p)->Stop >= stop)						// =============
+			{ // The existing span completely covers this one.	//     +++++
+				return;
+			}
+			// Extend the existing span with the new one.		// ======
+			span = *span_p;										//     +++++++
+			span->Stop = stop;									// (or)  +++++
+
+			// Free up any spans we just covered up.
+			span_p = &(*span_p)->NextSpan;
+			while (*span_p != NULL && (*span_p)->Start <= stop && (*span_p)->Stop <= stop)
+			{
+				Span *span = *span_p;							// ======  ======
+				*span_p = span->NextSpan;						//     +++++++++++++
+				span->NextSpan = FreeSpans;
+				FreeSpans = span;
+			}
+			if (*span_p != NULL && (*span_p)->Start <= stop)	// =======         ========
+			{ // Our new span connects two existing spans.		//     ++++++++++++++
+			  // They should all be collapsed into a single span.
+				span->Stop = (*span_p)->Stop;
+				span = *span_p;
+				*span_p = span->NextSpan;
+				span->NextSpan = FreeSpans;
+				FreeSpans = span;
+			}
+			goto check;
+		}
+		else if ((*span_p)->Start <= stop)						//        =====
+		{ // The new span extends the existing span from		//    ++++
+		  // the beginning.										// (or) ++++
+			(*span_p)->Start = start;
+			goto check;
+		}
+		else													//         ======
+		{ // No overlap, so insert a new span.					// +++++
+			goto addspan;
+		}
+	}
+	// Append a new span to the end of the list.
+addspan:
+	span = AllocSpan();
+	span->NextSpan = *span_p;
+	span->Start = start;
+	span->Stop = stop;
+	*span_p = span;
+check:
+#ifdef _DEBUG
+	// Validate the span list: Spans must be in order, and there must be
+	// at least one pixel between spans.
+	for (span = Spans[listnum]; span != NULL; span = span->NextSpan)
+	{
+		assert(span->Start < span->Stop);
+		if (span->NextSpan != NULL)
+		{
+			assert(span->Stop < span->NextSpan->Start);
+		}
+	}
+#endif
+	;
+}
+
+//==========================================================================
+//
+// FCoverageBuffer :: AllocSpan
+//
+//==========================================================================
+
+FCoverageBuffer::Span *FCoverageBuffer::AllocSpan()
+{
+	Span *span;
+
+	if (FreeSpans != NULL)
+	{
+		span = FreeSpans;
+		FreeSpans = span->NextSpan;
+	}
+	else
+	{
+		span = (Span *)SpanArena.Alloc(sizeof(Span));
+	}
+	return span;
+}
+
+//==========================================================================
+//
+// R_CheckOffscreenBuffer
+//
+// Allocates the offscreen coverage buffer and optionally the offscreen
+// color buffer. If they already exist but are the wrong size, they will
+// be reallocated.
+//
+//==========================================================================
+
+void R_CheckOffscreenBuffer(int width, int height, bool spansonly)
+{
+	if (OffscreenCoverageBuffer == NULL)
+	{
+		assert(OffscreenColorBuffer == NULL && "The color buffer cannot exist without the coverage buffer");
+		OffscreenCoverageBuffer = new FCoverageBuffer(width);
+	}
+	else if (OffscreenCoverageBuffer->NumLists != width)
+	{
+		delete OffscreenCoverageBuffer;
+		OffscreenCoverageBuffer = new FCoverageBuffer(width);
+		if (OffscreenColorBuffer != NULL)
+		{
+			delete[] OffscreenColorBuffer;
+			OffscreenColorBuffer = NULL;
+		}
+	}
+	else
+	{
+		OffscreenCoverageBuffer->Clear();
+	}
+
+	if (!spansonly)
+	{
+		if (OffscreenColorBuffer == NULL)
+		{
+			OffscreenColorBuffer = new BYTE[width * height];
+		}
+		else if (OffscreenBufferWidth != width || OffscreenBufferHeight != height)
+		{
+			delete[] OffscreenColorBuffer;
+			OffscreenColorBuffer = new BYTE[width * height];
+		}
+	}
+	OffscreenBufferWidth = width;
+	OffscreenBufferHeight = height;
+}
+

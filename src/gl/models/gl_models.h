@@ -334,7 +334,7 @@ struct FSpriteModelFrame
 class GLSprite;
 
 void gl_InitModels();
-FSpriteModelFrame * gl_FindModelFrame(const PClass * ti, int sprite, int frame);
+FSpriteModelFrame * gl_FindModelFrame(const PClass * ti, int sprite, int frame, bool dropped);
 
 void gl_RenderModel(GLSprite * spr, int cm);
 // [BB] HUD weapon model rendering functions.
