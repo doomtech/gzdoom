@@ -1240,6 +1240,7 @@ struct FVoxelMipLevel
 
 struct FVoxel
 {
+	int LumpNum;
 	int NumMips;
 	int VoxelIndex;
 	BYTE *Palette;
