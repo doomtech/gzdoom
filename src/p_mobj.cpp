@@ -2237,7 +2237,7 @@ void P_ZMovement (AActor *mo, fixed_t oldfloorz)
 			mo->z = mo->floorz;
 			if (mo->velz < 0)
 			{
-				const fixed_t minvel = -9*FRACUNIT;	// landing speed from a jump with normal gravity
+				const fixed_t minvel = -8*FRACUNIT;	// landing speed from a jump with normal gravity
 
 				// Spawn splashes, etc.
 				P_HitFloor (mo);
@@ -2253,7 +2253,7 @@ void P_ZMovement (AActor *mo, fixed_t oldfloorz)
 				mo->HitFloor ();
 				if (mo->player)
 				{
-					if (mo->player->jumpTics != 0 && mo->velz < -grav*4)
+					if (mo->player->jumpTics < 0 || mo->velz < minvel)
 					{ // delay any jumping for a short while
 						mo->player->jumpTics = 7;
 					}
