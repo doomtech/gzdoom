@@ -54,6 +54,7 @@ struct visplane_s
 	float		visibility;
 	fixed_t		viewx, viewy, viewz;
 	angle_t		viewangle;
+	fixed_t		alpha;
 
 	unsigned short *bottom;			// [RH] bottom and top arrays are dynamically
 	unsigned short pad;				//		allocated immediately after the
@@ -92,6 +93,7 @@ visplane_t *R_FindPlane
 ( const secplane_t &height,
   FTextureID	picnum,
   int			lightlevel,
+  fixed_t		alpha,
   fixed_t		xoffs,		// killough 2/28/98: add x-y offsets
   fixed_t		yoffs,
   fixed_t		xscale,
