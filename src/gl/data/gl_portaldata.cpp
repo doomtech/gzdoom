@@ -214,6 +214,16 @@ void FPortal::UpdateClipAngles()
 struct FCoverageVertex
 {
 	fixed_t x, y;
+
+	bool operator !=(FCoverageVertex &other)
+	{
+		return x != other.x || y != other.y;
+	}
+};
+
+struct FCoverageLine
+{
+	FCoverageVertex v[2];
 };
 
 struct FCoverageBuilder
@@ -297,116 +307,20 @@ struct FCoverageBuilder
 
 	//==========================================================================
 	//
-	//
-	//
-	//==========================================================================
-
-	void CollectSubsector(subsector_t *sub, TArray<FCoverageVertex> &shape)
-	{
-#if 1
-		collect.Push(int(sub-subsectors));
-#else
-		divline_t shapeline;
-		divline_t subline;
-		double cx, cy;
-		fixed_t fcx, fcy;
-		unsigned int matches;
-
-		for(unsigned j = 0; j < shape.Size(); j++)
-		{
-			int jj = (j+1)%shape.Size();
-			shapeline.x = shape[j].x;
-			shapeline.y = shape[j].y;
-			shapeline.dx = shape[jj].x - shape[j].x;
-			shapeline.dy = shape[jj].y - shape[j].y;
-			for(unsigned i = 0; i < sub->numlines; i++)
-			{
-				subline.x = sub->firstline[i].v1->x;
-				subline.y = sub->firstline[i].v1->y;
-				subline.dx = sub->firstline[i].v2->x - subline.x;
-				subline.dy = sub->firstline[i].v2->y - subline.y;
-			}
-			fixed_t inter1 = P_InterceptVector(&subline, &shapeline);
-			fixed_t inter2 = P_InterceptVector(&shapeline, &subline);
-			if (inter1 > 0 && inter1 < FRACUNIT && inter2 > 0 && inter2 < FRACUNIT)
-			{
-				collect.Push(int(sub-subsectors));
-				return;
-			}
-		}
-		// If we get here the subsector's lines don't intersect with the shape.
-		// There's 3 possibilities:
-		// 1: The shape is inside the subsector (and therefore the shape's center is inside the subsector)
-		cx = cy = 0;
-		for(unsigned j = 0; j < shape.Size(); j++)
-		{
-			cx += shape[j].x;
-			cy += shape[j].y;
-		}
-		fcx = xs_CRoundToInt(cx / shape.Size());
-		fcy = xs_CRoundToInt(cy / shape.Size());
-
-		matches = 0;
-		for(unsigned i = 0; i < sub->numlines; i++)
-		{
-			subline.x = sub->firstline[i].v1->x;
-			subline.y = sub->firstline[i].v1->y;
-			subline.dx = sub->firstline[i].v2->x - subline.x;
-			subline.dy = sub->firstline[i].v2->y - subline.y;
-			matches += P_PointOnDivlineSide(fcx, fcy, &subline);
-		}
-		if (matches == sub->numlines)
-		{
-			collect.Push(int(sub-subsectors));
-			return;
-		}
-
-		// 2: The subsector is inside the shape (and therefore the subsector's center is inside the shape)
-		cx = cy = 0;
-		for(unsigned i = 0; i < sub->numlines; i++)
-		{
-			cx += sub->firstline[i].v1->x;
-			cy += sub->firstline[i].v1->y;
-		}
-		fcx = xs_CRoundToInt(cx / sub->numlines);
-		fcy = xs_CRoundToInt(cy / sub->numlines);
-
-		matches = 0;
-		for(unsigned j = 0; j < shape.Size(); j++)
-		{
-			int jj = (j+1)%shape.Size();
-			shapeline.x = shape[j].x;
-			shapeline.y = shape[j].y;
-			shapeline.dx = shape[jj].x - shape[j].x;
-			shapeline.dy = shape[jj].y - shape[j].y;
-			matches += P_PointOnDivlineSide(fcx, fcy, &shapeline);
-		}
-		if (matches == (int)shape.Size())
-		{
-			collect.Push(int(sub-subsectors));
-			return;
-		}
-
-		// 3: Both are completely separate. No need to check because this isn't part of the coverage.
-#endif
-	}
-
-	//==========================================================================
-	//
-	// adapted from polyobject splitter but uses a more precise epsilon
+	// adapted from polyobject splitter
 	//
 	//==========================================================================
 
 	void CollectNode(void *node, TArray<FCoverageVertex> &shape)
 	{
-		static TArray<FCoverageVertex> lists[2];
-		static const double COVERAGE_EPSILON = 6./FRACUNIT;	// same epsilon as the node builder
+		static TArray<FCoverageLine> lists[2];
+		const double COVERAGE_EPSILON = 6.;	// same epsilon as the node builder
 
 		if (!((size_t)node & 1))  // Keep going until found a subsector
 		{
 			node_t *bsp = (node_t *)node;
 
-			int centerside = R_PointOnSide(centerx, centery, bsp);
+			int centerside = R_PointOnSide(center.x, center.y, bsp);
 
 			lists[0].Clear();
 			lists[1].Clear();
@@ -414,6 +328,7 @@ struct FCoverageBuilder
 			{
 				FCoverageVertex *v1 = &shape[i];
 				FCoverageVertex *v2 = &shape[(i+1) % shape.Size()];
+				FCoverageLine vl = { *v1, *v2 };
 
 				double dist_v1 = PartitionDistance(v1, bsp);
 				double dist_v2 = PartitionDistance(v2, bsp);
@@ -422,18 +337,18 @@ struct FCoverageBuilder
 				{
 					if (dist_v2 <= COVERAGE_EPSILON)
 					{
-						lists[centerside].Push(*v1);
+						lists[centerside].Push(vl);
 					}
 					else
 					{
 						int side = PointOnSide(v2, bsp);
-						lists[side].Push(*v1);
+						lists[side].Push(vl);
 					}
 				}
 				else if (dist_v2 <= COVERAGE_EPSILON)
 				{
 					int side = PointOnSide(v1, bsp);
-					lists[side].Push(*v1);
+					lists[side].Push(vl);
 				}
 				else 
 				{
@@ -448,20 +363,21 @@ struct FCoverageBuilder
 
 						if (GetIntersection(v1, v2, bsp, &vert))
 						{
-							lists[side1].Push(*v1);
-							lists[side1].Push(vert);
-							lists[side2].Push(vert);
+							lists[0].Push(vl);
+							lists[1].Push(vl);
+							lists[side1].Last().v[1] = vert;
+							lists[side2].Last().v[0] = vert;
 						}
 						else
 						{
 							// should never happen
-							lists[side1].Push(*v1);
+							lists[side1].Push(vl);
 						}
 					}
 					else 
 					{
 						// both points on the same side.
-						lists[side1].Push(*v1);
+						lists[side1].Push(vl);
 					}
 				}
 			}
@@ -476,19 +392,30 @@ struct FCoverageBuilder
 			else
 			{
 				// copy the static arrays into local ones
-				TArray<FCoverageVertex> locallist0 = lists[0];
-				TArray<FCoverageVertex> locallist1 = lists[1];
+				TArray<FCoverageVertex> locallists[2];
 
-				CollectNode(bsp->children[0], locallist0);
-				CollectNode(bsp->children[1], locallist1);
+				for(int l=0;l<2;l++)
+				{
+					for (unsigned i=0;i<lists[l].Size(); i++)
+					{
+						locallists[l].Push(lists[l][i].v[0]);
+						unsigned i1= (i+1)%lists[l].Size();
+						if (lists[l][i1].v[0] != lists[l][i].v[1])
+						{
+							locallists[l].Push(lists[l][i].v[1]);
+						}
+					}
+				}
+
+				CollectNode(bsp->children[0], locallists[0]);
+				CollectNode(bsp->children[1], locallists[1]);
 			}
 		}
 		else
 		{
 			// we reached a subsector so we can link the node with this subsector
 			subsector_t *sub = (subsector_t *)((BYTE *)node - 1);
-
-			CollectSubsector(sub, shape);
+			collect.Push(int(sub-subsectors));
 		}
 	}
 };
@@ -515,14 +442,7 @@ void gl_BuildPortalCoverage(FPortalCoverage *coverage, subsector_t *subsector, F
 	build.center.x = xs_CRoundToInt(centerx / subsector->numlines);
 	build.center.y = xs_CRoundToInt(centery / subsector->numlines);
 
-	if (numnodes == 0)
-	{
-		build.CollectSubsector (subsectors, shape);
-	}
-	else
-	{
-		build.CollectNode(nodes + numnodes - 1, shape);
-	}
+	build.CollectNode(nodes + numnodes - 1, shape);
 	coverage->subsectors = new DWORD[build.collect.Size()]; 
 	coverage->sscount = build.collect.Size();
 	memcpy(coverage->subsectors, &build.collect[0], build.collect.Size() * sizeof(DWORD));
@@ -536,12 +456,18 @@ void gl_BuildPortalCoverage(FPortalCoverage *coverage, subsector_t *subsector, F
 
 void gl_InitPortals()
 {
-	glcycle_t tpt;
-	tpt.Reset();
-	tpt.Clock();
-
 	TThinkerIterator<AStackPoint> it;
 	AStackPoint *pt;
+
+	if (numnodes == 0) return;
+
+	for(int i=0;i<numnodes;i++)
+	{
+		node_t *no = &nodes[i];
+		double fdx = (double)no->dx;
+		double fdy = (double)no->dy;
+		no->len = (float)sqrt(fdx * fdx + fdy * fdy);
+	}
 
 	portals.Clear();
 	while ((pt = it.Next()))
@@ -594,8 +520,6 @@ void gl_InitPortals()
 			portal->ClipAngles.Resize(portal->Shape.Size());
 		}
 	}
-	tpt.Unclock();
-	Printf("Portal init took %f ms\n", tpt.TimeMS());
 }
 
 
