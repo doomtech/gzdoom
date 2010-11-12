@@ -99,13 +99,18 @@ void GLWall::SkyTexture(int sky1,ASkyViewpoint * skyboxx, bool ceiling)
 		}
 		else 
 		{
-			static GLSectorStackInfo stackinfo;
-			if (ceiling && GLPortal::inlowerstack) return;
-			if (!ceiling && GLPortal::inupperstack) return;
 			type=RENDERWALL_SECTORSTACK;
-			stackinfo.origin = skyboxx;
-			stackinfo.isupper= ceiling;
-			stack=&stackinfo;
+			if (ceiling)
+			{
+				if (GLPortal::inlowerstack) return;
+				portal = gl_GetPortal(skyboxx, sector_t::ceiling);
+			}
+			else
+			{
+				if (GLPortal::inupperstack) return;
+				portal = gl_GetPortal(skyboxx, sector_t::floor);
+			}
+			if (portal == NULL) return;	// invalid
 		}
 	}
 	else

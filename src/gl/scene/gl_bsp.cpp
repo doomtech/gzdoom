@@ -491,11 +491,21 @@ static void DoSubsector(subsector_t * sub)
 
 				if (fakesector->CeilingSkyBox && fakesector->CeilingSkyBox->bAlways)
 				{
-					gl_drawinfo->PortalCoverage[fakesector->CeilingSkyBox->special1].subs.Push(DWORD(sub-subsectors));
+					FPortal *portal = gl_GetPortal(fakesector->CeilingSkyBox, sector_t::ceiling);
+					if (portal != NULL)
+					{
+						GLSectorStackPortal *glportal = portal->GetGLPortal();
+						glportal->AddSubsector(sub);
+					}
 				}
-				if (fakesector->FloorSkyBox && fakesector->FloorSkyBox->bAlways && fakesector->FloorSkyBox != fakesector->CeilingSkyBox)
+				if (fakesector->FloorSkyBox && fakesector->FloorSkyBox->bAlways)
 				{
-					gl_drawinfo->PortalCoverage[fakesector->FloorSkyBox->special1].subs.Push(DWORD(sub-subsectors));
+					FPortal *portal = gl_GetPortal(fakesector->FloorSkyBox, sector_t::floor);
+					if (portal != NULL)
+					{
+						GLSectorStackPortal *glportal = portal->GetGLPortal();
+						glportal->AddSubsector(sub);
+					}
 				}
 			}
 		}

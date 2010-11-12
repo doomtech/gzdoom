@@ -49,6 +49,7 @@
 #include "gl/dynlights/gl_glow.h"
 #include "gl/dynlights/gl_lightbuffer.h"
 #include "gl/scene/gl_drawinfo.h"
+#include "gl/scene/gl_portal.h"
 #include "gl/utility/gl_clock.h"
 #include "gl/utility/gl_templates.h"
 
@@ -1175,12 +1176,18 @@ void FDrawInfo::ProcessSectorStacks()
 				{				
 					subsector_t *sub = HandledSubsectors[j];
 					ss_renderflags[DWORD(sub-subsectors)] &= ~SSRF_RENDERCEILING;
-					if (sub->portalcoverage[sector_t::ceiling].subsectors == NULL)
+					FPortal *portal = gl_GetPortal(sec->CeilingSkyBox, sector_t::ceiling);
+
+					if (portal != NULL)
 					{
-						gl_BuildPortalCoverage(&sub->portalcoverage[sector_t::ceiling],	
-							sub, &portals[sec->CeilingSkyBox->special1]);
+						if (sub->portalcoverage[sector_t::ceiling].subsectors == NULL)
+						{
+							gl_BuildPortalCoverage(&sub->portalcoverage[sector_t::ceiling],	sub, portal);
+						}
+
+						GLSectorStackPortal *glportal = portal->GetGLPortal();
+						glportal->AddSubsector(sub);
 					}
-					PortalCoverage[sec->CeilingSkyBox->special1].subs.Push(DWORD(sub-subsectors));
 
 					if (sec->GetAlpha(sector_t::ceiling) != 0)
 					{
@@ -1219,12 +1226,17 @@ void FDrawInfo::ProcessSectorStacks()
 					subsector_t *sub = HandledSubsectors[j];
 					ss_renderflags[DWORD(sub-subsectors)] &= ~SSRF_RENDERFLOOR;
 
-					if (sub->portalcoverage[sector_t::floor].subsectors == NULL)
+					FPortal *portal = gl_GetPortal(sec->FloorSkyBox, sector_t::floor);
+					if (portal != NULL)
 					{
-						gl_BuildPortalCoverage(&sub->portalcoverage[sector_t::floor],
-							sub, &portals[sec->FloorSkyBox->special1]);
+						if (sub->portalcoverage[sector_t::floor].subsectors == NULL)
+						{
+							gl_BuildPortalCoverage(&sub->portalcoverage[sector_t::floor], sub, portal);
+						}
+
+						GLSectorStackPortal *glportal = portal->GetGLPortal();
+						glportal->AddSubsector(sub);
 					}
-					PortalCoverage[sec->FloorSkyBox->special1].subs.Push(DWORD(sub-subsectors));
 
 					if (sec->GetAlpha(sector_t::floor)!=0)
 					{

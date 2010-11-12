@@ -214,9 +214,7 @@ void GLWall::PutWall(bool translucent)
 
 	case RENDERWALL_SECTORSTACK:
 		//@sync-portal
-		stack=UniqueStacks.Get(stack);	// map all stacks with the same displacement together
-		portal=GLPortal::FindPortal(stack);
-		if (!portal) portal=new GLSectorStackPortal(stack);
+		portal = this->portal->GetGLPortal();
 		portal->AddLine(this);
 		break;
 

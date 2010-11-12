@@ -940,7 +940,6 @@ void FDrawInfo::StartScene()
 
 	sectorrenderflags.Resize(numsectors);
 	ss_renderflags.Resize(numsubsectors);
-	PortalCoverage.Resize(portals.Size());
 
 	memset(&sectorrenderflags[0], 0, numsectors*sizeof(sectorrenderflags[0]));
 	memset(&ss_renderflags[0], 0, numsubsectors*sizeof(ss_renderflags[0]));

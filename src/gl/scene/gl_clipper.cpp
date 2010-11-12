@@ -283,13 +283,13 @@ void Clipper::RemoveClipRange(angle_t start, angle_t end)
 		{
 			node = node->next;
 		}
-		if (node->start <= start)
+		if (node != NULL && node->start <= start)
 		{
 			if (node->end >= end) return;
 			start = node->end;
 			node = node->next;
 		}
-		while (node->start < end)
+		while (node != NULL && node->start < end)
 		{
 			DoRemoveClipRange(start, node->start);
 			start = node->end;

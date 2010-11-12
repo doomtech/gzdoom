@@ -18,8 +18,8 @@ class ADynamicLight;
 class FMaterial;
 struct GLDrawList;
 struct GLSkyInfo;
-struct GLSectorStackInfo;
 struct FTexCoordInfo;
+struct FPortal;
 
 
 enum WallTypes
@@ -135,7 +135,7 @@ public:
 		AActor * skybox;			// for skyboxes
 		GLSkyInfo * sky;			// for normal sky
 		GLHorizonInfo * horizon;	// for horizon information
-		GLSectorStackInfo * stack;	// for sector stacks
+		FPortal * portal;			// stacked sector portals
 		secplane_t * planemirror;	// for plane mirrors
 	};
 
