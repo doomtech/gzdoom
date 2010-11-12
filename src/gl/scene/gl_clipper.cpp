@@ -275,7 +275,7 @@ void Clipper::AddClipRange(angle_t start, angle_t end)
 
 void Clipper::RemoveClipRange(angle_t start, angle_t end)
 {
-	ClipNode *node, *temp;
+	ClipNode *node;
 
 	if (silhouette)
 	{
@@ -309,6 +309,8 @@ void Clipper::RemoveClipRange(angle_t start, angle_t end)
 
 void Clipper::DoRemoveClipRange(angle_t start, angle_t end)
 {
+	ClipNode *node, *temp;
+
 	if (cliphead)
 	{
 		//check to see if range contains any old ranges

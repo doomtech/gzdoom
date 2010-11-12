@@ -150,23 +150,8 @@ static void SpreadHackedFlag(subsector_t * sub)
 static void PrepareSectorData()
 {
 	int 				i;
-	size_t				/*ii,*/ jj;
 	TArray<subsector_t *> undetermined;
 	subsector_t *		ss;
-
-	// look up sector number for each subsector
-	for (i = 0; i < numsubsectors; i++)
-	{
-		ss = &subsectors[i];
-		seg_t *seg = ss->firstline;
-
-		M_ClearBox(ss->bbox);
-		for(jj=0; jj<ss->numlines; jj++)
-		{
-			M_AddToBox(ss->bbox,seg->v1->x, seg->v1->y);
-			seg++;
-		}
-	}
 
 	// now group the subsectors by sector
 	subsector_t ** subsectorbuffer = new subsector_t * [numsubsectors];

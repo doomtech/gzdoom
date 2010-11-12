@@ -1069,8 +1069,8 @@ struct subsector_t
 
 	// subsector related GL data
 	FLightNode *	lighthead[2];	// Light nodes (blended and additive)
-	fixed_t			bbox[4];		// Bounding box
 	int				validcount;
+	short			mapsection;
 	char			hacked;			// 1: is part of a render hack
 									// 2: has one-sided walls
 	FPortalCoverage	portalcoverage[2];
