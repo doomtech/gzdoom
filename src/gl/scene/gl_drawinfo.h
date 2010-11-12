@@ -189,6 +189,11 @@ struct FDrawInfo
 		BYTE flags;
 	};
 
+	struct FPortalCoverageInfo
+	{
+		TArray<DWORD> subs;
+	};
+
 	TArray<BYTE> sectorrenderflags;
 	TArray<BYTE> ss_renderflags;
 
@@ -207,6 +212,8 @@ struct FDrawInfo
 	TArray<sector_t *> FloorStacks;
 
 	TArray<subsector_t *> HandledSubsectors;
+
+	TArray<FPortalCoverageInfo> PortalCoverage;
 
 	FDrawInfo * next;
 	GLDrawList drawlists[GLDL_TYPES];

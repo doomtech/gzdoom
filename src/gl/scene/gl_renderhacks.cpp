@@ -1173,12 +1173,19 @@ void FDrawInfo::ProcessSectorStacks()
 				}
 				for(unsigned int j=0;j<HandledSubsectors.Size();j++)
 				{				
-					ss_renderflags[DWORD(HandledSubsectors[j]-subsectors)] &= ~SSRF_RENDERCEILING;
+					subsector_t *sub = HandledSubsectors[j];
+					ss_renderflags[DWORD(sub-subsectors)] &= ~SSRF_RENDERCEILING;
+					if (sub->portalcoverage[sector_t::ceiling].subsectors == NULL)
+					{
+						gl_BuildPortalCoverage(&sub->portalcoverage[sector_t::ceiling],	
+							sub, &portals[sec->CeilingSkyBox->special1]);
+					}
+					PortalCoverage[sec->CeilingSkyBox->special1].subs.Push(DWORD(sub-subsectors));
 
-					if (sub->render_sector->GetAlpha(sector_t::ceiling)!=0)
+					if (sec->GetAlpha(sector_t::ceiling) != 0)
 					{
 						gl_subsectorrendernode * node = SSR_List.GetNew();
-						node->sub = HandledSubsectors[j];
+						node->sub = sub;
 						AddOtherCeilingPlane(sub->render_sector->sectornum, node);
 					}
 				}
@@ -1209,13 +1216,20 @@ void FDrawInfo::ProcessSectorStacks()
 
 				for(unsigned int j=0;j<HandledSubsectors.Size();j++)
 				{				
-					//Printf("%d: ss %d, sec %d\n", j, HandledSubsectors[j]-subsectors, HandledSubsectors[j]->render_sector->sectornum);
-					ss_renderflags[DWORD(HandledSubsectors[j]-subsectors)] &= ~SSRF_RENDERFLOOR;
+					subsector_t *sub = HandledSubsectors[j];
+					ss_renderflags[DWORD(sub-subsectors)] &= ~SSRF_RENDERFLOOR;
 
-					if (sub->render_sector->GetAlpha(sector_t::floor)!=0)
+					if (sub->portalcoverage[sector_t::floor].subsectors == NULL)
+					{
+						gl_BuildPortalCoverage(&sub->portalcoverage[sector_t::floor],
+							sub, &portals[sec->FloorSkyBox->special1]);
+					}
+					PortalCoverage[sec->FloorSkyBox->special1].subs.Push(DWORD(sub-subsectors));
+
+					if (sec->GetAlpha(sector_t::floor)!=0)
 					{
 						gl_subsectorrendernode * node = SSR_List.GetNew();
-						node->sub = HandledSubsectors[j];
+						node->sub = sub;
 						AddOtherFloorPlane(sub->render_sector->sectornum, node);
 					}
 				}

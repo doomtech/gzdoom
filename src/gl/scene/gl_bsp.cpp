@@ -62,6 +62,26 @@ CVAR(Bool, gl_render_things, true, 0)
 CVAR(Bool, gl_render_walls, true, 0)
 CVAR(Bool, gl_render_flats, true, 0)
 
+
+static void UnclipSubsector(subsector_t *sub)
+{
+	int count = sub->numlines;
+	seg_t * seg = sub->firstline;
+
+	while (count--)
+	{
+		angle_t startAngle = seg->v2->GetClipAngle();
+		angle_t endAngle = seg->v1->GetClipAngle();
+
+		// Back side, i.e. backface culling	- read: endAngle >= startAngle!
+		if (startAngle-endAngle >= ANGLE_180)  
+		{
+			clipper.SafeRemoveClipRange(startAngle, endAngle);
+		}
+		seg++;
+	}
+}
+
 //==========================================================================
 //
 // R_AddLine
@@ -367,6 +387,14 @@ static void DoSubsector(subsector_t * sub)
 	sector=sub->sector;
 	if (!sector) return;
 
+	if (gl_drawinfo->ss_renderflags[sub-subsectors] & SSRF_SEEN)
+	{
+		// This means that we have reached a subsector in a portal that has been marked 'seen'
+		// from the other side of the portal. This means we must clear the clipper for the
+		// range this subsector spans before going on.
+		UnclipSubsector(sub);
+	}
+
 	fakesector=gl_FakeFlat(sector, &fake, false);
 
 	if (sector->validcount != validcount)
@@ -426,6 +454,14 @@ static void DoSubsector(subsector_t * sub)
 			// Due to the way a BSP works such a subsector can never be visible
 			if (!sector->heightsec || sector->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC || in_area!=area_default)
 			{
+				if (sector != sub->render_sector)
+				{
+					sector = sub->render_sector;
+					// the planes of this subsector are faked to belong to another sector
+					// This means we need the heightsec parts and light info of the render sector, not the actual one.
+					fakesector = gl_FakeFlat(sector, &fake, false);
+				}
+
 				BYTE &srf = gl_drawinfo->sectorrenderflags[sub->render_sector->sectornum];
 				if (!(srf & SSRF_PROCESSED))
 				{
@@ -434,13 +470,6 @@ static void DoSubsector(subsector_t * sub)
 					SetupFlat.Clock();
 					//if (!gl_multithreading)
 					{
-						if (sector != sub->render_sector)
-						{
-							sector = sub->render_sector;
-							// the planes of this subsector are faked to belong to another sector
-							// This means we need the heightsec parts and light info of the render sector, not the actual one!
-							fakesector = gl_FakeFlat(sector, &fake, false);
-						}
 						GLRenderer->ProcessSector(fakesector);
 					}
 					/*
@@ -456,6 +485,15 @@ static void DoSubsector(subsector_t * sub)
 				gl_drawinfo->ss_renderflags[sub-subsectors] = 
 					(sub->numlines > 2) ? SSRF_PROCESSED|SSRF_RENDERALL : SSRF_PROCESSED;
 				if (sub->hacked & 1) gl_drawinfo->AddHackedSubsector(sub);
+
+				if (fakesector->CeilingSkyBox && fakesector->CeilingSkyBox->bAlways)
+				{
+					gl_drawinfo->PortalCoverage[fakesector->CeilingSkyBox->special1].subs.Push(DWORD(sub-subsectors));
+				}
+				if (fakesector->FloorSkyBox && fakesector->FloorSkyBox->bAlways && fakesector->FloorSkyBox != fakesector->CeilingSkyBox)
+				{
+					gl_drawinfo->PortalCoverage[fakesector->FloorSkyBox->special1].subs.Push(DWORD(sub-subsectors));
+				}
 			}
 		}
 	}

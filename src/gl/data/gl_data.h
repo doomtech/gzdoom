@@ -47,6 +47,6 @@ struct FPortal
 extern TArray<FPortal> portals;
 
 void gl_InitPortals();
-
+void gl_BuildPortalCoverage(FPortalCoverage *coverage, subsector_t *subsector, FPortal *portal);
 
 #endif
