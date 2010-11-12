@@ -325,6 +325,8 @@ inline void GLPortal::ClearClipper()
 	angle_t a1 = GLRenderer->FrustumAngle();
 	if (a1<ANGLE_180) clipper.SafeAddClipRangeRealAngles(viewangle+a1, viewangle-a1);
 
+	// lock the parts that have just been clipped out.
+	clipper.SetSilhouette();
 }
 
 //-----------------------------------------------------------------------------
