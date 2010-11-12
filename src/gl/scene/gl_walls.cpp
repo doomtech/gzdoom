@@ -785,6 +785,7 @@ void GLWall::DoTexture(int _type,seg_t * seg, int peg,
 //==========================================================================
 
 void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary, 
+						  sector_t * front, sector_t * back,
 						  sector_t * realfront, sector_t * realback,
 						  fixed_t fch1, fixed_t fch2, fixed_t ffh1, fixed_t ffh2,
 						  fixed_t bch1, fixed_t bch2, fixed_t bfh1, fixed_t bfh2)
@@ -837,8 +838,8 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 		FTexture * tex = TexMan(seg->sidedef->GetTexture(side_t::top));
 		if (!tex || tex->UseType==FTexture::TEX_Null)
 		{
-			if (seg->frontsector->GetTexture(sector_t::ceiling) == skyflatnum &&
-				seg->backsector->GetTexture(sector_t::ceiling) == skyflatnum)
+			if (front->GetTexture(sector_t::ceiling) == skyflatnum &&
+				back->GetTexture(sector_t::ceiling) == skyflatnum)
 			{
 				// intra-sky lines do not clip the texture at all if there's no upper texture
 				topleft = topright = texturetop;
@@ -1445,7 +1446,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
-	if (seg->linedef-lines==8)
+	if (seg->linedef-lines==1095)
 		__asm nop
 #endif
 #endif
@@ -1657,7 +1658,8 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 		gltexture=FMaterial::ValidateTexture(seg->sidedef->GetTexture(side_t::mid), true);
 		if (gltexture || drawfogboundary)
 		{
-			DoMidTexture(seg, drawfogboundary, realfront, realback, fch1, fch2, ffh1, ffh2, bch1, bch2, bfh1, bfh2);
+			DoMidTexture(seg, drawfogboundary, frontsector, backsector, realfront, realback, 
+				fch1, fch2, ffh1, ffh2, bch1, bch2, bfh1, bfh2);
 		}
 
 		if (backsector->e->XFloor.ffloors.Size() || frontsector->e->XFloor.ffloors.Size()) 
