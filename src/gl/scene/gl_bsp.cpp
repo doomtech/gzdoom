@@ -387,6 +387,9 @@ static void DoSubsector(subsector_t * sub)
 	sector=sub->sector;
 	if (!sector) return;
 
+	// If the mapsections differ this subsector can't possibly be visible from the current view point
+	if (!(currentmapsection[sub->mapsection>>3] & (1 << (sub->mapsection & 7)))) return;
+
 	if (gl_drawinfo->ss_renderflags[sub-subsectors] & SSRF_SEEN)
 	{
 		// This means that we have reached a subsector in a portal that has been marked 'seen'

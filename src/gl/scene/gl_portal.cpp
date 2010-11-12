@@ -613,6 +613,11 @@ void GLSkyboxPortal::DrawContents()
 	GLRenderer->SetupView(viewx, viewy, viewz, viewangle, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
 	GLRenderer->SetViewArea();
 	ClearClipper();
+
+	int mapsection = R_PointInSubsector(viewx, viewy)->mapsection;
+	memset(&currentmapsection[0], 0, currentmapsection.Size());
+	currentmapsection[mapsection>>3] |= 1 << (mapsection & 7);
+
 	GLRenderer->DrawScene();
 	origin->flags&=~MF_JUSTHIT;
 	inskybox=false;
@@ -742,6 +747,24 @@ int GLSectorStackPortal::ClipSeg(seg_t *seg)
 #endif
 }
 
+//-----------------------------------------------------------------------------
+//
+// GLSectorStackPortal::SetupCoverage
+//
+//-----------------------------------------------------------------------------
+
+/*
+void GLSectorStackPortal::SetupCoverage()
+{
+	memset(&currentmapsection[0], 0, currentmapsection.Size());
+
+	FPortalCoverageInfo *pc = &gl_drawinfo->PortalCoverage[origin->origin->special1];
+	for(unsigned i = 0; i < pc->subs.Size(); i++)
+	{
+		subsector_t *sub = &subsectors[pc->subs[i];
+}
+*/
+
 
 //-----------------------------------------------------------------------------
 //
@@ -782,7 +805,6 @@ int GLSectorStackPortal::ClipPoint(fixed_t x, fixed_t y)
 	*/
 	return PClip_Inside;
 }
-
 
 //-----------------------------------------------------------------------------
 //

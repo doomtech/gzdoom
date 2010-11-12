@@ -105,26 +105,68 @@ void gl_InitSegs()
 
 //==========================================================================
 //
+// 
+//
+//==========================================================================
+
+static void DoSetMapSection(subsector_t *sub, int num)
+{
+	sub->mapsection = num;
+
+	for(DWORD i=0;i<sub->numlines;i++)
+	{
+		seg_t * seg = sub->firstline + i;
+
+		if (seg->PartnerSeg)
+		{
+			subsector_t * sub2 = seg->PartnerSeg->Subsector();
+
+			if (sub2->mapsection != num)
+			{
+				assert(sub2->mapsection == 0);
+				DoSetMapSection(sub2, num);
+			}
+		}
+	}
+}
+
+//==========================================================================
+//
+// 
+//
+//==========================================================================
+
+static void SetMapSections()
+{
+	bool set;
+	int num = 0;
+	do
+	{
+		set = false;
+		for(int i=0; i<numsubsectors; i++)
+		{
+			if (subsectors[i].mapsection == 0)
+			{
+				num++;
+				DoSetMapSection(&subsectors[i], num);
+				set = true;
+				break;
+			}
+		}
+	}
+	while (set);
+	currentmapsection.Resize(1 + num/8);
+	Printf("%d map sections found\n", num);
+}
+
+//==========================================================================
+//
 // prepare subsectors for GL rendering
 // - analyze rendering hacks using open sectors
 // - assign a render sector (for self referencing sectors)
 // - calculate a bounding box
 //
 //==========================================================================
-
-inline void M_ClearBox (fixed_t *box)
-{
-	box[BOXTOP] = box[BOXRIGHT] = INT_MIN;
-	box[BOXBOTTOM] = box[BOXLEFT] = INT_MAX;
-}
-
-inline void M_AddToBox(fixed_t* box,fixed_t x,fixed_t y)
-{
-	if (x<box[BOXLEFT]) box[BOXLEFT] = x;
-	if (x>box[BOXRIGHT]) box[BOXRIGHT] = x;
-	if (y<box[BOXBOTTOM]) box[BOXBOTTOM] = y;
-	if (y>box[BOXTOP]) box[BOXTOP] = y;
-}
 
 static void SpreadHackedFlag(subsector_t * sub)
 {
@@ -146,6 +188,12 @@ static void SpreadHackedFlag(subsector_t * sub)
 	}
 }
 
+
+//==========================================================================
+//
+// 
+//
+//==========================================================================
 
 static void PrepareSectorData()
 {
@@ -193,6 +241,7 @@ static void PrepareSectorData()
 			}
 		}
 	}
+	SetMapSections();
 }
 
 //==========================================================================
@@ -201,6 +250,7 @@ static void PrepareSectorData()
 // - This will be used to lower the floor of such sectors by one map unit
 //
 //==========================================================================
+
 static void PrepareTransparentDoors(sector_t * sector)
 {
 	bool solidwall=false;
@@ -285,12 +335,12 @@ static void PrepareTransparentDoors(sector_t * sector)
 	}
 }
 
-
 //==========================================================================
 //
 // 
 //
 //==========================================================================
+
 static void AddToVertex(const sector_t * sec, TArray<int> & list)
 {
 	int secno = int(sec-sectors);
@@ -307,6 +357,7 @@ static void AddToVertex(const sector_t * sec, TArray<int> & list)
 // Attach sectors to vertices - used to generate vertex height lists
 //
 //==========================================================================
+
 static void InitVertexData()
 {
 	TArray<int> * vt_sectorlists;
@@ -376,7 +427,7 @@ static void InitVertexData()
 
 //==========================================================================
 //
-// Group segs to sidedefs
+//
 //
 //==========================================================================
 
@@ -405,6 +456,12 @@ static int STACK_ARGS segcmp(const void *a, const void *b)
 	seg_t *B = *(seg_t**)b;
 	return xs_RoundToInt(FRACUNIT*(A->sidefrac - B->sidefrac));
 }
+
+//==========================================================================
+//
+// Group segs to sidedefs
+//
+//==========================================================================
 
 static void PrepareSegs()
 {
@@ -533,6 +590,7 @@ void gl_PreprocessLevel()
 // Cleans up all the GL data for the last level
 //
 //==========================================================================
+
 void gl_CleanLevelData()
 {
 	// Dynamic lights must be destroyed before the sector information here is deleted.
@@ -585,3 +643,24 @@ void gl_CleanLevelData()
 	}
 }
 
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+CCMD(listmapsections)
+{
+	for(int i=0;i<100;i++)
+	{
+		for (int j=0;j<numsubsectors;j++)
+		{
+			if (subsectors[j].mapsection == i)
+			{
+				Printf("Mapsection %d, sector %d, line %d\n", i, subsectors[j].render_sector->sectornum, int(subsectors[j].firstline->linedef-lines));
+				break;
+			}
+		}
+	}
+}

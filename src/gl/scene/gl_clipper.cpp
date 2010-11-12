@@ -126,12 +126,11 @@ void Clipper::SetSilhouette()
 
 	while (node != NULL)
 	{
-		ClipNode *snode = new ClipNode;
-		snode->start = node->start;
-		snode->end = node->end;
+		ClipNode *snode = ClipNode::NewRange(node->start, node->end);
+		if (silhouette == NULL) silhouette = snode;
 		snode->prev = last;
-		snode->next = NULL;
 		if (last != NULL) last->next = snode;
+		last = snode;
 		node = node->next;
 	}
 }
