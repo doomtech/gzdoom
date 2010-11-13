@@ -752,8 +752,7 @@ void GLWall::DoTexture(int _type,seg_t * seg, int peg,
 
 	gltexture->GetTexCoordInfo(&tci, seg->sidedef->GetTextureXScale(texpos), seg->sidedef->GetTextureYScale(texpos));
 
-	type = (seg->linedef->special == Line_Mirror && _type == RENDERWALL_M1S && 
-		!(gl.flags & RFL_NOSTENCIL) && gl_mirrors) ? RENDERWALL_MIRROR : _type;
+	type = (seg->linedef->special == Line_Mirror && _type == RENDERWALL_M1S && gl_mirrors) ? RENDERWALL_MIRROR : _type;
 
 	float floatceilingref = FIXED2FLOAT(ceilingrefheight) + 
 							FIXED2FLOAT(tci.RowOffset(seg->sidedef->GetTextureYOffset(texpos))) +
@@ -1551,7 +1550,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 	}
 
 
-	if (seg->linedef->special==Line_Horizon && !(gl.flags&RFL_NOSTENCIL))
+	if (seg->linedef->special==Line_Horizon)
 	{
 		SkyNormal(frontsector,v1,v2);
 		DoHorizon(seg,frontsector, v1,v2);

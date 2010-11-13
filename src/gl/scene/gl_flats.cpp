@@ -449,11 +449,6 @@ inline void GLFlat::PutFlat(bool fog)
 	{
 		Colormap.GetFixedColormap();
 	}
-	if ((gl.flags&RFL_NOSTENCIL) && !(renderflags&SSRF_RENDER3DPLANES))
-	{
-		renderstyle=STYLE_Translucent;
-		alpha=1.f;
-	}
 	if (renderstyle!=STYLE_Translucent || alpha < 1.f - FLT_EPSILON || fog)
 	{
 		int list = (renderflags&SSRF_RENDER3DPLANES) ? GLDL_TRANSLUCENT : GLDL_TRANSLUCENTBORDER;
