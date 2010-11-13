@@ -319,6 +319,7 @@ struct subsector_t;
 struct sector_t;
 struct side_t;
 extern bool gl_plane_reflection_i;
+struct FPortal;
 
 // Ceiling/floor flags
 enum
@@ -751,6 +752,7 @@ struct sector_t
 	fixed_t						transdoorheight;	// for transparent door hacks
 	int							subsectorcount;		// list of subsectors
 	subsector_t **				subsectors;
+	FPortal *					portals[2];			// floor and ceiling portals
 
 	enum
 	{

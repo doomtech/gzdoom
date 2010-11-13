@@ -96,6 +96,13 @@ static sector_t *currentsector;
 
 static void AddLine (seg_t *seg)
 {
+#ifdef _MSC_VER
+#ifdef _DEBUG
+	if (seg->linedef-lines==38)
+		__asm nop
+#endif
+#endif
+
 	angle_t startAngle, endAngle;
 	sector_t * backsector = NULL;
 	sector_t bs;
@@ -489,23 +496,20 @@ static void DoSubsector(subsector_t * sub)
 					(sub->numlines > 2) ? SSRF_PROCESSED|SSRF_RENDERALL : SSRF_PROCESSED;
 				if (sub->hacked & 1) gl_drawinfo->AddHackedSubsector(sub);
 
-				if (fakesector->CeilingSkyBox && fakesector->CeilingSkyBox->bAlways)
+				FPortal *portal;
+
+				portal = fakesector->portals[sector_t::ceiling];
+				if (portal != NULL)
 				{
-					FPortal *portal = gl_GetPortal(fakesector->CeilingSkyBox, sector_t::ceiling);
-					if (portal != NULL)
-					{
-						GLSectorStackPortal *glportal = portal->GetGLPortal();
-						glportal->AddSubsector(sub);
-					}
+					GLSectorStackPortal *glportal = portal->GetGLPortal();
+					glportal->AddSubsector(sub);
 				}
-				if (fakesector->FloorSkyBox && fakesector->FloorSkyBox->bAlways)
+
+				portal = fakesector->portals[sector_t::floor];
+				if (portal != NULL)
 				{
-					FPortal *portal = gl_GetPortal(fakesector->FloorSkyBox, sector_t::floor);
-					if (portal != NULL)
-					{
-						GLSectorStackPortal *glportal = portal->GetGLPortal();
-						glportal->AddSubsector(sub);
-					}
+					GLSectorStackPortal *glportal = portal->GetGLPortal();
+					glportal->AddSubsector(sub);
 				}
 			}
 		}

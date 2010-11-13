@@ -602,14 +602,20 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 	if (frontsector->floorplane.ZatPoint(FIXED2FLOAT(viewx), FIXED2FLOAT(viewy)) <= FIXED2FLOAT(viewz))
 	{
 		// process the original floor first.
-		if (frontsector->FloorSkyBox && frontsector->FloorSkyBox->bAlways) gl_drawinfo->AddFloorStack(sector);
 
 		srf |= SSRF_RENDERFLOOR;
 
 		lightlevel = GetFloorLight(frontsector);
 		Colormap=frontsector->ColorMap;
-		stack = frontsector->FloorSkyBox && frontsector->FloorSkyBox->bAlways;
-		alpha= stack ? frontsector->GetAlpha(sector_t::floor)/65536.0f : 1.0f-frontsector->GetFloorReflect();
+		if (frontsector->portals[sector_t::floor] != NULL) 
+		{
+			gl_drawinfo->AddFloorStack(sector);
+			alpha = frontsector->GetAlpha(sector_t::floor)/65536.0f;
+		}
+		else
+		{
+			alpha = 1.0f-frontsector->GetFloorReflect();
+		}
 		if (frontsector->VBOHeightcheck(sector_t::floor))
 		{
 			vboindex = frontsector->vboindex[sector_t::floor];
@@ -644,14 +650,21 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 	if (frontsector->ceilingplane.ZatPoint(FIXED2FLOAT(viewx), FIXED2FLOAT(viewy)) >= FIXED2FLOAT(viewz))
 	{
 		// process the original ceiling first.
-		if (frontsector->CeilingSkyBox && frontsector->CeilingSkyBox->bAlways) gl_drawinfo->AddCeilingStack(sector);
 
 		srf |= SSRF_RENDERCEILING;
 
 		lightlevel = GetCeilingLight(frontsector);
 		Colormap=frontsector->ColorMap;
-		stack = frontsector->CeilingSkyBox && frontsector->CeilingSkyBox->bAlways;
-		alpha=stack ? frontsector->GetAlpha(sector_t::ceiling)/65536.0f : 1.0f-frontsector->GetCeilingReflect();
+		if (frontsector->portals[sector_t::ceiling] != NULL) 
+		{
+			gl_drawinfo->AddCeilingStack(sector);
+			alpha = frontsector->GetAlpha(sector_t::ceiling)/65536.0f;
+		}
+		else
+		{
+			alpha = 1.0f-frontsector->GetCeilingReflect();
+		}
+
 		if (frontsector->VBOHeightcheck(sector_t::ceiling))
 		{
 			vboindex = frontsector->vboindex[sector_t::ceiling];

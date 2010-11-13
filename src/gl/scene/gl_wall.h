@@ -164,7 +164,7 @@ private:
 	void FloodPlane(int pass);
 
 	void MirrorPlane(secplane_t * plane, bool ceiling);
-	void SkyTexture(int sky1,ASkyViewpoint * skyboxx, bool ceiling);
+	void SkyTexture(sector_t *sector, int plane);
 
 	void SkyNormal(sector_t * fs,vertex_t * v1,vertex_t * v2);
 	void SkyTop(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex_t * v2);

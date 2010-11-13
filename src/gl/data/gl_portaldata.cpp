@@ -484,8 +484,6 @@ void gl_InitPortals()
 	while ((pt = it.Next()))
 	{
 		FPortal *portalp[2] = {NULL, NULL};
-		pt->special1 = -1;
-		pt->special2 = -1;
 		for(int i=0;i<numsectors;i++)
 		{
 			if (sectors[i].linecount == 0)
@@ -500,8 +498,6 @@ void gl_InitPortals()
 				// we only process portals that actually are in use.
 				if (portalp[plane] == NULL) 
 				{
-					if (plane==0) pt->special1 = portals.Size();	// Link portal thing to render data
-					else pt->special2 = portals.Size();				// floor goes into special1, ceiling into spacial2
 					portalp[plane] = &portals[portals.Reserve(1)];
 					portalp[plane]->origin = pt;
 					portalp[plane]->glportal = NULL;
@@ -510,6 +506,7 @@ void gl_InitPortals()
 					portalp[plane]->yDisplacement = pt->y - pt->Mate->y;
 				}
 				portalp[plane]->AddSectorToPortal(&sectors[i]);
+				sectors[i].portals[plane] = portalp[plane];
 
 				for (int j=0;j < sectors[i].subsectorcount; j++)
 				{

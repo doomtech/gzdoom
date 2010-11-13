@@ -244,7 +244,6 @@ void GLWall::PutWall(bool translucent)
 
 	case RENDERWALL_SKY:
 		//@sync-portal
-		sky=UniqueSkies.Get(sky);
 		portal=GLPortal::FindPortal(sky);
 		if (!portal) portal=new GLSkyPortal(sky);
 		portal->AddLine(this);
@@ -503,7 +502,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 
 		if (fs->GetTexture(sector_t::ceiling) == skyflatnum)
 		{
-			SkyTexture(fs->sky, fs->CeilingSkyBox, true);
+			SkyTexture(fs, sector_t::floor);
 		}
 		else
 		{
@@ -522,8 +521,8 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 
 			if (gl_fixedcolormap) hi.colormap.GetFixedColormap();
 			horizon = &hi;
-			PutWall(0);
 		}
+		PutWall(0);
 		ztop[1] = ztop[0] = zbottom[0];
 	}
 
@@ -532,7 +531,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 		zbottom[1] = zbottom[0] = FIXED2FLOAT(fs->GetPlaneTexZ(sector_t::floor));
 		if (fs->GetTexture(sector_t::floor) == skyflatnum)
 		{
-			SkyTexture(fs->sky, fs->FloorSkyBox, false);
+			SkyTexture(fs, sector_t::floor);
 		}
 		else
 		{
@@ -551,8 +550,8 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 
 			if (gl_fixedcolormap) hi.colormap.GetFixedColormap();
 			horizon=&hi;
-			PutWall(0);
 		}
+		PutWall(0);
 	}
 	return true;
 }

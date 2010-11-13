@@ -23,6 +23,7 @@ struct GLRenderSettings
 extern GLRenderSettings glset;
 
 #include "r_defs.h"
+#include "a_sharedglobal.h"
 
 void gl_RecalcVertexHeights(vertex_t * v);
 FTextureID gl_GetSpriteFrame(unsigned sprite, int frame, int rot, angle_t ang, bool *mirror);
@@ -49,19 +50,6 @@ struct FPortal
 
 extern TArray<FPortal> portals;
 extern TArray<BYTE> currentmapsection;
-
-inline FPortal *gl_GetPortal(AActor *pt, int plane)
-{
-	if (plane == sector_t::floor)
-	{
-		if (pt->special1 != -1) return &portals[pt->special1];
-	}
-	else
-	{
-		if (pt->special2 != -1) return &portals[pt->special2];
-	}
-	return NULL;
-}
 
 void gl_InitPortals();
 void gl_BuildPortalCoverage(FPortalCoverage *coverage, subsector_t *subsector, FPortal *portal);
