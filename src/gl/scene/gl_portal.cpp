@@ -656,6 +656,26 @@ void GLSkyboxPortal::DrawContents()
 //
 //-----------------------------------------------------------------------------
 
+static BYTE SetCoverage(void *node)
+{
+	if (numnodes == 0)
+	{
+		return 0;
+	}
+	if (!((size_t)node & 1))  // Keep going until found a subsector
+	{
+		node_t *bsp = (node_t *)node;
+		BYTE coverage = SetCoverage(bsp->children[0]) | SetCoverage(bsp->children[1]);
+		gl_drawinfo->no_renderflags[bsp-nodes] = coverage;
+		return coverage;
+	}
+	else
+	{
+		subsector_t *sub = (subsector_t *)((BYTE *)node - 1);
+		return gl_drawinfo->ss_renderflags[sub-subsectors] & SSRF_SEEN;
+	}
+}
+
 void GLSectorStackPortal::SetupCoverage()
 {
 	memset(&currentmapsection[0], 0, currentmapsection.Size());
@@ -670,6 +690,7 @@ void GLSectorStackPortal::SetupCoverage()
 			gl_drawinfo->ss_renderflags[dsub-::subsectors] |= SSRF_SEEN;
 		}
 	}
+	SetCoverage(&nodes[numnodes-1]);
 }
 
 //-----------------------------------------------------------------------------
@@ -692,7 +713,7 @@ void GLSectorStackPortal::DrawContents()
 
 	// avoid recursions!
 	if (origin->plane == sector_t::ceiling) inupperstack++;
-	else if (origin->plane == sector_t::floor) inlowerstack++;
+	else /*if (origin->plane == sector_t::floor)*/ inlowerstack++;
 
 	GLRenderer->SetupView(viewx, viewy, viewz, viewangle, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
 	SetupCoverage();
@@ -700,7 +721,7 @@ void GLSectorStackPortal::DrawContents()
 	GLRenderer->DrawScene();
 
 	if (origin->plane == sector_t::ceiling) inupperstack--;
-	else if (origin->plane == sector_t::floor) inlowerstack--;
+	else /*if (origin->plane == sector_t::floor)*/ inlowerstack--;
 }
 
 //-----------------------------------------------------------------------------

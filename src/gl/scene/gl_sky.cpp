@@ -79,6 +79,10 @@ void GLWall::SkyTexture(sector_t *sector, int plane)
 	{
 		type=RENDERWALL_SKYBOX;
 		skybox=skyboxx;
+		if (skybox->x == -129*FRACUNIT)
+		{
+			__asm nop
+		}
 	}
 	else
 	{
@@ -344,8 +348,6 @@ void GLWall::SkyBottom(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,ver
 			ztop[1]=FIXED2FLOAT(bs->floorplane.ZatPoint(v2));
 			flags|=GLWF_SKYHACK;	// mid textures on such lines need special treatment!
 		}
-
-		SkyTexture(fs, sector_t::floor);
 	}
 	else 
 	{
