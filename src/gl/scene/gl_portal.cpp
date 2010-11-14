@@ -89,7 +89,6 @@ bool	 GLPortal::inskybox;
 
 UniqueList<GLSkyInfo> UniqueSkies;
 UniqueList<GLHorizonInfo> UniqueHorizons;
-UniqueList<GLSectorStackInfo> UniqueStacks;
 UniqueList<secplane_t> UniquePlaneMirrors;
 
 
@@ -104,7 +103,6 @@ void GLPortal::BeginScene()
 {
 	UniqueSkies.Clear();
 	UniqueHorizons.Clear();
-	UniqueStacks.Clear();
 	UniquePlaneMirrors.Clear();
 }
 
@@ -292,6 +290,9 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 	savedviewactor=GLRenderer->mViewActor;
 	savedviewangle=viewangle;
 	savedviewarea=in_area;
+
+	NextPortal = GLRenderer->mCurrentPortal;
+	GLRenderer->mCurrentPortal = NULL;	// Portals which need this have to set it themselves
 	PortalAll.Unclock();
 	return true;
 }
@@ -325,6 +326,8 @@ inline void GLPortal::ClearClipper()
 	angle_t a1 = GLRenderer->FrustumAngle();
 	if (a1<ANGLE_180) clipper.SafeAddClipRangeRealAngles(viewangle+a1, viewangle-a1);
 
+	// lock the parts that have just been clipped out.
+	clipper.SetSilhouette();
 }
 
 //-----------------------------------------------------------------------------
@@ -337,6 +340,7 @@ void GLPortal::End(bool usestencil)
 	bool needdepth = NeedDepthBuffer();
 
 	PortalAll.Clock();
+	GLRenderer->mCurrentPortal = NextPortal;
 	if (clipsave) gl.Enable (GL_CLIP_PLANE0+renderdepth-1);
 	if (usestencil)
 	{
@@ -465,6 +469,15 @@ FString indent;
 void GLPortal::EndFrame()
 {
 	GLPortal * p;
+
+	if (!(gl.flags & RFL_NOSTENCIL))
+	{
+		while (portals.Pop(p) && p)
+		{
+			delete p;
+		}
+		return;
+	}
 
 	if (gl_portalinfo)
 	{
@@ -611,6 +624,11 @@ void GLSkyboxPortal::DrawContents()
 	GLRenderer->SetupView(viewx, viewy, viewz, viewangle, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
 	GLRenderer->SetViewArea();
 	ClearClipper();
+
+	int mapsection = R_PointInSubsector(viewx, viewy)->mapsection;
+	memset(&currentmapsection[0], 0, currentmapsection.Size());
+	currentmapsection[mapsection>>3] |= 1 << (mapsection & 7);
+
 	GLRenderer->DrawScene();
 	origin->flags&=~MF_JUSTHIT;
 	inskybox=false;
@@ -622,13 +640,45 @@ void GLSkyboxPortal::DrawContents()
 }
 
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//
+//
+// Sector stack Portal
+//
+//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+// GLSectorStackPortal::SetupCoverage
+//
+//-----------------------------------------------------------------------------
+
+void GLSectorStackPortal::SetupCoverage()
+{
+	memset(&currentmapsection[0], 0, currentmapsection.Size());
+	for(unsigned i=0; i<subsectors.Size(); i++)
+	{
+		subsector_t *sub = subsectors[i];
+		int plane = origin->plane;
+		for(int j=0;j<sub->portalcoverage[plane].sscount; j++)
+		{
+			subsector_t *dsub = &::subsectors[sub->portalcoverage[plane].subsectors[j]];
+			currentmapsection[dsub->mapsection>>3] |= 1 << (dsub->mapsection&7);
+			gl_drawinfo->ss_renderflags[dsub-::subsectors] |= SSRF_SEEN;
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
 //
 // GLSectorStackPortal::DrawContents
 //
 //-----------------------------------------------------------------------------
 void GLSectorStackPortal::DrawContents()
 {
-	FPortal *portal = &::portals[origin->origin->special1];
+	FPortal *portal = origin;
 	portal->UpdateClipAngles();
 
 	viewx += origin->origin->x - origin->origin->Mate->x;
@@ -640,10 +690,11 @@ void GLSectorStackPortal::DrawContents()
 	validcount++;
 
 	// avoid recursions!
-	if (origin->isupper) inupperstack=true;
-	else inlowerstack=true;
+	if (origin->plane == sector_t::ceiling) inupperstack=true;
+	else if (origin->plane == sector_t::floor) inlowerstack=true;
 
 	GLRenderer->SetupView(viewx, viewy, viewz, viewangle, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
+	SetupCoverage();
 	ClearClipper();
 	GLRenderer->DrawScene();
 }
@@ -655,7 +706,7 @@ void GLSectorStackPortal::DrawContents()
 //-----------------------------------------------------------------------------
 int GLSectorStackPortal::ClipSeg(seg_t *seg) 
 { 
-	FPortal *portal = &::portals[origin->origin->special1];
+	FPortal *portal = origin;
 	angle_t *angles = &portal->ClipAngles[0];
 	unsigned numpoints = portal->ClipAngles.Size()-1;
 	angle_t clipangle = seg->v1->GetClipAngle();
@@ -748,7 +799,7 @@ int GLSectorStackPortal::ClipSeg(seg_t *seg)
 //-----------------------------------------------------------------------------
 int GLSectorStackPortal::ClipPoint(fixed_t x, fixed_t y) 
 { 
-	FPortal *portal = &::portals[origin->origin->special1];
+	FPortal *portal = origin;
 	angle_t *angles = &portal->ClipAngles[0];
 	unsigned numpoints = portal->ClipAngles.Size()-1;
 	angle_t clipangle = R_PointToPseudoAngle(viewx, viewy, x, y);
@@ -781,12 +832,22 @@ int GLSectorStackPortal::ClipPoint(fixed_t x, fixed_t y)
 	return PClip_Inside;
 }
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//
+//
+// Plane Mirror Portal
+//
+//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 //
 // GLPlaneMirrorPortal::DrawContents
 //
 //-----------------------------------------------------------------------------
+
 void GLPlaneMirrorPortal::DrawContents()
 {
 	if (renderdepth>r_mirror_recursions) 
@@ -819,6 +880,13 @@ void GLPlaneMirrorPortal::DrawContents()
 	PlaneMirrorFlag--;
 	PlaneMirrorMode=old_pm;
 }
+
+//-----------------------------------------------------------------------------
+//
+// GLPlaneMirrorPortal::DrawContents
+//
+//-----------------------------------------------------------------------------
+
 
 
 //-----------------------------------------------------------------------------

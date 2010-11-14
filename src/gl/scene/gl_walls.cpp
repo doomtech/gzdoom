@@ -214,9 +214,7 @@ void GLWall::PutWall(bool translucent)
 
 	case RENDERWALL_SECTORSTACK:
 		//@sync-portal
-		stack=UniqueStacks.Get(stack);	// map all stacks with the same displacement together
-		portal=GLPortal::FindPortal(stack);
-		if (!portal) portal=new GLSectorStackPortal(stack);
+		portal = this->portal->GetGLPortal();
 		portal->AddLine(this);
 		break;
 
@@ -246,7 +244,6 @@ void GLWall::PutWall(bool translucent)
 
 	case RENDERWALL_SKY:
 		//@sync-portal
-		sky=UniqueSkies.Get(sky);
 		portal=GLPortal::FindPortal(sky);
 		if (!portal) portal=new GLSkyPortal(sky);
 		portal->AddLine(this);
@@ -505,7 +502,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 
 		if (fs->GetTexture(sector_t::ceiling) == skyflatnum)
 		{
-			SkyTexture(fs->sky, fs->CeilingSkyBox, true);
+			SkyTexture(fs, sector_t::floor);
 		}
 		else
 		{
@@ -524,8 +521,8 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 
 			if (gl_fixedcolormap) hi.colormap.GetFixedColormap();
 			horizon = &hi;
-			PutWall(0);
 		}
+		PutWall(0);
 		ztop[1] = ztop[0] = zbottom[0];
 	}
 
@@ -534,7 +531,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 		zbottom[1] = zbottom[0] = FIXED2FLOAT(fs->GetPlaneTexZ(sector_t::floor));
 		if (fs->GetTexture(sector_t::floor) == skyflatnum)
 		{
-			SkyTexture(fs->sky, fs->FloorSkyBox, false);
+			SkyTexture(fs, sector_t::floor);
 		}
 		else
 		{
@@ -553,8 +550,8 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 
 			if (gl_fixedcolormap) hi.colormap.GetFixedColormap();
 			horizon=&hi;
-			PutWall(0);
 		}
+		PutWall(0);
 	}
 	return true;
 }
@@ -755,8 +752,7 @@ void GLWall::DoTexture(int _type,seg_t * seg, int peg,
 
 	gltexture->GetTexCoordInfo(&tci, seg->sidedef->GetTextureXScale(texpos), seg->sidedef->GetTextureYScale(texpos));
 
-	type = (seg->linedef->special == Line_Mirror && _type == RENDERWALL_M1S && 
-		!(gl.flags & RFL_NOSTENCIL) && gl_mirrors) ? RENDERWALL_MIRROR : _type;
+	type = (seg->linedef->special == Line_Mirror && _type == RENDERWALL_M1S && gl_mirrors) ? RENDERWALL_MIRROR : _type;
 
 	float floatceilingref = FIXED2FLOAT(ceilingrefheight) + 
 							FIXED2FLOAT(tci.RowOffset(seg->sidedef->GetTextureYOffset(texpos))) +
@@ -1555,7 +1551,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 	}
 
 
-	if (seg->linedef->special==Line_Horizon && !(gl.flags&RFL_NOSTENCIL))
+	if (seg->linedef->special==Line_Horizon)
 	{
 		SkyNormal(frontsector,v1,v2);
 		DoHorizon(seg,frontsector, v1,v2);
