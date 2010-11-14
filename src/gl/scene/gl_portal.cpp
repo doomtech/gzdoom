@@ -290,6 +290,9 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 	savedviewactor=GLRenderer->mViewActor;
 	savedviewangle=viewangle;
 	savedviewarea=in_area;
+
+	NextPortal = GLRenderer->mCurrentPortal;
+	GLRenderer->mCurrentPortal = NULL;	// Portals which need this have to set it themselves
 	PortalAll.Unclock();
 	return true;
 }
@@ -337,6 +340,7 @@ void GLPortal::End(bool usestencil)
 	bool needdepth = NeedDepthBuffer();
 
 	PortalAll.Clock();
+	GLRenderer->mCurrentPortal = NextPortal;
 	if (clipsave) gl.Enable (GL_CLIP_PLANE0+renderdepth-1);
 	if (usestencil)
 	{
@@ -636,6 +640,38 @@ void GLSkyboxPortal::DrawContents()
 }
 
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//
+//
+// Sector stack Portal
+//
+//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+// GLSectorStackPortal::SetupCoverage
+//
+//-----------------------------------------------------------------------------
+
+void GLSectorStackPortal::SetupCoverage()
+{
+	memset(&currentmapsection[0], 0, currentmapsection.Size());
+	for(unsigned i=0; i<subsectors.Size(); i++)
+	{
+		subsector_t *sub = subsectors[i];
+		int plane = origin->plane;
+		for(int j=0;j<sub->portalcoverage[plane].sscount; j++)
+		{
+			subsector_t *dsub = &::subsectors[sub->portalcoverage[plane].subsectors[j]];
+			currentmapsection[dsub->mapsection>>3] |= 1 << (dsub->mapsection&7);
+			gl_drawinfo->ss_renderflags[dsub-::subsectors] |= SSRF_SEEN;
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
 //
 // GLSectorStackPortal::DrawContents
 //
@@ -655,7 +691,7 @@ void GLSectorStackPortal::DrawContents()
 
 	// avoid recursions!
 	if (origin->plane == sector_t::ceiling) inupperstack=true;
-	else inlowerstack=true;
+	else if (origin->plane == sector_t::floor) inlowerstack=true;
 
 	GLRenderer->SetupView(viewx, viewy, viewz, viewangle, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
 	SetupCoverage();
@@ -755,28 +791,6 @@ int GLSectorStackPortal::ClipSeg(seg_t *seg)
 #endif
 }
 
-//-----------------------------------------------------------------------------
-//
-// GLSectorStackPortal::SetupCoverage
-//
-//-----------------------------------------------------------------------------
-
-void GLSectorStackPortal::SetupCoverage()
-{
-	memset(&currentmapsection[0], 0, currentmapsection.Size());
-	for(unsigned i=0; i<subsectors.Size(); i++)
-	{
-		subsector_t *sub = subsectors[i];
-		int plane = origin->plane;
-		for(int j=0;j<sub->portalcoverage[plane].sscount; j++)
-		{
-			subsector_t *dsub = &::subsectors[sub->portalcoverage[plane].subsectors[j]];
-			currentmapsection[dsub->mapsection>>3] |= 1 << (dsub->mapsection&7);
-			gl_drawinfo->ss_renderflags[dsub-::subsectors] |= SSRF_SEEN;
-		}
-	}
-}
-
 
 //-----------------------------------------------------------------------------
 //
@@ -819,10 +833,21 @@ int GLSectorStackPortal::ClipPoint(fixed_t x, fixed_t y)
 }
 
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//
+//
+// Plane Mirror Portal
+//
+//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 //
 // GLPlaneMirrorPortal::DrawContents
 //
 //-----------------------------------------------------------------------------
+
 void GLPlaneMirrorPortal::DrawContents()
 {
 	if (renderdepth>r_mirror_recursions) 
@@ -855,6 +880,13 @@ void GLPlaneMirrorPortal::DrawContents()
 	PlaneMirrorFlag--;
 	PlaneMirrorMode=old_pm;
 }
+
+//-----------------------------------------------------------------------------
+//
+// GLPlaneMirrorPortal::DrawContents
+//
+//-----------------------------------------------------------------------------
+
 
 
 //-----------------------------------------------------------------------------

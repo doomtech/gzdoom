@@ -102,6 +102,7 @@ private:
 	AActor * savedviewactor;
 	area_t savedviewarea;
 	unsigned char clipsave;
+	GLPortal *NextPortal;
 
 protected:
 	TArray<GLWall> lines;
