@@ -502,17 +502,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 
 		if (fs->GetTexture(sector_t::ceiling) == skyflatnum)
 		{
-			portal = fs->portals[sector_t::ceiling];
-			if (portal != NULL)
-			{
-				type=RENDERWALL_SECTORSTACK;
-				if (GLPortal::inlowerstack) goto floor;
-				this->portal = portal;
-			}
-			else
-			{
-				SkyTexture(fs, sector_t::ceiling);
-			}
+			SkyPlane(fs, sector_t::ceiling, false);
 		}
 		else
 		{
@@ -531,28 +521,17 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 
 			if (gl_fixedcolormap) hi.colormap.GetFixedColormap();
 			horizon = &hi;
+			PutWall(0);
 		}
-		PutWall(0);
 		ztop[1] = ztop[0] = zbottom[0];
 	}
 
-floor:
 	if (viewz > fs->GetPlaneTexZ(sector_t::floor))
 	{
 		zbottom[1] = zbottom[0] = FIXED2FLOAT(fs->GetPlaneTexZ(sector_t::floor));
 		if (fs->GetTexture(sector_t::floor) == skyflatnum)
 		{
-			portal = fs->portals[sector_t::floor];
-			if (portal != NULL)
-			{
-				type=RENDERWALL_SECTORSTACK;
-				if (GLPortal::inupperstack) return true;
-				this->portal = portal;
-			}
-			else
-			{
-				SkyTexture(fs, sector_t::floor);
-			}
+			SkyPlane(fs, sector_t::floor, false);
 		}
 		else
 		{
@@ -571,8 +550,8 @@ floor:
 
 			if (gl_fixedcolormap) hi.colormap.GetFixedColormap();
 			horizon=&hi;
+			PutWall(0);
 		}
-		PutWall(0);
 	}
 	return true;
 }

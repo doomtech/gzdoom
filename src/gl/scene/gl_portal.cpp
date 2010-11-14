@@ -83,8 +83,7 @@ int GLPortal::renderdepth;
 int GLPortal::PlaneMirrorMode;
 GLuint GLPortal::QueryObject;
 
-int		 GLPortal::inupperstack;
-int		 GLPortal::inlowerstack;
+int		 GLPortal::instack[2];
 bool	 GLPortal::inskybox;
 
 UniqueList<GLSkyInfo> UniqueSkies;
@@ -440,7 +439,7 @@ void GLPortal::StartFrame()
 	if (renderdepth==0)
 	{
 		inskybox=false;
-		inupperstack=inlowerstack=0;
+		instack[sector_t::floor]=instack[sector_t::ceiling]=0;
 	}
 	renderdepth++;
 }
@@ -712,16 +711,14 @@ void GLSectorStackPortal::DrawContents()
 	validcount++;
 
 	// avoid recursions!
-	if (origin->plane == sector_t::ceiling) inupperstack++;
-	else /*if (origin->plane == sector_t::floor)*/ inlowerstack++;
+	if (origin->plane != -1) instack[origin->plane]++;
 
 	GLRenderer->SetupView(viewx, viewy, viewz, viewangle, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
 	SetupCoverage();
 	ClearClipper();
 	GLRenderer->DrawScene();
 
-	if (origin->plane == sector_t::ceiling) inupperstack--;
-	else /*if (origin->plane == sector_t::floor)*/ inlowerstack--;
+	if (origin->plane != -1) instack[origin->plane]--;
 }
 
 //-----------------------------------------------------------------------------
