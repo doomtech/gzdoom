@@ -88,8 +88,8 @@ protected:
 
 public:
 	static int PlaneMirrorMode;
-	static 	bool inupperstack;
-	static bool	inlowerstack;
+	static int inupperstack;
+	static int	inlowerstack;
 	static bool	inskybox;
 
 private:
