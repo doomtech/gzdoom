@@ -313,6 +313,7 @@ void FGLRenderer::CreateScene()
 	ProcessAll.Clock();
 
 	// clip the scene and fill the drawlists
+	for(unsigned i=0;i<portals.Size(); i++) portals[i]->glportal = NULL;
 	gl_spriteindex=0;
 	Bsp.Clock();
 	gl_RenderBSPNode (nodes + numnodes - 1);
@@ -851,7 +852,6 @@ void FGLRenderer::ProcessScene(bool toscreen)
 	int mapsection = R_PointInSubsector(viewx, viewy)->mapsection;
 	memset(&currentmapsection[0], 0, currentmapsection.Size());
 	currentmapsection[mapsection>>3] |= 1 << (mapsection & 7);
-	for(unsigned i=0;i<portals.Size(); i++) portals[i].glportal = NULL;
 	DrawScene(toscreen);
 	FDrawInfo::EndDrawInfo();
 
