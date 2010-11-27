@@ -348,3 +348,4 @@ void GLWall::SkyBottom(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,ver
 
 	SkyPlane(fs, sector_t::floor, true);
 }
+
