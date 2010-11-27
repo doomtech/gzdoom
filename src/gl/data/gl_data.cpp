@@ -86,8 +86,6 @@ CUSTOM_CVAR(Bool, gl_nocoloredspritelighting, false, 0)
 	glset.nocoloredspritelighting = self;
 }
 
-void gl_CreateSections();
-
 //-----------------------------------------------------------------------------
 //
 // Adjust sprite offsets for GL rendering (IWAD resources only)

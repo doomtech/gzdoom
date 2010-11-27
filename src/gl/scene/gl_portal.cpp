@@ -52,6 +52,7 @@
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/dynlights/gl_glow.h"
 #include "gl/data/gl_data.h"
+#include "gl/data/gl_sections.h"
 #include "gl/scene/gl_clipper.h"
 #include "gl/scene/gl_drawinfo.h"
 #include "gl/scene/gl_portal.h"
@@ -659,15 +660,20 @@ void GLSkyboxPortal::DrawContents()
 void GLSectorStackPortal::SetupCoverage()
 {
 	memset(&currentmapsection[0], 0, currentmapsection.Size());
-	for(unsigned i=0; i<subsectors.Size(); i++)
+	for(int p=sector_t::floor; p<=sector_t::ceiling; p++)
 	{
-		subsector_t *sub = subsectors[i];
-		int plane = origin->plane;
-		for(int j=0;j<sub->portalcoverage[plane].sscount; j++)
+		int flag = p==sector_t::floor? SSRF_SEENFLOOR : SSRF_SEENCEILING;
+		for(unsigned i=0; i<subsectors[p].Size(); i++)
 		{
-			subsector_t *dsub = &::subsectors[sub->portalcoverage[plane].subsectors[j]];
-			currentmapsection[dsub->mapsection>>3] |= 1 << (dsub->mapsection&7);
-			gl_drawinfo->ss_renderflags[dsub-::subsectors] |= SSRF_SEEN;
+			subsector_t *sub = subsectors[p][i];
+			int plane = origin->plane;
+			for(int j=0;j<sub->portalcoverage[plane].sscount; j++)
+			{
+				subsector_t *dsub = &::subsectors[sub->portalcoverage[plane].subsectors[j]];
+				currentmapsection[dsub->mapsection>>3] |= 1 << (dsub->mapsection&7);
+				gl_drawinfo->ss_renderflags[dsub-::subsectors] |= flag;
+				gl_drawinfo->sect_renderflags[SectionForSubsector[dsub-::subsectors]] |= flag;
+			}
 		}
 	}
 }

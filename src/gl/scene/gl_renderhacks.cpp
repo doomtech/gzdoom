@@ -1183,7 +1183,7 @@ void FDrawInfo::ProcessSectorStacks()
 						gl_BuildPortalCoverage(&sub->portalcoverage[sector_t::ceiling],	sub, portal);
 					}
 
-					portal->GetGLPortal()->AddSubsector(sub);
+					portal->GetGLPortal()->AddSubsector(sub, sector_t::ceiling);
 
 					if (sec->GetAlpha(sector_t::ceiling) != 0)
 					{
@@ -1229,7 +1229,7 @@ void FDrawInfo::ProcessSectorStacks()
 					}
 
 					GLSectorStackPortal *glportal = portal->GetGLPortal();
-					glportal->AddSubsector(sub);
+					glportal->AddSubsector(sub, sector_t::floor);
 
 					if (sec->GetAlpha(sector_t::floor)!=0)
 					{

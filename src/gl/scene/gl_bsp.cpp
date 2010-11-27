@@ -502,14 +502,14 @@ static void DoSubsector(subsector_t * sub)
 				if (portal != NULL)
 				{
 					GLSectorStackPortal *glportal = portal->GetGLPortal();
-					glportal->AddSubsector(sub);
+					glportal->AddSubsector(sub, sector_t::ceiling);
 				}
 
 				portal = fakesector->portals[sector_t::floor];
 				if (portal != NULL)
 				{
 					GLSectorStackPortal *glportal = portal->GetGLPortal();
-					glportal->AddSubsector(sub);
+					glportal->AddSubsector(sub, sector_t::floor);
 				}
 			}
 		}

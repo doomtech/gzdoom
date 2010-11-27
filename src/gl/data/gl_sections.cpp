@@ -37,7 +37,6 @@
 **---------------------------------------------------------------------------
 **
 */
-#if 0
 
 #include "gl/system/gl_system.h"
 #include "i_system.h"
@@ -197,13 +196,13 @@ public:
 
 	sector_t *FrontRenderSector(seg_t *seg)
 	{
-		return seg->Subsector->render_sector;
+		return seg->Subsector()->render_sector;
 	}
 
 	sector_t *BackRenderSector(seg_t *seg)
 	{
 		if (seg->PartnerSeg == NULL) return NULL;
-		return seg->PartnerSeg->Subsector->render_sector;
+		return seg->PartnerSeg->Subsector()->render_sector;
 	}
 
 	bool IntraSectorSeg(seg_t *seg)
@@ -318,7 +317,7 @@ public:
 					return true;
 				}
 				else if (intra && 
-					!ISDONE(seg->PartnerSeg->Subsector-subsectors, processed_subsectors))
+					!ISDONE(seg->PartnerSeg->Subsector()-subsectors, processed_subsectors))
 				{
 					*pSeg = seg->PartnerSeg;
 					return true;
@@ -464,6 +463,7 @@ public:
 		}
 	}
 
+#if 0
 	//=============================================================================
 	//
 	// cbTessBegin
@@ -578,7 +578,7 @@ public:
 		}
 		gluDeleteTess(tess);
 	}
-
+#endif
 
 	//=============================================================================
 	//
@@ -665,7 +665,7 @@ public:
 						DPrintf("Inconsistent subsector references in seg %d. Cannot create Sections.\n", workseg-segs);
 						return false;
 					}
-					subsector = partner->Subsector;
+					subsector = partner->Subsector();
 					startpt = workseg->v1;
 				}
 				else
@@ -684,7 +684,7 @@ public:
 					}
 					else
 					{
-						subsector = workseg->Subsector;
+						subsector = workseg->Subsector();
 						// If this is a regular seg, start there, otherwise start
 						// at the subsector's first seg
 						startpt = workseg->sidedef == NULL? NULL : workseg->v1;
@@ -702,7 +702,7 @@ public:
 		SectionLoops.ShrinkToFit();
 		SectionLines.ShrinkToFit();
 
-		tesselateSections();
+		//tesselateSections();
 
 		return true;
 	}
@@ -844,4 +844,3 @@ void gl_CreateSections()
 
 
 
-#endif

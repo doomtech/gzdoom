@@ -233,7 +233,7 @@ public:
 
 struct GLSectorStackPortal : public GLPortal
 {
-	TArray<subsector_t *> subsectors;
+	TArray<subsector_t *> subsectors[2];
 protected:
 	virtual void DrawContents();
 	virtual void * GetSource() const { return origin; }
@@ -250,9 +250,9 @@ public:
 	int ClipSeg(seg_t *seg);
 	int ClipPoint(fixed_t x, fixed_t y);
 	void SetupCoverage();
-	void AddSubsector(subsector_t *sub)
+	void AddSubsector(subsector_t *sub, int fc)
 	{
-		subsectors.Push(sub);
+		subsectors[fc].Push(sub);
 	}
 
 };

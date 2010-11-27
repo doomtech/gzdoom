@@ -57,6 +57,7 @@
 #include "gl/renderer/gl_renderer.h"
 #include "gl/data/gl_data.h"
 #include "gl/data/gl_vertexbuffer.h"
+#include "gl/data/gl_sections.h"
 #include "gl/dynlights/gl_dynlight.h"
 #include "gl/dynlights/gl_glow.h"
 #include "gl/utility/gl_clock.h"
@@ -576,9 +577,7 @@ void gl_PreprocessLevel()
 		GLRenderer->SetupLevel();
 	}
 
-#if 0
 	gl_CreateSections();
-#endif
 
 	InitGLRMapinfoData();
 }
