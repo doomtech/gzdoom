@@ -3404,11 +3404,13 @@ void P_FreeLevelData ()
 		delete[] vertexes;
 		vertexes = NULL;
 	}
+	numvertexes = 0;
 	if (segs != NULL)
 	{
 		delete[] segs;
 		segs = NULL;
 	}
+	numsegs = 0;
 	if (glsegextras != NULL)
 	{
 		delete[] glsegextras;
@@ -3419,8 +3421,8 @@ void P_FreeLevelData ()
 		delete[] sectors[0].e;
 		delete[] sectors;
 		sectors = NULL;
-		numsectors = 0;	// needed for the pointer cleanup code
 	}
+	numsectors = 0;
 	if (gamenodes != NULL && gamenodes != nodes)
 	{
 		delete[] gamenodes;
@@ -3453,11 +3455,14 @@ void P_FreeLevelData ()
 		delete[] lines;
 		lines = NULL;
 	}
+	numlines = 0;
 	if (sides != NULL)
 	{
 		delete[] sides;
 		sides = NULL;
 	}
+	numsides = 0;
+
 	if (blockmaplump != NULL)
 	{
 		delete[] blockmaplump;
@@ -3514,6 +3519,7 @@ void P_FreeLevelData ()
 		delete[] zones;
 		zones = NULL;
 	}
+	numzones = 0;
 	P_FreeStrifeConversations ();
 	if (level.Scrolls != NULL)
 	{
