@@ -199,6 +199,23 @@ void ST_LoadCrosshair(bool alwaysload)
 
 //---------------------------------------------------------------------------
 //
+// ST_Clear
+//
+//---------------------------------------------------------------------------
+
+void ST_Clear()
+{
+	if (StatusBar != NULL)
+	{
+		StatusBar->Destroy();
+		StatusBar = NULL;
+	}
+	CrosshairImage = NULL;
+	CrosshairNum = 0;
+}
+
+//---------------------------------------------------------------------------
+//
 // Constructor
 //
 //---------------------------------------------------------------------------
@@ -236,6 +253,7 @@ void DBaseStatusBar::Destroy ()
 		msg->Destroy();
 		msg = next;
 	}
+	Messages = NULL;
 	Super::Destroy();
 }
 
