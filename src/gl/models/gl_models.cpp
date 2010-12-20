@@ -272,6 +272,7 @@ void gl_InitModels()
 		smf.models[0] = md;
 		smf.skins[0] = md->GetPaletteTexture();
 		smf.xscale = smf.yscale = smf.zscale = FIXED2FLOAT(VoxelDefs[i]->Scale);
+		smf.angleoffset = VoxelDefs[i]->AngleOffset;
 		if (VoxelDefs[i]->PlacedSpin != 0)
 		{
 			smf.yrotate = 1.f;
@@ -664,7 +665,7 @@ void gl_RenderModel(GLSprite * spr, int cm)
 	float scaleFactorZ = FIXED2FLOAT(spr->actor->scaleY) * smf->zscale;
 	float pitch = 0;
 	float rotateOffset = 0;
-	float angle = ANGLE_TO_FLOAT(spr->actor->angle);
+	float angle = ANGLE_TO_FLOAT(spr->actor->angle + smf->angleoffset);
 
 	// [BB] Workaround for the missing pitch information.
 	if ( (smf->flags & MDL_PITCHFROMMOMENTUM) )

@@ -329,6 +329,7 @@ struct FSpriteModelFrame
 	short frame;
 	FState * state;	// for later!
 	int hashnext;
+	angle_t angleoffset;
 };
 
 class GLSprite;
