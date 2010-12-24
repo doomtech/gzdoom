@@ -722,8 +722,8 @@ void GLSectorStackPortal::DrawContents()
 {
 	FPortal *portal = origin;
 
-	viewx += origin->origin->x - origin->origin->Mate->x;
-	viewy += origin->origin->y - origin->origin->Mate->y;
+	viewx += origin->xDisplacement;
+	viewy += origin->yDisplacement;
 	GLRenderer->mViewActor = NULL;
 	GLRenderer->mCurrentPortal = this;
 

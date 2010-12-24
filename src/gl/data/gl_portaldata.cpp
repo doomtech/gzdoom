@@ -360,7 +360,6 @@ void gl_InitPortals()
 				if (portalp[plane] == NULL) 
 				{
 					portalp[plane] = new FPortal;
-					portalp[plane]->origin = pt;
 					portalp[plane]->glportal = NULL;
 					portalp[plane]->plane = plane;
 					portalp[plane]->xDisplacement = pt->x - pt->Mate->x;
@@ -386,14 +385,14 @@ CCMD(dumpportals)
 	{
 		double xdisp = portals[i]->xDisplacement/65536.;
 		double ydisp = portals[i]->yDisplacement/65536.;
-		Printf(PRINT_LOG, "Portal #%d, %s, stackpoint at (%f,%f), displacement = (%f,%f)\n", i, portals[i]->plane==0? "floor":"ceiling", portals[i]->origin->x/65536., portals[i]->origin->y/65536.,
+		Printf(PRINT_LOG, "Portal #%d, %s, displacement = (%f,%f)\n", i, portals[i]->plane==0? "floor":"ceiling",
 			xdisp, ydisp);
 		Printf(PRINT_LOG, "Coverage:\n");
 		for(int j=0;j<numsubsectors;j++)
 		{
 			subsector_t *sub = &subsectors[j];
-			ASkyViewpoint *pt = portals[i]->plane == 0? sub->render_sector->FloorSkyBox : sub->render_sector->CeilingSkyBox;
-			if (pt == portals[i]->origin)
+			FPortal *port = sub->render_sector->portals[portals[i]->plane];
+			if (port == portals[i])
 			{
 				Printf(PRINT_LOG, "\tSubsector %d (%d):\n\t\t", j, sub->render_sector->sectornum);
 				for(unsigned k = 0;k< sub->numlines; k++)
