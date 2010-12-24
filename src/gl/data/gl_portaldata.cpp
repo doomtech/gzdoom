@@ -63,6 +63,30 @@
 #include "gl/utility/gl_clock.h"
 #include "gl/gl_functions.h"
 
+struct FPortalID
+{
+	fixed_t mXDisplacement;
+	fixed_t mYDisplacement;
+
+	// for the hash code
+	operator intptr_t() const { return (mXDisplacement >> 8) + (mYDisplacement << 8); }
+	bool operator != (const FPortalID &other) const
+	{
+		return mXDisplacement != other.mXDisplacement ||
+				mYDisplacement != other.mYDisplacement;
+	}
+};
+
+struct FPortalSector
+{
+	sector_t *mSub;
+	int mPlane;
+};
+
+typedef TArray<FPortalSector> FPortalSectors;
+
+typedef TMap<FPortalID, FPortalSectors> FPortalMap;
+
 TArray<FPortal *> portals;
 
 //==========================================================================
@@ -326,10 +350,36 @@ void gl_BuildPortalCoverage(FPortalCoverage *coverage, subsector_t *subsector, F
 //
 //==========================================================================
 
+static void CollectPortalSectors(FPortalMap &collection)
+{
+	for (int i=0;i<numsectors;i++)
+	{
+		sector_t *sec = &sectors[i];
+		if (sec->CeilingSkyBox != NULL && sec->CeilingSkyBox->bAlways && sec->CeilingSkyBox->Mate != NULL)
+		{
+			FPortalID id = { sec->CeilingSkyBox->x - sec->CeilingSkyBox->Mate->x,
+							 sec->CeilingSkyBox->y - sec->CeilingSkyBox->Mate->y};
+
+			FPortalSectors &sss = collection[id];
+			FPortalSector ss = { sec, sector_t::ceiling };
+			sss.Push(ss);
+		}
+
+		if (sec->FloorSkyBox != NULL && sec->FloorSkyBox->bAlways && sec->FloorSkyBox->Mate != NULL)
+		{
+			FPortalID id = { sec->FloorSkyBox->x - sec->FloorSkyBox->Mate->x,
+							 sec->FloorSkyBox->y - sec->FloorSkyBox->Mate->y };
+
+			FPortalSectors &sss = collection[id];
+			FPortalSector ss = { sec, sector_t::floor };
+			sss.Push(ss);
+		}
+	}
+}
+
 void gl_InitPortals()
 {
-	TThinkerIterator<AStackPoint> it;
-	AStackPoint *pt;
+	FPortalMap collection;
 
 	if (numnodes == 0) return;
 
@@ -341,43 +391,49 @@ void gl_InitPortals()
 		no->len = (float)sqrt(fdx * fdx + fdy * fdy);
 	}
 
+	CollectPortalSectors(collection);
 	portals.Clear();
-	while ((pt = it.Next()))
+
+	FPortalMap::Iterator it(collection);
+	FPortalMap::Pair *pair;
+	int c = 0;
+	int planeflags = 0;
+	while (it.NextPair(pair))
 	{
-		FPortal *portalp[2] = {NULL, NULL};
-		for(int i=0;i<numsectors;i++)
+		for(unsigned i=0;i<pair->Value.Size(); i++)
 		{
-			if (sectors[i].linecount == 0)
+			if (pair->Value[i].mPlane == sector_t::floor) planeflags |= 1;
+			else if (pair->Value[i].mPlane == sector_t::ceiling) planeflags |= 2;
+		}
+		for (int i=1;i<=2;i<<=1)
+		{
+			// For now, add separate portals for floor and ceiling. They can be merged once
+			// proper plane clipping is in.
+			if (planeflags & i)
 			{
-				continue;
-			}
-			for(int plane=0;plane<2;plane++)
-			{
-				TObjPtr<ASkyViewpoint> &p = plane==1? sectors[i].CeilingSkyBox : sectors[i].FloorSkyBox;
-				if (p != pt) continue;
-
-				// we only process portals that actually are in use.
-				if (portalp[plane] == NULL) 
+				FPortal *portal = new FPortal;
+				portal->xDisplacement = pair->Key.mXDisplacement;
+				portal->yDisplacement = pair->Key.mYDisplacement;
+				portal->plane = (i==1? sector_t::floor : sector_t::ceiling);	/**/
+				portals.Push(portal);
+				for(unsigned j=0;j<pair->Value.Size(); j++)
 				{
-					portalp[plane] = new FPortal;
-					portalp[plane]->glportal = NULL;
-					portalp[plane]->plane = plane;
-					portalp[plane]->xDisplacement = pt->x - pt->Mate->x;
-					portalp[plane]->yDisplacement = pt->y - pt->Mate->y;
-					portals.Push(portalp[plane]);
-				}
-				sectors[i].portals[plane] = portalp[plane];
-
-				for (int j=0;j < sectors[i].subsectorcount; j++)
-				{
-					subsector_t *sub = sectors[i].subsectors[j];
-					gl_BuildPortalCoverage(&sub->portalcoverage[plane], sub, portalp[plane]);
+					sector_t *sec = pair->Value[j].mSub;
+					int plane = pair->Value[j].mPlane;
+					if (portal->plane == plane)
+					{
+						for(int k=0;k<sec->subsectorcount; k++)
+						{
+							subsector_t *sub = sec->subsectors[k];
+							gl_BuildPortalCoverage(&sub->portalcoverage[plane], sub, portal);
+						}
+						sec->portals[plane] = portal;
+					}
 				}
 			}
 		}
 	}
 }
-
 
 CCMD(dumpportals)
 {
