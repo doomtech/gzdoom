@@ -71,145 +71,6 @@ TArray<FPortal *> portals;
 //
 //==========================================================================
 
-int FPortal::PointOnShapeLineSide(fixed_t x, fixed_t y, int shapeindex)
-{
-	int shapeindex2 = (shapeindex+1)%Shape.Size();
-
-	return DMulScale32(y - Shape[shapeindex]->y, Shape[shapeindex2]->x - Shape[shapeindex]->x,
-		Shape[shapeindex]->x - x, Shape[shapeindex2]->y - Shape[shapeindex]->y);
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void FPortal::AddVertexToShape(vertex_t *vertex)
-{
-	for(unsigned i=0;i<Shape.Size(); i++)
-	{
-		if (vertex->x == Shape[i]->x && vertex->y == Shape[i]->y) return;
-	}
-
-	if (Shape.Size() < 2) 
-	{
-		Shape.Push(vertex);
-	}
-	else if (Shape.Size() == 2)
-	{
-		// Special case: We need to check if the vertex is on an extension of the line between the first two vertices.
-		int pos = PointOnShapeLineSide(vertex->x, vertex->y, 0);
-
-		if (pos == 0)
-		{
-			fixed_t distv1 = P_AproxDistance(vertex->x - Shape[0]->x, vertex->y - Shape[0]->y);
-			fixed_t distv2 = P_AproxDistance(vertex->x - Shape[1]->x, vertex->y - Shape[1]->y);
-			fixed_t distvv = P_AproxDistance(Shape[0]->x - Shape[1]->x, Shape[0]->y - Shape[1]->y);
-
-			if (distv1 > distvv)
-			{
-				Shape[1] = vertex;
-			}
-			else if (distv2 > distvv)
-			{
-				Shape[0] = vertex;
-			}
-			return;
-		}
-		else if (pos > 0)
-		{
-			Shape.Insert(1, vertex);
-		}
-		else
-		{
-			Shape.Push(vertex);
-		}
-	}
-	else
-	{
-		for(unsigned i=0; i<Shape.Size(); i++)
-		{
-			int startlinepos = PointOnShapeLineSide(vertex->x, vertex->y, i);
-			if (startlinepos >= 0)
-			{
-				int previouslinepos = PointOnShapeLineSide(vertex->x, vertex->y, (i+Shape.Size()-1)%Shape.Size());
-
-				if (previouslinepos < 0)	// we found the first line for which the vertex lies in front
-				{
-					unsigned int nextpoint = i;
-
-					do
-					{
-						nextpoint = (nextpoint+1) % Shape.Size();
-					}
-					while (PointOnShapeLineSide(vertex->x, vertex->y, nextpoint) >= 0);
-
-					int removecount = (nextpoint - i + Shape.Size()) % Shape.Size() - 1;
-
-					if (removecount == 0)
-					{
-						if (startlinepos > 0) 
-						{
-							Shape.Insert(i+1, vertex);
-						}
-					}
-					else if (nextpoint > i || nextpoint == 0)
-					{
-						// The easy case: It doesn't wrap around
-						Shape.Delete(i+1, removecount-1);
-						Shape[i+1] = vertex;
-					}
-					else
-					{
-						// It does wrap around.
-						Shape.Delete(i+1, removecount);
-						Shape.Delete(1, nextpoint-1);
-						Shape[0] = vertex;
-					}
-					return;
-				}
-			}
-		}
-	}
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void FPortal::AddSectorToPortal(sector_t *sector)
-{
-	for(int i=0; i<sector->linecount; i++)
-	{
-		AddVertexToShape(sector->lines[i]->v1);
-		// This is necessary to handle unclosed sectors
-		AddVertexToShape(sector->lines[i]->v2);
-	}
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void FPortal::UpdateClipAngles()
-{
-	for(unsigned int i=0; i<Shape.Size(); i++)
-	{
-		ClipAngles[i] = R_PointToPseudoAngle(viewx, viewy, Shape[i]->x, Shape[i]->y);
-	}
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
 GLSectorStackPortal *FPortal::GetGLPortal()
 {
 	if (glportal == NULL) glportal = new GLSectorStackPortal(this);
@@ -506,7 +367,6 @@ void gl_InitPortals()
 					portalp[plane]->yDisplacement = pt->y - pt->Mate->y;
 					portals.Push(portalp[plane]);
 				}
-				portalp[plane]->AddSectorToPortal(&sectors[i]);
 				sectors[i].portals[plane] = portalp[plane];
 
 				for (int j=0;j < sectors[i].subsectorcount; j++)
@@ -517,17 +377,6 @@ void gl_InitPortals()
 			}
 		}
 	}
-
-	for(unsigned i=0;i<portals.Size(); i++)
-	{
-		// if the first vertex is duplicated at the end it'll save time in a time critical function
-		// because that code does not need to check for wraparounds anymore.
-		// Note: We cannot push an element of the array onto the array itself. This must be done in 2 steps
-		portals[i]->Shape.Reserve(1);
-		portals[i]->Shape.Last() = portals[i]->Shape[0];
-		portals[i]->Shape.ShrinkToFit();
-		portals[i]->ClipAngles.Resize(portals[i]->Shape.Size());
-	}
 }
 
 
@@ -537,12 +386,8 @@ CCMD(dumpportals)
 	{
 		double xdisp = portals[i]->xDisplacement/65536.;
 		double ydisp = portals[i]->yDisplacement/65536.;
-		Printf(PRINT_LOG, "Portal #%d, %s, stackpoint at (%f,%f), displacement = (%f,%f)\nShape:\n", i, portals[i]->plane==0? "floor":"ceiling", portals[i]->origin->x/65536., portals[i]->origin->y/65536.,
+		Printf(PRINT_LOG, "Portal #%d, %s, stackpoint at (%f,%f), displacement = (%f,%f)\n", i, portals[i]->plane==0? "floor":"ceiling", portals[i]->origin->x/65536., portals[i]->origin->y/65536.,
 			xdisp, ydisp);
-		for (unsigned j=0;j<portals[i]->Shape.Size(); j++)
-		{
-			Printf(PRINT_LOG, "\t(%f,%f)\n", portals[i]->Shape[j]->x/65536. + xdisp, portals[i]->Shape[j]->y/65536. + ydisp);
-		}
 		Printf(PRINT_LOG, "Coverage:\n");
 		for(int j=0;j<numsubsectors;j++)
 		{
