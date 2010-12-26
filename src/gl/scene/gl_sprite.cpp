@@ -67,6 +67,7 @@ CVAR(Float, gl_sclipfactor, 1.8, CVAR_ARCHIVE)
 CVAR(Int, gl_particles_style, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // 0 = square, 1 = round, 2 = smooth
 CVAR(Int, gl_billboard_mode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Int, gl_enhanced_nv_stealth, 3, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Int, gl_fuzztype, 0, CVAR_ARCHIVE)
 
 extern bool r_showviewer;
 EXTERN_CVAR (Float, transsouls)
@@ -136,7 +137,7 @@ void GLSprite::Draw(int pass)
 			gl_RenderState.AlphaFunc(GL_GEQUAL,trans*gl_mask_sprite_threshold);
 		}
 
-		if (RenderStyle.BlendOp == STYLEOP_Fuzz)
+		if (RenderStyle.BlendOp == STYLEOP_Shadow)
 		{
 			float fuzzalpha=0.44f;
 			float minalpha=0.1f;
@@ -166,7 +167,7 @@ void GLSprite::Draw(int pass)
 			additivefog = true;
 		}
 	}
-	if (RenderStyle.BlendOp!=STYLEOP_Fuzz)
+	if (RenderStyle.BlendOp!=STYLEOP_Shadow)
 	{
 		if (actor)
 		{
@@ -729,9 +730,25 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 
 	ThingColor=0xffffff;
 	RenderStyle = thing->RenderStyle;
-	RenderStyle.CheckFuzz();
 	trans = FIXED2FLOAT(thing->alpha);
 	hw_styleflags = STYLEHW_Normal;
+
+	if (RenderStyle.BlendOp >= STYLEOP_Fuzz && RenderStyle.BlendOp <= STYLEOP_FuzzOrRevSub)
+	{
+		RenderStyle.CheckFuzz();
+		if (RenderStyle.BlendOp == STYLEOP_Fuzz)
+		{
+			if (gl.shadermodel >= 4 && gl_fuzztype != 0)
+			{
+				// Todo: implement shader selection here
+				RenderStyle.BlendOp = STYLEOP_Shadow;	// keep it valid for now
+			}
+			else
+			{
+				RenderStyle.BlendOp = STYLEOP_Shadow;
+			}
+		}
+	}
 
 	if (RenderStyle.Flags & STYLEF_TransSoulsAlpha)
 	{
@@ -742,7 +759,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 		trans = 1.f;
 	}
 
-	if (trans >= 1.f-FLT_EPSILON && RenderStyle.BlendOp != STYLEOP_Fuzz && (
+	if (trans >= 1.f-FLT_EPSILON && RenderStyle.BlendOp != STYLEOP_Shadow && (
 			(RenderStyle.SrcAlpha == STYLEALPHA_One && RenderStyle.DestAlpha == STYLEALPHA_Zero) ||
 			(RenderStyle.SrcAlpha == STYLEALPHA_Src && RenderStyle.DestAlpha == STYLEALPHA_InvSrc)
 			))
@@ -777,7 +794,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 
 	if (enhancedvision && gl_enhanced_nightvision)
 	{
-		if (RenderStyle.BlendOp == STYLEOP_Fuzz)
+		if (RenderStyle.BlendOp == STYLEOP_Shadow)
 		{
 			// enhanced vision makes them more visible!
 			trans=0.5f;
