@@ -389,6 +389,11 @@ static const FDefaultShader defaultshaders[]=
 	{"Warp 2",	"shaders/glsl/func_warp2.fp"},
 	{"Brightmap","shaders/glsl/func_brightmap.fp"},
 	{"No Texture", "shaders/glsl/func_notexture.fp"},
+	{"Basic Fuzz", "shaders/glsl/fuzz_standard.fp"},
+	{"Smooth Fuzz", "shaders/glsl/fuzz_smooth.fp"},
+	{"Swirly Fuzz", "shaders/glsl/fuzz_swirly.fp"},
+	{"Translucent Fuzz", "shaders/glsl/fuzz_smoothtranslucent.fp"},
+	{"Jagged Fuzz", "shaders/glsl/fuzz_jagged.fp"},
 	{NULL,NULL}
 };
 

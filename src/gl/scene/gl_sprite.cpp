@@ -67,7 +67,10 @@ CVAR(Float, gl_sclipfactor, 1.8, CVAR_ARCHIVE)
 CVAR(Int, gl_particles_style, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // 0 = square, 1 = round, 2 = smooth
 CVAR(Int, gl_billboard_mode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Int, gl_enhanced_nv_stealth, 3, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Int, gl_fuzztype, 0, CVAR_ARCHIVE)
+CUSTOM_CVAR(Int, gl_fuzztype, 0, CVAR_ARCHIVE)
+{
+	if (self < 0 || self > 5) self = 0;
+}
 
 extern bool r_showviewer;
 EXTERN_CVAR (Float, transsouls)
@@ -204,7 +207,7 @@ void GLSprite::Draw(int pass)
 
 	gl_SetFog(foglevel, rel, &Colormap, additivefog);
 
-	if (gltexture) gltexture->BindPatch(Colormap.colormap,translation);
+	if (gltexture) gltexture->BindPatch(Colormap.colormap, translation, OverrideShader);
 	else if (!modelframe) gl_RenderState.EnableTexture(false);
 
 	if (!modelframe)
@@ -730,6 +733,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 
 	ThingColor=0xffffff;
 	RenderStyle = thing->RenderStyle;
+	OverrideShader = 0;
 	trans = FIXED2FLOAT(thing->alpha);
 	hw_styleflags = STYLEHW_Normal;
 
@@ -741,7 +745,10 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 			if (gl.shadermodel >= 4 && gl_fuzztype != 0)
 			{
 				// Todo: implement shader selection here
-				RenderStyle.BlendOp = STYLEOP_Shadow;	// keep it valid for now
+				RenderStyle = LegacyRenderStyles[STYLE_Translucent];
+				OverrideShader = gl_fuzztype + 4;
+				trans = 0.99f;	// trans may not be 1 here
+				hw_styleflags |= STYLEHW_NoAlphaTest;
 			}
 			else
 			{
@@ -885,6 +892,7 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 
 	trans=particle->trans/255.0f;
 	RenderStyle = STYLE_Translucent;
+	OverrideShader = 0;
 
 	ThingColor = GPalette.BaseColors[particle->color];
 	ThingColor.a=0;
