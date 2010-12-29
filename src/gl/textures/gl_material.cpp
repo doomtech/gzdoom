@@ -884,10 +884,6 @@ void FMaterial::Bind(int cm, int clampmode, int translation, int overrideshader)
 
 void FMaterial::BindPatch(int cm, int translation, int overrideshader)
 {
-	if (overrideshader > 0)
-	{
-		__asm nop
-	}
 	int usebright = false;
 	int shaderindex = overrideshader > 0? overrideshader : mShaderIndex;
 	int maxbound = 0;
