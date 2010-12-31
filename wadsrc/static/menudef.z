@@ -131,6 +131,8 @@ OptionValue "FuzzStyle"
 	2, "Smooth fuzz"
 	3, "Swirly fuzz"
 	4, "Translucent fuzz"
+	6, "Noise"
+	7, "Smooth Noise"
 	//5, "Jagged fuzz" I can't see any difference between this and 4 so it's disabled for now.
 }
 

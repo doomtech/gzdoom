@@ -394,6 +394,8 @@ static const FDefaultShader defaultshaders[]=
 	{"Swirly Fuzz", "shaders/glsl/fuzz_swirly.fp"},
 	{"Translucent Fuzz", "shaders/glsl/fuzz_smoothtranslucent.fp"},
 	{"Jagged Fuzz", "shaders/glsl/fuzz_jagged.fp"},
+	{"Noise Fuzz", "shaders/glsl/fuzz_noise.fp"},
+	{"Smooth Noise Fuzz", "shaders/glsl/fuzz_smoothnoise.fp"},
 	{NULL,NULL}
 };
 

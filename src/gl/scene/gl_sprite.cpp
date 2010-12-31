@@ -69,7 +69,7 @@ CVAR(Int, gl_billboard_mode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Int, gl_enhanced_nv_stealth, 3, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CUSTOM_CVAR(Int, gl_fuzztype, 0, CVAR_ARCHIVE)
 {
-	if (self < 0 || self > 5) self = 0;
+	if (self < 0 || self > 7) self = 0;
 }
 
 extern bool r_showviewer;
