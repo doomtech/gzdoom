@@ -3996,6 +3996,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\gl\models\gl_voxels.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\gl\models\tab_anorms.h"
 					>
 				</File>
