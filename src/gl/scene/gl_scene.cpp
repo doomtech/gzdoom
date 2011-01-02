@@ -91,6 +91,7 @@ extern int viewpitch;
  
 DWORD			gl_fixedcolormap;
 area_t			in_area;
+TArray<BYTE> currentmapsection;
 
 
 void R_SetupFrame (AActor * camera);
@@ -312,6 +313,7 @@ void FGLRenderer::CreateScene()
 	ProcessAll.Clock();
 
 	// clip the scene and fill the drawlists
+	for(unsigned i=0;i<portals.Size(); i++) portals[i]->glportal = NULL;
 	gl_spriteindex=0;
 	Bsp.Clock();
 	gl_RenderBSPNode (nodes + numnodes - 1);
@@ -847,6 +849,9 @@ void FGLRenderer::ProcessScene(bool toscreen)
 	iter_dlightf = iter_dlight = draw_dlight = draw_dlightf = 0;
 	GLPortal::BeginScene();
 
+	int mapsection = R_PointInSubsector(viewx, viewy)->mapsection;
+	memset(&currentmapsection[0], 0, currentmapsection.Size());
+	currentmapsection[mapsection>>3] |= 1 << (mapsection & 7);
 	DrawScene(toscreen);
 	FDrawInfo::EndDrawInfo();
 
@@ -951,9 +956,6 @@ sector_t * FGLRenderer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, flo
 //-----------------------------------------------------------------------------
 static FRandom pr_glhom;
 EXTERN_CVAR(Int, r_clearbuffer)
-CVAR(Bool, gl_testdl, false, 0)
-static int dl = -1;
-static int indl = 0;
 
 void FGLRenderer::RenderView (player_t* player)
 {
@@ -1035,30 +1037,8 @@ void FGLRenderer::RenderView (player_t* player)
 	TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
 	GLRenderer->mLightCount = ((it.Next()) != NULL);
 
-	if (gl_testdl)
-	{
-		if (dl == -1)
-		{
-			dl = glGenLists(1);
-			glNewList(dl, GL_COMPILE_AND_EXECUTE);
-			indl = true;
-		}
-		else
-		{
-			glCallList(dl);
-			All.Unclock();
-			return;
-		}
-	}
-
 	sector_t * viewsector = RenderViewpoint(player->camera, NULL, FieldOfView * 360.0f / FINEANGLES, ratio, fovratio, true, true);
 	EndDrawScene(viewsector);
-
-	if (gl_testdl && indl)
-	{
-		indl = false;
-		glEndList();
-	}
 
 	All.Unclock();
 }

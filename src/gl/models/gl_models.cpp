@@ -258,6 +258,14 @@ void gl_InitModels()
 
 	lastLump = 0;
 
+	for(unsigned i=0;i<Models.Size();i++)
+	{
+		delete Models[i];
+	}
+	Models.Clear();
+	SpriteModelFrames.Clear();
+	DeleteModelHash();
+
 	// First, create models for each voxel
 	for (unsigned i = 0; i < Voxels.Size(); i++)
 	{

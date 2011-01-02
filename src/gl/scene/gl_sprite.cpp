@@ -67,6 +67,10 @@ CVAR(Float, gl_sclipfactor, 1.8, CVAR_ARCHIVE)
 CVAR(Int, gl_particles_style, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // 0 = square, 1 = round, 2 = smooth
 CVAR(Int, gl_billboard_mode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Int, gl_enhanced_nv_stealth, 3, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CUSTOM_CVAR(Int, gl_fuzztype, 0, CVAR_ARCHIVE)
+{
+	if (self < 0 || self > 7) self = 0;
+}
 
 extern bool r_showviewer;
 EXTERN_CVAR (Float, transsouls)
@@ -136,7 +140,7 @@ void GLSprite::Draw(int pass)
 			gl_RenderState.AlphaFunc(GL_GEQUAL,trans*gl_mask_sprite_threshold);
 		}
 
-		if (RenderStyle.BlendOp == STYLEOP_Fuzz)
+		if (RenderStyle.BlendOp == STYLEOP_Shadow)
 		{
 			float fuzzalpha=0.44f;
 			float minalpha=0.1f;
@@ -166,7 +170,7 @@ void GLSprite::Draw(int pass)
 			additivefog = true;
 		}
 	}
-	if (RenderStyle.BlendOp!=STYLEOP_Fuzz)
+	if (RenderStyle.BlendOp!=STYLEOP_Shadow)
 	{
 		if (actor)
 		{
@@ -203,7 +207,7 @@ void GLSprite::Draw(int pass)
 
 	gl_SetFog(foglevel, rel, &Colormap, additivefog);
 
-	if (gltexture) gltexture->BindPatch(Colormap.colormap,translation);
+	if (gltexture) gltexture->BindPatch(Colormap.colormap, translation, OverrideShader);
 	else if (!modelframe) gl_RenderState.EnableTexture(false);
 
 	if (!modelframe)
@@ -445,6 +449,9 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 		if (!(thing->flags & MF_STEALTH) || !gl_fixedcolormap || !gl_enhanced_nightvision)
 			return; 
 	}
+
+	// If this thing is in a map section that's not in view it can't possible be visible
+	if (!(currentmapsection[thing->subsector->mapsection>>3] & (1 << (thing->subsector->mapsection & 7)))) return;
 
 	// [RH] Interpolate the sprite's position to make it look smooth
 	fixed_t thingx = thing->PrevX + FixedMul (r_TicFrac, thing->x - thing->PrevX);
@@ -726,9 +733,29 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 
 	ThingColor=0xffffff;
 	RenderStyle = thing->RenderStyle;
-	RenderStyle.CheckFuzz();
+	OverrideShader = 0;
 	trans = FIXED2FLOAT(thing->alpha);
 	hw_styleflags = STYLEHW_Normal;
+
+	if (RenderStyle.BlendOp >= STYLEOP_Fuzz && RenderStyle.BlendOp <= STYLEOP_FuzzOrRevSub)
+	{
+		RenderStyle.CheckFuzz();
+		if (RenderStyle.BlendOp == STYLEOP_Fuzz)
+		{
+			if (gl.shadermodel >= 4 && gl_fuzztype != 0)
+			{
+				// Todo: implement shader selection here
+				RenderStyle = LegacyRenderStyles[STYLE_Translucent];
+				OverrideShader = gl_fuzztype + 4;
+				trans = 0.99f;	// trans may not be 1 here
+				hw_styleflags |= STYLEHW_NoAlphaTest;
+			}
+			else
+			{
+				RenderStyle.BlendOp = STYLEOP_Shadow;
+			}
+		}
+	}
 
 	if (RenderStyle.Flags & STYLEF_TransSoulsAlpha)
 	{
@@ -739,7 +766,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 		trans = 1.f;
 	}
 
-	if (trans >= 1.f-FLT_EPSILON && RenderStyle.BlendOp != STYLEOP_Fuzz && (
+	if (trans >= 1.f-FLT_EPSILON && RenderStyle.BlendOp != STYLEOP_Shadow && (
 			(RenderStyle.SrcAlpha == STYLEALPHA_One && RenderStyle.DestAlpha == STYLEALPHA_Zero) ||
 			(RenderStyle.SrcAlpha == STYLEALPHA_Src && RenderStyle.DestAlpha == STYLEALPHA_InvSrc)
 			))
@@ -774,7 +801,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 
 	if (enhancedvision && gl_enhanced_nightvision)
 	{
-		if (RenderStyle.BlendOp == STYLEOP_Fuzz)
+		if (RenderStyle.BlendOp == STYLEOP_Shadow)
 		{
 			// enhanced vision makes them more visible!
 			trans=0.5f;
@@ -865,6 +892,7 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 
 	trans=particle->trans/255.0f;
 	RenderStyle = STYLE_Translucent;
+	OverrideShader = 0;
 
 	ThingColor = GPalette.BaseColors[particle->color];
 	ThingColor.a=0;

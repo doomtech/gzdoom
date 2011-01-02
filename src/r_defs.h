@@ -71,6 +71,16 @@ extern size_t MaxDrawSegs;
 // Note: transformed values not buffered locally,
 //	like some DOOM-alikes ("wt", "WebView") did.
 //
+enum
+{
+	VERTEXFLAG_ZCeilingEnabled = 0x01,
+	VERTEXFLAG_ZFloorEnabled   = 0x02
+};
+struct vertexdata_t
+{
+	fixed_t zCeiling, zFloor;
+	DWORD flags;
+};
 struct vertex_t
 {
 	fixed_t x, y;
@@ -84,9 +94,25 @@ struct vertex_t
 	sector_t ** sectors;
 	float * heightlist;
 
+	vertex_t()
+	{
+		x = y = 0;
+		fx = fy = 0;
+		viewangle = 0;
+		dirty = true;
+		numheights = numsectors = 0;
+		sectors = NULL;
+		heightlist = NULL;
+	}
+
 	bool operator== (const vertex_t &other)
 	{
 		return x == other.x && y == other.y;
+	}
+
+	bool operator!= (const vertex_t &other)
+	{
+		return x != other.x || y != other.y;
 	}
 
 	void clear()
@@ -320,6 +346,7 @@ struct subsector_t;
 struct sector_t;
 struct side_t;
 extern bool gl_plane_reflection_i;
+struct FPortal;
 
 // Ceiling/floor flags
 enum
@@ -477,6 +504,7 @@ struct sector_t
 		FTransform xform;
 		int Flags;
 		int Light;
+		fixed_t alpha;
 		FTextureID Texture;
 		fixed_t TexZ;
 	};
@@ -562,6 +590,16 @@ struct sector_t
 	{
 		planes[pos].xform.base_yoffs = y;
 		planes[pos].xform.base_angle = o;
+	}
+
+	void SetAlpha(int pos, fixed_t o)
+	{
+		planes[pos].alpha = o;
+	}
+
+	fixed_t GetAlpha(int pos) const
+	{
+		return planes[pos].alpha;
 	}
 
 	int GetFlags(int pos) const 
@@ -733,7 +771,7 @@ struct sector_t
 	extsector_t	*				e;		// This stores data that requires construction/destruction. Such data must not be copied by R_FakeFlat.
 
 	// GL only stuff starts here
-	float						ceiling_reflect, floor_reflect;
+	float						reflect[2];
 
 	int							dirtyframe[3];		// last frame this sector was marked dirty
 	bool						dirty;				// marked for recalculation
@@ -741,6 +779,7 @@ struct sector_t
 	fixed_t						transdoorheight;	// for transparent door hacks
 	int							subsectorcount;		// list of subsectors
 	subsector_t **				subsectors;
+	FPortal *					portals[2];			// floor and ceiling portals
 
 	enum
 	{
@@ -756,8 +795,7 @@ struct sector_t
 	int				ibocount;
 #endif
 
-	float GetFloorReflect() { return gl_plane_reflection_i? floor_reflect : 0; }
-	float GetCeilingReflect() { return gl_plane_reflection_i? ceiling_reflect : 0; }
+	float GetReflect(int pos) { return gl_plane_reflection_i? reflect[pos] : 0; }
 	bool VBOHeightcheck(int pos) const { return vboheight[pos] == GetPlaneTexZ(pos); }
 
 	enum
@@ -1041,6 +1079,12 @@ enum
 	SSECF_POLYORG = 4,
 };
 
+struct FPortalCoverage
+{
+	DWORD *		subsectors;
+	int			sscount;
+};
+
 struct subsector_t
 {
 	sector_t	*sector;
@@ -1053,10 +1097,11 @@ struct subsector_t
 
 	// subsector related GL data
 	FLightNode *	lighthead[2];	// Light nodes (blended and additive)
-	fixed_t			bbox[4];		// Bounding box
 	int				validcount;
+	short			mapsection;
 	char			hacked;			// 1: is part of a render hack
 									// 2: has one-sided walls
+	FPortalCoverage	portalcoverage[2];
 };
 
 

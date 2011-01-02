@@ -83,13 +83,11 @@ int GLPortal::renderdepth;
 int GLPortal::PlaneMirrorMode;
 GLuint GLPortal::QueryObject;
 
-bool	 GLPortal::inupperstack;
-bool	 GLPortal::inlowerstack;
+int		 GLPortal::instack[2];
 bool	 GLPortal::inskybox;
 
 UniqueList<GLSkyInfo> UniqueSkies;
 UniqueList<GLHorizonInfo> UniqueHorizons;
-UniqueList<GLSectorStackInfo> UniqueStacks;
 UniqueList<secplane_t> UniquePlaneMirrors;
 
 
@@ -104,7 +102,6 @@ void GLPortal::BeginScene()
 {
 	UniqueSkies.Clear();
 	UniqueHorizons.Clear();
-	UniqueStacks.Clear();
 	UniquePlaneMirrors.Clear();
 }
 
@@ -292,6 +289,9 @@ bool GLPortal::Start(bool usestencil, bool doquery)
 	savedviewactor=GLRenderer->mViewActor;
 	savedviewangle=viewangle;
 	savedviewarea=in_area;
+
+	NextPortal = GLRenderer->mCurrentPortal;
+	GLRenderer->mCurrentPortal = NULL;	// Portals which need this have to set it themselves
 	PortalAll.Unclock();
 	return true;
 }
@@ -325,6 +325,8 @@ inline void GLPortal::ClearClipper()
 	angle_t a1 = GLRenderer->FrustumAngle();
 	if (a1<ANGLE_180) clipper.SafeAddClipRangeRealAngles(viewangle+a1, viewangle-a1);
 
+	// lock the parts that have just been clipped out.
+	clipper.SetSilhouette();
 }
 
 //-----------------------------------------------------------------------------
@@ -337,6 +339,7 @@ void GLPortal::End(bool usestencil)
 	bool needdepth = NeedDepthBuffer();
 
 	PortalAll.Clock();
+	GLRenderer->mCurrentPortal = NextPortal;
 	if (clipsave) gl.Enable (GL_CLIP_PLANE0+renderdepth-1);
 	if (usestencil)
 	{
@@ -435,7 +438,8 @@ void GLPortal::StartFrame()
 	portals.Push(p);
 	if (renderdepth==0)
 	{
-		inskybox=inupperstack=inlowerstack=false;
+		inskybox=false;
+		instack[sector_t::floor]=instack[sector_t::ceiling]=0;
 	}
 	renderdepth++;
 }
@@ -466,6 +470,15 @@ void GLPortal::EndFrame()
 {
 	GLPortal * p;
 
+	if (gl.flags & RFL_NOSTENCIL)
+	{
+		while (portals.Pop(p) && p)
+		{
+			delete p;
+		}
+		return;
+	}
+
 	if (gl_portalinfo)
 	{
 		Printf("%s%d portals, depth = %d\n%s{\n", indent.GetChars(), portals.Size(), renderdepth, indent.GetChars());
@@ -483,8 +496,10 @@ void GLPortal::EndFrame()
 		{
 			Printf("%sProcessing %s, depth = %d, query = %d\n", indent.GetChars(), p->GetName(), renderdepth, usequery);
 		}
-
-		p->RenderPortal(true, usequery);
+		if (p->lines.Size() > 0)
+		{
+			p->RenderPortal(true, usequery);
+		}
 		delete p;
 	}
 	renderdepth--;
@@ -517,7 +532,7 @@ bool GLPortal::RenderFirstSkyPortal(int recursion)
 	for(unsigned i=portals.Size()-1;i>=0 && portals[i]!=NULL;i--)
 	{
 		p=portals[i];
-		if (p->IsSky())
+		if (p->lines.Size() > 0 && p->IsSky())
 		{
 			// Cannot clear the depth buffer inside a portal recursion
 			if (recursion && p->NeedDepthBuffer()) continue;
@@ -532,9 +547,8 @@ bool GLPortal::RenderFirstSkyPortal(int recursion)
 
 	if (best)
 	{
-		best->RenderPortal(false, false);
 		portals.Delete(bestindex);
-
+		best->RenderPortal(false, false);
 		delete best;
 		return true;
 	}
@@ -547,6 +561,7 @@ bool GLPortal::RenderFirstSkyPortal(int recursion)
 // FindPortal
 //
 //-----------------------------------------------------------------------------
+
 GLPortal * GLPortal::FindPortal(const void * src)
 {
 	int i=portals.Size()-1;
@@ -556,6 +571,23 @@ GLPortal * GLPortal::FindPortal(const void * src)
 }
 
 
+//-----------------------------------------------------------------------------
+//
+// 
+//
+//-----------------------------------------------------------------------------
+
+void GLPortal::SaveMapSection()
+{
+	savedmapsection.Resize(currentmapsection.Size());
+	memcpy(&savedmapsection[0], &currentmapsection[0], currentmapsection.Size());
+	memset(&currentmapsection[0], 0, currentmapsection.Size());
+}
+
+void GLPortal::RestoreMapSection()
+{
+	memcpy(&currentmapsection[0], &savedmapsection[0], currentmapsection.Size());
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -611,6 +643,12 @@ void GLSkyboxPortal::DrawContents()
 	GLRenderer->SetupView(viewx, viewy, viewz, viewangle, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
 	GLRenderer->SetViewArea();
 	ClearClipper();
+
+	int mapsection = R_PointInSubsector(viewx, viewy)->mapsection;
+
+	SaveMapSection();
+	currentmapsection[mapsection>>3] |= 1 << (mapsection & 7);
+
 	GLRenderer->DrawScene();
 	origin->flags&=~MF_JUSTHIT;
 	inskybox=false;
@@ -619,6 +657,60 @@ void GLSkyboxPortal::DrawContents()
 
 	PlaneMirrorMode=old_pm;
 	extralight = saved_extralight;
+
+	RestoreMapSection();
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//
+//
+// Sector stack Portal
+//
+//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+// GLSectorStackPortal::SetupCoverage
+//
+//-----------------------------------------------------------------------------
+
+static BYTE SetCoverage(void *node)
+{
+	if (numnodes == 0)
+	{
+		return 0;
+	}
+	if (!((size_t)node & 1))  // Keep going until found a subsector
+	{
+		node_t *bsp = (node_t *)node;
+		BYTE coverage = SetCoverage(bsp->children[0]) | SetCoverage(bsp->children[1]);
+		gl_drawinfo->no_renderflags[bsp-nodes] = coverage;
+		return coverage;
+	}
+	else
+	{
+		subsector_t *sub = (subsector_t *)((BYTE *)node - 1);
+		return gl_drawinfo->ss_renderflags[sub-subsectors] & SSRF_SEEN;
+	}
+}
+
+void GLSectorStackPortal::SetupCoverage()
+{
+	for(unsigned i=0; i<subsectors.Size(); i++)
+	{
+		subsector_t *sub = subsectors[i];
+		int plane = origin->plane;
+		for(int j=0;j<sub->portalcoverage[plane].sscount; j++)
+		{
+			subsector_t *dsub = &::subsectors[sub->portalcoverage[plane].subsectors[j]];
+			currentmapsection[dsub->mapsection>>3] |= 1 << (dsub->mapsection&7);
+			gl_drawinfo->ss_renderflags[dsub-::subsectors] |= SSRF_SEEN;
+		}
+	}
+	SetCoverage(&nodes[numnodes-1]);
 }
 
 //-----------------------------------------------------------------------------
@@ -628,11 +720,10 @@ void GLSkyboxPortal::DrawContents()
 //-----------------------------------------------------------------------------
 void GLSectorStackPortal::DrawContents()
 {
-	FPortal *portal = &::portals[origin->origin->special1];
-	portal->UpdateClipAngles();
+	FPortal *portal = origin;
 
-	viewx += origin->origin->x - origin->origin->Mate->x;
-	viewy += origin->origin->y - origin->origin->Mate->y;
+	viewx += origin->xDisplacement;
+	viewy += origin->yDisplacement;
 	GLRenderer->mViewActor = NULL;
 	GLRenderer->mCurrentPortal = this;
 
@@ -640,153 +731,34 @@ void GLSectorStackPortal::DrawContents()
 	validcount++;
 
 	// avoid recursions!
-	if (origin->isupper) inupperstack=true;
-	else inlowerstack=true;
+	if (origin->plane != -1) instack[origin->plane]++;
 
 	GLRenderer->SetupView(viewx, viewy, viewz, viewangle, !!(MirrorFlag&1), !!(PlaneMirrorFlag&1));
+	SaveMapSection();
+	SetupCoverage();
 	ClearClipper();
 	GLRenderer->DrawScene();
+	RestoreMapSection();
+
+	if (origin->plane != -1) instack[origin->plane]--;
 }
 
 //-----------------------------------------------------------------------------
-//
-// GLSectorStackPortal::ClipSeg
-//
-//-----------------------------------------------------------------------------
-int GLSectorStackPortal::ClipSeg(seg_t *seg) 
-{ 
-	FPortal *portal = &::portals[origin->origin->special1];
-	angle_t *angles = &portal->ClipAngles[0];
-	unsigned numpoints = portal->ClipAngles.Size()-1;
-	angle_t clipangle = seg->v1->GetClipAngle();
-	unsigned i, j;
-	int relation;
-
-	// Check the front side of the portal. Anything in front of the shape must be discarded by the clipper.
-	for(i=0;i<numpoints; i++)
-	{
-		if (angles[i+1] - clipangle <= ANGLE_180 && angles[i] - clipangle > ANGLE_180 && angles[i+1] - angles[i] < ANGLE_180)
-		{
-			relation = DMulScale32(seg->v1->y - portal->Shape[i]->y - portal->yDisplacement, portal->Shape[i+1]->x - portal->Shape[i]->x,
-				portal->Shape[i]->x - seg->v1->x + portal->xDisplacement, portal->Shape[i+1]->y - portal->Shape[i]->y);
-			if (relation > 0) 
-			{
-				return PClip_InFront;
-			}
-			else if (relation == 0)
-			{
-				// If this vertex is on the boundary we need to check the second one, too. The line may be partially inside the shape
-				// but outside the portal. We can use the same boundary line for this
-				relation = DMulScale32(seg->v2->y - portal->Shape[i]->y - portal->yDisplacement, portal->Shape[i+1]->x - portal->Shape[i]->x,
-					portal->Shape[i]->x - seg->v2->x + portal->xDisplacement, portal->Shape[i+1]->y - portal->Shape[i]->y);
-				if (relation >= 0) return PClip_InFront;
-			}
-			return PClip_Inside;
-		}
-	}
-	
-	// The first vertex did not yield any useful result. Check the second one.
-	clipangle = seg->v2->GetClipAngle();
-	for(j=0;j<numpoints; j++)
-	{
-		if (angles[j+1] - clipangle <= ANGLE_180 && angles[j] - clipangle > ANGLE_180 && angles[j+1] - angles[j] < ANGLE_180)
-		{
-			relation = DMulScale32(seg->v2->y - portal->Shape[j]->y - portal->yDisplacement, portal->Shape[j+1]->x - portal->Shape[j]->x,
-				portal->Shape[j]->x - seg->v1->x + portal->xDisplacement, portal->Shape[j+1]->y - portal->Shape[j]->y);
-			if (relation > 0) 
-			{
-				return PClip_InFront;
-			}
-			else if (relation == 0)
-			{
-				// If this vertex is on the boundary we need to check the second one, too. The line may be partially inside the shape
-				// but outside the portal. We can use the same boundary line for this
-				relation = DMulScale32(seg->v2->y - portal->Shape[j]->y - portal->yDisplacement, portal->Shape[j+1]->x - portal->Shape[j]->x,
-					portal->Shape[j]->x - seg->v2->x + portal->xDisplacement, portal->Shape[j+1]->y - portal->Shape[j]->y);
-				if (relation >= 0) return PClip_InFront;
-			}
-			return PClip_Inside;
-		}
-	}
-	return PClip_Inside;	// The viewpoint is inside the portal
-
-#if 0
-	// Check backside of portal
-	for(i=0;i<numpoints; i++)
-	{
-		if (angles[i+1] - clipangle > ANGLE_180 && angles[i] - clipangle <= ANGLE_180)
-		{
-			relation1 = DMulScale32(seg->v1->y - portal->Shape[i]->y - portal->yDisplacement, portal->Shape[i+1]->x - portal->Shape[i]->x,
-				portal->Shape[i]->x - seg->v1->x + portal->xDisplacement, portal->Shape[i+1]->y - portal->Shape[i]->y);
-			if (relation1 < 0) return PClip_Inside;
-			// If this vertex is inside we need to check the second one, too. The line may be partially inside the shape
-			// but outside the portal.
-			break;
-		}
-	}
-
-	clipangle = seg->v2->GetClipAngle();
-	for(j=0;j<numpoints; j++)
-	{
-		if (angles[j+1] - clipangle > ANGLE_180 && angles[j] - clipangle <= ANGLE_180)
-		{
-			relation2 = DMulScale32(seg->v2->y - portal->Shape[j]->y - portal->yDisplacement, portal->Shape[j+1]->x - portal->Shape[j]->x,
-				portal->Shape[j]->x - seg->v2->x + portal->xDisplacement, portal->Shape[j+1]->y - portal->Shape[j]->y);
-			if (relation2 < 0) return PClip_Inside;
-			break;
-		}
-	}
-	return PClip_Behind;
-#endif
-}
-
-
 //-----------------------------------------------------------------------------
 //
-// GLSectorStackPortal::ClipPoint
+//
+// Plane Mirror Portal
+//
 //
 //-----------------------------------------------------------------------------
-int GLSectorStackPortal::ClipPoint(fixed_t x, fixed_t y) 
-{ 
-	FPortal *portal = &::portals[origin->origin->special1];
-	angle_t *angles = &portal->ClipAngles[0];
-	unsigned numpoints = portal->ClipAngles.Size()-1;
-	angle_t clipangle = R_PointToPseudoAngle(viewx, viewy, x, y);
-	unsigned i;
-
-	for(i=0;i<numpoints; i++)
-	{
-		if (angles[i+1] - clipangle <= ANGLE_180 && angles[i] - clipangle > ANGLE_180 && angles[i+1] - angles[i] < ANGLE_180)
-		{
-			int relation = DMulScale32(y - portal->Shape[i]->y - portal->yDisplacement, portal->Shape[i+1]->x - portal->Shape[i]->x,
-				portal->Shape[i]->x - x + portal->xDisplacement, portal->Shape[i+1]->y - portal->Shape[i]->y);
-			if (relation > 0) return PClip_InFront;
-			return PClip_Inside;
-		}
-	}
-	return PClip_Inside;
-
-	/*
-	for(i=0;i<numpoints; i++)
-	{
-		if (clipangle >= angles[i] && clipangle < angles[i+1])
-		{
-			int relation = DMulScale32(y - portal->Shape[i]->y, portal->Shape[i+1]->x - portal->Shape[i]->x,
-				portal->Shape[i]->x - x, portal->Shape[i+1]->y - portal->Shape[i]->y);
-			if (relation > 0) return PClip_InFront;
-			return PClip_Inside;
-		}
-	}
-	*/
-	return PClip_Inside;
-}
-
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 //
 // GLPlaneMirrorPortal::DrawContents
 //
 //-----------------------------------------------------------------------------
+
 void GLPlaneMirrorPortal::DrawContents()
 {
 	if (renderdepth>r_mirror_recursions) 
@@ -819,6 +791,13 @@ void GLPlaneMirrorPortal::DrawContents()
 	PlaneMirrorFlag--;
 	PlaneMirrorMode=old_pm;
 }
+
+//-----------------------------------------------------------------------------
+//
+// GLPlaneMirrorPortal::DrawContents
+//
+//-----------------------------------------------------------------------------
+
 
 
 //-----------------------------------------------------------------------------

@@ -75,7 +75,7 @@ planefunction_t 		ceilingfunc;
 #define MAXVISPLANES 128    /* must be a power of 2 */
 
 // Avoid infinite recursion with stacked sectors by limiting them.
-#define MAX_SKYBOX_PLANES 100
+#define MAX_SKYBOX_PLANES 1000
 
 // [RH] Allocate one extra for sky box planes.
 static visplane_t		*visplanes[MAXVISPLANES+1];	// killough
@@ -522,7 +522,7 @@ static visplane_t *new_visplane (unsigned hash)
 // killough 2/28/98: Add offsets
 //==========================================================================
 
-visplane_t *R_FindPlane (const secplane_t &height, FTextureID picnum, int lightlevel,
+visplane_t *R_FindPlane (const secplane_t &height, FTextureID picnum, int lightlevel, fixed_t alpha,
 						 fixed_t xoffs, fixed_t yoffs,
 						 fixed_t xscale, fixed_t yscale, angle_t angle,
 						 int sky, ASkyViewpoint *skybox)
@@ -540,6 +540,7 @@ visplane_t *R_FindPlane (const secplane_t &height, FTextureID picnum, int lightl
 		xscale = 0;
 		yscale = 0;
 		angle = 0;
+		alpha = 0;
 		plane.a = plane.b = plane.d = 0;
 		// [RH] Map floor skies and ceiling skies to separate visplanes. This isn't
 		// always necessary, but it is needed if a floor and ceiling sky are in the
@@ -560,6 +561,8 @@ visplane_t *R_FindPlane (const secplane_t &height, FTextureID picnum, int lightl
 		plane = height;
 		isskybox = false;
 		sky = 0;	// not skyflatnum so it can't be a sky
+		skybox = NULL;
+		alpha = FRACUNIT;
 	}
 		
 	// New visplane algorithm uses hash table -- killough
@@ -579,7 +582,27 @@ visplane_t *R_FindPlane (const secplane_t &height, FTextureID picnum, int lightl
 						check->viewx == stacked_viewx &&
 						check->viewy == stacked_viewy &&
 						check->viewz == stacked_viewz &&
-						check->viewangle == stacked_angle)
+						(
+							// headache inducing logic... :(
+							(!(skybox->flags & MF_JUSTATTACKED)) ||
+							(
+								check->alpha == alpha &&
+								(alpha == 0 ||	// if alpha is > 0 everything needs to be checked
+									(plane == check->height &&
+									 picnum == check->picnum &&
+									 lightlevel == check->lightlevel &&
+									 xoffs == check->xoffs &&	// killough 2/28/98: Add offset checks
+									 yoffs == check->yoffs &&
+									 basecolormap == check->colormap &&	// [RH] Add more checks
+									 xscale == check->xscale &&
+									 yscale == check->yscale &&
+									 angle == check->angle
+									)
+								) &&
+								check->viewangle == stacked_angle
+							)
+						)
+					   )
 					{
 						return check;
 					}
@@ -628,6 +651,7 @@ visplane_t *R_FindPlane (const secplane_t &height, FTextureID picnum, int lightl
 	check->viewy = stacked_viewy;
 	check->viewz = stacked_viewz;
 	check->viewangle = stacked_angle;
+	check->alpha = alpha;
 
 	clearbufshort (check->top, viewwidth, 0x7fff);
 
@@ -712,6 +736,7 @@ visplane_t *R_CheckPlane (visplane_t *pl, int start, int stop)
 		new_pl->viewz = pl->viewz;
 		new_pl->viewangle = pl->viewangle;
 		new_pl->sky = pl->sky;
+		new_pl->alpha = pl->alpha;
 		pl = new_pl;
 		pl->minx = start;
 		pl->maxx = stop;
@@ -1034,26 +1059,19 @@ void R_DrawSinglePlane (visplane_t *pl, fixed_t alpha, bool masked)
 CVAR (Bool, r_skyboxes, true, 0)
 static int numskyboxes;
 
-struct VisplaneAndAlpha
-{
-	visplane_t *Visplane;
-	fixed_t Alpha;
-};
-
 void R_DrawSkyBoxes ()
 {
 	static TArray<size_t> interestingStack;
 	static TArray<ptrdiff_t> drawsegStack;
 	static TArray<ptrdiff_t> visspriteStack;
 	static TArray<fixed_t> viewxStack, viewyStack, viewzStack;
-	static TArray<VisplaneAndAlpha> visplaneStack;
+	static TArray<visplane_t *> visplaneStack;
 
 	numskyboxes = 0;
 
 	if (visplanes[MAXVISPLANES] == NULL)
 		return;
 
-	VisplaneAndAlpha vaAdder = { 0 };
 	int savedextralight = extralight;
 	fixed_t savedx = viewx;
 	fixed_t savedy = viewy;
@@ -1169,9 +1187,7 @@ void R_DrawSkyBoxes ()
 		viewxStack.Push (viewx);
 		viewyStack.Push (viewy);
 		viewzStack.Push (viewz);
-		vaAdder.Visplane = pl;
-		vaAdder.Alpha = sky->PlaneAlpha;
-		visplaneStack.Push (vaAdder);
+		visplaneStack.Push (pl);
 
 		R_RenderBSPNode (nodes + numnodes - 1);
 		R_DrawPlanes ();
@@ -1200,13 +1216,13 @@ void R_DrawSkyBoxes ()
 		ds_p = firstdrawseg;
 		vissprite_p = firstvissprite;
 
-		visplaneStack.Pop (vaAdder);
-		if (vaAdder.Alpha > 0)
+		visplaneStack.Pop (pl);
+		if (pl->alpha > 0)
 		{
-			R_DrawSinglePlane (vaAdder.Visplane, vaAdder.Alpha, true);
+			R_DrawSinglePlane (pl, pl->alpha, true);
 		}
-		*freehead = vaAdder.Visplane;
-		freehead = &vaAdder.Visplane->next;
+		*freehead = pl;
+		freehead = &pl->next;
 	}
 	firstvissprite = vissprites;
 	vissprite_p = vissprites + savedvissprite_p;

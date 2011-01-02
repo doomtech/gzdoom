@@ -66,7 +66,7 @@ extern fixed_t globaluclip, globaldclip;
 #define BASEYCENTER 	(100)
 
 EXTERN_CVAR (Bool, st_scale)
-CVAR (Bool, r_drawfuzz, true, CVAR_ARCHIVE)
+CVAR (Int, r_drawfuzz, 1, CVAR_ARCHIVE)
 
 
 //
@@ -1290,7 +1290,10 @@ void R_InitSprites ()
 		numskins++;
 	}
 
+	SpriteFrames.Clear();
+
 	// [RH] Do some preliminary setup
+	if (skins != NULL) delete [] skins;
 	skins = new FPlayerSkin[numskins];
 	memset (skins, 0, sizeof(*skins) * numskins);
 	for (i = 0; i < numskins; i++)
@@ -2818,8 +2821,8 @@ void R_DrawSprite (vissprite_t *spr)
 		}
 		if (neardepth > spr->depth || (fardepth > spr->depth &&
 			// Check if sprite is in front of draw seg:
-			DMulScale24 (spr->depth - ds->cy, ds->cdx, ds->cdy, ds->cx - spr->cx) < 0))
-
+			DMulScale32(spr->gy - ds->curline->v1->y, ds->curline->v2->x - ds->curline->v1->x,
+						ds->curline->v1->x - spr->gx, ds->curline->v2->y - ds->curline->v1->y) <= 0))
 		{
 			// seg is behind sprite, so draw the mid texture if it has one
 			if (ds->maskedtexturecol != -1 || ds->bFogBoundary)
@@ -2968,6 +2971,7 @@ void R_InitParticles ()
 	if ( NumParticles < 100 )
 		NumParticles = 100;
 
+	R_DeinitParticles();
 	Particles = new particle_t[NumParticles];
 	R_ClearParticles ();
 	atterm (R_DeinitParticles);

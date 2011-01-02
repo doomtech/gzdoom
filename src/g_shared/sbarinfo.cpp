@@ -423,6 +423,8 @@ static void FreeSBarInfoScript()
 
 void SBarInfo::Load()
 {
+	FreeSBarInfoScript();
+	MugShotStates.Clear();
 	if(gameinfo.statusbar.IsNotEmpty())
 	{
 		int lump = Wads.CheckNumForFullName(gameinfo.statusbar, true);
@@ -1153,8 +1155,8 @@ public:
 
 		if((offsetflags & SBarInfoCommand::CENTER) == SBarInfoCommand::CENTER)
 		{
-			dx -= (texture->GetScaledWidthDouble()/2.0)-texture->LeftOffset;
-			dy -= (texture->GetScaledHeightDouble()/2.0)-texture->TopOffset;
+			dx -= (texture->GetScaledWidthDouble()/2.0)-texture->GetScaledLeftOffsetDouble();
+			dy -= (texture->GetScaledHeightDouble()/2.0)-texture->GetScaledTopOffsetDouble();
 		}
 
 		dx += xOffset;
@@ -1188,7 +1190,7 @@ public:
 			}
 
 			if(clearDontDraw)
-				screen->Clear(static_cast<int>(MAX<double>(dx, dcx)), static_cast<int>(MAX<double>(dy, dcy)), static_cast<int>(dcr), static_cast<int>(dcb), GPalette.BlackIndex, 0);
+				screen->Clear(static_cast<int>(MAX<double>(dx, dcx)), static_cast<int>(MAX<double>(dy, dcy)), static_cast<int>(MIN<double>(dcr,w+MAX<double>(dx, dcx))), static_cast<int>(MIN<double>(dcb,MAX<double>(dy, dcy)+h)), GPalette.BlackIndex, 0);
 			else
 			{
 				if(alphaMap)

@@ -57,25 +57,48 @@
 #include "gl/data/gl_data.h"
 #include "gl/data/gl_vertexbuffer.h"
 #include "gl/scene/gl_clipper.h"
+#include "gl/scene/gl_portal.h"
 #include "gl/dynlights/gl_dynlight.h"
 #include "gl/dynlights/gl_glow.h"
 #include "gl/utility/gl_clock.h"
 #include "gl/gl_functions.h"
 
-TArray<FPortal> portals;
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-int FPortal::PointOnShapeLineSide(fixed_t x, fixed_t y, int shapeindex)
+struct FPortalID
 {
-	int shapeindex2 = (shapeindex+1)%Shape.Size();
+	fixed_t mXDisplacement;
+	fixed_t mYDisplacement;
 
-	return DMulScale32(y - Shape[shapeindex]->y, Shape[shapeindex2]->x - Shape[shapeindex]->x,
-		Shape[shapeindex]->x - x, Shape[shapeindex2]->y - Shape[shapeindex]->y);
+	// for the hash code
+	operator intptr_t() const { return (mXDisplacement >> 8) + (mYDisplacement << 8); }
+	bool operator != (const FPortalID &other) const
+	{
+		return mXDisplacement != other.mXDisplacement ||
+				mYDisplacement != other.mYDisplacement;
+	}
+};
+
+struct FPortalSector
+{
+	sector_t *mSub;
+	int mPlane;
+};
+
+typedef TArray<FPortalSector> FPortalSectors;
+
+typedef TMap<FPortalID, FPortalSectors> FPortalMap;
+
+TArray<FPortal *> portals;
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+GLSectorStackPortal *FPortal::GetGLPortal()
+{
+	if (glportal == NULL) glportal = new GLSectorStackPortal(this);
+	return glportal;
 }
 
 //==========================================================================
@@ -84,123 +107,241 @@ int FPortal::PointOnShapeLineSide(fixed_t x, fixed_t y, int shapeindex)
 //
 //==========================================================================
 
-void FPortal::AddVertexToShape(vertex_t *vertex)
+struct FCoverageVertex
 {
-	for(unsigned i=0;i<Shape.Size(); i++)
+	fixed_t x, y;
+
+	bool operator !=(FCoverageVertex &other)
 	{
-		if (vertex->x == Shape[i]->x && vertex->y == Shape[i]->y) return;
+		return x != other.x || y != other.y;
+	}
+};
+
+struct FCoverageLine
+{
+	FCoverageVertex v[2];
+};
+
+struct FCoverageBuilder
+{
+	subsector_t *target;
+	FPortal *portal;
+	TArray<int> collect;
+	FCoverageVertex center;
+
+	//==========================================================================
+	//
+	//
+	//
+	//==========================================================================
+
+	FCoverageBuilder(subsector_t *sub, FPortal *port)
+	{
+		target = sub;
+		portal = port;
 	}
 
-	if (Shape.Size() < 2) 
+	//==========================================================================
+	//
+	// GetIntersection
+	//
+	// adapted from P_InterceptVector
+	//
+	//==========================================================================
+
+	bool GetIntersection(FCoverageVertex *v1, FCoverageVertex *v2, node_t *bsp, FCoverageVertex *v)
 	{
-		Shape.Push(vertex);
+		double frac;
+		double num;
+		double den;
+
+		double v2x = (double)v1->x;
+		double v2y = (double)v1->y;
+		double v2dx = (double)(v2->x - v1->x);
+		double v2dy = (double)(v2->y - v1->y);
+		double v1x = (double)bsp->x;
+		double v1y = (double)bsp->y;
+		double v1dx = (double)bsp->dx;
+		double v1dy = (double)bsp->dy;
+			
+		den = v1dy*v2dx - v1dx*v2dy;
+
+		if (den == 0)
+			return false;		// parallel
+		
+		num = (v1x - v2x)*v1dy + (v2y - v1y)*v1dx;
+		frac = num / den;
+
+		if (frac < 0. || frac > 1.) return false;
+
+		v->x = xs_RoundToInt(v2x + frac * v2dx);
+		v->y = xs_RoundToInt(v2y + frac * v2dy);
+		return true;
 	}
-	else if (Shape.Size() == 2)
-	{
-		// Special case: We need to check if the vertex is on an extension of the line between the first two vertices.
-		int pos = PointOnShapeLineSide(vertex->x, vertex->y, 0);
 
-		if (pos == 0)
-		{
-			fixed_t distv1 = P_AproxDistance(vertex->x - Shape[0]->x, vertex->y - Shape[0]->y);
-			fixed_t distv2 = P_AproxDistance(vertex->x - Shape[1]->x, vertex->y - Shape[1]->y);
-			fixed_t distvv = P_AproxDistance(Shape[0]->x - Shape[1]->x, Shape[0]->y - Shape[1]->y);
+	//==========================================================================
+	//
+	//
+	//
+	//==========================================================================
 
-			if (distv1 > distvv)
-			{
-				Shape[1] = vertex;
-			}
-			else if (distv2 > distvv)
-			{
-				Shape[0] = vertex;
-			}
-			return;
-		}
-		else if (pos > 0)
-		{
-			Shape.Insert(1, vertex);
-		}
-		else
-		{
-			Shape.Push(vertex);
-		}
+	double PartitionDistance(FCoverageVertex *vt, node_t *node)
+	{	
+		return fabs(double(-node->dy) * (vt->x - node->x) + double(node->dx) * (vt->y - node->y)) / node->len;
 	}
-	else
-	{
-		for(unsigned i=0; i<Shape.Size(); i++)
-		{
-			int startlinepos = PointOnShapeLineSide(vertex->x, vertex->y, i);
-			if (startlinepos >= 0)
-			{
-				int previouslinepos = PointOnShapeLineSide(vertex->x, vertex->y, (i+Shape.Size()-1)%Shape.Size());
 
-				if (previouslinepos < 0)	// we found the first line for which the vertex lies in front
+	//==========================================================================
+	//
+	//
+	//
+	//==========================================================================
+
+	int PointOnSide(FCoverageVertex *vt, node_t *node)
+	{	
+		return R_PointOnSide(vt->x, vt->y, node);
+	}
+
+	//==========================================================================
+	//
+	// adapted from polyobject splitter
+	//
+	//==========================================================================
+
+	void CollectNode(void *node, TArray<FCoverageVertex> &shape)
+	{
+		static TArray<FCoverageLine> lists[2];
+		const double COVERAGE_EPSILON = 6.;	// same epsilon as the node builder
+
+		if (!((size_t)node & 1))  // Keep going until found a subsector
+		{
+			node_t *bsp = (node_t *)node;
+
+			int centerside = R_PointOnSide(center.x, center.y, bsp);
+
+			lists[0].Clear();
+			lists[1].Clear();
+			for(unsigned i=0;i<shape.Size(); i++)
+			{
+				FCoverageVertex *v1 = &shape[i];
+				FCoverageVertex *v2 = &shape[(i+1) % shape.Size()];
+				FCoverageLine vl = { *v1, *v2 };
+
+				double dist_v1 = PartitionDistance(v1, bsp);
+				double dist_v2 = PartitionDistance(v2, bsp);
+
+				if(dist_v1 <= COVERAGE_EPSILON)
 				{
-					unsigned int nextpoint = i;
-
-					do
+					if (dist_v2 <= COVERAGE_EPSILON)
 					{
-						nextpoint = (nextpoint+1) % Shape.Size();
-					}
-					while (PointOnShapeLineSide(vertex->x, vertex->y, nextpoint) >= 0);
-
-					int removecount = (nextpoint - i + Shape.Size()) % Shape.Size() - 1;
-
-					if (removecount == 0)
-					{
-						if (startlinepos > 0) 
-						{
-							Shape.Insert(i+1, vertex);
-						}
-					}
-					else if (nextpoint > i || nextpoint == 0)
-					{
-						// The easy case: It doesn't wrap around
-						Shape.Delete(i+1, removecount-1);
-						Shape[i+1] = vertex;
+						lists[centerside].Push(vl);
 					}
 					else
 					{
-						// It does wrap around.
-						Shape.Delete(i+1, removecount);
-						Shape.Delete(1, nextpoint-1);
-						Shape[0] = vertex;
+						int side = PointOnSide(v2, bsp);
+						lists[side].Push(vl);
 					}
-					return;
+				}
+				else if (dist_v2 <= COVERAGE_EPSILON)
+				{
+					int side = PointOnSide(v1, bsp);
+					lists[side].Push(vl);
+				}
+				else 
+				{
+					int side1 = PointOnSide(v1, bsp);
+					int side2 = PointOnSide(v2, bsp);
+
+					if(side1 != side2)
+					{
+						// if the partition line crosses this seg, we must split it.
+
+						FCoverageVertex vert;
+
+						if (GetIntersection(v1, v2, bsp, &vert))
+						{
+							lists[0].Push(vl);
+							lists[1].Push(vl);
+							lists[side1].Last().v[1] = vert;
+							lists[side2].Last().v[0] = vert;
+						}
+						else
+						{
+							// should never happen
+							lists[side1].Push(vl);
+						}
+					}
+					else 
+					{
+						// both points on the same side.
+						lists[side1].Push(vl);
+					}
 				}
 			}
+			if (lists[1].Size() == 0)
+			{
+				CollectNode(bsp->children[0], shape);
+			}
+			else if (lists[0].Size() == 0)
+			{
+				CollectNode(bsp->children[1], shape);
+			}
+			else
+			{
+				// copy the static arrays into local ones
+				TArray<FCoverageVertex> locallists[2];
+
+				for(int l=0;l<2;l++)
+				{
+					for (unsigned i=0;i<lists[l].Size(); i++)
+					{
+						locallists[l].Push(lists[l][i].v[0]);
+						unsigned i1= (i+1)%lists[l].Size();
+						if (lists[l][i1].v[0] != lists[l][i].v[1])
+						{
+							locallists[l].Push(lists[l][i].v[1]);
+						}
+					}
+				}
+
+				CollectNode(bsp->children[0], locallists[0]);
+				CollectNode(bsp->children[1], locallists[1]);
+			}
+		}
+		else
+		{
+			// we reached a subsector so we can link the node with this subsector
+			subsector_t *sub = (subsector_t *)((BYTE *)node - 1);
+			collect.Push(int(sub-subsectors));
 		}
 	}
-}
+};
 
 //==========================================================================
 //
-//
+// Calculate portal coverage for a single subsector
 //
 //==========================================================================
 
-void FPortal::AddSectorToPortal(sector_t *sector)
+void gl_BuildPortalCoverage(FPortalCoverage *coverage, subsector_t *subsector, FPortal *portal)
 {
-	for(int i=0; i<sector->linecount; i++)
-	{
-		AddVertexToShape(sector->lines[i]->v1);
-		// This is necessary to handle unclosed sectors
-		AddVertexToShape(sector->lines[i]->v2);
-	}
-}
+	TArray<FCoverageVertex> shape;
+	double centerx=0, centery=0;
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-void FPortal::UpdateClipAngles()
-{
-	for(unsigned int i=0; i<Shape.Size(); i++)
+	shape.Resize(subsector->numlines);
+	for(unsigned i=0; i<subsector->numlines; i++)
 	{
-		ClipAngles[i] = R_PointToPseudoAngle(viewx, viewy, Shape[i]->x, Shape[i]->y);
+		centerx += (shape[i].x = subsector->firstline[i].v1->x + portal->xDisplacement);
+		centery += (shape[i].y = subsector->firstline[i].v1->y + portal->yDisplacement);
 	}
+
+	FCoverageBuilder build(subsector, portal);
+	build.center.x = xs_CRoundToInt(centerx / subsector->numlines);
+	build.center.y = xs_CRoundToInt(centery / subsector->numlines);
+
+	build.CollectNode(nodes + numnodes - 1, shape);
+	coverage->subsectors = new DWORD[build.collect.Size()]; 
+	coverage->sscount = build.collect.Size();
+	memcpy(coverage->subsectors, &build.collect[0], build.collect.Size() * sizeof(DWORD));
 }
 
 //==========================================================================
@@ -209,68 +350,124 @@ void FPortal::UpdateClipAngles()
 //
 //==========================================================================
 
-void gl_InitPortals()
+static void CollectPortalSectors(FPortalMap &collection)
 {
-	TThinkerIterator<AStackPoint> it;
-	AStackPoint *pt;
-
-	portals.Clear();
-	while ((pt = it.Next()))
+	for (int i=0;i<numsectors;i++)
 	{
-		FPortal *portal = NULL;
-		int plane;
-		pt->special1 = -1;
-		for(int i=0;i<numsectors;i++)
+		sector_t *sec = &sectors[i];
+		if (sec->CeilingSkyBox != NULL && sec->CeilingSkyBox->bAlways && sec->CeilingSkyBox->Mate != NULL)
 		{
-			if (sectors[i].linecount == 0)
-			{
-				continue;
-			}
-			else if (sectors[i].FloorSkyBox == pt)
-			{
-				plane = 1;
-			}
-			else if (sectors[i].CeilingSkyBox == pt)
-			{
-				plane = 2;
-			}
-			else continue;
+			FPortalID id = { sec->CeilingSkyBox->x - sec->CeilingSkyBox->Mate->x,
+							 sec->CeilingSkyBox->y - sec->CeilingSkyBox->Mate->y};
 
-			// we only process portals that actually are in use.
-			if (portal == NULL) 
-			{
-				pt->special1 = portals.Size();	// Link portal thing to render data
-				portal = &portals[portals.Reserve(1)];
-				portal->origin = pt;
-				portal->plane = 0;
-				portal->xDisplacement = pt->x - pt->Mate->x;
-				portal->yDisplacement = pt->y - pt->Mate->y;
-			}
-			portal->AddSectorToPortal(&sectors[i]);
-			portal->plane|=plane;
+			FPortalSectors &sss = collection[id];
+			FPortalSector ss = { sec, sector_t::ceiling };
+			sss.Push(ss);
 		}
-		if (portal != NULL)
+
+		if (sec->FloorSkyBox != NULL && sec->FloorSkyBox->bAlways && sec->FloorSkyBox->Mate != NULL)
 		{
-			// if the first vertex is duplicated at the end it'll save time in a time critical function
-			// because that code does not need to check for wraparounds anymire.
-			portal->Shape.Resize(portal->Shape.Size()+1);
-			portal->Shape[portal->Shape.Size()-1] = portal->Shape[0];
-			portal->Shape.ShrinkToFit();
-			portal->ClipAngles.Resize(portal->Shape.Size());
+			FPortalID id = { sec->FloorSkyBox->x - sec->FloorSkyBox->Mate->x,
+							 sec->FloorSkyBox->y - sec->FloorSkyBox->Mate->y };
+
+			FPortalSectors &sss = collection[id];
+			FPortalSector ss = { sec, sector_t::floor };
+			sss.Push(ss);
 		}
 	}
 }
 
+void gl_InitPortals()
+{
+	FPortalMap collection;
+
+	if (numnodes == 0) return;
+
+	for(int i=0;i<numnodes;i++)
+	{
+		node_t *no = &nodes[i];
+		double fdx = (double)no->dx;
+		double fdy = (double)no->dy;
+		no->len = (float)sqrt(fdx * fdx + fdy * fdy);
+	}
+
+	CollectPortalSectors(collection);
+	portals.Clear();
+
+	FPortalMap::Iterator it(collection);
+	FPortalMap::Pair *pair;
+	int c = 0;
+	int planeflags = 0;
+	while (it.NextPair(pair))
+	{
+		for(unsigned i=0;i<pair->Value.Size(); i++)
+		{
+			if (pair->Value[i].mPlane == sector_t::floor) planeflags |= 1;
+			else if (pair->Value[i].mPlane == sector_t::ceiling) planeflags |= 2;
+		}
+		for (int i=1;i<=2;i<<=1)
+		{
+			// For now, add separate portals for floor and ceiling. They can be merged once
+			// proper plane clipping is in.
+			if (planeflags & i)
+			{
+				FPortal *portal = new FPortal;
+				portal->xDisplacement = pair->Key.mXDisplacement;
+				portal->yDisplacement = pair->Key.mYDisplacement;
+				portal->plane = (i==1? sector_t::floor : sector_t::ceiling);	/**/
+				portals.Push(portal);
+				for(unsigned j=0;j<pair->Value.Size(); j++)
+				{
+					sector_t *sec = pair->Value[j].mSub;
+					int plane = pair->Value[j].mPlane;
+					if (portal->plane == plane)
+					{
+						for(int k=0;k<sec->subsectorcount; k++)
+						{
+							subsector_t *sub = sec->subsectors[k];
+							gl_BuildPortalCoverage(&sub->portalcoverage[plane], sub, portal);
+						}
+						sec->portals[plane] = portal;
+					}
+				}
+			}
+		}
+	}
+}
 
 CCMD(dumpportals)
 {
 	for(unsigned i=0;i<portals.Size(); i++)
 	{
-		Printf("Portal #%d, plane %d, stackpoint at (%f,%f), displacement = (%f,%f)\n", i, portals[i].plane, portals[i].origin->x/65536., portals[i].origin->y/65536.,
-			portals[i].origin->x/65536. - portals[i].origin->Mate->x/65536., portals[i].origin->y/65536. - portals[i].origin->Mate->y/65536.);
-		for (unsigned j=0;j<portals[i].Shape.Size(); j++)
+		double xdisp = portals[i]->xDisplacement/65536.;
+		double ydisp = portals[i]->yDisplacement/65536.;
+		Printf(PRINT_LOG, "Portal #%d, %s, displacement = (%f,%f)\n", i, portals[i]->plane==0? "floor":"ceiling",
+			xdisp, ydisp);
+		Printf(PRINT_LOG, "Coverage:\n");
+		for(int j=0;j<numsubsectors;j++)
 		{
-			Printf("\t(%f,%f)\n", (portals[i].Shape[j]->x + portals[i].xDisplacement)/65536., (portals[i].Shape[j]->y + portals[i].yDisplacement)/65536.);
+			subsector_t *sub = &subsectors[j];
+			FPortal *port = sub->render_sector->portals[portals[i]->plane];
+			if (port == portals[i])
+			{
+				Printf(PRINT_LOG, "\tSubsector %d (%d):\n\t\t", j, sub->render_sector->sectornum);
+				for(unsigned k = 0;k< sub->numlines; k++)
+				{
+					Printf(PRINT_LOG, "(%.3f,%.3f), ",	sub->firstline[k].v1->x/65536. + xdisp, sub->firstline[k].v1->y/65536. + ydisp);
+				}
+				Printf(PRINT_LOG, "\n\t\tCovered by subsectors:\n");
+				FPortalCoverage *cov = &sub->portalcoverage[portals[i]->plane];
+				for(int l = 0;l< cov->sscount; l++)
+				{
+					subsector_t *csub = &subsectors[cov->subsectors[l]];
+					Printf(PRINT_LOG, "\t\t\t%5d (%4d): ", cov->subsectors[l], csub->render_sector->sectornum);
+					for(unsigned m = 0;m< csub->numlines; m++)
+					{
+						Printf(PRINT_LOG, "(%.3f,%.3f), ",	csub->firstline[m].v1->x/65536., csub->firstline[m].v1->y/65536.);
+					}
+					Printf(PRINT_LOG, "\n");
+				}
+			}
 		}
 	}
 }

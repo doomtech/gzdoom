@@ -410,6 +410,9 @@ public:
 	virtual void GetHitlist(BYTE *hitlist);
 	virtual void PrecacheTexture(FTexture *tex, int cache);
 
+	// Report a game restart
+	virtual void GameRestart();
+
 	// Screen wiping
 	virtual bool WipeStartScreen(int type);
 	virtual void WipeEndScreen();
@@ -476,7 +479,7 @@ extern "C" DWORD Col2RGB8_Inverse[65][256];
 //		--111111111111111111111111111111	= 0x3FFFFFFF
 
 // Allocates buffer screens, call before R_Init.
-void V_Init ();
+void V_Init (bool restart);
 
 // Initializes graphics mode for the first time.
 void V_Init2 ();

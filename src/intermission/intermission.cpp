@@ -110,10 +110,9 @@ void DIntermissionScreen::Init(FIntermissionAction *desc, bool first)
 	{
 		texname = GStrings[texname+1];
 	}
-	FTextureID tex = TexMan.CheckForTexture(texname, FTexture::TEX_MiscPatch);
-	if (tex.isValid())
+	if (texname[0] != 0)
 	{
-		mBackground = tex;
+		mBackground = TexMan.CheckForTexture(texname, FTexture::TEX_MiscPatch);
 		mFlatfill = desc->mFlatfill;
 	}
 	S_Sound (CHAN_VOICE | CHAN_UI, desc->mSound, 1.0f, ATTN_NONE);
@@ -392,7 +391,12 @@ void DIntermissionScreenCast::Init(FIntermissionAction *desc, bool first)
 	mName = static_cast<FIntermissionActionCast*>(desc)->mName;
 	mClass = PClass::FindClass(static_cast<FIntermissionActionCast*>(desc)->mCastClass);
 	if (mClass != NULL) mDefaults = GetDefaultByType(mClass);
-	else mDefaults = NULL;
+	else 
+	{
+		mDefaults = NULL;
+		caststate = NULL;
+		return;
+	}
 
 	mCastSounds.Resize(static_cast<FIntermissionActionCast*>(desc)->mCastSounds.Size());
 	for (unsigned i=0; i < mCastSounds.Size(); i++)
@@ -405,15 +409,17 @@ void DIntermissionScreenCast::Init(FIntermissionAction *desc, bool first)
 	if (mClass->IsDescendantOf(RUNTIME_CLASS(APlayerPawn)))
 	{
 		advplayerstate = mDefaults->MissileState;
-		castsprite = skins[players[consoleplayer].userinfo.skin].sprite;
 		casttranslation = translationtables[TRANSLATION_Players][consoleplayer];
 	}
 	else
 	{
 		advplayerstate = NULL;
-		if (caststate != NULL) castsprite = caststate->sprite;
-		else castsprite = -1;
 		casttranslation = NULL;
+		if (mDefaults->Translation != 0)
+		{
+			casttranslation = translationtables[GetTranslationType(mDefaults->Translation)]
+												[GetTranslationIndex(mDefaults->Translation)];
+		}
 	}
 	castdeath = false;
 	castframes = 0;
@@ -433,21 +439,26 @@ int DIntermissionScreenCast::Responder (event_t *ev)
 		return 1;					// already in dying frames
 
 	castdeath = true;
-	caststate = mClass->ActorInfo->FindState(NAME_Death);
-	if (caststate == NULL) return -1;
 
-	casttics = caststate->GetTics();
-	castframes = 0;
-	castattacking = false;
+	if (mClass != NULL)
+	{
+		FName label[] = {NAME_Death, NAME_Cast};
+		caststate = mClass->ActorInfo->FindState(2, label);
+		if (caststate == NULL) return -1;
 
-	if (mClass->IsDescendantOf(RUNTIME_CLASS(APlayerPawn)))
-	{
-		int snd = S_FindSkinnedSound(players[consoleplayer].mo, "*death");
-		if (snd != 0) S_Sound (CHAN_VOICE | CHAN_UI, snd, 1, ATTN_NONE);
-	}
-	else if (mDefaults->DeathSound)
-	{
-		S_Sound (CHAN_VOICE | CHAN_UI, mDefaults->DeathSound, 1, ATTN_NONE);
+		casttics = caststate->GetTics();
+		castframes = 0;
+		castattacking = false;
+
+		if (mClass->IsDescendantOf(RUNTIME_CLASS(APlayerPawn)))
+		{
+			int snd = S_FindSkinnedSound(players[consoleplayer].mo, "*death");
+			if (snd != 0) S_Sound (CHAN_VOICE | CHAN_UI, snd, 1, ATTN_NONE);
+		}
+		else if (mDefaults->DeathSound)
+		{
+			S_Sound (CHAN_VOICE | CHAN_UI, mDefaults->DeathSound, 1, ATTN_NONE);
+		}
 	}
 	return true;
 }
@@ -478,7 +489,8 @@ int DIntermissionScreenCast::Ticker ()
 	if (--casttics > 0 && caststate != NULL)
 		return 0; 				// not time to change state yet
 				
-	if (caststate == NULL || caststate->GetTics() == -1 || caststate->GetNextState() == NULL)
+	if (caststate == NULL || caststate->GetTics() == -1 || caststate->GetNextState() == NULL ||
+		(caststate->GetNextState() == caststate && castdeath))
 	{
 		return -1;
 	}
@@ -494,7 +506,7 @@ int DIntermissionScreenCast::Ticker ()
 		castframes++;
 	}
 		
-	if (castframes == 12)
+	if (castframes == 12 && !castdeath)
 	{
 		// go into attack frame
 		castattacking = true;
@@ -559,6 +571,20 @@ void DIntermissionScreenCast::Drawer ()
 	// draw the current frame in the middle of the screen
 	if (caststate != NULL)
 	{
+		int castsprite;
+
+		if (!(mDefaults->flags4 & MF4_NOSKIN) && 
+			mDefaults->SpawnState != NULL && caststate->sprite == mDefaults->SpawnState->sprite &&
+			mClass->IsDescendantOf(RUNTIME_CLASS(APlayerPawn)) &&
+			skins != NULL)
+		{
+			castsprite = skins[players[consoleplayer].userinfo.skin].sprite;
+		}
+		else
+		{
+			castsprite = caststate->sprite;
+		}
+
 		sprframe = &SpriteFrames[sprites[castsprite].spriteframes + caststate->GetFrame()];
 		pic = TexMan(sprframe->Texture[0]);
 
@@ -811,6 +837,7 @@ void F_StartIntermission(FIntermissionDescriptor *desc, bool deleteme, BYTE stat
 	viewactive = false;
 	automapactive = false;
 	DIntermissionController::CurrentIntermission = new DIntermissionController(desc, deleteme, state);
+	GC::WriteBarrier(DIntermissionController::CurrentIntermission);
 }
 
 

@@ -145,6 +145,11 @@ void SetStrifeType(int convid, const PClass *Class)
 	StrifeTypes[convid] = Class;
 }
 
+void ClearStrifeTypes()
+{
+	StrifeTypes.Clear();
+}
+
 void SetConversation(int convid, const PClass *Class, int dlgindex)
 {
 	if (convid != -1)
@@ -914,7 +919,7 @@ public:
 	{
 		if (ev->type == EV_GUI_Event && ev->subtype == EV_GUI_Char && ev->data1 >= '0' && ev->data1 <= '9')
 		{ // Activate an item of type numberedmore (dialogue only)
-			mSelection = ev->data1 == '0' ? 10 : ev->data1 - '0';
+			mSelection = ev->data1 == '0' ? 9 : ev->data1 - '1';
 			return MenuEvent(MKEY_Enter, false);
 		}
 		return Super::Responder(ev);

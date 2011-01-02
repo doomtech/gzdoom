@@ -1238,6 +1238,7 @@ MapFlagHandlers[] =
 	{ "resethealth",					MITYPE_SETFLAG2,	LEVEL2_RESETHEALTH, 0 },
 	{ "endofgame",						MITYPE_SETFLAG2,	LEVEL2_ENDGAME, 0 },
 	{ "nostatistics",					MITYPE_SETFLAG2,	LEVEL2_NOSTATISTICS, 0 },
+	{ "noautosavehint",					MITYPE_SETFLAG2,	LEVEL2_NOAUTOSAVEHINT, 0 },
 	{ "unfreezesingleplayerconversations",MITYPE_SETFLAG2,	LEVEL2_CONV_SINGLE_UNFREEZE, 0 },
 	{ "nobotnodes",						MITYPE_IGNORE,	0, 0 },		// Skulltag option: nobotnodes
 	{ "compat_shorttex",				MITYPE_COMPATFLAG, COMPATF_SHORTTEX},
@@ -1626,7 +1627,13 @@ void FMapInfoParser::ParseEpisodeInfo ()
 	}
 	else
 	{
-		FEpisode *epi = &AllEpisodes[AllEpisodes.Reserve(1)];
+		// Only allocate a new entry if this doesn't replace an existing episode.
+		if (i >= AllEpisodes.Size())
+		{
+			i = AllEpisodes.Reserve(1);
+		}
+
+		FEpisode *epi = &AllEpisodes[i];
 
 		epi->mEpisodeMap = map;
 		epi->mEpisodeName = name;
@@ -1789,6 +1796,25 @@ void FMapInfoParser::ParseMapInfo (int lump, level_info_t &gamedefaults, level_i
 
 //==========================================================================
 //
+//
+//
+//==========================================================================
+
+void DeinitIntermissions();
+
+static void ClearMapinfo()
+{
+	wadclusterinfos.Clear();
+	wadlevelinfos.Clear();
+	ClearEpisodes();
+	AllSkills.Clear();
+	DefaultSkill = -1;
+	DeinitIntermissions();
+	level.info = NULL;
+}
+
+//==========================================================================
+//
 // G_ParseMapInfo
 // Parses the MAPINFO lumps of all loaded WADs and generates
 // data for wadlevelinfos and wadclusterinfos.
@@ -1800,7 +1826,8 @@ void G_ParseMapInfo (const char *basemapinfo)
 	int lump, lastlump = 0;
 	level_info_t gamedefaults;
 
-	atterm(ClearEpisodes);
+	ClearMapinfo();
+	atterm(ClearMapinfo);
 
 	// Parse the default MAPINFO for the current game. This lump *MUST* come from zdoom.pk3.
 	if (basemapinfo != NULL)

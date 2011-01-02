@@ -347,16 +347,8 @@ void P_SerializeWorld (FArchive &arc)
 			<< sec->interpolations[0]
 			<< sec->interpolations[1]
 			<< sec->interpolations[2]
-			<< sec->interpolations[3];
-
-		if (SaveVersion < 2492)
-		{
-			sec->SeqName = NAME_None;
-		}
-		else
-		{
-			arc << sec->SeqName;
-		}
+			<< sec->interpolations[3]
+			<< sec->SeqName;
 
 		sec->e->Serialize(arc);
 		if (arc.IsStoring ())
@@ -374,7 +366,7 @@ void P_SerializeWorld (FArchive &arc)
 				<< desaturate;
 			sec->ColorMap = GetSpecialLights (color, fade, desaturate);
 		}
-		arc << sec->ceiling_reflect << sec->floor_reflect;
+		arc << sec->reflect[sector_t::ceiling] << sec->reflect[sector_t::floor];
 	}
 
 	// do lines
@@ -445,7 +437,7 @@ FArchive &operator<< (FArchive &arc, sector_t::splane &p)
 {
 	arc << p.xform.xoffs << p.xform.yoffs << p.xform.xscale << p.xform.yscale 
 		<< p.xform.angle << p.xform.base_yoffs << p.xform.base_angle
-		<< p.Flags << p.Light << p.Texture << p.TexZ;
+		<< p.Flags << p.Light << p.Texture << p.TexZ << p.alpha;
 	return arc;
 }
 
@@ -607,15 +599,6 @@ void P_SerializeSubsectors(FArchive &arc)
 	}
 	else
 	{
-		if (SaveVersion < 2609)
-		{
-			if (hasglnodes)
-			{
-				RecalculateDrawnSubsectors();
-			}
-			return;
-		}
-
 		arc << num_verts << num_subs << num_nodes;
 		if (num_verts != numvertexes ||
 			num_subs != numsubsectors ||

@@ -227,13 +227,14 @@ void FIWadManager::ParseIWadInfo(const char *fn, const char *data, int datasize)
 			{
 				sc.MustGetString();
 				FString wadname = sc.String;
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__) // Turns out Mac OS X is case insensitive.
 				mIWadNames.Push(wadname);
 #else
 				// check for lowercase, uppercased first letter and full uppercase on Linux etc.
 				wadname.ToLower();
 				mIWadNames.Push(wadname);
-				wadname[0] = toupper(wadname[0]);
+				wadname.LockBuffer()[0] = toupper(wadname[0]);
+				wadname.UnlockBuffer();
 				mIWadNames.Push(wadname);
 				wadname.ToUpper();
 				mIWadNames.Push(wadname);
@@ -331,7 +332,7 @@ int FIWadManager::CheckIWAD (const char *doomwaddir, WadStuff *wads)
 		{
 			FString iwad;
 			
-			iwad.Format ("%s%s%s", doomwaddir, slash, mIWadNames[i]);
+			iwad.Format ("%s%s%s", doomwaddir, slash, mIWadNames[i].GetChars());
 			FixPathSeperator (iwad);
 			if (FileExists (iwad))
 			{
@@ -547,6 +548,7 @@ int FIWadManager::IdentifyVersion (TArray<FString> &wadfiles, const char *iwad, 
 		exit (0);
 
 	// zdoom.pk3 must always be the first file loaded and the IWAD second.
+	wadfiles.Clear();
 	D_AddFile (wadfiles, zdoom_wad);
 
 	if (mIWads[wads[pickwad].Type].preload >= 0)

@@ -312,6 +312,7 @@ static void ReadArrayVars (PNGHandle *png, FWorldGlobalArray *vars, size_t count
 			{
 				SDWORD key, val;
 				key = arc.ReadCount();
+
 				val = arc.ReadCount();
 				vars[i].Insert (key, val);
 			}
@@ -2536,8 +2537,12 @@ enum
 	APROP_DamageFactor	= 24,
 	APROP_MasterTID     = 25,
 	APROP_TargetTID		= 26,
-	APROP_TracerTID		= 27
-};	
+	APROP_TracerTID		= 27,
+	APROP_WaterLevel	= 28,
+	APROP_ScaleX        = 29,
+	APROP_ScaleY        = 30,
+	APROP_Dormant		= 31,
+};
 
 // These are needed for ACS's APROP_RenderStyle
 static const int LegacyRenderStyleIndices[] =
@@ -2717,6 +2722,14 @@ void DLevelScript::DoSetActorProperty (AActor *actor, int property, int value)
 		DoSetMaster (actor, other);
 		break;
 
+	case APROP_ScaleX:
+		actor->scaleX = value;
+		break;
+
+	case APROP_ScaleY:
+		actor->scaleY = value;
+		break;
+
 	default:
 		// do nothing.
 		break;
@@ -2757,6 +2770,7 @@ int DLevelScript::GetActorProperty (int tid, int property)
 	case APROP_Friendly:	return !!(actor->flags & MF_FRIENDLY);
 	case APROP_Notarget:	return !!(actor->flags3 & MF3_NOTARGET);
 	case APROP_Notrigger:	return !!(actor->flags6 & MF6_NOTRIGGER);
+	case APROP_Dormant:		return !!(actor->flags2 & MF2_DORMANT);
 	case APROP_SpawnHealth: if (actor->IsKindOf (RUNTIME_CLASS (APlayerPawn)))
 							{
 								return static_cast<APlayerPawn *>(actor)->MaxHealth;
@@ -2778,6 +2792,10 @@ int DLevelScript::GetActorProperty (int tid, int property)
 	case APROP_MasterTID:	return DoGetMasterTID (actor);
 	case APROP_TargetTID:	return (actor->target != NULL)? actor->target->tid : 0;
 	case APROP_TracerTID:	return (actor->tracer != NULL)? actor->tracer->tid : 0;
+	case APROP_WaterLevel:	return actor->waterlevel;
+	case APROP_ScaleX: 		return actor->scaleX;
+	case APROP_ScaleY: 		return actor->scaleY;
+
 	default:				return 0;
 	}
 }
@@ -2811,6 +2829,9 @@ int DLevelScript::CheckActorProperty (int tid, int property, int value)
 		case APROP_MasterTID:
 		case APROP_TargetTID:
 		case APROP_TracerTID:
+		case APROP_WaterLevel:
+		case APROP_ScaleX:
+		case APROP_ScaleY:
 			return (GetActorProperty(tid, property) == value);
 
 		// Boolean values need to compare to a binary version of value
@@ -2822,6 +2843,7 @@ int DLevelScript::CheckActorProperty (int tid, int property, int value)
 		case APROP_Friendly:
 		case APROP_Notarget:
 		case APROP_Notrigger:
+		case APROP_Dormant:
 			return (GetActorProperty(tid, property) == (!!value));
 
 		// Strings are not covered by GetActorProperty, so make the check here

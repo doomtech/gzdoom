@@ -80,6 +80,7 @@ struct FIntermissionAction
 	TArray<FIntermissionPatch> mOverlays;
 
 	FIntermissionAction();
+	virtual ~FIntermissionAction() {}
 	virtual bool ParseKey(FScanner &sc);
 };
 
@@ -145,7 +146,7 @@ struct FIntermissionActionScroller : public FIntermissionAction
 struct FIntermissionDescriptor
 {
 	FName mLink;
-	TArray<FIntermissionAction *> mActions;
+	TDeletingArray<FIntermissionAction *> mActions;
 };
 
 typedef TMap<FName, FIntermissionDescriptor*> FIntermissionDescriptorList;
@@ -233,7 +234,6 @@ class DIntermissionScreenCast : public DIntermissionScreen
 	TArray<FICastSound> mCastSounds;
 
 	int 			casttics;
-	int				castsprite;			// [RH] For overriding the player sprite with a skin
 	const FRemapTable *casttranslation;	// [RH] Draw "our hero" with their chosen suit color
 	FState*			caststate;
 	FState*			basestate;

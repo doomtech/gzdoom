@@ -70,7 +70,6 @@ CVAR(Int, m_show_backbutton, 0, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 DMenu *DMenu::CurrentMenu;
 int DMenu::MenuTime;
 
-FListMenuDescriptor *MainMenu;
 FGameStartup GameStartupInfo;
 EMenuState		menuactive;
 bool			M_DemoNoPlay;
@@ -544,7 +543,7 @@ bool M_Responder (event_t *ev)
 				}
 			}
 		}
-		else if (ev->type == EV_KeyDown || ev->type == EV_KeyUp)
+		else if (menuactive != MENU_WaitKey && (ev->type == EV_KeyDown || ev->type == EV_KeyUp))
 		{
 			keyup = ev->type == EV_KeyUp;
 

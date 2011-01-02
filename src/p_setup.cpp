@@ -106,6 +106,8 @@ bool P_IsBuildMap(MapData *map);
 //
 int 			numvertexes;
 vertex_t*		vertexes;
+int 			numvertexdatas;
+vertexdata_t*		vertexdatas;
 
 int 			numsegs;
 seg_t*			segs;
@@ -795,6 +797,7 @@ void P_LoadVertexes (MapData * map)
 	// Determine number of vertices:
 	//	total lump length / vertex record length.
 	numvertexes = map->MapLumps[ML_VERTEXES].Size / sizeof(mapvertex_t);
+	numvertexdatas = 0;
 
 	if (numvertexes == 0)
 	{
@@ -803,6 +806,7 @@ void P_LoadVertexes (MapData * map)
 
 	// Allocate memory for buffer.
 	vertexes = new vertex_t[numvertexes];		
+	vertexdatas = NULL;
 
 	map->Seek(ML_VERTEXES);
 		
@@ -1460,7 +1464,8 @@ void P_LoadSectors (MapData * map)
 		ss->nextsec = -1;	//jff 2/26/98 add fields to support locking out
 		ss->prevsec = -1;	// stair retriggering until build completes
 
-		// killough 3/7/98:
+		ss->SetAlpha(sector_t::floor, FRACUNIT);
+		ss->SetAlpha(sector_t::ceiling, FRACUNIT);
 		ss->SetXScale(sector_t::floor, FRACUNIT);	// [RH] floor and ceiling scaling
 		ss->SetYScale(sector_t::floor, FRACUNIT);
 		ss->SetXScale(sector_t::ceiling, FRACUNIT);
@@ -1817,6 +1822,7 @@ void P_SetLineID (line_t *ld)
 			{
 				ld->id = ld->args[0];
 			}
+			ld->special = 0;
 			break;
 
 		case TranslucentLine:
@@ -1873,8 +1879,8 @@ void P_FinishLoadingLineDef(line_t *ld, int alpha)
 
 	ld->frontsector = ld->sidedef[0] != NULL ? ld->sidedef[0]->sector : NULL;
 	ld->backsector  = ld->sidedef[1] != NULL ? ld->sidedef[1]->sector : NULL;
-	float dx = FIXED2FLOAT(ld->v2->x - ld->v1->x);
-	float dy = FIXED2FLOAT(ld->v2->y - ld->v1->y);
+	double dx = FIXED2DBL(ld->v2->x - ld->v1->x);
+	double dy = FIXED2DBL(ld->v2->y - ld->v1->y);
 	int linenum = int(ld-lines);
 
 	if (ld->frontsector == NULL)
@@ -1883,7 +1889,7 @@ void P_FinishLoadingLineDef(line_t *ld, int alpha)
 	}
 
 	// [RH] Set some new sidedef properties
-	int len = (int)(sqrtf (dx*dx + dy*dy) + 0.5f);
+	int len = (int)(sqrt (dx*dx + dy*dy) + 0.5f);
 
 	if (ld->sidedef[0] != NULL)
 	{
@@ -3398,11 +3404,13 @@ void P_FreeLevelData ()
 		delete[] vertexes;
 		vertexes = NULL;
 	}
+	numvertexes = 0;
 	if (segs != NULL)
 	{
 		delete[] segs;
 		segs = NULL;
 	}
+	numsegs = 0;
 	if (glsegextras != NULL)
 	{
 		delete[] glsegextras;
@@ -3413,8 +3421,8 @@ void P_FreeLevelData ()
 		delete[] sectors[0].e;
 		delete[] sectors;
 		sectors = NULL;
-		numsectors = 0;	// needed for the pointer cleanup code
 	}
+	numsectors = 0;
 	if (gamenodes != NULL && gamenodes != nodes)
 	{
 		delete[] gamenodes;
@@ -3447,11 +3455,14 @@ void P_FreeLevelData ()
 		delete[] lines;
 		lines = NULL;
 	}
+	numlines = 0;
 	if (sides != NULL)
 	{
 		delete[] sides;
 		sides = NULL;
 	}
+	numsides = 0;
+
 	if (blockmaplump != NULL)
 	{
 		delete[] blockmaplump;
@@ -3508,6 +3519,7 @@ void P_FreeLevelData ()
 		delete[] zones;
 		zones = NULL;
 	}
+	numzones = 0;
 	P_FreeStrifeConversations ();
 	if (level.Scrolls != NULL)
 	{
@@ -3532,6 +3544,7 @@ void P_FreeExtraLevelData()
 			delete node;
 			node = next;
 		}
+		FBlockNode::FreeBlocks = NULL;
 	}
 	{
 		msecnode_t *node = headsecnode;
@@ -3570,8 +3583,11 @@ void P_SetupLevel (char *lumpname, int position)
 
 	wminfo.partime = 180;
 
+	MapThingsConverted.Clear();
+	linemap.Clear();
 	FCanvasTextureInfo::EmptyList ();
 	R_FreePastViewers ();
+	P_ClearUDMFKeys();
 
 	if (!savegamerestore)
 	{
@@ -4124,8 +4140,6 @@ void P_Init ()
 	atterm (P_Shutdown);
 
 	P_InitEffects ();		// [RH]
-	R_InitPicAnims ();
-	P_InitSwitchList ();
 	P_InitTerrainTypes ();
 	P_InitKeyMessages ();
 	R_InitSprites ();
@@ -4137,11 +4151,7 @@ static void P_Shutdown ()
 	P_DeinitKeyMessages ();
 	P_FreeLevelData ();
 	P_FreeExtraLevelData ();
-	if (StatusBar != NULL)
-	{
-		StatusBar->Destroy();
-		StatusBar = NULL;
-	}
+	ST_Clear();
 }
 
 #if 0

@@ -119,7 +119,6 @@ bool savegamerestore;
 
 extern int mousex, mousey;
 extern bool sendpause, sendsave, sendturn180, SendLand;
-extern const AInventory *SendItemUse, *SendItemDrop;
 
 void *statcopy;					// for statistics driver
 
@@ -309,6 +308,7 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 	bool wantFast;
 	int i;
 
+	G_ClearHubInfo();
 	if (!savegamerestore)
 	{
 		G_ClearSnapshots ();
@@ -742,12 +742,7 @@ void G_DoCompleted (void)
 		{ // Reset world variables for the new hub.
 			P_ClearACSVars(false);
 		}
-		// With hub statistics the time should be per hub.
-		// Additionally there is a global time counter now so nothing is missed by changing it
-		//else if (mode == FINISH_NoHub)
-		{ // Reset time to zero if not entering/staying in a hub.
-			level.time = 0;
-		}
+		level.time = 0;
 		level.maptime = 0;
 	}
 

@@ -46,7 +46,7 @@
 #define GI_COMPATSTAIRS			0x00000020	// same for stairbuilding
 #define GI_COMPATPOLY1			0x00000040	// Hexen's MAP36 needs old polyobject drawing
 #define GI_COMPATPOLY2			0x00000080	// so does HEXDD's MAP47
-#define GI_NOTEXTCOLOR			0x00000100
+#define GI_NOTEXTCOLOR			0x00000100	// Chex Quest 3 would have everything green
 
 #include "gametype.h"
 
@@ -64,6 +64,12 @@ struct gameborder_t
 	char bl[8];
 	char b[8];
 	char br[8];
+};
+
+struct FGIFont
+{
+	FName fontname;
+	FName color;
 };
 
 struct gameinfo_t
@@ -129,6 +135,10 @@ struct gameinfo_t
 	int TextScreenX;
 	int TextScreenY;
 	FName DefaultEndSequence;
+	FString mMapArrow, mCheatMapArrow;
+	FGIFont mStatscreenMapNameFont;
+	FGIFont mStatscreenFinishedFont;
+	FGIFont mStatscreenEnteringFont;
 
 	const char *GetFinalePage(unsigned int num) const;
 };

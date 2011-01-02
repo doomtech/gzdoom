@@ -867,10 +867,11 @@ static void SetupFloorPortal (AStackPoint *point)
 	NActorIterator it (NAME_LowerStackLookOnly, point->tid);
 	sector_t *Sector = point->Sector;
 	Sector->FloorSkyBox = static_cast<ASkyViewpoint*>(it.Next());
-	if (Sector->FloorSkyBox != NULL)
+	if (Sector->FloorSkyBox != NULL && Sector->FloorSkyBox->bAlways)
 	{
 		Sector->FloorSkyBox->Mate = point;
-		Sector->FloorSkyBox->PlaneAlpha = Scale (point->args[0], OPAQUE, 255);
+		if (Sector->GetAlpha(sector_t::floor) == OPAQUE)
+			Sector->SetAlpha(sector_t::floor, Scale (point->args[0], OPAQUE, 255));
 	}
 }
 
@@ -879,11 +880,45 @@ static void SetupCeilingPortal (AStackPoint *point)
 	NActorIterator it (NAME_UpperStackLookOnly, point->tid);
 	sector_t *Sector = point->Sector;
 	Sector->CeilingSkyBox = static_cast<ASkyViewpoint*>(it.Next());
-	if (Sector->CeilingSkyBox != NULL)
+	if (Sector->CeilingSkyBox != NULL && Sector->CeilingSkyBox->bAlways)
 	{
 		Sector->CeilingSkyBox->Mate = point;
-		Sector->CeilingSkyBox->PlaneAlpha = Scale (point->args[0], OPAQUE, 255);
+		if (Sector->GetAlpha(sector_t::ceiling) == OPAQUE)
+			Sector->SetAlpha(sector_t::ceiling, Scale (point->args[0], OPAQUE, 255));
 	}
+}
+
+static bool SpreadCeilingPortal(AStackPoint *pt, fixed_t alpha, sector_t *sector)
+{
+	bool fail = false;
+	sector->validcount = validcount;
+	for(int i=0; i<sector->linecount; i++)
+	{
+		line_t *line = sector->lines[i];
+		sector_t *backsector = sector == line->frontsector? line->backsector : line->frontsector;
+		if (line->backsector == line->frontsector) continue;
+		if (backsector == NULL) { fail = true; continue; }
+		if (backsector->validcount == validcount) continue;
+		if (backsector->CeilingSkyBox == pt) continue;
+
+		// Check if the backside would map to the same visplane
+		if (backsector->CeilingSkyBox != NULL) { fail = true; continue; }
+		if (backsector->ceilingplane != sector->ceilingplane) { fail = true; continue; }
+		if (backsector->lightlevel != sector->lightlevel) { fail = true; continue; }
+		if (backsector->GetTexture(sector_t::ceiling)		!= sector->GetTexture(sector_t::ceiling)) { fail = true; continue; }
+		if (backsector->GetXOffset(sector_t::ceiling)		!= sector->GetXOffset(sector_t::ceiling)) { fail = true; continue; }
+		if (backsector->GetYOffset(sector_t::ceiling)		!= sector->GetYOffset(sector_t::ceiling)) { fail = true; continue; }
+		if (backsector->GetXScale(sector_t::ceiling)		!= sector->GetXScale(sector_t::ceiling)) { fail = true; continue; }
+		if (backsector->GetYScale(sector_t::ceiling)		!= sector->GetYScale(sector_t::ceiling)) { fail = true; continue; }
+		if (backsector->GetAngle(sector_t::ceiling)		!= sector->GetAngle(sector_t::ceiling)) { fail = true; continue; }
+		if (SpreadCeilingPortal(pt, alpha, backsector)) { fail = true; continue; }
+	}
+	if (!fail) 
+	{
+		sector->CeilingSkyBox = pt;
+		sector->SetAlpha(sector_t::ceiling, alpha);
+	}
+	return fail;
 }
 
 void P_SetupPortals()
@@ -906,45 +941,28 @@ void P_SetupPortals()
 		pt->special1 = 0;
 		points.Push(pt);
 	}
-
-	for(unsigned i=0;i<points.Size(); i++)
-	{
-		if (points[i]->special1 == 0 && points[i]->Mate != NULL)
-		{
-			for(unsigned j=1;j<points.Size(); j++)
-			{
-				if (points[j]->special1 == 0 && points[j]->Mate != NULL && points[i]->GetClass() == points[j]->GetClass())
-				{
-					fixed_t deltax1 = points[i]->Mate->x - points[i]->x;
-					fixed_t deltay1 = points[i]->Mate->y - points[i]->y;
-					fixed_t deltax2 = points[j]->Mate->x - points[j]->x;
-					fixed_t deltay2 = points[j]->Mate->y - points[j]->y;
-					if (deltax1 == deltax2 && deltay1 == deltay2)
-					{
-						if (points[j]->Sector->FloorSkyBox == points[j]->Mate)
-							points[j]->Sector->FloorSkyBox = points[i]->Mate;
-
-						if (points[j]->Sector->CeilingSkyBox == points[j]->Mate)
-							points[j]->Sector->CeilingSkyBox = points[i]->Mate;
-
-						points[j]->special1 = 1;
-					}
-				}
-			}
-		}
-	}
 }
 
-inline void SetPortal(sector_t *sector, int plane, AStackPoint *portal)
+inline void SetPortal(sector_t *sector, int plane, AStackPoint *portal, fixed_t alpha)
 {
 	// plane: 0=floor, 1=ceiling, 2=both
 	if (plane > 0)
 	{
-		if (sector->CeilingSkyBox == NULL) sector->CeilingSkyBox = portal;
+		if (sector->CeilingSkyBox == NULL || !sector->CeilingSkyBox->bAlways) 
+		{
+			sector->CeilingSkyBox = portal;
+			if (sector->GetAlpha(sector_t::ceiling) == OPAQUE)
+				sector->SetAlpha(sector_t::ceiling, alpha);
+		}
 	}
 	if (plane == 2 || plane == 0)
 	{
-		if (sector->FloorSkyBox == NULL) sector->FloorSkyBox = portal;
+		if (sector->FloorSkyBox == NULL || !sector->FloorSkyBox->bAlways) 
+		{
+			sector->FloorSkyBox = portal;
+		}
+		if (sector->GetAlpha(sector_t::floor) == OPAQUE)
+			sector->SetAlpha(sector_t::floor, alpha);
 	}
 }
 
@@ -964,6 +982,7 @@ void P_SpawnPortal(line_t *line, int sectortag, int plane, int alpha)
 			fixed_t y1 = (line->v1->y + line->v2->y) >> 1;
 			fixed_t x2 = (lines[i].v1->x + lines[i].v2->x) >> 1;
 			fixed_t y2 = (lines[i].v1->y + lines[i].v2->y) >> 1;
+			fixed_t alpha = Scale (lines[i].args[4], OPAQUE, 255);
 
 			AStackPoint *anchor = Spawn<AStackPoint>(x1, y1, 0, NO_REPLACE);
 			AStackPoint *reference = Spawn<AStackPoint>(x2, y2, 0, NO_REPLACE);
@@ -978,7 +997,7 @@ void P_SpawnPortal(line_t *line, int sectortag, int plane, int alpha)
 
 		    for (int s=-1; (s = P_FindSectorFromTag(sectortag,s)) >= 0;)
 			{
-				SetPortal(&sectors[s], plane, reference);
+				SetPortal(&sectors[s], plane, reference, alpha);
 			}
 
 			for (int j=0;j<numlines;j++)
@@ -992,13 +1011,13 @@ void P_SpawnPortal(line_t *line, int sectortag, int plane, int alpha)
 				{
 					if (lines[i].args[0] == 0)
 					{
-						SetPortal(lines[i].frontsector, plane, reference);
+						SetPortal(lines[i].frontsector, plane, reference, alpha);
 					}
 					else
 					{
 						for (int s=-1; (s = P_FindSectorFromTag(lines[i].args[0],s)) >= 0;)
 						{
-							SetPortal(&sectors[s], plane, reference);
+							SetPortal(&sectors[s], plane, reference, alpha);
 						}
 					}
 				}

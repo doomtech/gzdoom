@@ -214,9 +214,7 @@ void GLWall::PutWall(bool translucent)
 
 	case RENDERWALL_SECTORSTACK:
 		//@sync-portal
-		stack=UniqueStacks.Get(stack);	// map all stacks with the same displacement together
-		portal=GLPortal::FindPortal(stack);
-		if (!portal) portal=new GLSectorStackPortal(stack);
+		portal = this->portal->GetGLPortal();
 		portal->AddLine(this);
 		break;
 
@@ -246,7 +244,6 @@ void GLWall::PutWall(bool translucent)
 
 	case RENDERWALL_SKY:
 		//@sync-portal
-		sky=UniqueSkies.Get(sky);
 		portal=GLPortal::FindPortal(sky);
 		if (!portal) portal=new GLSkyPortal(sky);
 		portal->AddLine(this);
@@ -505,7 +502,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 
 		if (fs->GetTexture(sector_t::ceiling) == skyflatnum)
 		{
-			SkyTexture(fs->sky, fs->CeilingSkyBox, true);
+			SkyPlane(fs, sector_t::ceiling, false);
 		}
 		else
 		{
@@ -534,7 +531,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 		zbottom[1] = zbottom[0] = FIXED2FLOAT(fs->GetPlaneTexZ(sector_t::floor));
 		if (fs->GetTexture(sector_t::floor) == skyflatnum)
 		{
-			SkyTexture(fs->sky, fs->FloorSkyBox, false);
+			SkyPlane(fs, sector_t::floor, false);
 		}
 		else
 		{
@@ -755,8 +752,7 @@ void GLWall::DoTexture(int _type,seg_t * seg, int peg,
 
 	gltexture->GetTexCoordInfo(&tci, seg->sidedef->GetTextureXScale(texpos), seg->sidedef->GetTextureYScale(texpos));
 
-	type = (seg->linedef->special == Line_Mirror && _type == RENDERWALL_M1S && 
-		!(gl.flags & RFL_NOSTENCIL) && gl_mirrors) ? RENDERWALL_MIRROR : _type;
+	type = (seg->linedef->special == Line_Mirror && _type == RENDERWALL_M1S && gl_mirrors) ? RENDERWALL_MIRROR : _type;
 
 	float floatceilingref = FIXED2FLOAT(ceilingrefheight) + 
 							FIXED2FLOAT(tci.RowOffset(seg->sidedef->GetTextureYOffset(texpos))) +
@@ -785,6 +781,7 @@ void GLWall::DoTexture(int _type,seg_t * seg, int peg,
 //==========================================================================
 
 void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary, 
+						  sector_t * front, sector_t * back,
 						  sector_t * realfront, sector_t * realback,
 						  fixed_t fch1, fixed_t fch2, fixed_t ffh1, fixed_t ffh2,
 						  fixed_t bch1, fixed_t bch2, fixed_t bfh1, fixed_t bfh2)
@@ -837,9 +834,18 @@ void GLWall::DoMidTexture(seg_t * seg, bool drawfogboundary,
 		FTexture * tex = TexMan(seg->sidedef->GetTexture(side_t::top));
 		if (!tex || tex->UseType==FTexture::TEX_Null)
 		{
-			// texture is missing - use the higher plane
-			topleft = MAX(bch1,fch1);
-			topright = MAX(bch2,fch2);
+			if (front->GetTexture(sector_t::ceiling) == skyflatnum &&
+				back->GetTexture(sector_t::ceiling) == skyflatnum)
+			{
+				// intra-sky lines do not clip the texture at all if there's no upper texture
+				topleft = topright = texturetop;
+			}
+			else
+			{
+				// texture is missing - use the higher plane
+				topleft = MAX(bch1,fch1);
+				topright = MAX(bch2,fch2);
+			}
 		}
 		else if ((bch1>fch1 || bch2>fch2) && 
 				 (seg->frontsector->GetTexture(sector_t::ceiling)!=skyflatnum || seg->backsector->GetTexture(sector_t::ceiling)==skyflatnum)) 
@@ -1436,7 +1442,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
-	if (seg->linedef-lines==8)
+	if (seg->linedef-lines==1095)
 		__asm nop
 #endif
 #endif
@@ -1545,7 +1551,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 	}
 
 
-	if (seg->linedef->special==Line_Horizon && !(gl.flags&RFL_NOSTENCIL))
+	if (seg->linedef->special==Line_Horizon)
 	{
 		SkyNormal(frontsector,v1,v2);
 		DoHorizon(seg,frontsector, v1,v2);
@@ -1648,7 +1654,8 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 		gltexture=FMaterial::ValidateTexture(seg->sidedef->GetTexture(side_t::mid), true);
 		if (gltexture || drawfogboundary)
 		{
-			DoMidTexture(seg, drawfogboundary, realfront, realback, fch1, fch2, ffh1, ffh2, bch1, bch2, bfh1, bfh2);
+			DoMidTexture(seg, drawfogboundary, frontsector, backsector, realfront, realback, 
+				fch1, fch2, ffh1, ffh2, bch1, bch2, bfh1, bfh2);
 		}
 
 		if (backsector->e->XFloor.ffloors.Size() || frontsector->e->XFloor.ffloors.Size()) 
