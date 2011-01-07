@@ -75,8 +75,7 @@ bool gl_SetPlaneTextureRotation(const GLSectorPlane * secplane, FMaterial * glte
 		secplane->xscale != FRACUNIT || secplane->yscale != FRACUNIT ||
 		secplane->angle != 0 || 
 		gltexture->TextureWidth(GLUSE_TEXTURE) != 64 ||
-		gltexture->TextureHeight(GLUSE_TEXTURE) != 64 ||
-		(gl.flags & RFL_ATI))	// for some reason skipping this does not work on ATI...
+		gltexture->TextureHeight(GLUSE_TEXTURE) != 64)
 	{
 		float uoffs=FIXED2FLOAT(secplane->xoffs)/gltexture->TextureWidth(GLUSE_TEXTURE);
 		float voffs=FIXED2FLOAT(secplane->yoffs)/gltexture->TextureHeight(GLUSE_TEXTURE);
