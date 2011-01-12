@@ -872,6 +872,7 @@ add_executable( zdoom WIN32
 	gl/models/gl_models_md3.cpp
 	gl/models/gl_models_md2.cpp
 	gl/models/gl_models.cpp
+	gl/models/gl_voxels.cpp
 	oplsynth/fmopl.cpp
 	oplsynth/mlopl.cpp
 	oplsynth/mlopl_io.cpp
