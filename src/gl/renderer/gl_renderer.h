@@ -177,5 +177,6 @@ struct TexFilter_s
 
 
 extern FGLRenderer *GLRenderer;
+extern int gl_depthdefault;
 
 #endif

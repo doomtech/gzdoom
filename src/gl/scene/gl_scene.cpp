@@ -90,6 +90,7 @@ EXTERN_CVAR (Bool, r_deathcamera)
 extern int viewpitch;
  
 DWORD			gl_fixedcolormap;
+int				gl_depthdefault = GL_LESS;
 area_t			in_area;
 TArray<BYTE> currentmapsection;
 
@@ -360,7 +361,7 @@ void FGLRenderer::RenderScene(int recursion)
 	// First draw all single-pass stuff
 
 	// Part 1: solid geometry. This is set up so that there are no transparent parts
-	gl.DepthFunc(GL_LESS);
+	gl.DepthFunc(gl_depthdefault = GL_LESS);
 
 
 	gl_RenderState.EnableAlphaTest(false);
@@ -551,7 +552,9 @@ void FGLRenderer::RenderTranslucent()
 	gl_RenderState.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	gl_RenderState.EnableBrightmap(true);
+	gl.DepthFunc(gl_depthdefault = GL_LEQUAL);
 	gl_drawinfo->drawlists[GLDL_TRANSLUCENTBORDER].Draw(GLPASS_TRANSLUCENT);
+	gl.DepthFunc(gl_depthdefault = GL_LESS);
 	gl_drawinfo->drawlists[GLDL_TRANSLUCENT].DrawSorted();
 	gl_RenderState.EnableBrightmap(false);
 

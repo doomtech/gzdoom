@@ -335,7 +335,7 @@ void GLWall::RenderFogBoundary()
 			flags &= ~GLWF_GLOW;
 			RenderWall(4,fc);
 
-			gl.DepthFunc(GL_LESS);
+			gl.DepthFunc(gl_depthdefault);
 			gl_RenderState.EnableFog(true);
 			gl_RenderState.AlphaFunc(GL_GEQUAL,0.5f);
 			gl_RenderState.EnableTexture(true);
@@ -378,7 +378,7 @@ void GLWall::RenderMirrorSurface()
 	// Restore the defaults for the translucent pass
 	gl_RenderState.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	gl_RenderState.AlphaFunc(GL_GEQUAL,0.5f*gl_mask_sprite_threshold);
-	gl.DepthFunc(GL_LESS);
+	gl.DepthFunc(gl_depthdefault);
 
 	// This is drawn in the translucent pass which is done after the decal pass
 	// As a result the decals have to be drawn here.

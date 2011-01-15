@@ -764,7 +764,7 @@ void gl_RenderModel(GLSprite * spr, int cm)
 		gl.MatrixMode(GL_MODELVIEW);
 	}
 
-	gl.DepthFunc(GL_LESS);
+	gl.DepthFunc(gl_depthdefault);
 	if (!( spr->actor->RenderStyle == LegacyRenderStyles[STYLE_Normal] ))
 		gl.Disable(GL_CULL_FACE);
 }
@@ -821,7 +821,7 @@ void gl_RenderHUDModel(pspdef_t *psp, fixed_t ofsx, fixed_t ofsy, int cm)
 
 	gl.MatrixMode(GL_MODELVIEW);
 	gl.PopMatrix();
-	gl.DepthFunc(GL_LESS);
+	gl.DepthFunc(gl_depthdefault);
 	if (!( playermo->RenderStyle == LegacyRenderStyles[STYLE_Normal] ))
 		gl.Disable(GL_CULL_FACE);
 }
