@@ -358,7 +358,7 @@ FHardwareTexture *FGLTexture::CreateTexture(int clampmode)
 	if (tex->UseType==FTexture::TEX_Null) return NULL;		// Cannot register a NULL texture
 	if (!gltexture[clampmode]) 
 	{
-		gltexture[clampmode] = new FHardwareTexture(tex->GetWidth(), tex->GetHeight(), true, true);
+		gltexture[clampmode] = new FHardwareTexture(tex->GetWidth(), tex->GetHeight(), true, true, false);
 	}
 	return gltexture[clampmode]; 
 }
@@ -374,7 +374,7 @@ bool FGLTexture::CreatePatch()
 	if (tex->UseType==FTexture::TEX_Null) return false;		// Cannot register a NULL texture
 	if (!glpatch) 
 	{
-		glpatch=new FHardwareTexture(tex->GetWidth() + bExpand, tex->GetHeight() + bExpand, false, false);
+		glpatch=new FHardwareTexture(tex->GetWidth() + bExpand, tex->GetHeight() + bExpand, false, false, tex->gl_info.bNoFilter);
 	}
 	if (glpatch) return true; 	
 	return false;
@@ -834,10 +834,10 @@ outl:
 //
 //===========================================================================
 
-void FMaterial::Bind(int cm, int clampmode, int translation)
+void FMaterial::Bind(int cm, int clampmode, int translation, int overrideshader)
 {
 	int usebright = false;
-	int shaderindex = mShaderIndex;
+	int shaderindex = overrideshader > 0? overrideshader : mShaderIndex;
 	int maxbound = 0;
 	bool allowhires = tex->xScale == FRACUNIT && tex->yScale == FRACUNIT;
 
@@ -848,7 +848,7 @@ void FMaterial::Bind(int cm, int clampmode, int translation)
 	else clampmode = 4;
 
 	const FHardwareTexture *gltexture = mBaseLayer->Bind(0, cm, clampmode, translation, allowhires? tex:NULL, softwarewarp);
-	if (gltexture != NULL && shaderindex > 0)
+	if (gltexture != NULL && shaderindex > 0 && overrideshader == 0)
 	{
 		for(unsigned i=0;i<mTextureLayers.Size();i++)
 		{
@@ -882,10 +882,10 @@ void FMaterial::Bind(int cm, int clampmode, int translation)
 //
 //===========================================================================
 
-void FMaterial::BindPatch(int cm, int translation)
+void FMaterial::BindPatch(int cm, int translation, int overrideshader)
 {
 	int usebright = false;
-	int shaderindex = mShaderIndex;
+	int shaderindex = overrideshader > 0? overrideshader : mShaderIndex;
 	int maxbound = 0;
 
 	int softwarewarp = gl_RenderState.SetupShader(tex->bHasCanvas, shaderindex, cm, tex->gl_info.shaderspeed);

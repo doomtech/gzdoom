@@ -1964,6 +1964,7 @@ DLevelScript::~DLevelScript ()
 {
 	if (localvars != NULL)
 		delete[] localvars;
+	localvars = NULL;
 }
 
 void DLevelScript::Unlink ()
@@ -2709,7 +2710,7 @@ void DLevelScript::DoSetActorProperty (AActor *actor, int property, int value)
 		actor->Score = value;
 
 	case APROP_NameTag:
-		actor->Tag = FBehavior::StaticLookupString(value);
+		actor->SetTag(FBehavior::StaticLookupString(value));
 		break;
 
 	case APROP_DamageFactor:
@@ -3052,6 +3053,7 @@ enum EACSFunctions
 	ACSF_GetPolyobjX,
 	ACSF_GetPolyobjY,
     ACSF_CheckSight,
+	ACSF_SpawnForced,
 };
 
 int DLevelScript::SideFromID(int id, int side)
@@ -3522,6 +3524,9 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
 			}
             return 0;
         }
+
+		case ACSF_SpawnForced:
+			return DoSpawn(args[0], args[1], args[2], args[3], args[4], args[5], true);
 
 		default:
 			break;
@@ -6725,9 +6730,18 @@ DLevelScript::DLevelScript (AActor *who, line_t *where, int num, const ScriptPtr
 	script = num;
 	numlocalvars = code->VarCount;
 	localvars = new SDWORD[code->VarCount];
-	localvars[0] = arg0;
-	localvars[1] = arg1;
-	localvars[2] = arg2;
+	if (code->VarCount > 0)
+	{
+		localvars[0] = arg0;
+		if (code->VarCount > 1)
+		{
+			localvars[1] = arg1;
+			if (code->VarCount > 2)
+			{
+				localvars[2] = arg2;
+			}
+		}
+	}
 	memset (localvars+code->ArgCount, 0, (code->VarCount-code->ArgCount)*sizeof(SDWORD));
 	pc = module->GetScriptAddress (code);
 	activator = who;

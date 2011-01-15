@@ -706,6 +706,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\memarena.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\name.cpp"
 				>
 			</File>
@@ -1348,6 +1352,10 @@
 			</File>
 			<File
 				RelativePath=".\src\md5.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\memarena.h"
 				>
 			</File>
 			<File
@@ -3985,6 +3993,10 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\models\gl_models_md3.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\gl\models\gl_voxels.cpp"
 					>
 				</File>
 				<File

@@ -640,6 +640,13 @@ OptionValue Contrast
 	2.0, "Smooth"
 }
 
+OptionValue Fuzziness
+{
+	0.0, "Translucent"
+	1.0, "Fuzz"
+	2.0, "Shadow"
+}
+
 OptionMenu "VideoOptions"
 {
 	Title "DISPLAY OPTIONS"
@@ -662,7 +669,7 @@ OptionMenu "VideoOptions"
 	}
 	
 	Option "Stretch short skies",		"r_stretchsky", "OnOff"
-	Option "Use fuzz effect",			"r_drawfuzz", "YesNo"
+	Option "Use fuzz effect",			"r_drawfuzz", "Fuzziness"
 	Slider "Lost Soul translucency",	"transsouls", 0.25, 1.0, 0.05, 2
 	Option "Use fake contrast",			"r_fakecontrast", "Contrast"
 	Option "Rocket Trails",				"cl_rockettrails", "RocketTrailTypes"
@@ -916,6 +923,7 @@ OptionMenu MapColorMenu
 	ColorPicker "1-sided walls",							"am_wallcolor"		
 	ColorPicker "2-sided walls with different floors",		"am_fdwallcolor"		
 	ColorPicker "2-sided walls with different ceilings",	"am_cdwallcolor"		
+	ColorPicker "2-sided walls with 3D floors",				"am_efwallcolor"		
 	ColorPicker "Map grid",									"am_gridcolor"		
 	ColorPicker "Center point",								"am_xhaircolor"		
 	ColorPicker "Not-yet-seen walls",						"am_notseencolor"		

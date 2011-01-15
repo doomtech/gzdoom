@@ -7,7 +7,7 @@
 
 struct particle_t;
 class FCanvasTexture;
-class FVertexBuffer;
+class FFlatVertexBuffer;
 class OpenGLFrameBuffer;
 struct FDrawInfo;
 struct pspdef_t;
@@ -69,7 +69,7 @@ public:
 	FVector2 mViewVector;
 	FVector3 mCameraPos;
 
-	FVertexBuffer *mVBO;
+	FFlatVertexBuffer *mVBO;
 
 
 	FGLRenderer(OpenGLFrameBuffer *fb) 
@@ -106,7 +106,7 @@ public:
 	void DrawScene(bool toscreen = false);
 	void DrawBlend(sector_t * viewsector);
 
-	void DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy, int cm_index, bool hudModelStep);
+	void DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy, int cm_index, bool hudModelStep, int OverrideShader);
 	void DrawPlayerSprites(sector_t * viewsector, bool hudModelStep);
 	void DrawTargeterSprites();
 
