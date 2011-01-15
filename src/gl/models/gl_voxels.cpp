@@ -56,6 +56,7 @@
 #include "gl/textures/gl_material.h"
 #include "gl/utility/gl_geometric.h"
 #include "gl/utility/gl_convert.h"
+#include "gl/renderer/gl_renderstate.h"
 
 
 //===========================================================================
@@ -465,6 +466,7 @@ void FVoxelModel::RenderFrame(FTexture * skin, int frame, int cm, int translatio
 {
 	FMaterial * tex = FMaterial::ValidateTexture(skin);
 	tex->Bind(cm, 0, translation);
+	gl_RenderState.Apply();
 
 	if (gl.flags&RFL_VBO)
 	{
