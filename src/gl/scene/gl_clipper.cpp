@@ -356,6 +356,30 @@ void Clipper::DoRemoveClipRange(angle_t start, angle_t end)
 	}
 }
 
+//-----------------------------------------------------------------------------
+//
+// 
+//
+//-----------------------------------------------------------------------------
+
+void Clipper::UnclipSubsector(subsector_t *sub)
+{
+	int count = sub->numlines;
+	seg_t * seg = sub->firstline;
+
+	while (count--)
+	{
+		angle_t startAngle = seg->v2->GetClipAngle();
+		angle_t endAngle = seg->v1->GetClipAngle();
+
+		// Front side only - read: endAngle < startAngle!
+		if (startAngle-endAngle >= ANGLE_180)  
+		{
+			SafeRemoveClipRange(startAngle, endAngle);
+		}
+		seg++;
+	}
+}
 
 //-----------------------------------------------------------------------------
 //

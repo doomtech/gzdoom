@@ -55,6 +55,7 @@
 #include "gl/dynlights/gl_glow.h"
 #include "gl/dynlights/gl_lightbuffer.h"
 #include "gl/scene/gl_drawinfo.h"
+#include "gl/scene/gl_portal.h"
 #include "gl/shaders/gl_shader.h"
 #include "gl/textures/gl_material.h"
 #include "gl/utility/gl_clock.h"
@@ -493,7 +494,7 @@ inline void GLFlat::PutFlat(sector_t *model, bool fog)
 //
 //==========================================================================
 
-void GLFlat::Process(sector_t * model, int whichplane, bool fog)
+void GLFlat::Process(sector_t * model, int whichplane, bool fog, bool stack)
 {
 	plane.GetFromSector(model, whichplane);
 
@@ -521,6 +522,23 @@ void GLFlat::Process(sector_t * model, int whichplane, bool fog)
 
 	z = plane.plane.ZatPoint(0.f, 0.f);
 	
+	// This plane is part of a portal, either a stacked sector or plamemirror
+	if (stack)
+	{
+		FPortal *portal = model->portals[whichplane];
+		GLPortal *glportal=portal->GetGLPortal();
+		glportal->AddPlane(this);
+	}
+	else if (alpha < 1.f-FLT_EPSILON)
+	{
+			//@sync-portal
+		secplane_t *planemirror=UniquePlaneMirrors.Get(&plane.plane);
+		GLPortal *portal=GLPortal::FindPortal(planemirror);
+		if (!portal) portal=new GLPlaneMirrorPortal(gl_drawinfo, planemirror);
+		portal->AddPlane(this);
+	}
+	if (alpha < FLT_EPSILON) return;	// don't draw the plane if it's invisible
+
 	PutFlat(model, fog);
 	rendered_flats++;
 }
@@ -572,7 +590,7 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 	{
 		__asm int 3
 	}
-	if (frontsector->sectornum==0)
+	if (frontsector->sectornum==2830)
 	{
 		__asm nop
 	}
@@ -631,7 +649,7 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 			Colormap.CopyLightColor(*light->p_extra_colormap);
 		}
 		renderstyle = STYLE_Translucent;
-		if (alpha!=0.0f) Process(frontsector, false, false);
+		Process(frontsector, sector_t::floor, false, stack);
 	}
 	
 	//
@@ -679,7 +697,7 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 			Colormap.CopyLightColor(*light->p_extra_colormap);
 		}
 		renderstyle = STYLE_Translucent;
-		if (alpha!=0.0f) Process(frontsector, true, false);
+		Process(frontsector, sector_t::ceiling, false, stack);
 	}
 
 	//

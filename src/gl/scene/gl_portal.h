@@ -104,12 +104,14 @@ private:
 	unsigned char clipsave;
 	GLPortal *NextPortal;
 	TArray<BYTE> savedmapsection;
+	FDrawInfo *ParentInfo;	// drawinfo that created the portal
 
 protected:
 	TArray<GLWall> lines;
+	TArray<GLFlat> planes;
 	int level;
 
-	GLPortal() { portals.Push(this); }
+	GLPortal(FDrawInfo *pinfo) { portals.Push(this); ParentInfo = pinfo; }
 	virtual ~GLPortal() { }
 
 	bool Start(bool usestencil, bool doquery);
@@ -124,6 +126,7 @@ protected:
 	virtual const char *GetName() = 0;
 	void SaveMapSection();
 	void RestoreMapSection();
+	unsigned int Size() { return lines.Size() + planes.Size(); }
 
 public:
 
@@ -149,6 +152,11 @@ public:
 	void AddLine(GLWall * l)
 	{
 		lines.Push(*l);
+	}
+
+	void AddPlane(GLFlat * l)
+	{
+		planes.Push(*l);
 	}
 
 	static int GetRecursion()
@@ -179,7 +187,8 @@ protected:
 
 public:
 	
-	GLMirrorPortal(line_t * line)
+	GLMirrorPortal(FDrawInfo *pinfo, line_t * line)
+		: GLPortal(pinfo)
 	{
 		linedef=line;
 	}
@@ -203,7 +212,8 @@ protected:
 public:
 
 	
-	GLSkyboxPortal(AActor * pt)
+	GLSkyboxPortal(FDrawInfo *pinfo, AActor * pt)
+		: GLPortal(pinfo)
 	{
 		origin=pt;
 	}
@@ -225,7 +235,8 @@ protected:
 public:
 
 	
-	GLSkyPortal(GLSkyInfo *  pt)
+	GLSkyPortal(FDrawInfo *pinfo, GLSkyInfo *  pt)
+		: GLPortal(pinfo)
 	{
 		origin=pt;
 	}
@@ -246,7 +257,8 @@ protected:
 
 public:
 	
-	GLSectorStackPortal(FPortal *pt) 
+	GLSectorStackPortal(FDrawInfo *pinfo, FPortal *pt) 
+		: GLPortal(pinfo)
 	{
 		origin=pt;
 	}
@@ -268,7 +280,8 @@ protected:
 
 public:
 
-	GLPlaneMirrorPortal(secplane_t * pt) 
+	GLPlaneMirrorPortal(FDrawInfo *pinfo, secplane_t * pt) 
+		: GLPortal(pinfo)
 	{
 		origin=pt;
 	}
@@ -289,7 +302,8 @@ protected:
 
 public:
 	
-	GLHorizonPortal(GLHorizonInfo * pt)
+	GLHorizonPortal(FDrawInfo *pinfo, GLHorizonInfo * pt)
+		: GLPortal(pinfo)
 	{
 		origin=pt;
 	}

@@ -112,7 +112,6 @@ void GLWall::PutWall(bool translucent)
 		4,		//RENDERWALL_HORIZON,          // special
 		4,		//RENDERWALL_SKYBOX,           // special
 		4,		//RENDERWALL_SECTORSTACK,      // special
-		4,		//RENDERWALL_PLANEMIRROR,      // special
 		4,		//RENDERWALL_MIRROR,           // special
 		1,		//RENDERWALL_MIRRORSURFACE,    // needs special handling
 		2,		//RENDERWALL_M2SNF,            // depends on render and texture settings, no fog
@@ -201,14 +200,14 @@ void GLWall::PutWall(bool translucent)
 		//@sync-portal
 		horizon=UniqueHorizons.Get(horizon);
 		portal=GLPortal::FindPortal(horizon);
-		if (!portal) portal=new GLHorizonPortal(horizon);
+		if (!portal) portal=new GLHorizonPortal(gl_drawinfo, horizon);
 		portal->AddLine(this);
 		break;
 
 	case RENDERWALL_SKYBOX:
 		//@sync-portal
 		portal=GLPortal::FindPortal(skybox);
-		if (!portal) portal=new GLSkyboxPortal(skybox);
+		if (!portal) portal=new GLSkyboxPortal(gl_drawinfo, skybox);
 		portal->AddLine(this);
 		break;
 
@@ -218,21 +217,10 @@ void GLWall::PutWall(bool translucent)
 		portal->AddLine(this);
 		break;
 
-	case RENDERWALL_PLANEMIRROR:
-		if (GLPortal::PlaneMirrorMode * planemirror->c <=0)
-		{
-			//@sync-portal
-			planemirror=UniquePlaneMirrors.Get(planemirror);
-			portal=GLPortal::FindPortal(planemirror);
-			if (!portal) portal=new GLPlaneMirrorPortal(planemirror);
-			portal->AddLine(this);
-		}
-		break;
-
 	case RENDERWALL_MIRROR:
 		//@sync-portal
 		portal=GLPortal::FindPortal(seg->linedef);
-		if (!portal) portal=new GLMirrorPortal(seg->linedef);
+		if (!portal) portal=new GLMirrorPortal(gl_drawinfo, seg->linedef);
 		portal->AddLine(this);
 		if (gl_mirror_envmap) 
 		{
@@ -245,7 +233,7 @@ void GLWall::PutWall(bool translucent)
 	case RENDERWALL_SKY:
 		//@sync-portal
 		portal=GLPortal::FindPortal(sky);
-		if (!portal) portal=new GLSkyPortal(sky);
+		if (!portal) portal=new GLSkyPortal(gl_drawinfo, sky);
 		portal->AddLine(this);
 		break;
 	}

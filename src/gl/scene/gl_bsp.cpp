@@ -63,25 +63,6 @@ CVAR(Bool, gl_render_walls, true, 0)
 CVAR(Bool, gl_render_flats, true, 0)
 
 
-static void UnclipSubsector(subsector_t *sub)
-{
-	int count = sub->numlines;
-	seg_t * seg = sub->firstline;
-
-	while (count--)
-	{
-		angle_t startAngle = seg->v2->GetClipAngle();
-		angle_t endAngle = seg->v1->GetClipAngle();
-
-		// Back side, i.e. backface culling	- read: endAngle >= startAngle!
-		if (startAngle-endAngle >= ANGLE_180)  
-		{
-			clipper.SafeRemoveClipRange(startAngle, endAngle);
-		}
-		seg++;
-	}
-}
-
 //==========================================================================
 //
 // R_AddLine
@@ -402,7 +383,7 @@ static void DoSubsector(subsector_t * sub)
 		// This means that we have reached a subsector in a portal that has been marked 'seen'
 		// from the other side of the portal. This means we must clear the clipper for the
 		// range this subsector spans before going on.
-		UnclipSubsector(sub);
+		clipper.UnclipSubsector(sub);
 	}
 
 	fakesector=gl_FakeFlat(sector, &fake, false);

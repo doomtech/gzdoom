@@ -34,7 +34,6 @@ enum WallTypes
 	RENDERWALL_HORIZON,
 	RENDERWALL_SKYBOX,
 	RENDERWALL_SECTORSTACK,
-	RENDERWALL_PLANEMIRROR,
 	RENDERWALL_MIRROR,
 	RENDERWALL_MIRRORSURFACE,
 	RENDERWALL_M2SNF,
@@ -98,7 +97,6 @@ public:
 		GLWF_SKYHACK=4,
 		GLWF_FOGGY=8,
 		GLWF_GLOW=16,		// illuminated by glowing flats
-		GLWF_NOSHADER=32,	// cannot be drawn with shaders.
 		GLWF_NOSPLITUPPER=64,
 		GLWF_NOSPLITLOWER=128,
 	};
@@ -276,8 +274,8 @@ public:
 	void DrawSubsectorLights(subsector_t * sub, int pass);
 	void DrawSubsectors(int pass, bool istrans);
 
-	void PutFlat(sector_t *fakesector, bool fog = false);
-	void Process(sector_t * model, int whichplane, bool notexture);
+	void PutFlat(sector_t *fakesector, bool fog);
+	void Process(sector_t * model, int whichplane, bool notexture, bool stack = false);
 	void SetFrom3DFloor(F3DFloor *rover, bool top, bool underside);
 	void ProcessSector(sector_t * frontsector);
 	void Draw(int pass);

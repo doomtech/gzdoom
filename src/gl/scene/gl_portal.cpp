@@ -139,7 +139,10 @@ void GLPortal::DrawPortalStencil()
 	for(unsigned int i=0;i<lines.Size();i++)
 	{
 		lines[i].RenderWall(0, NULL);
-
+	}
+	for(unsigned int i=0;i<planes.Size();i++)
+	{
+		planes[i].DrawSubsectors(GLPASS_BASE, false);
 	}
 
 	if (NeedCap() && lines.Size() > 1)
@@ -304,6 +307,12 @@ inline void GLPortal::ClearClipper()
 	clipper.Clear();
 
 	static int call=0;
+	fixed_t sviewx = viewx;
+	fixed_t sviewy = viewy;
+
+	clipper.anglecache--;
+	viewx = savedviewx;
+	viewy = savedviewy;
 
 	// Set the clipper to the minimal visible area
 	clipper.SafeAddClipRange(0,0xffffffff);
@@ -321,12 +330,53 @@ inline void GLPortal::ClearClipper()
 		}
 	}
 
+	for(unsigned int i=0;i<planes.Size();i++)
+	{
+		if (planes[i].sub)
+		{
+			clipper.UnclipSubsector(planes[i].sub);
+		}
+		else
+		{
+			sector_t *sec = planes[i].sector;
+			int rf = planes[i].renderflags;
+
+			// Unclip the subsectors belonging to this sector
+			for (i=0; i<sec->subsectorcount; i++)
+			{
+				subsector_t * sub = sec->subsectors[i];
+
+				if (ParentInfo->ss_renderflags[sub-subsectors] & rf)
+				{
+					clipper.UnclipSubsector(sub);
+				}
+			}
+
+			// Draw the subsectors assigned to it due to missing textures
+			if (!(planes[i].renderflags&SSRF_RENDER3DPLANES))
+			{
+				gl_subsectorrendernode * node = (rf & SSRF_RENDERFLOOR)?
+					ParentInfo->GetOtherFloorPlanes(sec->sectornum) :
+					ParentInfo->GetOtherCeilingPlanes(sec->sectornum);
+
+				while (node)
+				{
+					clipper.UnclipSubsector(node->sub);
+					node = node->next;
+				}
+			}
+		}
+	}
+
 	// and finally clip it to the visible area
 	angle_t a1 = GLRenderer->FrustumAngle();
 	if (a1<ANGLE_180) clipper.SafeAddClipRangeRealAngles(viewangle+a1, viewangle-a1);
 
 	// lock the parts that have just been clipped out.
 	clipper.SetSilhouette();
+	viewx = sviewx;
+	viewy = sviewy;
+	clipper.anglecache++;
 }
 
 //-----------------------------------------------------------------------------
@@ -496,7 +546,7 @@ void GLPortal::EndFrame()
 		{
 			Printf("%sProcessing %s, depth = %d, query = %d\n", indent.GetChars(), p->GetName(), renderdepth, usequery);
 		}
-		if (p->lines.Size() > 0)
+		if (p->Size() > 0)
 		{
 			p->RenderPortal(true, usequery);
 		}
@@ -532,12 +582,12 @@ bool GLPortal::RenderFirstSkyPortal(int recursion)
 	for(unsigned i=portals.Size()-1;i>=0 && portals[i]!=NULL;i--)
 	{
 		p=portals[i];
-		if (p->lines.Size() > 0 && p->IsSky())
+		if (p->Size() > 0 && p->IsSky())
 		{
 			// Cannot clear the depth buffer inside a portal recursion
 			if (recursion && p->NeedDepthBuffer()) continue;
 
-			if (!best || p->lines.Size()>best->lines.Size())
+			if (!best || p->Size() > best->Size())
 			{
 				best=p;
 				bestindex=i;

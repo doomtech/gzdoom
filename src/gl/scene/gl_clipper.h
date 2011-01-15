@@ -128,6 +128,7 @@ public:
 	}
 
 	bool CheckBox(const fixed_t *bspcoord);
+	void UnclipSubsector(subsector_t *sub);
 };
 
 

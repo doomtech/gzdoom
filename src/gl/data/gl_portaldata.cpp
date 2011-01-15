@@ -97,7 +97,7 @@ TArray<FPortal *> portals;
 
 GLSectorStackPortal *FPortal::GetGLPortal()
 {
-	if (glportal == NULL) glportal = new GLSectorStackPortal(this);
+	if (glportal == NULL) glportal = new GLSectorStackPortal(gl_drawinfo, this);
 	return glportal;
 }
 
