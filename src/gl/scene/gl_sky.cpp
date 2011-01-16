@@ -74,7 +74,8 @@ void GLWall::SkyPlane(sector_t *sector, int plane, bool allowreflect)
 		FPortal *portal = sector->portals[plane];
 		if (portal != NULL)
 		{
-			// sky-like portals are strictly one-way.
+			// sky-like portals are strictly one-way because it is not possible to do
+			// quick visibility checks for them.
 			if (GLPortal::instack[1-plane]) return;
 			type=RENDERWALL_SECTORSTACK;
 			this->portal = portal;
