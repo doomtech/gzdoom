@@ -290,3 +290,27 @@ void GLWall::SkyBottom(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,ver
 	}
 }
 
+
+//==========================================================================
+//
+//  Handle one sided walls, upper and lower texture
+//
+//==========================================================================
+void GLWall::FillPortal(seg_t * seg, FPortal *_portal,
+					   int topleft,int topright, int bottomleft,int bottomright)
+{
+	if (topleft<=bottomleft && topright<=bottomright) return;
+
+	// The Vertex values can be destroyed in this function and must be restored aferward!
+	GLSeg glsave=glseg;
+
+	type = RENDERWALL_SECTORSTACK;
+
+	if (!SetWallCoordinates(seg, NULL, 0, topleft, topright, bottomleft, bottomright, 0)) return;
+
+	portal = _portal;
+	PutWall(false);
+	glseg=glsave;
+}
+
+

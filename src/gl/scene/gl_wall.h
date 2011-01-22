@@ -165,12 +165,17 @@ private:
 	void SkyNormal(sector_t * fs,vertex_t * v1,vertex_t * v2);
 	void SkyTop(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex_t * v2);
 	void SkyBottom(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex_t * v2);
+	void PortalTop(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex_t * v2);
+	void PortalBottom(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex_t * v2);
 
 	void Put3DWall(lightlist_t * lightlist, bool translucent);
 	void SplitWall(sector_t * frontsector, bool translucent);
 	void LightPass();
 	void SetHorizon(vertex_t * ul, vertex_t * ur, vertex_t * ll, vertex_t * lr);
 	bool DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2);
+
+	void FillPortal(seg_t * seg, FPortal *_portal,
+						   int topleft,int topright, int bottomleft,int bottomright);
 
 	bool SetWallCoordinates(seg_t * seg, FTexCoordInfo *tci, float ceilingrefheight,
 							int topleft,int topright, int bottomleft,int bottomright, int texoffset);

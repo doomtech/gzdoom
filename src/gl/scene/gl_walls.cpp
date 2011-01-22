@@ -1592,7 +1592,12 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 		SkyTop(seg,frontsector,backsector,v1,v2);
 		SkyBottom(seg,frontsector,backsector,v1,v2);
 		
+		// ---------------------------------------------------------------------------
+		//
 		// upper texture
+		//
+		// ---------------------------------------------------------------------------
+
 		if (frontsector->GetTexture(sector_t::ceiling)!=skyflatnum || backsector->GetTexture(sector_t::ceiling)!=skyflatnum)
 		{
 			fixed_t bch1a=bch1, bch2a=bch2;
@@ -1615,6 +1620,13 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 						realfront->GetPlaneTexZ(sector_t::ceiling),realback->GetPlaneTexZ(sector_t::ceiling),
 						fch1,fch2,bch1a,bch2a,0);
 				}
+				else if (backsector->portals[sector_t::ceiling] != NULL &&
+						backsector->GetTexture(sector_t::ceiling)!=skyflatnum &&
+						!GLPortal::instack[sector_t::floor])
+				{
+					// this type of portal effect is strictly one way!
+					FillPortal(seg, backsector->portals[sector_t::ceiling], fch1,fch2,bch1a,bch2a);
+				}
 				else if ((frontsector->ceilingplane.a | frontsector->ceilingplane.b | 
 						 backsector->ceilingplane.a | backsector->ceilingplane.b) && 
 						frontsector->GetTexture(sector_t::ceiling)!=skyflatnum &&
@@ -1636,7 +1648,12 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 		}
 
 
-		/* mid texture */
+		// ---------------------------------------------------------------------------
+		//
+		// mid texture
+		//
+		// ---------------------------------------------------------------------------
+
 		bool drawfogboundary = gl_CheckFog(frontsector, backsector);
 
 		gltexture=FMaterial::ValidateTexture(seg->sidedef->GetTexture(side_t::mid), true);
@@ -1651,7 +1668,12 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 			DoFFloorBlocks(seg,frontsector,backsector, fch1, fch2, ffh1, ffh2, bch1, bch2, bfh1, bfh2);
 		}
 		
-		/* bottom texture */
+		// ---------------------------------------------------------------------------
+		//
+		// bottom texture
+		//
+		// ---------------------------------------------------------------------------
+
 		// the back sector's ceiling obstructs part of this wall (specially important for sky sectors)
 		if (fch1<bfh1 && fch2<bfh2)
 		{
@@ -1670,6 +1692,13 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 					frontsector->GetTexture(sector_t::ceiling)==skyflatnum && backsector->GetTexture(sector_t::ceiling)==skyflatnum ?
 						realfront->GetPlaneTexZ(sector_t::floor)-realback->GetPlaneTexZ(sector_t::ceiling) : 
 						realfront->GetPlaneTexZ(sector_t::floor)-realfront->GetPlaneTexZ(sector_t::ceiling));
+			}
+			else if (backsector->portals[sector_t::floor] != NULL &&
+					backsector->GetTexture(sector_t::floor)!=skyflatnum &&
+					!GLPortal::instack[sector_t::ceiling])
+			{
+				// this type of portal effect is strictly one way!
+				FillPortal(seg, backsector->portals[sector_t::floor], bfh1,bfh2,ffh1,ffh2);
 			}
 			else if ((frontsector->floorplane.a | frontsector->floorplane.b | 
 					backsector->floorplane.a | backsector->floorplane.b) && 
