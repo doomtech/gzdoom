@@ -2313,6 +2313,10 @@
 				Name="Render Sources"
 				>
 				<File
+					RelativePath=".\src\r_3dfloors.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\r_bsp.cpp"
 					>
 				</File>
@@ -2364,6 +2368,10 @@
 			<Filter
 				Name="Render Headers"
 				>
+				<File
+					RelativePath=".\src\r_3dfloors.h"
+					>
+				</File>
 				<File
 					RelativePath=".\src\r_blend.h"
 					>

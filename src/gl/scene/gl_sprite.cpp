@@ -359,7 +359,7 @@ void GLSprite::SplitSprite(sector_t * frontsector, bool translucent)
 		{
 			copySprite=*this;
 			copySprite.lightlevel=*lightlist[i].p_lightlevel;
-			copySprite.Colormap.CopyLightColor(*lightlist[i].p_extra_colormap);
+			copySprite.Colormap.CopyLightColor(lightlist[i].extra_colormap);
 
 			if (glset.nocoloredspritelighting)
 			{
@@ -407,7 +407,7 @@ void GLSprite::SetSpriteColor(sector_t *sector, fixed_t center_y)
 		if (maplightbottom<center_y)
 		{
 			lightlevel=*lightlist[i].p_lightlevel;
-			Colormap.CopyLightColor(*lightlist[i].p_extra_colormap);
+			Colormap.CopyLightColor(lightlist[i].extra_colormap);
 
 			if (glset.nocoloredspritelighting)
 			{
@@ -884,7 +884,7 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 			if (lightbottom < particle->y)
 			{
 				lightlevel = *lightlist[i].p_lightlevel;
-				Colormap.LightColor = (*lightlist[i].p_extra_colormap)->Color;
+				Colormap.LightColor = (lightlist[i].extra_colormap)->Color;
 				break;
 			}
 		}
