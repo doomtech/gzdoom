@@ -260,7 +260,7 @@ void R_RenderMaskedSegRange (drawseg_t *ds, int x1, int x2)
 			}
 			if (sclipTop <= frontsector->e->XFloor.lightlist[i].plane.ZatPoint(viewx, viewy))
 			{
-				basecolormap = frontsector->e->XFloor.lightlist[i].extra_colormap;
+				basecolormap = EXTRACOLORMAP(&frontsector->e->XFloor.lightlist[i], LIGHT_WALLBOTH);
 				wallshade = LIGHT2SHADE(curline->sidedef->GetLightLevel(foggy, *frontsector->e->XFloor.lightlist[i].p_lightlevel) + r_actualextralight);
 				break;
 			}
@@ -766,7 +766,7 @@ void R_RenderFakeWallRange (drawseg_t *ds, int x1, int x2)
 				}
 			}
 			// correct colors now
-			basecolormap = frontsector->ColorMap;
+			basecolormap = COLORMAP(frontsector, LIGHT_WALLBOTH);
 			wallshade = ds->shade;
 			if (fixedlightlev < 0)
 			{
@@ -776,7 +776,7 @@ void R_RenderFakeWallRange (drawseg_t *ds, int x1, int x2)
 					{
 						if (sclipTop <= backsector->e->XFloor.lightlist[j].plane.Zat0())
 						{
-							basecolormap = backsector->e->XFloor.lightlist[j].extra_colormap;
+							basecolormap = EXTRACOLORMAP(&backsector->e->XFloor.lightlist[j], LIGHT_WALLBOTH);
 							wallshade = LIGHT2SHADE(curline->sidedef->GetLightLevel(foggy, *backsector->e->XFloor.lightlist[j].p_lightlevel) + r_actualextralight);
 							break;
 						}
@@ -788,7 +788,7 @@ void R_RenderFakeWallRange (drawseg_t *ds, int x1, int x2)
 					{
 						if (sclipTop <= frontsector->e->XFloor.lightlist[j].plane.Zat0())
 						{
-							basecolormap = frontsector->e->XFloor.lightlist[j].extra_colormap;
+							basecolormap = EXTRACOLORMAP(&frontsector->e->XFloor.lightlist[j], LIGHT_WALLBOTH);
 							wallshade = LIGHT2SHADE(curline->sidedef->GetLightLevel(foggy, *frontsector->e->XFloor.lightlist[j].p_lightlevel) + r_actualextralight);
 							break;
 						}
@@ -938,7 +938,7 @@ void R_RenderFakeWallRange (drawseg_t *ds, int x1, int x2)
 				}
 			}
 			// correct colors now
-			basecolormap = frontsector->ColorMap;
+			basecolormap = COLORMAP(frontsector, LIGHT_WALLBOTH);
 			wallshade = ds->shade;
 			if (fixedlightlev < 0)
 			{
@@ -948,7 +948,7 @@ void R_RenderFakeWallRange (drawseg_t *ds, int x1, int x2)
 					{
 						if (sclipTop <= backsector->e->XFloor.lightlist[j].plane.Zat0())
 						{
-							basecolormap = backsector->e->XFloor.lightlist[j].extra_colormap;
+							basecolormap = EXTRACOLORMAP(&backsector->e->XFloor.lightlist[j], LIGHT_WALLBOTH);
 							wallshade = LIGHT2SHADE(curline->sidedef->GetLightLevel(foggy, *backsector->e->XFloor.lightlist[j].p_lightlevel) + r_actualextralight);
 							break;
 						}
@@ -960,7 +960,7 @@ void R_RenderFakeWallRange (drawseg_t *ds, int x1, int x2)
 					{
 						if(sclipTop <= frontsector->e->XFloor.lightlist[j].plane.Zat0())
 						{
-							basecolormap = frontsector->e->XFloor.lightlist[j].extra_colormap;
+							basecolormap = EXTRACOLORMAP(&frontsector->e->XFloor.lightlist[j], LIGHT_WALLBOTH);
 							wallshade = LIGHT2SHADE(curline->sidedef->GetLightLevel(foggy, *frontsector->e->XFloor.lightlist[j].p_lightlevel) + r_actualextralight);
 							break;
 						}
@@ -1187,7 +1187,7 @@ void wallscan_striped (int x1, int x2, short *uwal, short *dwal, fixed_t *swal, 
 			up = down;
 			down = (down == most1) ? most2 : most1;
 		}
-		basecolormap = frontsector->e->XFloor.lightlist[i].extra_colormap;
+		basecolormap = EXTRACOLORMAP(&frontsector->e->XFloor.lightlist[i], LIGHT_WALLBOTH);
 		wallshade = LIGHT2SHADE(curline->sidedef->GetLightLevel(fogginess,
 			*frontsector->e->XFloor.lightlist[i].p_lightlevel) + r_actualextralight);
  	}

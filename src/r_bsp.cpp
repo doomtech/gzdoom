@@ -1165,23 +1165,26 @@ void R_Subsector (subsector_t *sub)
 	frontsector = R_FakeFlat(frontsector, &tempsec, &floorlightlevel,
 						   &ceilinglightlevel, false);	// killough 4/11/98
 
+	basecolormap = COLORMAP(frontsector, LIGHT_CEILING);
 	fll = floorlightlevel;
 	cll = ceilinglightlevel;
 
 	// [RH] set foggy flag
 	foggy = level.fadeto || frontsector->ColorMaps[LIGHT_GLOBAL]->Fade || (level.flags & LEVEL_HASFADETABLE);
 	r_actualextralight = foggy ? 0 : extralight << 4;
+	basecolormap = COLORMAP(frontsector, LIGHT_CEILING);
 
 	// kg3D - fake lights
 	if (fixedlightlev < 0 && frontsector->e && frontsector->e->XFloor.lightlist.Size())
 	{
 		light = P_GetPlaneLight(frontsector, &frontsector->ceilingplane, false);
-		basecolormap = light->extra_colormap;
+		basecolormap = EXTRACOLORMAP(light, LIGHT_CEILING);
 		ceilinglightlevel = *light->p_lightlevel;
 	}
 	else
 	{
 		basecolormap = COLORMAP(frontsector, LIGHT_CEILING);
+		ceilinglightlevel = frontsector->lightlevel;
 	}
 
 	ceilingplane = frontsector->ceilingplane.ZatPoint (viewx, viewy) > viewz ||
@@ -1203,15 +1206,17 @@ void R_Subsector (subsector_t *sub)
 					frontsector->CeilingSkyBox
 					) : NULL;
 
+	basecolormap = COLORMAP(frontsector, LIGHT_FLOOR);
 	if (fixedlightlev < 0 && frontsector->e && frontsector->e->XFloor.lightlist.Size())
 	{
 		light = P_GetPlaneLight(frontsector, &frontsector->floorplane, false);
-		basecolormap = light->extra_colormap;
+		basecolormap = EXTRACOLORMAP(light, LIGHT_FLOOR);
 		floorlightlevel = *light->p_lightlevel;
 	}
 	else
 	{
 		basecolormap = COLORMAP(frontsector, LIGHT_FLOOR);
+		floorlightlevel = frontsector->lightlevel;
 	}
 
 	// killough 3/7/98: Add (x,y) offsets to flats, add deep water check
@@ -1236,6 +1241,7 @@ void R_Subsector (subsector_t *sub)
 					frontsector->FloorSkyBox
 					) : NULL;
 
+	basecolormap = COLORMAP(frontsector, LIGHT_THING);
 	// kg3D - fake planes rendering
 	if (frontsector->e && frontsector->e->XFloor.ffloors.Size())
 	{
@@ -1277,7 +1283,7 @@ void R_Subsector (subsector_t *sub)
 				if (fixedlightlev < 0 && sub->sector->e->XFloor.lightlist.Size())
 				{
 					light = P_GetPlaneLight(sub->sector, &frontsector->floorplane, false);
-					basecolormap = light->extra_colormap;
+					basecolormap = EXTRACOLORMAP(light, LIGHT_FLOOR);
 					floorlightlevel = *light->p_lightlevel;
 				}
 
@@ -1321,8 +1327,8 @@ void R_Subsector (subsector_t *sub)
 				R_3D_NewClip();
 			}
 			fakeHeight = fakeFloor->bottom.plane->ZatPoint(frontsector->soundorg[0], frontsector->soundorg[1]);
-			if (fakeHeight > viewz &&
-				fakeHeight < frontsector->ceilingplane.ZatPoint(frontsector->soundorg[0], frontsector->soundorg[1]))
+			if (fakeHeight > viewz)// &&
+				//fakeHeight < frontsector->ceilingplane.ZatPoint(frontsector->soundorg[0], frontsector->soundorg[1]))
 			{
 				fake3D = FAKE3D_FAKECEILING;
 				tempsec = *fakeFloor->model;
@@ -1340,7 +1346,7 @@ void R_Subsector (subsector_t *sub)
 				if (fixedlightlev < 0 && sub->sector->e->XFloor.lightlist.Size())
 				{
 					light = P_GetPlaneLight(sub->sector, &frontsector->ceilingplane, false);
-					basecolormap = light->extra_colormap;
+					basecolormap = EXTRACOLORMAP(light, LIGHT_CEILING);
 					ceilinglightlevel = *light->p_lightlevel;
 				}
 				tempsec.ceilingplane.ChangeHeight(1);

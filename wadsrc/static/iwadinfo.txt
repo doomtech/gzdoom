@@ -22,6 +22,17 @@ IWad
 
 IWad
 {
+	Name = "DOOM 64"
+	Autoname = "Doom64"
+	Game = "Doom64"
+	Config = "Doom"
+	Mapinfo = "mapinfo/doom64.txt"
+	MustContain = "ROMINFO"
+	BannerColors = "a8 00 00", "a8 a8 a8"
+}
+
+IWad
+{
 	Name = "Action Doom 2: Urban Brawl"
 	Game = "Doom"
 	Config = "UrbanBrawl"
@@ -316,4 +327,5 @@ Names
 	"action2.wad"
 	"harm1.wad"
 	"hacx.wad"
+	"doom64.wad"
 }
