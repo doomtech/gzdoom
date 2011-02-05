@@ -49,6 +49,7 @@
 #include "r_interpolate.h"
 #include "r_bsp.h"
 #include "r_plane.h"
+#include "r_3dfloors.h"
 #include "v_palette.h"
 #include "po_man.h"
 //#include "gl/data/gl_data.h"
@@ -106,7 +107,6 @@ static fixed_t MaxVisForFloor;
 static FRandom pr_torchflicker ("TorchFlicker");
 static FRandom pr_hom;
 static TArray<InterpolationViewer> PastViewers;
-static int centerxwide;
 static bool polyclipped;
 static bool r_showviewer;
 bool r_dontmaplines;
@@ -138,6 +138,7 @@ float			LastFOV;
 int				WidescreenRatio;
 
 fixed_t			GlobVis;
+fixed_t			viewingrangerecip;
 fixed_t			FocalTangent;
 fixed_t			FocalLengthX;
 fixed_t			FocalLengthY;
@@ -154,6 +155,8 @@ float			WallTMapScale2;
 extern "C" {
 int 			centerx;
 int				centery;
+int				centerxwide;
+
 }
 
 DCanvas			*RenderTarget;		// [RH] canvas to render to
@@ -162,6 +165,7 @@ fixed_t			globaluclip, globaldclip;
 fixed_t 		centerxfrac;
 fixed_t 		centeryfrac;
 fixed_t			yaspectmul;
+fixed_t			baseyaspectmul;		// yaspectmul without a forced aspect ratio
 float			iyaspectmulfloat;
 fixed_t			InvZtoScale;
 
@@ -461,6 +465,9 @@ void R_InitTextureMapping ()
 	FocalLengthY = Scale (centerxfrac, yaspectmul, hitan);
 	FocalLengthXfloat = (float)FocalLengthX / 65536.f;
 
+	// This is 1/FocalTangent before the widescreen extension of FOV.
+	viewingrangerecip = DivScale32(1, finetangent[FINEANGLES/4+(FieldOfView/2)]);
+
 	// Now generate xtoviewangle for sky texture mapping.
 	// [RH] Do not generate viewangletox, because texture mapping is no
 	// longer done with trig, so it's not needed.
@@ -603,7 +610,7 @@ void R_SetViewSize (int blocks)
 
 void R_SetWindow (int windowSize, int fullWidth, int fullHeight, int stHeight)
 {
-	int virtheight, virtwidth;
+	int virtheight, virtwidth, trueratio, virtwidth2, virtheight2;
 
 	if (windowSize >= 11)
 	{
@@ -624,7 +631,7 @@ void R_SetWindow (int windowSize, int fullWidth, int fullHeight, int stHeight)
 	}
 
 	// If the screen is approximately 16:9 or 16:10, consider it widescreen.
-	WidescreenRatio = CheckRatio (fullWidth, fullHeight);
+	WidescreenRatio = CheckRatio (fullWidth, fullHeight, &trueratio);
 
 	DrawFSHUD = (windowSize == 11);
 	
@@ -647,8 +654,18 @@ void R_SetWindow (int windowSize, int fullWidth, int fullHeight, int stHeight)
 	centerxfrac = centerx<<FRACBITS;
 	centeryfrac = centery<<FRACBITS;
 
-	virtwidth = fullWidth;
-	virtheight = fullHeight;
+	virtwidth = virtwidth2 = fullWidth;
+	virtheight = virtheight2 = fullHeight;
+
+	if (trueratio & 4)
+	{
+		virtheight2 = virtheight2 * BaseRatioSizes[trueratio][3] / 48;
+	}
+	else
+	{
+		virtwidth2 = virtwidth2 * BaseRatioSizes[trueratio][3] / 48;
+	}
+
 	if (WidescreenRatio & 4)
 	{
 		virtheight = virtheight * BaseRatioSizes[WidescreenRatio][3] / 48;
@@ -660,6 +677,7 @@ void R_SetWindow (int windowSize, int fullWidth, int fullHeight, int stHeight)
 		centerxwide = centerx * BaseRatioSizes[WidescreenRatio][3] / 48;
 	}
 
+	baseyaspectmul = Scale(320 << FRACBITS, virtheight2, r_Yaspect * virtwidth2);
 	yaspectmul = Scale ((320<<FRACBITS), virtheight, r_Yaspect * virtwidth);
 	iyaspectmulfloat = (float)virtwidth * r_Yaspect / 320.f / (float)virtheight;
 	InvZtoScale = yaspectmul * centerx;
@@ -1089,7 +1107,6 @@ void R_SetupFrame (AActor *actor)
 		iview->otic = nowtic;
 	}
 
-	R_UpdateAnimations (I_FPSTime());
 	r_TicFrac = I_GetTimeFrac (&r_FrameTime);
 	if (cl_capfps || r_NoInterpolate)
 	{
@@ -1136,24 +1153,47 @@ void R_SetupFrame (AActor *actor)
 	}
 
 	extralight = camera->player ? camera->player->extralight : 0;
+	newblend = 0;
 
 	// killough 3/20/98, 4/4/98: select colormap based on player status
 	// [RH] Can also select a blend
 
-	const sector_t *s = viewsector->GetHeightSec();
-	if (s != NULL)
+	TArray<lightlist_t> &lightlist = viewsector->e->XFloor.lightlist;
+	if (lightlist.Size() > 0)
 	{
-		newblend = viewz < s->floorplane.ZatPoint (viewx, viewy)
-			? s->bottommap
-			: viewz > s->ceilingplane.ZatPoint (viewx, viewy)
-			? s->topmap
-			: s->midmap;
-		if (APART(newblend) == 0 && newblend >= numfakecmaps)
-			newblend = 0;
+		for(unsigned int i=0;i<lightlist.Size();i++)
+		{
+			fixed_t lightbottom;
+			if (i<lightlist.Size()-1) 
+				lightbottom = lightlist[i+1].plane.ZatPoint(viewx, viewy);
+			else 
+				lightbottom = viewsector->floorplane.ZatPoint(viewx, viewy);
+
+			if (lightbottom < viewz)
+			{
+				// 3d floor 'fog' is rendered as a blending value
+				PalEntry blendv = lightlist[i].blend;
+
+				// If no alpha is set, use 50%
+				if (blendv.a==0 && blendv!=0) blendv.a=128;
+				newblend = blendv.d;
+				break;
+			}
+		}
 	}
 	else
 	{
-		newblend = 0;
+		const sector_t *s = viewsector->GetHeightSec();
+		if (s != NULL)
+		{
+			newblend = viewz < s->floorplane.ZatPoint (viewx, viewy)
+				? s->bottommap
+				: viewz > s->ceilingplane.ZatPoint (viewx, viewy)
+				? s->topmap
+				: s->midmap;
+			if (APART(newblend) == 0 && newblend >= numfakecmaps)
+				newblend = 0;
+		}
 	}
 
 	// [RH] Don't override testblend unless entering a sector with a
@@ -1350,6 +1390,8 @@ void R_EnterMirror (drawseg_t *ds, int depth)
 	fixed_t startx = viewx;
 	fixed_t starty = viewy;
 
+	CurrentMirror++;
+
 	unsigned int mirrorsAtStart = WallMirrors.Size ();
 
 	vertex_t *v1 = ds->curline->v1;
@@ -1405,6 +1447,7 @@ void R_EnterMirror (drawseg_t *ds, int depth)
 	MirrorFlags = (depth + 1) & 1;
 
 	R_RenderBSPNode (nodes + numnodes - 1);
+	R_3D_ResetClip(); // reset clips (floor/ceiling)
 
 	R_DrawPlanes ();
 	R_DrawSkyBoxes ();
@@ -1478,6 +1521,9 @@ void R_RenderActorView (AActor *actor, bool dontmaplines)
 	MaskedCycles.Reset();
 	WallScanCycles.Reset();
 
+	fakeActive = 0; // kg3D - reset fake floor idicator
+	R_3D_ResetClip(); // reset clips (floor/ceiling)
+
 	R_SetupBuffer ();
 	R_SetupFrame (actor);
 
@@ -1532,6 +1578,7 @@ void R_RenderActorView (AActor *actor, bool dontmaplines)
 	if (r_polymost < 2)
 	{
 		R_RenderBSPNode (nodes + numnodes - 1);	// The head node is the last node output.
+		R_3D_ResetClip(); // reset clips (floor/ceiling)
 	}
 	camera->renderflags = savedflags;
 	WallCycles.Unclock();

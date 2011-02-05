@@ -432,9 +432,6 @@ void	EV_StartLightFading (int tag, int value, int tics);
 bool	P_ChangeSwitchTexture (side_t *side, int useAgain, BYTE special, bool *quest=NULL);
 bool	P_CheckSwitchRange(AActor *user, line_t *line, int sideno);
 
-void	P_InitSwitchList ();
-void	P_ProcessSwitchDef (FScanner &sc);
-
 //
 // P_PLATS
 //
@@ -631,49 +628,12 @@ inline FArchive &operator<< (FArchive &arc, DDoor::EVlDoor &type)
 	return arc;
 }
 
-class DSplitDoor : public DDoor
-{
-	DECLARE_CLASS (DSplitDoor, DDoor)
-public:
-	DSplitDoor (sector_t *sector);
-	DSplitDoor (sector_t *sec, EVlDoor type, fixed_t speed, int delay, int lightTag);
-
-	void Serialize (FArchive &arc);
-	void Tick ();
-protected:
-	// To manage Doom 64 split doors, we need a bit more stuff...
-	fixed_t		m_BottomDist;	// Equivalent of m_TopDist for the bottom part
-	fixed_t		m_OriginalDist;	// The starting position for a door that opens, or the middle otherwise
-	void StopInterpolation();	// Since we need to interpolate the bottom as well
-
-	friend bool	EV_DoSplitDoor (DDoor::EVlDoor type, line_t *line, AActor *thing,
-						int tag, int speed, int delay, int lightTag);
-private:
-	DSplitDoor ();
-	TObjPtr<DInterpolation> SplitInterpolation;	// Bottom part interpolation
-};
-
-bool EV_DoSplitDoor (DDoor::EVlDoor type, line_t *line, AActor *thing,
-				int tag, int speed, int delay, int lightTag);
-
-
-struct FDoorAnimation
-{
-	FTextureID BaseTexture;
-	FTextureID *TextureFrames;
-	int NumTextureFrames;
-	FName OpenSound;
-	FName CloseSound;
-};
-
-void P_ParseAnimatedDoor (FScanner &sc);
-
 class DAnimatedDoor : public DMovingCeiling
 {
 	DECLARE_CLASS (DAnimatedDoor, DMovingCeiling)
 public:
 	DAnimatedDoor (sector_t *sector);
-	DAnimatedDoor (sector_t *sector, line_t *line, int speed, int delay);
+	DAnimatedDoor (sector_t *sec, line_t *line, int speed, int delay, FDoorAnimation *anim);
 
 	void Serialize (FArchive &arc);
 	void Tick ();
@@ -682,7 +642,7 @@ public:
 protected:
 	line_t *m_Line1, *m_Line2;
 	int m_Frame;
-	int m_WhichDoorIndex;
+	FDoorAnimation *m_DoorAnim;
 	int m_Timer;
 	fixed_t m_BotDist;
 	int m_Status;
@@ -723,6 +683,7 @@ public:
 		ceilRaiseInstant,
 		ceilCrushAndRaise,
 		ceilLowerAndCrush,
+		ceilLowerAndCrushDist,
 		ceilCrushRaiseAndStay,
 		ceilRaiseToNearest,
 		ceilLowerToLowest,
@@ -749,6 +710,10 @@ public:
 	void Serialize (FArchive &arc);
 	void Tick ();
 
+	static DCeiling *Create(sector_t *sec, DCeiling::ECeiling type, line_t *line, int tag,
+						fixed_t speed, fixed_t speed2, fixed_t height,
+						int crush, int silent, int change, bool hexencrush);
+
 protected:
 	ECeiling	m_Type;
 	fixed_t 	m_BottomHeight;
@@ -774,9 +739,6 @@ protected:
 private:
 	DCeiling ();
 
-	friend bool EV_DoCeiling (DCeiling::ECeiling type, line_t *line,
-		int tag, fixed_t speed, fixed_t speed2, fixed_t height,
-		int crush, int silent, int change, bool hexencrush);
 	friend bool EV_CeilingCrushStop (int tag);
 	friend void P_ActivateInStasisCeiling (int tag);
 };

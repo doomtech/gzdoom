@@ -153,8 +153,8 @@ static int LS_Sector_SetPlaneReflection (line_t *ln, AActor *it, bool backSide,
 	while ((secnum = P_FindSectorFromTag (arg0, secnum)) >= 0)
 	{
 		sector_t * s = &sectors[secnum];
-		if (s->floorplane.a==0 && s->floorplane.b==0) s->floor_reflect = arg1/255.f;
-		if (s->ceilingplane.a==0 && s->ceilingplane.b==0) sectors[secnum].ceiling_reflect = arg2/255.f;
+		if (s->floorplane.a==0 && s->floorplane.b==0) s->reflect[sector_t::floor] = arg1/255.f;
+		if (s->ceilingplane.a==0 && s->ceilingplane.b==0) sectors[secnum].reflect[sector_t::ceiling] = arg2/255.f;
 	}
 
 	return true;
@@ -375,11 +375,9 @@ CCMD(gl_resetmap)
 //  Gets the texture index for a sprite frame
 //
 //===========================================================================
-const BYTE SF_FRAMEMASK  = 0x1f;
 
 FTextureID gl_GetSpriteFrame(unsigned sprite, int frame, int rot, angle_t ang, bool *mirror)
 {
-	frame&=SF_FRAMEMASK;
 	spritedef_t *sprdef = &sprites[sprite];
 	if (frame >= sprdef->numframes)
 	{
@@ -418,6 +416,7 @@ void gl_RecalcVertexHeights(vertex_t * v)
 	int i,j,k;
 	float height;
 
+	//@sync-vertexheights
 	v->numheights=0;
 	for(i=0;i<v->numsectors;i++)
 	{
@@ -472,7 +471,7 @@ CCMD(dumpgeometry)
 		{
 			subsector_t * sub = sector->subsectors[j];
 
-			Printf(PRINT_LOG, "    Subsector %d - real sector = %d - %s\n", sub-subsectors, sub->sector->sectornum, sub->hacked&1? "hacked":"");
+			Printf(PRINT_LOG, "    Subsector %d - real sector = %d - %s\n", int(sub-subsectors), sub->sector->sectornum, sub->hacked&1? "hacked":"");
 			for(DWORD k=0;k<sub->numlines;k++)
 			{
 				seg_t * seg = sub->firstline + k;
@@ -480,13 +479,13 @@ CCMD(dumpgeometry)
 				{
 				Printf(PRINT_LOG, "      (%4.4f, %4.4f), (%4.4f, %4.4f) - seg %d, linedef %d, side %d", 
 					FIXED2FLOAT(seg->v1->x), FIXED2FLOAT(seg->v1->y), FIXED2FLOAT(seg->v2->x), FIXED2FLOAT(seg->v2->y),
-					seg-segs, seg->linedef-lines, seg->sidedef != seg->linedef->sidedef[0]);
+					int(seg-segs), int(seg->linedef-lines), seg->sidedef != seg->linedef->sidedef[0]);
 				}
 				else
 				{
 					Printf(PRINT_LOG, "      (%4.4f, %4.4f), (%4.4f, %4.4f) - seg %d, miniseg", 
 						FIXED2FLOAT(seg->v1->x), FIXED2FLOAT(seg->v1->y), FIXED2FLOAT(seg->v2->x), FIXED2FLOAT(seg->v2->y),
-						seg-segs);
+						int(seg-segs));
 				}
 				if (seg->PartnerSeg) 
 				{

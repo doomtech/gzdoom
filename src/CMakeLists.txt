@@ -58,6 +58,8 @@ foreach( majver ${MAJOR_VERSIONS} )
 	endforeach( dir ${FMOD_DIR_VERSIONS} )
 endforeach( majver ${MAJOR_VERSIONS} )
 
+message( STATUS "${FMOD_DIR_VERSIONS}" )
+
 if( WIN32 )
 	if( X64 )
 		set( WIN_TYPE Win64 )
@@ -396,8 +398,7 @@ endif( SSE_MATTERS )
 
 if( CMAKE_COMPILER_IS_GNUCXX )
 	if( PROFILE )
-		set( CMAKE_C_FLinclude( FindFluidSynth.cmake )
-AGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -pg" )
+		set( CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -pg" )
 		set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg" )
 		set( CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -pg" )
 		set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -pg" )
@@ -555,6 +556,7 @@ else( WIN32 )
 		sdl/hardware.cpp
 		sdl/i_cd.cpp
 		sdl/i_input.cpp
+		sdl/i_joystick.cpp
 		sdl/i_main.cpp
 		sdl/i_movie.cpp
 		sdl/i_system.cpp
@@ -653,7 +655,6 @@ add_executable( zdoom WIN32
 	doomstat.cpp
 	dsectoreffect.cpp
 	dthinker.cpp
-	f_finale.cpp
 	f_wipe.cpp
 	farchive.cpp
 	files.cpp
@@ -677,6 +678,7 @@ add_executable( zdoom WIN32
 	m_misc.cpp
 	m_png.cpp
 	m_random.cpp
+	memarena.cpp
 	md5.cpp
 	name.cpp
 	nodebuild.cpp
@@ -726,7 +728,7 @@ add_executable( zdoom WIN32
 	p_xlat.cpp
 	parsecontext.cpp
 	po_man.cpp
-	r_anim.cpp
+	r_3dfloors.cpp
 	r_bsp.cpp
 	r_data.cpp
 	r_draw.cpp
@@ -807,6 +809,8 @@ add_executable( zdoom WIN32
 	g_shared/sbar_mugshot.cpp
 	g_shared/shared_hud.cpp
 	g_shared/shared_sbar.cpp
+	intermission/intermission.cpp
+	intermission/intermission_parse.cpp
 	menu/colorpickermenu.cpp
 	menu/joystickmenu.cpp
 	menu/listmenu.cpp
@@ -871,6 +875,7 @@ add_executable( zdoom WIN32
 	gl/models/gl_models_md3.cpp
 	gl/models/gl_models_md2.cpp
 	gl/models/gl_models.cpp
+	gl/models/gl_voxels.cpp
 	oplsynth/fmopl.cpp
 	oplsynth/mlopl.cpp
 	oplsynth/mlopl_io.cpp
@@ -897,6 +902,7 @@ add_executable( zdoom WIN32
 	sound/music_mus_midiout.cpp
 	sound/music_smf_midiout.cpp
 	sound/music_hmi_midiout.cpp
+	sound/music_xmi_midiout.cpp
 	sound/music_midistream.cpp
 	sound/music_midi_base.cpp
 	sound/music_midi_timidity.cpp
@@ -906,6 +912,9 @@ add_executable( zdoom WIN32
 	sound/music_softsynth_mididevice.cpp
 	sound/music_timidity_mididevice.cpp
 	sound/music_win_mididevice.cpp
+	sound/music_pseudo_mididevice.cpp
+	textures/animations.cpp
+	textures/anim_switches.cpp
 	textures/automaptexture.cpp
 	textures/bitmap.cpp
 	textures/buildtexture.cpp

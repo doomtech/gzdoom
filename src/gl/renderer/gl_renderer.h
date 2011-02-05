@@ -7,23 +7,25 @@
 
 struct particle_t;
 class FCanvasTexture;
-class FVertexBuffer;
+class FFlatVertexBuffer;
 class OpenGLFrameBuffer;
 struct FDrawInfo;
 struct pspdef_t;
 class FShaderManager;
 class GLPortal;
+class FGLThreadManager;
 
 extern int extralight;
 
 enum SectorRenderFlags
 {
 	// This is used to avoid creating too many drawinfos
-	SSRF_RENDERFLOOR=1,
-	SSRF_RENDERCEILING=2,
-	SSRF_RENDER3DPLANES=4,
-	SSRF_RENDERALL=7,
-	SSRF_PROCESSED=8,
+	SSRF_RENDERFLOOR = 1,
+	SSRF_RENDERCEILING = 2,
+	SSRF_RENDER3DPLANES = 4,
+	SSRF_RENDERALL = 7,
+	SSRF_PROCESSED = 8,
+	SSRF_SEEN = 16,
 };
 
 struct GL_IRECT
@@ -52,6 +54,7 @@ public:
 	float mCurrentFoV;
 	AActor *mViewActor;
 	FShaderManager *mShaderManager;
+	FGLThreadManager *mThreadManager;
 	int gl_spriteindex;
 	unsigned int mFBID;
 
@@ -66,7 +69,7 @@ public:
 	FVector2 mViewVector;
 	FVector3 mCameraPos;
 
-	FVertexBuffer *mVBO;
+	FFlatVertexBuffer *mVBO;
 
 
 	FGLRenderer(OpenGLFrameBuffer *fb) 
@@ -103,7 +106,7 @@ public:
 	void DrawScene(bool toscreen = false);
 	void DrawBlend(sector_t * viewsector);
 
-	void DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy, int cm_index, bool hudModelStep);
+	void DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy, int cm_index, bool hudModelStep, int OverrideShader);
 	void DrawPlayerSprites(sector_t * viewsector, bool hudModelStep);
 	void DrawTargeterSprites();
 
@@ -119,7 +122,7 @@ public:
 	void ProcessLowerMiniseg(seg_t *seg, sector_t * frontsector, sector_t * backsector);
 	void ProcessSprite(AActor *thing, sector_t *sector);
 	void ProcessParticle(particle_t *part, sector_t *sector);
-	void ProcessSector(sector_t *fakesector, subsector_t *sub);
+	void ProcessSector(sector_t *fakesector);
 	void FlushTextures();
 	void RenderTextureView (FCanvasTexture *self, AActor *viewpoint, int fov);
 	unsigned char *GetTextureBuffer(FTexture *tex, int &w, int &h);

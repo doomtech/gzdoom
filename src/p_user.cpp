@@ -44,7 +44,7 @@
 #include "w_wad.h"
 #include "cmdlib.h"
 #include "sbar.h"
-#include "f_finale.h"
+#include "intermission/intermission.h"
 #include "c_console.h"
 #include "doomdef.h"
 #include "c_dispatch.h"
@@ -52,6 +52,7 @@
 #include "thingdef/thingdef.h"
 #include "g_level.h"
 #include "d_net.h"
+#include "gstrings.h"
 
 static FRandom pr_skullpop ("SkullPop");
 
@@ -95,6 +96,19 @@ bool FPlayerClass::CheckSkin (int skin)
 	return false;
 }
 
+//===========================================================================
+//
+// GetDisplayName
+//
+//===========================================================================
+
+const char *GetPrintableDisplayName(const PClass *cls)
+{ 
+	// Fixme; This needs a decent way to access the string table without creating a mess.
+	const char *name = cls->Meta.GetMetaString(APMETA_DisplayName);
+	return name;
+}
+
 bool ValidatePlayerClass(const PClass *ti, const char *name)
 {
 	if (!ti)
@@ -119,6 +133,7 @@ void SetupPlayerClasses ()
 {
 	FPlayerClass newclass;
 
+	PlayerClasses.Clear();
 	for (unsigned i=0; i<gameinfo.PlayerClasses.Size(); i++)
 	{
 		newclass.Flags = 0;
@@ -417,11 +432,8 @@ void APlayerPawn::Serialize (FArchive &arc)
 		<< InvSel
 		<< MorphWeapon
 		<< DamageFade
-		<< PlayerFlags;
-	if (SaveVersion < 2435)
-	{
-		DamageFade.a = 255;
-	}
+		<< PlayerFlags
+		<< FlechetteType;
 }
 
 //===========================================================================
@@ -1201,9 +1213,9 @@ void APlayerPawn::Die (AActor *source, AActor *inflictor)
 				}
 			}
 		}
-		if (!multiplayer && (level.flags2 & LEVEL2_DEATHSLIDESHOW))
+		if (!multiplayer && level.info->deathsequence != NAME_None)
 		{
-			F_StartSlideshow ();
+			F_StartIntermission(level.info->deathsequence, FSTATE_EndingGame);
 		}
 	}
 }
@@ -2142,9 +2154,13 @@ void P_PlayerThink (player_t *player)
 		P_DeathThink (player);
 		return;
 	}
-	if (player->jumpTics)
+	if (player->jumpTics != 0)
 	{
 		player->jumpTics--;
+		if (onground && player->jumpTics < -18)
+		{
+			player->jumpTics = 0;
+		}
 	}
 	if (player->morphTics && !(player->cheats & CF_PREDICTING))
 	{
@@ -2203,7 +2219,7 @@ void P_PlayerThink (player_t *player)
 		// [RH] check for jump
 		if (cmd->ucmd.buttons & BT_JUMP)
 		{
-			if (player->crouchoffset!=0)
+			if (player->crouchoffset != 0)
 			{
 				// Jumping while crouching will force an un-crouch but not jump
 				player->crouching = 1;
@@ -2217,7 +2233,7 @@ void P_PlayerThink (player_t *player)
 			{
 				player->mo->velz = 3*FRACUNIT;
 			}
-			else if (level.IsJumpingAllowed() && onground && !player->jumpTics)
+			else if (level.IsJumpingAllowed() && onground && player->jumpTics == 0)
 			{
 				fixed_t jumpvelz = player->mo->JumpZ * 35 / TICRATE;
 
@@ -2227,7 +2243,7 @@ void P_PlayerThink (player_t *player)
 				player->mo->velz += jumpvelz;
 				S_Sound (player->mo, CHAN_BODY, "*jump", 1, ATTN_NORM);
 				player->mo->flags2 &= ~MF2_ONMOBJ;
-				player->jumpTics = 18*TICRATE/35;
+				player->jumpTics = -1;
 			}
 		}
 
@@ -2536,33 +2552,9 @@ void player_t::Serialize (FArchive &arc)
 		<< poisoncount
 		<< poisoner
 		<< attacker
-		<< extralight;
-	if (SaveVersion < 1858)
-	{
-		int fixedmap;
-		arc << fixedmap;
-		fixedcolormap = NOFIXEDCOLORMAP;
-		fixedlightlevel = -1;
-		if (fixedmap >= NUMCOLORMAPS)
-		{
-			fixedcolormap = fixedmap - NUMCOLORMAPS;
-		}
-		else if (fixedmap > 0)
-		{
-			fixedlightlevel = fixedmap;
-		}
-	}
-	else if (SaveVersion < 1893)
-	{
-		int ll;
-		arc	<< fixedcolormap << ll;
-		fixedlightlevel = ll;
-	}
-	else
-	{
-		arc	<< fixedcolormap << fixedlightlevel;
-	}
-	arc << morphTics
+		<< extralight
+		<< fixedcolormap << fixedlightlevel
+		<< morphTics
 		<< MorphedPlayerClass
 		<< MorphStyle
 		<< MorphExitFlash

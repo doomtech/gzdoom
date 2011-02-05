@@ -44,6 +44,7 @@
 #include "r_sky.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/scene/gl_clipper.h"
+#include "gl/data/gl_data.h"
 
 
 //==========================================================================
@@ -70,10 +71,11 @@ bool gl_CheckClip(side_t * sidedef, sector_t * frontsector, sector_t * backsecto
 
 	// Lines with stacked sectors must never block!
 
-	if (backsector->CeilingSkyBox && backsector->CeilingSkyBox->bAlways) return false;
-	if (backsector->FloorSkyBox && backsector->FloorSkyBox->bAlways) return false;
-	if (frontsector->CeilingSkyBox && frontsector->CeilingSkyBox->bAlways) return false;
-	if (frontsector->FloorSkyBox && frontsector->FloorSkyBox->bAlways) return false;
+	if (backsector->portals[sector_t::ceiling] != NULL || backsector->portals[sector_t::floor] != NULL ||
+		frontsector->portals[sector_t::ceiling] != NULL || frontsector->portals[sector_t::floor] != NULL)
+	{
+		return false;
+	}
 
 	// on large levels this distinction can save some time
 	// That's a lot of avoided multiplications if there's a lot to see!
@@ -206,7 +208,23 @@ bool CopyPlaneIfValid (secplane_t *dest, const secplane_t *source, const secplan
 //==========================================================================
 sector_t * gl_FakeFlat(sector_t * sec, sector_t * dest, area_t in_area, bool back)
 {
-	if (!sec->heightsec || sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC || sec->heightsec==sec) return sec;
+	if (!sec->heightsec || sec->heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC || sec->heightsec==sec) 
+	{
+		// check for backsectors with the ceiling lower than the floor. These will create
+		// visual glitches because upper amd lower textures overlap.
+		if (back && sec->planes[sector_t::floor].TexZ > sec->planes[sector_t::ceiling].TexZ)
+		{
+			if (!(sec->floorplane.a | sec->floorplane.b | sec->ceilingplane.a | sec->ceilingplane.b))
+			{
+				*dest = *sec;
+				dest->ceilingplane=sec->floorplane;
+				dest->ceilingplane.FlipVert();
+				dest->planes[sector_t::ceiling].TexZ = dest->planes[sector_t::floor].TexZ;
+				return dest;
+			}
+		}
+		return sec;
+	}
 
 #ifdef _MSC_VER
 #ifdef _DEBUG
@@ -224,8 +242,13 @@ sector_t * gl_FakeFlat(sector_t * sec, sector_t * dest, area_t in_area, bool bac
 
 	int diffTex = (sec->heightsec->MoreFlags & SECF_CLIPFAKEPLANES);
 	sector_t * s = sec->heightsec;
-		  
-	*dest=*sec;
+	
+#if 0
+	*dest=*sec;	// This will invoke the copy operator which isn't really needed here. Memcpy is faster.
+#else
+	memcpy(dest, sec, sizeof(sector_t));
+#endif
+
 	// Replace floor and ceiling height with control sector's heights.
 	if (diffTex)
 	{
@@ -298,6 +321,10 @@ sector_t * gl_FakeFlat(sector_t * sec, sector_t * dest, area_t in_area, bool bac
 
 		dest->vboindex[sector_t::ceiling] = sec->vboindex[sector_t::vbo_fakefloor];
 		dest->vboheight[sector_t::ceiling] = s->vboheight[sector_t::floor];
+		if (!(s->MoreFlags & SECF_NOFAKELIGHT))
+		{
+			dest->lightlevel  = s->lightlevel;
+		}
 
 		if (!back)
 		{
@@ -323,7 +350,6 @@ sector_t * gl_FakeFlat(sector_t * sec, sector_t * dest, area_t in_area, bool bac
 			
 			if (!(s->MoreFlags & SECF_NOFAKELIGHT))
 			{
-				dest->lightlevel  = s->lightlevel;
 				dest->SetPlaneLight(sector_t::floor, s->GetPlaneLight(sector_t::floor));
 				dest->SetPlaneLight(sector_t::ceiling, s->GetPlaneLight(sector_t::ceiling));
 				dest->ChangeFlags(sector_t::floor, -1, s->GetFlags(sector_t::floor));
@@ -345,6 +371,11 @@ sector_t * gl_FakeFlat(sector_t * sec, sector_t * dest, area_t in_area, bool bac
 
 		dest->vboindex[sector_t::ceiling] = sec->vboindex[sector_t::ceiling];
 		dest->vboheight[sector_t::ceiling] = sec->vboheight[sector_t::ceiling];
+
+		if (!(s->MoreFlags & SECF_NOFAKELIGHT))
+		{
+			dest->lightlevel  = s->lightlevel;
+		}
 
 		if (!back)
 		{

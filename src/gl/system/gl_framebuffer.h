@@ -48,6 +48,7 @@ public:
 	int GetPageCount();
 	bool Begin2D(bool copy3d);
 	void GetHitlist(BYTE *hitlist);
+	void GameRestart();
 
 	// Retrieves a buffer containing image data for a screenshot.
 	// Hint: Pitch can be negative for upside-down images, in which case buffer
@@ -65,6 +66,7 @@ public:
 	void Dim(PalEntry color=0);
 	void Dim (PalEntry color, float damount, int x1, int y1, int w, int h);
 	void FlatFill (int left, int top, int right, int bottom, FTexture *src, bool local_origin=false);
+	void RemapVoxels();
 	void DrawRemainingPlayerSprites();
 
 	void FillSimplePoly(FTexture *tex, FVector2 *points, int npoints,

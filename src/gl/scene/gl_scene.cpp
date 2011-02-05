@@ -91,6 +91,7 @@ extern int viewpitch;
  
 DWORD			gl_fixedcolormap;
 area_t			in_area;
+TArray<BYTE> currentmapsection;
 
 
 void R_SetupFrame (AActor * camera);
@@ -269,6 +270,16 @@ void FGLRenderer::SetProjection(float fov, float ratio, float fovratio)
 
 void FGLRenderer::SetViewMatrix(bool mirror, bool planemirror)
 {
+	if (gl.shadermodel >= 4)
+	{
+		gl.ActiveTexture(GL_TEXTURE7);
+		gl.MatrixMode(GL_TEXTURE);
+		gl.LoadIdentity();
+	}
+	gl.ActiveTexture(GL_TEXTURE0);
+	gl.MatrixMode(GL_TEXTURE);
+	gl.LoadIdentity();
+
 	gl.MatrixMode(GL_MODELVIEW);
 	gl.LoadIdentity();
 
@@ -312,6 +323,7 @@ void FGLRenderer::CreateScene()
 	ProcessAll.Clock();
 
 	// clip the scene and fill the drawlists
+	for(unsigned i=0;i<portals.Size(); i++) portals[i]->glportal = NULL;
 	gl_spriteindex=0;
 	Bsp.Clock();
 	gl_RenderBSPNode (nodes + numnodes - 1);
@@ -413,7 +425,7 @@ void FGLRenderer::RenderScene(int recursion)
 		// remove any remaining texture bindings and shaders whick may get in the way.
 		gl_RenderState.EnableTexture(false);
 		gl_RenderState.EnableBrightmap(false);
-		gl_RenderState.Apply(true);
+		gl_RenderState.Apply();
 		gl_drawinfo->drawlists[GLDL_LIGHT].Draw(GLPASS_BASE);
 		gl_RenderState.EnableTexture(true);
 
@@ -654,7 +666,7 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 				if (lightbottom<viewz && (!lightlist[i].caster || !(lightlist[i].caster->flags&FF_FADEWALLS)))
 				{
 					// 3d floor 'fog' is rendered as a blending value
-					blendv=(*lightlist[i].p_extra_colormap)->Fade;
+					blendv=(lightlist[i].extra_colormap)->Fade;
 					// If this is the same as the sector's it doesn't apply!
 					if (blendv == viewsector->ColorMaps[LIGHT_GLOBAL]->Fade) blendv=0;
 					// a little hack to make this work for Legacy maps.
@@ -847,6 +859,9 @@ void FGLRenderer::ProcessScene(bool toscreen)
 	iter_dlightf = iter_dlight = draw_dlight = draw_dlightf = 0;
 	GLPortal::BeginScene();
 
+	int mapsection = R_PointInSubsector(viewx, viewy)->mapsection;
+	memset(&currentmapsection[0], 0, currentmapsection.Size());
+	currentmapsection[mapsection>>3] |= 1 << (mapsection & 7);
 	DrawScene(toscreen);
 	FDrawInfo::EndDrawInfo();
 
@@ -951,9 +966,6 @@ sector_t * FGLRenderer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, flo
 //-----------------------------------------------------------------------------
 static FRandom pr_glhom;
 EXTERN_CVAR(Int, r_clearbuffer)
-CVAR(Bool, gl_testdl, false, 0)
-static int dl = -1;
-static int indl = 0;
 
 void FGLRenderer::RenderView (player_t* player)
 {
@@ -1035,30 +1047,8 @@ void FGLRenderer::RenderView (player_t* player)
 	TThinkerIterator<ADynamicLight> it(STAT_DLIGHT);
 	GLRenderer->mLightCount = ((it.Next()) != NULL);
 
-	if (gl_testdl)
-	{
-		if (dl == -1)
-		{
-			dl = glGenLists(1);
-			glNewList(dl, GL_COMPILE_AND_EXECUTE);
-			indl = true;
-		}
-		else
-		{
-			glCallList(dl);
-			All.Unclock();
-			return;
-		}
-	}
-
 	sector_t * viewsector = RenderViewpoint(player->camera, NULL, FieldOfView * 360.0f / FINEANGLES, ratio, fovratio, true, true);
 	EndDrawScene(viewsector);
-
-	if (gl_testdl && indl)
-	{
-		indl = false;
-		glEndList();
-	}
 
 	All.Unclock();
 }

@@ -92,8 +92,6 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		if (gl.shadermodel < 4) 
 		{
 			vp_comb << "#define NO_SM4\n";
-			if (gl_fogmode == 2) vp_comb << "#define FOG_RADIAL\n";
-			if (gl_lightmode == 2) vp_comb << "#define DOOMLIGHT\n";
 		}
 
 		fp_comb = vp_comb;
@@ -266,8 +264,7 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 	catch(CRecoverableError &err)
 	{
 		shader_cm = NULL;
-		Printf("Unable to load shader %s:\n%s\n", name.GetChars(), err.GetMessage());
-		I_Error("");
+		I_Error("Unable to load shader %s:\n%s\n", name.GetChars(), err.GetMessage());
 	}
 
 	if (gl.shadermodel > 2)
@@ -298,8 +295,7 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 			catch(CRecoverableError &err)
 			{
 				shader[i] = NULL;
-				Printf("Unable to load shader %s:\n%s\n", name.GetChars(), err.GetMessage());
-				I_Error("");
+				I_Error("Unable to load shader %s:\n%s\n", name.GetChars(), err.GetMessage());
 			}
 			if (i==3 && gl.maxuniforms < 1024)
 			{
@@ -339,7 +335,7 @@ FShader *FShaderContainer::Bind(int cm, bool glowing, float Speed, bool lights)
 {
 	FShader *sh=NULL;
 
-	if (cm >= CM_FIRSTSPECIALCOLORMAP && cm < CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size())
+	if (cm >= CM_FIRSTSPECIALCOLORMAP && cm < CM_MAXCOLORMAP)
 	{
 		// these are never used with any kind of lighting or fog
 		sh = shader_cm;
@@ -391,6 +387,13 @@ static const FDefaultShader defaultshaders[]=
 	{"Warp 2",	"shaders/glsl/func_warp2.fp"},
 	{"Brightmap","shaders/glsl/func_brightmap.fp"},
 	{"No Texture", "shaders/glsl/func_notexture.fp"},
+	{"Basic Fuzz", "shaders/glsl/fuzz_standard.fp"},
+	{"Smooth Fuzz", "shaders/glsl/fuzz_smooth.fp"},
+	{"Swirly Fuzz", "shaders/glsl/fuzz_swirly.fp"},
+	{"Translucent Fuzz", "shaders/glsl/fuzz_smoothtranslucent.fp"},
+	{"Jagged Fuzz", "shaders/glsl/fuzz_jagged.fp"},
+	{"Noise Fuzz", "shaders/glsl/fuzz_noise.fp"},
+	{"Smooth Noise Fuzz", "shaders/glsl/fuzz_smoothnoise.fp"},
 	{NULL,NULL}
 };
 
@@ -565,6 +568,17 @@ FShader *FShaderManager::BindEffect(int effect)
 	return NULL;
 }
 
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+void gl_DestroyUserShaders()
+{
+	// todo
+}
 
 //==========================================================================
 //

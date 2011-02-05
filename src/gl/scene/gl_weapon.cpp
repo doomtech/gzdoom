@@ -58,6 +58,7 @@
 EXTERN_CVAR (Bool, r_drawplayersprites)
 EXTERN_CVAR(Float, transsouls)
 EXTERN_CVAR (Bool, st_scale)
+EXTERN_CVAR(Int, gl_fuzztype)
 
 
 //==========================================================================
@@ -66,7 +67,7 @@ EXTERN_CVAR (Bool, st_scale)
 //
 //==========================================================================
 
-void FGLRenderer::DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy, int cm_index, bool hudModelStep)
+void FGLRenderer::DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed_t sy, int cm_index, bool hudModelStep, int OverrideShader)
 {
 	float			fU1,fV1;
 	float			fU2,fV2;
@@ -89,11 +90,10 @@ void FGLRenderer::DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed
 	FTextureID lump = gl_GetSpriteFrame(psp->sprite, psp->frame, 0, 0, &mirror);
 	if (!lump.isValid()) return;
 
-	FMaterial * tex=FMaterial::ValidateTexture(lump, false);
+	FMaterial * tex = FMaterial::ValidateTexture(lump, false);
 	if (!tex) return;
 
-	const PatchTextureInfo * pti = tex->BindPatch(cm_index, 0);
-	if (!pti) return;
+	tex->BindPatch(cm_index, 0, OverrideShader);
 
 	int vw = viewwidth;
 	int vh = viewheight;
@@ -137,20 +137,23 @@ void FGLRenderer::DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed
 
 	if (!mirror)
 	{
-		fU1=pti->GetUL();
-		fV1=pti->GetVT();
-		fU2=pti->GetUR();
-		fV2=pti->GetVB();
+		fU1=tex->GetUL();
+		fV1=tex->GetVT();
+		fU2=tex->GetUR();
+		fV2=tex->GetVB();
 	}
 	else
 	{
-		fU2=pti->GetUL();
-		fV1=pti->GetVT();
-		fU1=pti->GetUR();
-		fV2=pti->GetVB();
+		fU2=tex->GetUL();
+		fV1=tex->GetVT();
+		fU1=tex->GetUR();
+		fV2=tex->GetVB();
 	}
 
-	if (tex->tex->gl_info.mIsTransparent) gl_RenderState.EnableAlphaTest(false);
+	if (tex->GetTransparent() || OverrideShader != 0)
+	{
+		gl_RenderState.EnableAlphaTest(false);
+	}
 	gl_RenderState.Apply();
 	gl.Begin(GL_TRIANGLE_STRIP);
 	gl.TexCoord2f(fU1, fV1); gl.Vertex2f(x1,y1);
@@ -158,7 +161,10 @@ void FGLRenderer::DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed
 	gl.TexCoord2f(fU2, fV1); gl.Vertex2f(x2,y1);
 	gl.TexCoord2f(fU2, fV2); gl.Vertex2f(x2,y2);
 	gl.End();
-	if (tex->tex->gl_info.mIsTransparent) gl_RenderState.EnableAlphaTest(true);
+	if (tex->GetTransparent() || OverrideShader != 0)
+	{
+		gl_RenderState.EnableAlphaTest(true);
+	}
 }
 
 //==========================================================================
@@ -238,7 +244,7 @@ void FGLRenderer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 
 				if (lightbottom<player->viewz) 
 				{
-					cm = *lightlist[i].p_extra_colormap;
+					cm = lightlist[i].extra_colormap;
 					lightlevel = *lightlist[i].p_lightlevel;
 					break;
 				}
@@ -270,10 +276,31 @@ void FGLRenderer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 	}
 
 	// Set the render parameters
-	vis.RenderStyle.CheckFuzz();
+
+	int OverrideShader = 0;
+	float trans = 0.f;
+	if (vis.RenderStyle.BlendOp >= STYLEOP_Fuzz && vis.RenderStyle.BlendOp <= STYLEOP_FuzzOrRevSub)
+	{
+		vis.RenderStyle.CheckFuzz();
+		if (vis.RenderStyle.BlendOp == STYLEOP_Fuzz)
+		{
+			if (gl.shadermodel >= 4 && gl_fuzztype != 0)
+			{
+				// Todo: implement shader selection here
+				vis.RenderStyle = LegacyRenderStyles[STYLE_Translucent];
+				OverrideShader = gl_fuzztype + 4;
+				trans = 0.99f;	// trans may not be 1 here
+			}
+			else
+			{
+				vis.RenderStyle.BlendOp = STYLEOP_Shadow;
+			}
+		}
+		statebright[0] = statebright[1] = false;
+	}
+
 	gl_SetRenderStyle(vis.RenderStyle, false, false);
 
-	float trans;
 	if (vis.RenderStyle.Flags & STYLEF_TransSoulsAlpha)
 	{
 		trans = transsouls;
@@ -282,7 +309,7 @@ void FGLRenderer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 	{
 		trans = 1.f;
 	}
-	else
+	else if (trans == 0.f)
 	{
 		trans = FIXED2FLOAT(vis.alpha);
 	}
@@ -319,7 +346,7 @@ void FGLRenderer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 			// set the lighting parameters (only calls glColor and glAlphaFunc)
 			gl_SetSpriteLighting(vis.RenderStyle, playermo, statebright[i]? 255 : lightlevel, 
 				0, &cmc, 0xffffff, trans, statebright[i], true);
-			DrawPSprite (player,psp,psp->sx+ofsx, psp->sy+ofsy, cm.colormap, hudModelStep);
+			DrawPSprite (player,psp,psp->sx+ofsx, psp->sy+ofsy, cm.colormap, hudModelStep, OverrideShader);
 		}
 	}
 	gl_RenderState.EnableBrightmap(false);
@@ -350,5 +377,5 @@ void FGLRenderer::DrawTargeterSprites()
 
 	// The Targeter's sprites are always drawn normally.
 	for (i=ps_targetcenter, psp = &player->psprites[ps_targetcenter]; i<NUMPSPRITES; i++,psp++)
-		if (psp->state) DrawPSprite (player,psp,psp->sx, psp->sy, CM_DEFAULT, false);
+		if (psp->state) DrawPSprite (player,psp,psp->sx, psp->sy, CM_DEFAULT, false, 0);
 }

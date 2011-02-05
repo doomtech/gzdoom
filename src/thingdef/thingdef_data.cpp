@@ -279,12 +279,13 @@ static FFlagDef InventoryFlags[] =
 	DEFINE_FLAG(IF, UNDROPPABLE, AInventory, ItemFlags),
 	DEFINE_FLAG(IF, INVBAR, AInventory, ItemFlags),
 	DEFINE_FLAG(IF, HUBPOWER, AInventory, ItemFlags),
+	DEFINE_FLAG(IF, UNTOSSABLE, AInventory, ItemFlags),
+	DEFINE_FLAG(IF, ADDITIVETIME, AInventory, ItemFlags),
 	DEFINE_FLAG(IF, ALWAYSPICKUP, AInventory, ItemFlags),
 	DEFINE_FLAG(IF, FANCYPICKUPSOUND, AInventory, ItemFlags),
 	DEFINE_FLAG(IF, BIGPOWERUP, AInventory, ItemFlags),
 	DEFINE_FLAG(IF, KEEPDEPLETED, AInventory, ItemFlags),
 	DEFINE_FLAG(IF, IGNORESKILL, AInventory, ItemFlags),
-	DEFINE_FLAG(IF, ADDITIVETIME, AInventory, ItemFlags),
 	DEFINE_FLAG(IF, NOATTENPICKUPSOUND, AInventory, ItemFlags),
 	DEFINE_FLAG(IF, PERSISTENTPOWER, AInventory, ItemFlags),
 
@@ -584,6 +585,7 @@ void InitThingdef()
 	}
 
 	// Create a sorted list of properties
+	if (properties.Size() == 0)
 	{
 		FAutoSegIterator probe(GRegHead, GRegTail);
 
@@ -596,6 +598,7 @@ void InitThingdef()
 	}
 
 	// Create a sorted list of native action functions
+	if (AFTable.Size() == 0)
 	{
 		FAutoSegIterator probe(ARegHead, ARegTail);
 
@@ -608,6 +611,7 @@ void InitThingdef()
 	}
 
 	// Create a sorted list of native variables
+	if (variables.Size() == 0)
 	{
 		FAutoSegIterator probe(MRegHead, MRegTail);
 

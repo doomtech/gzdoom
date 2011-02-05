@@ -52,6 +52,7 @@
 #include "vectors.h"
 
 #include "gl/system/gl_framebuffer.h"
+#include "gl/system/gl_threads.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_lightdata.h"
 #include "gl/renderer/gl_renderstate.h"
@@ -65,6 +66,7 @@
 #include "gl/textures/gl_material.h"
 #include "gl/utility/gl_clock.h"
 #include "gl/utility/gl_templates.h"
+#include "gl/models/gl_models.h"
 
 //===========================================================================
 // 
@@ -87,16 +89,19 @@ void FGLRenderer::Initialize()
 	mirrortexture = FTexture::CreateTexture(Wads.GetNumForFullName("glstuff/mirror.png"), FTexture::TEX_MiscPatch);
 	gllight = FTexture::CreateTexture(Wads.GetNumForFullName("glstuff/gllight.png"), FTexture::TEX_MiscPatch);
 
-	mVBO = new FVertexBuffer;
+	mVBO = new FFlatVertexBuffer;
 	mFBID = 0;
 	SetupLevel();
 	mShaderManager = new FShaderManager;
+	mThreadManager = new FGLThreadManager;
 }
 
 FGLRenderer::~FGLRenderer() 
 {
+	gl_CleanModelData();
 	gl_DeleteAllAttachedLights();
 	FMaterial::FlushAll();
+	if (mThreadManager != NULL) delete mThreadManager;
 	if (mShaderManager != NULL) delete mShaderManager;
 	if (mVBO != NULL) delete mVBO;
 	if (glpart2) delete glpart2;
@@ -166,10 +171,10 @@ void FGLRenderer::ProcessParticle(particle_t *part, sector_t *sector)
 //
 //===========================================================================
 
-void FGLRenderer::ProcessSector(sector_t *fakesector, subsector_t *sub)
+void FGLRenderer::ProcessSector(sector_t *fakesector)
 {
 	GLFlat glflat;
-	glflat.ProcessSector(fakesector, sub);
+	glflat.ProcessSector(fakesector);
 }
 
 //===========================================================================
@@ -295,8 +300,6 @@ void FGLRenderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 
 	FMaterial * gltex = FMaterial::ValidateTexture(img);
 
-	const PatchTextureInfo * pti;
-
 	if (parms.colorOverlay)
 	{
 		// Right now there's only black. Should be implemented properly later
@@ -313,20 +316,18 @@ void FGLRenderer::DrawTexture(FTexture *img, DCanvas::DrawParms &parms)
 				GLTranslationPalette * pal = static_cast<GLTranslationPalette*>(parms.remap->GetNative());
 				if (pal) translation = -pal->GetIndex();
 			}
-			pti = gltex->BindPatch(CM_DEFAULT, translation);
+			gltex->BindPatch(CM_DEFAULT, translation);
 		}
 		else 
 		{
 			// This is an alpha texture
-			pti = gltex->BindPatch(CM_SHADE, 0);
+			gltex->BindPatch(CM_SHADE, 0);
 		}
 
-		if (!pti) return;
-
-		u1 = pti->GetUL();
-		v1 = pti->GetVT();
-		u2 = pti->GetUR();
-		v2 = pti->GetVB();
+		u1 = gltex->GetUL();
+		v1 = gltex->GetVT();
+		u2 = gltex->GetUR();
+		v2 = gltex->GetVB();
 	}
 	else
 	{
@@ -480,22 +481,22 @@ void FGLRenderer::FlatFill (int left, int top, int right, int bottom, FTexture *
 	
 	if (!gltexture) return;
 
-	const WorldTextureInfo * wti = gltexture->Bind(CM_DEFAULT, 0, 0);
-	if (!wti) return;
+	gltexture->Bind(CM_DEFAULT, 0, 0);
 	
+	// scaling is not used here.
 	if (!local_origin)
 	{
-		fU1=wti->GetU(left);
-		fV1=wti->GetV(top);
-		fU2=wti->GetU(right);
-		fV2=wti->GetV(bottom);
+		fU1 = float(left) / src->GetWidth();
+		fV1 = float(top) / src->GetHeight();
+		fU2 = float(right) / src->GetWidth();
+		fV2 = float(bottom) / src->GetHeight();
 	}
 	else
 	{		
-		fU1=wti->GetU(0);
-		fV1=wti->GetV(0);
-		fU2=wti->GetU(right-left);
-		fV2=wti->GetV(bottom-top);
+		fU1 = 0;
+		fV1 = 0;
+		fU2 = float(right-left) / src->GetWidth();
+		fV2 = float(bottom-top) / src->GetHeight();
 	}
 	gl_RenderState.Apply();
 	gl.Begin(GL_TRIANGLE_STRIP);
@@ -516,7 +517,7 @@ void FGLRenderer::Clear(int left, int top, int right, int bottom, int palcolor, 
 {
 	int rt;
 	int offY = 0;
-	PalEntry p = palcolor==-1? (PalEntry)color : GPalette.BaseColors[palcolor];
+	PalEntry p = palcolor==-1 || color != 0? (PalEntry)color : GPalette.BaseColors[palcolor];
 	int width = right-left;
 	int height= bottom-top;
 	
@@ -574,10 +575,7 @@ void FGLRenderer::FillSimplePoly(FTexture *texture, FVector2 *points, int npoint
 	PalEntry pe = gl_CalcLightColor(lightlevel, cm.LightColor, cm.blendfactor);
 	gl.Color3ub(pe.r, pe.g, pe.b);
 
-	if (!gltexture->Bind(cm.colormap))
-	{
-		return;
-	}
+	gltexture->Bind(cm.colormap);
 
 	int i;
 	float rot = float(rotation * M_PI / float(1u << 31));

@@ -2043,6 +2043,38 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FadeTo)
 
 //===========================================================================
 //
+// A_Scale(float scalex, optional float scaley)
+//
+// Scales the actor's graphics. If scaley is 0, use scalex.
+//
+//===========================================================================
+DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SetScale)
+{
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_FIXED(scalex, 0);
+	ACTION_PARAM_FIXED(scaley, 1);
+
+	self->scaleX = scalex;
+	self->scaleY = scaley ? scaley : scalex;
+}
+
+//===========================================================================
+//
+// A_SetMass(int mass)
+//
+// Sets the actor's mass.
+//
+//===========================================================================
+DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SetMass)
+{
+	ACTION_PARAM_START(2);
+	ACTION_PARAM_INT(mass, 0);
+
+	self->Mass = mass;
+}
+
+//===========================================================================
+//
 // A_SpawnDebris
 //
 //===========================================================================
@@ -2653,6 +2685,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfTargetInLOS)
 
 			if (an > (fov / 2) && an < (ANGLE_MAX - (fov / 2)))
 			{
+
 				return; // [KS] Outside of FOV - return
 			}
 

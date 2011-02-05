@@ -385,7 +385,7 @@ static FSoundID T_FindSound(const char * name)
 
 	// Now it gets dirty!
 
-	if (gameinfo.gametype & GAME_DoomStrife)
+	if (gameinfo.gametype & GAME_DoomStrifeChex)
 	{
 		mysnprintf(buffer, countof(buffer), "DS%.35s", name);
 		if (Wads.CheckNumForName(buffer, ns_sounds)<0) strcpy(buffer, name);

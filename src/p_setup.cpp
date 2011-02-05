@@ -107,6 +107,8 @@ bool P_IsBuildMap(MapData *map);
 //
 int 			numvertexes;
 vertex_t*		vertexes;
+int 			numvertexdatas;
+vertexdata_t*		vertexdatas;
 
 int 			numsegs;
 seg_t*			segs;
@@ -140,9 +142,6 @@ subsector_t * 	gamesubsectors;
 int 			numgamesubsectors;
 
 bool			hasglnodes;
-
-FExtraLight*	ExtraLights;
-FLightStack*	LightStacks;
 
 TArray<FMapThing> MapThingsConverted;
 
@@ -880,6 +879,7 @@ void P_LoadVertexes (MapData * map)
 	// Determine number of vertices:
 	//	total lump length / vertex record length.
 	numvertexes = map->MapLumps[ML_VERTEXES].Size / (map->isDoom64 ? sizeof(mapvertexdoom64_t) : sizeof(mapvertex_t));
+	numvertexdatas = 0;
 
 	if (numvertexes == 0)
 	{
@@ -888,6 +888,7 @@ void P_LoadVertexes (MapData * map)
 
 	// Allocate memory for buffer.
 	vertexes = new vertex_t[numvertexes];		
+	vertexdatas = NULL;
 
 	map->Seek(ML_VERTEXES);
 
@@ -1560,7 +1561,8 @@ void P_LoadSectors (MapData * map)
 		ss->nextsec = -1;	//jff 2/26/98 add fields to support locking out
 		ss->prevsec = -1;	// stair retriggering until build completes
 
-		// killough 3/7/98:
+		ss->SetAlpha(sector_t::floor, FRACUNIT);
+		ss->SetAlpha(sector_t::ceiling, FRACUNIT);
 		ss->SetXScale(sector_t::floor, FRACUNIT);	// [RH] floor and ceiling scaling
 		ss->SetYScale(sector_t::floor, FRACUNIT);
 		ss->SetXScale(sector_t::ceiling, FRACUNIT);
@@ -1927,6 +1929,7 @@ void P_LoadThings (MapData * map)
 
 		memset (&mti[i], 0, sizeof(mti[i]));
 
+		mti[i].Conversation = 0;
 		mti[i].SkillFilter = MakeSkill(flags);
 		mti[i].ClassFilter = 0xffff;	// Doom map format doesn't have class flags so spawn for all player classes
 		flags &= ~MTF_SKILLMASK;
@@ -2000,6 +2003,7 @@ void P_LoadThingsHexen (MapData * map)
 		mti[i].SkillFilter = MakeSkill(mti[i].flags);
 		mti[i].ClassFilter = (mti[i].flags & MTF_CLASS_MASK) >> MTF_CLASS_SHIFT;
 		mti[i].flags &= ~(MTF_SKILLMASK|MTF_CLASS_MASK);
+		mti[i].Conversation = 0;
 	}
 	delete[] mtp;
 }
@@ -2130,7 +2134,7 @@ void P_SetLineID (line_t *ld)
 	// [RH] Set line id (as appropriate) here
 	// for Doom format maps this must be done in P_TranslateLineDef because
 	// the tag doesn't always go into the first arg.
-	if (level.flags & LEVEL_HEXENFORMAT)	
+	if (level.maptype == MAPTYPE_HEXEN)	
 	{
 		switch (ld->special)
 		{
@@ -2144,6 +2148,7 @@ void P_SetLineID (line_t *ld)
 			{
 				ld->id = ld->args[0];
 			}
+			ld->special = 0;
 			break;
 
 		case TranslucentLine:
@@ -2200,8 +2205,8 @@ void P_FinishLoadingLineDef(line_t *ld, int alpha)
 
 	ld->frontsector = ld->sidedef[0] != NULL ? ld->sidedef[0]->sector : NULL;
 	ld->backsector  = ld->sidedef[1] != NULL ? ld->sidedef[1]->sector : NULL;
-	float dx = FIXED2FLOAT(ld->v2->x - ld->v1->x);
-	float dy = FIXED2FLOAT(ld->v2->y - ld->v1->y);
+	double dx = FIXED2DBL(ld->v2->x - ld->v1->x);
+	double dy = FIXED2DBL(ld->v2->y - ld->v1->y);
 	int linenum = int(ld-lines);
 
 	if (ld->frontsector == NULL)
@@ -2210,7 +2215,7 @@ void P_FinishLoadingLineDef(line_t *ld, int alpha)
 	}
 
 	// [RH] Set some new sidedef properties
-	int len = (int)(sqrtf (dx*dx + dy*dy) + 0.5f);
+	int len = (int)(sqrt (dx*dx + dy*dy) + 0.5f);
 
 	if (ld->sidedef[0] != NULL)
 	{
@@ -2975,10 +2980,10 @@ void P_LoadSideDefsDoom64 (MapData * map)
 // as possible from its ZDBSP incarnation.
 //
 
-static unsigned int BlockHash (TArray<WORD> *block)
+static unsigned int BlockHash (TArray<int> *block)
 {
 	int hash = 0;
-	WORD *ar = &(*block)[0];
+	int *ar = &(*block)[0];
 	for (size_t i = 0; i < block->Size(); ++i)
 	{
 		hash = hash * 12235 + ar[i];
@@ -2986,7 +2991,7 @@ static unsigned int BlockHash (TArray<WORD> *block)
 	return hash & 0x7fffffff;
 }
 
-static bool BlockCompare (TArray<WORD> *block1, TArray<WORD> *block2)
+static bool BlockCompare (TArray<int> *block1, TArray<int> *block2)
 {
 	size_t size = block1->Size();
 
@@ -2998,8 +3003,8 @@ static bool BlockCompare (TArray<WORD> *block1, TArray<WORD> *block2)
 	{
 		return true;
 	}
-	WORD *ar1 = &(*block1)[0];
-	WORD *ar2 = &(*block2)[0];
+	int *ar1 = &(*block1)[0];
+	int *ar2 = &(*block2)[0];
 	for (size_t i = 0; i < size; ++i)
 	{
 		if (ar1[i] != ar2[i])
@@ -3010,20 +3015,20 @@ static bool BlockCompare (TArray<WORD> *block1, TArray<WORD> *block2)
 	return true;
 }
 
-static void CreatePackedBlockmap (TArray<int> &BlockMap, TArray<WORD> *blocks, int bmapwidth, int bmapheight)
+static void CreatePackedBlockmap (TArray<int> &BlockMap, TArray<int> *blocks, int bmapwidth, int bmapheight)
 {
 	int buckets[4096];
 	int *hashes, hashblock;
-	TArray<WORD> *block;
+	TArray<int> *block;
 	int zero = 0;
 	int terminator = -1;
-	WORD *array;
+	int *array;
 	int i, hash;
 	int hashed = 0, nothashed = 0;
 
 	hashes = new int[bmapwidth * bmapheight];
 
-	memset (hashes, 0xff, sizeof(WORD)*bmapwidth*bmapheight);
+	memset (hashes, 0xff, sizeof(int)*bmapwidth*bmapheight);
 	memset (buckets, 0xff, sizeof(buckets));
 
 	for (i = 0; i < bmapwidth * bmapheight; ++i)
@@ -3070,12 +3075,12 @@ static void CreatePackedBlockmap (TArray<int> &BlockMap, TArray<WORD> *blocks, i
 
 static void P_CreateBlockMap ()
 {
-	TArray<WORD> *BlockLists, *block, *endblock;
-	WORD adder;
+	TArray<int> *BlockLists, *block, *endblock;
+	int adder;
 	int bmapwidth, bmapheight;
 	int minx, maxx, miny, maxy;
 	int i;
-	WORD line;
+	int line;
 
 	if (numvertexes <= 0)
 		return;
@@ -3107,7 +3112,7 @@ static void P_CreateBlockMap ()
 	adder = bmapwidth;		BlockMap.Push (adder);
 	adder = bmapheight;		BlockMap.Push (adder);
 
-	BlockLists = new TArray<WORD>[bmapwidth * bmapheight];
+	BlockLists = new TArray<int>[bmapwidth * bmapheight];
 
 	for (line = 0; line < numlines; ++line)
 	{
@@ -3391,7 +3396,6 @@ line_t**				linebuffer;
 static void P_GroupLines (bool buildmap)
 {
 	cycle_t times[16];
-	TArray<linf>		exLightTags;
 	int*				linesDoneInEachSector;
 	int 				i;
 	int 				j;
@@ -3401,7 +3405,7 @@ static void P_GroupLines (bool buildmap)
 	sector_t*			sector;
 	FBoundingBox		bbox;
 	bool				flaggedNoFronts = false;
-	unsigned int		ii, jj;
+	unsigned int		jj;
 
 	for (i = 0; i < (int)countof(times); ++i)
 	{
@@ -3452,50 +3456,12 @@ static void P_GroupLines (bool buildmap)
 			li->backsector->linecount++;
 			total++;
 		}
-
-		// [RH] Count extra lights
-		if (li->special == ExtraFloor_LightOnly)
-		{
-			int adder = li->args[1] == 1 ? 2 : 1;
-
-			for (ii = 0; ii < exLightTags.Size(); ++ii)
-			{
-				if (exLightTags[ii].tag == li->args[0])
-					break;
-			}
-			if (ii == exLightTags.Size())
-			{
-				linf info = { li->args[0], adder };
-				exLightTags.Push (info);
-				totallights += adder;
-			}
-			else
-			{
-				totallights += adder;
-				exLightTags[ii].count += adder;
-			}
-		}
 	}
 	if (flaggedNoFronts)
 	{
 		I_Error ("You need to fix these lines to play this map.\n");
 	}
 	times[1].Unclock();
-
-	// collect extra light info
-	times[2].Clock();
-	LightStacks = new FLightStack[totallights];
-	ExtraLights = new FExtraLight[exLightTags.Size()];
-	memset (ExtraLights, 0, exLightTags.Size()*sizeof(FExtraLight));
-
-	for (ii = 0, jj = 0; ii < exLightTags.Size(); ++ii)
-	{
-		ExtraLights[ii].Tag = exLightTags[ii].tag;
-		ExtraLights[ii].NumLights = exLightTags[ii].count;
-		ExtraLights[ii].Lights = &LightStacks[jj];
-		jj += ExtraLights[ii].NumLights;
-	}
-	times[2].Unclock();
 
 	// build line tables for each sector
 	times[3].Clock();
@@ -3552,43 +3518,6 @@ static void P_GroupLines (bool buildmap)
 		sector->soundorg[0] = bbox.Right()/2 + bbox.Left()/2;
 		sector->soundorg[1] = bbox.Top()/2 + bbox.Bottom()/2;
 		sector->soundorg[2] = sector->floorplane.ZatPoint (sector->soundorg[0], sector->soundorg[1]);
-
-		// Find a triangle in the sector for sorting extra lights
-		// The points must be in the sector, because intersecting
-		// planes are okay so long as they intersect beyond all
-		// sectors that use them.
-		if (sector->linecount == 0)
-		{ // If the sector has no lines, its tag is guaranteed to be 0, which
-		  // means it cannot be used for extralights. So just use some dummy
-		  // vertices for the triangle.
-			sector->Triangle[0] = vertexes;
-			sector->Triangle[1] = vertexes;
-			sector->Triangle[2] = vertexes;
-		}
-		else
-		{
-			sector->Triangle[0] = sector->lines[0]->v1;
-			sector->Triangle[1] = sector->lines[0]->v2;
-			sector->Triangle[2] = sector->Triangle[0];	// failsafe
-			if (sector->linecount > 1)
-			{
-				fixed_t dx = sector->Triangle[1]->x - sector->Triangle[0]->x;
-				fixed_t dy = sector->Triangle[1]->y - sector->Triangle[1]->y;
-				// Find another point in the sector that does not lie
-				// on the same line as the first two points.
-				for (j = 2; j < sector->linecount*2; ++j)
-				{
-					vertex_t *v;
-
-					v = (j & 1) ? sector->lines[j>>1]->v1 : sector->lines[j>>1]->v2;
-					if (DMulScale32 (v->y - sector->Triangle[0]->y, dx,
-									sector->Triangle[0]->x - v->x, dy) != 0)
-					{
-						sector->Triangle[2] = v;
-					}
-				}
-			}
-		}
 	}
 	delete[] linesDoneInEachSector;
 	times[3].Unclock();
@@ -3605,89 +3534,12 @@ static void P_GroupLines (bool buildmap)
 	}
 	times[5].Unclock();
 
-	times[6].Clock();
-	for (i = 0, li = lines; i < numlines; ++i, ++li)
-	{
-		if (li->special == ExtraFloor_LightOnly)
-		{
-			for (ii = 0; ii < exLightTags.Size(); ++ii)
-			{
-				if (ExtraLights[ii].Tag == li->args[0])
-					break;
-			}
-			if (ii < exLightTags.Size())
-			{
-				ExtraLights[ii].InsertLight (li->frontsector->ceilingplane, li, li->args[1] == 2);
-				if (li->args[1] == 1)
-				{
-					ExtraLights[ii].InsertLight (li->frontsector->floorplane, li, 2);
-				}
-				j = -1;
-				while ((j = P_FindSectorFromTag (li->args[0], j)) >= 0)
-				{
-					sectors[j].ExtraLights = &ExtraLights[ii];
-				}
-			}
-		}
-	}
-	times[6].Unclock();
-
 	if (showloadtimes)
 	{
 		Printf ("---Group Lines Times---\n");
 		for (i = 0; i < 7; ++i)
 		{
 			Printf (" time %d:%9.4f ms\n", i, times[i].TimeMS());
-		}
-	}
-}
-
-void FExtraLight::InsertLight (const secplane_t &inplane, line_t *line, int type)
-{
-	// type 0 : !bottom, !flooder
-	// type 1 : !bottom, flooder
-	// type 2 : bottom, !flooder
-
-	vertex_t **triangle = line->frontsector->Triangle;
-	int i, j;
-	fixed_t diff = FIXED_MAX;
-	secplane_t plane = inplane;
-
-	if (type != 2)
-	{
-		plane.FlipVert ();
-	}
-
-	// Find the first plane this light is above and insert it there
-	for (i = 0; i < NumUsedLights; ++i)
-	{
-		for (j = 0; j < 3; ++j)
-		{
-			diff = plane.ZatPoint (triangle[j]) - Lights[i].Plane.ZatPoint (triangle[j]);
-			if (diff != 0)
-			{
-				break;
-			}
-		}
-		if (diff >= 0)
-		{
-			break;
-		}
-	}
-	if (i < NumLights)
-	{
-		for (j = MIN<int>(NumUsedLights, NumLights-1); j > i; --j)
-		{
-			Lights[j] = Lights[j-1];
-		}
-		Lights[i].Plane = plane;
-		Lights[i].Master = type == 2 ? NULL : line->frontsector;
-		Lights[i].bBottom = type == 2;
-		Lights[i].bFlooder = type == 1;
-		Lights[i].bOverlaps = diff == 0;
-		if (NumUsedLights < NumLights)
-		{
-			++NumUsedLights;
 		}
 	}
 }
@@ -3971,11 +3823,13 @@ void P_FreeLevelData ()
 		delete[] vertexes;
 		vertexes = NULL;
 	}
+	numvertexes = 0;
 	if (segs != NULL)
 	{
 		delete[] segs;
 		segs = NULL;
 	}
+	numsegs = 0;
 	if (glsegextras != NULL)
 	{
 		delete[] glsegextras;
@@ -3986,8 +3840,8 @@ void P_FreeLevelData ()
 		delete[] sectors[0].e;
 		delete[] sectors;
 		sectors = NULL;
-		numsectors = 0;	// needed for the pointer cleanup code
 	}
+	numsectors = 0;
 	if (gamenodes != NULL && gamenodes != nodes)
 	{
 		delete[] gamenodes;
@@ -4020,11 +3874,14 @@ void P_FreeLevelData ()
 		delete[] lines;
 		lines = NULL;
 	}
+	numlines = 0;
 	if (sides != NULL)
 	{
 		delete[] sides;
 		sides = NULL;
 	}
+	numsides = 0;
+
 	if (blockmaplump != NULL)
 	{
 		delete[] blockmaplump;
@@ -4055,16 +3912,6 @@ void P_FreeLevelData ()
 		delete[] rejectmatrix;
 		rejectmatrix = NULL;
 	}
-	if (LightStacks != NULL)
-	{
-		delete[] LightStacks;
-		LightStacks = NULL;
-	}
-	if (ExtraLights != NULL)
-	{
-		delete[] ExtraLights;
-		ExtraLights = NULL;
-	}
 	if (linebuffer != NULL)
 	{
 		delete[] linebuffer;
@@ -4081,6 +3928,8 @@ void P_FreeLevelData ()
 		delete[] zones;
 		zones = NULL;
 	}
+	numzones = 0;
+
 	if(lights != NULL)
 	{
 		delete[] lights;
@@ -4110,6 +3959,7 @@ void P_FreeExtraLevelData()
 			delete node;
 			node = next;
 		}
+		FBlockNode::FreeBlocks = NULL;
 	}
 	{
 		msecnode_t *node = headsecnode;
@@ -4146,10 +3996,14 @@ void P_SetupLevel (char *lumpname, int position)
 		times[i].Reset();
 	}
 
+	level.maptype = MAPTYPE_UNKNOWN;
 	wminfo.partime = 180;
 
+	MapThingsConverted.Clear();
+	linemap.Clear();
 	FCanvasTextureInfo::EmptyList ();
 	R_FreePastViewers ();
+	P_ClearUDMFKeys();
 
 	if (!savegamerestore)
 	{
@@ -4223,7 +4077,7 @@ void P_SetupLevel (char *lumpname, int position)
 		if (map->HasBehavior)
 		{
 			P_LoadBehavior (map);
-			level.flags |= LEVEL_HEXENFORMAT;
+			level.maptype = MAPTYPE_HEXEN;
 		}
 		else
 		{
@@ -4246,6 +4100,11 @@ void P_SetupLevel (char *lumpname, int position)
 				}
 			}
 			P_LoadTranslator(translator);
+			level.maptype = MAPTYPE_DOOM;
+		}
+		if (map->isText)
+		{
+			level.maptype = MAPTYPE_UDMF;
 		}
 		CheckCompatibility(map);
 		T_LoadScripts(map);
@@ -4347,6 +4206,7 @@ void P_SetupLevel (char *lumpname, int position)
 	else
 	{
 		ForceNodeBuild = true;
+		level.maptype = MAPTYPE_BUILD;
 	}
 	bool reloop = false;
 
@@ -4723,8 +4583,6 @@ void P_Init ()
 	atterm (P_Shutdown);
 
 	P_InitEffects ();		// [RH]
-	R_InitPicAnims ();
-	P_InitSwitchList ();
 	P_InitTerrainTypes ();
 	P_InitKeyMessages ();
 	R_InitSprites ();
@@ -4736,11 +4594,7 @@ static void P_Shutdown ()
 	P_DeinitKeyMessages ();
 	P_FreeLevelData ();
 	P_FreeExtraLevelData ();
-	if (StatusBar != NULL)
-	{
-		StatusBar->Destroy();
-		StatusBar = NULL;
-	}
+	ST_Clear();
 }
 
 #if 0

@@ -49,6 +49,7 @@
 #include "gl/dynlights/gl_glow.h"
 #include "gl/dynlights/gl_lightbuffer.h"
 #include "gl/scene/gl_drawinfo.h"
+#include "gl/scene/gl_portal.h"
 #include "gl/utility/gl_clock.h"
 #include "gl/utility/gl_templates.h"
 
@@ -142,47 +143,55 @@ void FDrawInfo::AddOtherCeilingPlane(int sector, gl_subsectorrendernode * node)
 // Collects all sectors that might need a fake ceiling
 //
 //==========================================================================
-void FDrawInfo::AddUpperMissingTexture(seg_t * seg, fixed_t backheight)
+void FDrawInfo::AddUpperMissingTexture(side_t * side, subsector_t *sub, fixed_t backheight)
 {
-	if (!seg->backsector) return;
+	if (!side->segs[0]->backsector) return;
 
 	totalms.Clock();
-	MissingTextureInfo mti = {};
-	MissingSegInfo msi;
-
-	subsector_t * sub = seg->Subsector();
-
-	if (sub->render_sector != sub->sector || seg->frontsector != sub->sector) 
+	for(int i=0; i<side->numsegs; i++)
 	{
-		totalms.Unclock();
-		return;
-	}
+		seg_t *seg = side->segs[i];
 
-	for(unsigned int i=0;i<MissingUpperTextures.Size();i++)
-	{
-		if (MissingUpperTextures[i].sub == sub)
+		// we need find the seg belonging to the passed subsector
+		if (seg->Subsector() == sub)
 		{
-			// Use the lowest adjoining height to draw a fake ceiling if necessary
-			if (backheight < MissingUpperTextures[i].planez) 
+			MissingTextureInfo mti = {};
+			MissingSegInfo msi;
+
+
+			if (sub->render_sector != sub->sector || seg->frontsector != sub->sector) 
 			{
-				MissingUpperTextures[i].planez = backheight;
-				MissingUpperTextures[i].seg = seg;
+				totalms.Unclock();
+				return;
 			}
 
-			msi.MTI_Index = i;
+			//@sync-hack
+			for(unsigned int i=0;i<MissingUpperTextures.Size();i++)
+			{
+				if (MissingUpperTextures[i].sub == sub)
+				{
+					// Use the lowest adjoining height to draw a fake ceiling if necessary
+					if (backheight < MissingUpperTextures[i].planez) 
+					{
+						MissingUpperTextures[i].planez = backheight;
+						MissingUpperTextures[i].seg = seg;
+					}
+
+					msi.MTI_Index = i;
+					msi.seg=seg;
+					MissingUpperSegs.Push(msi);
+					totalms.Unclock();
+					return;
+				}
+			}
+			mti.seg=seg;
+			mti.sub=sub;
+			mti.planez=backheight;
+			msi.MTI_Index = MissingUpperTextures.Push(mti);
 			msi.seg=seg;
 			MissingUpperSegs.Push(msi);
-
-			totalms.Unclock();
-			return;
 		}
 	}
-	mti.seg=seg;
-	mti.sub=sub;
-	mti.planez=backheight;
-	msi.MTI_Index = MissingUpperTextures.Push(mti);
-	msi.seg=seg;
-	MissingUpperSegs.Push(msi);
 	totalms.Unclock();
 }
 
@@ -191,58 +200,71 @@ void FDrawInfo::AddUpperMissingTexture(seg_t * seg, fixed_t backheight)
 // Collects all sectors that might need a fake floor
 //
 //==========================================================================
-void FDrawInfo::AddLowerMissingTexture(seg_t * seg, fixed_t backheight)
+void FDrawInfo::AddLowerMissingTexture(side_t * side, subsector_t *sub, fixed_t backheight)
 {
-	if (!seg->backsector) return;
-	if (seg->backsector->transdoor)
+	sector_t *backsec = side->segs[0]->backsector;
+	if (!backsec) return;
+	if (backsec->transdoor)
 	{
-		if (seg->backsector->transdoorheight == seg->backsector->GetPlaneTexZ(sector_t::floor)) return;
+		// Transparent door hacks alter the backsector's floor height so we should not
+		// process the missing texture for them.
+		if (backsec->transdoorheight == backsec->GetPlaneTexZ(sector_t::floor)) return;
 	}
 
 	totalms.Clock();
-	MissingTextureInfo mti = {};
-	MissingSegInfo msi;
-
-	subsector_t * sub = seg->Subsector();
-
-	if (sub->render_sector != sub->sector || seg->frontsector != sub->sector) 
+	// we need to check all segs of this sidedef
+	for(int i=0; i<side->numsegs; i++)
 	{
-		totalms.Unclock();
-		return;
-	}
+		seg_t *seg = side->segs[i];
 
-	// Ignore FF_FIX's because they are designed to abuse missing textures
-	if (seg->backsector->e->XFloor.ffloors.Size() && seg->backsector->e->XFloor.ffloors[0]->flags&FF_FIX)
-	{
-		totalms.Unclock();
-		return;
-	}
-
-	for(unsigned int i=0;i<MissingLowerTextures.Size();i++)
-	{
-		if (MissingLowerTextures[i].sub == sub)
+		// we need find the seg belonging to the passed subsector
+		if (seg->Subsector() == sub)
 		{
-			// Use the highest adjoining height to draw a fake floor if necessary
-			if (backheight > MissingLowerTextures[i].planez) 
+			MissingTextureInfo mti = {};
+			MissingSegInfo msi;
+
+			subsector_t * sub = seg->Subsector();
+
+			if (sub->render_sector != sub->sector || seg->frontsector != sub->sector) 
 			{
-				MissingLowerTextures[i].planez = backheight;
-				MissingLowerTextures[i].seg = seg;
+				totalms.Unclock();
+				return;
 			}
 
-			msi.MTI_Index = i;
+			// Ignore FF_FIX's because they are designed to abuse missing textures
+			if (seg->backsector->e->XFloor.ffloors.Size() && seg->backsector->e->XFloor.ffloors[0]->flags&FF_FIX)
+			{
+				totalms.Unclock();
+				return;
+			}
+
+			//@sync-hack
+			for(unsigned int i=0;i<MissingLowerTextures.Size();i++)
+			{
+				if (MissingLowerTextures[i].sub == sub)
+				{
+					// Use the highest adjoining height to draw a fake floor if necessary
+					if (backheight > MissingLowerTextures[i].planez) 
+					{
+						MissingLowerTextures[i].planez = backheight;
+						MissingLowerTextures[i].seg = seg;
+					}
+
+					msi.MTI_Index = i;
+					msi.seg=seg;
+					MissingLowerSegs.Push(msi);
+					totalms.Unclock();
+					return;
+				}
+			}
+			mti.seg=seg;
+			mti.sub = sub;
+			mti.planez=backheight;
+			msi.MTI_Index = MissingLowerTextures.Push(mti);
 			msi.seg=seg;
 			MissingLowerSegs.Push(msi);
-
-			totalms.Unclock();
-			return;
 		}
 	}
-	mti.seg=seg;
-	mti.sub = sub;
-	mti.planez=backheight;
-	msi.MTI_Index = MissingLowerTextures.Push(mti);
-	msi.seg=seg;
-	MissingLowerSegs.Push(msi);
 	totalms.Unclock();
 }
 
@@ -658,7 +680,7 @@ void FDrawInfo::DrawUnhandledMissingTextures()
 		if (seg->PartnerSeg && (seg->PartnerSeg->Subsector()->flags & SSECF_DEGENERATE)) continue;
 		if (seg->backsector->transdoor) continue;
 		if (seg->backsector->GetTexture(sector_t::ceiling)==skyflatnum) continue;
-		if (seg->backsector->CeilingSkyBox && seg->backsector->CeilingSkyBox->bAlways) continue;
+		if (seg->backsector->portals[sector_t::ceiling] != NULL) continue;
 
 		if (!glset.notexturefill) FloodUpperGap(seg);
 	}
@@ -678,7 +700,7 @@ void FDrawInfo::DrawUnhandledMissingTextures()
 		if (seg->frontsector->GetPlaneTexZ(sector_t::floor) > viewz) continue;	// out of sight
 		if (seg->backsector->transdoor) continue;
 		if (seg->backsector->GetTexture(sector_t::floor)==skyflatnum) continue;
-		if (seg->backsector->FloorSkyBox && seg->backsector->FloorSkyBox->bAlways) continue;
+		if (seg->backsector->portals[sector_t::floor] != NULL) continue;
 
 		if (!glset.notexturefill) FloodLowerGap(seg);
 	}
@@ -711,8 +733,9 @@ ADD_STAT(missingtextures)
 
 void FDrawInfo::AddHackedSubsector(subsector_t * sub)
 {
-	if (!(level.flags & LEVEL_HEXENFORMAT))
+	if (!(level.maptype == MAPTYPE_HEXEN))
 	{
+		//@sync-hack (probably not, this is only called from the main thread)
 		SubsectorHackInfo sh={sub, 0};
 		SubsectorHacks.Push (sh);
 	}
@@ -1010,14 +1033,16 @@ ADD_STAT(sectorhacks)
 //
 //==========================================================================
 
-void FDrawInfo::AddFloorStack(subsector_t * sub)
+void FDrawInfo::AddFloorStack(sector_t * sec)
 {
-	FloorStacks.Push(sub);
+	//@sync-hack
+	FloorStacks.Push(sec);
 }
 
-void FDrawInfo::AddCeilingStack(subsector_t * sub)
+void FDrawInfo::AddCeilingStack(sector_t * sec)
 {
-	CeilingStacks.Push(sub);
+	//@sync-hack
+	CeilingStacks.Push(sec);
 }
 
 //==========================================================================
@@ -1034,7 +1059,7 @@ void FDrawInfo::CollectSectorStacksCeiling(subsector_t * sub, sector_t * anchor)
 	sub->validcount=validcount;
 
 	// Has a sector stack or skybox itself!
-	if (sub->render_sector->CeilingSkyBox && sub->render_sector->CeilingSkyBox->bAlways) return;
+	if (sub->render_sector->portals[sector_t::ceiling] != NULL) return;
 
 	// Don't bother processing unrendered subsectors
 	if (sub->numlines>2 && !(ss_renderflags[DWORD(sub-subsectors)]&SSRF_PROCESSED)) return;
@@ -1082,7 +1107,7 @@ void FDrawInfo::CollectSectorStacksFloor(subsector_t * sub, sector_t * anchor)
 	sub->validcount=validcount;
 
 	// Has a sector stack or skybox itself!
-	if (sub->render_sector->FloorSkyBox && sub->render_sector->FloorSkyBox->bAlways) return;
+	if (sub->render_sector->portals[sector_t::floor] != NULL) return;
 
 	// Don't bother processing unrendered subsectors
 	if (sub->numlines>2 && !(ss_renderflags[DWORD(sub-subsectors)]&SSRF_PROCESSED)) return;
@@ -1126,33 +1151,48 @@ void FDrawInfo::CollectSectorStacksFloor(subsector_t * sub, sector_t * anchor)
 void FDrawInfo::ProcessSectorStacks()
 {
 	unsigned int i;
+	sector_t fake;
 
 	validcount++;
 	for (i=0;i<CeilingStacks.Size (); i++)
 	{
-		subsector_t * sub = CeilingStacks[i];
-
-		HandledSubsectors.Clear();
-		for(DWORD j=0;j<sub->numlines;j++)
+		sector_t *sec = gl_FakeFlat(CeilingStacks[i], &fake, false);
+		FPortal *portal = sec->portals[sector_t::ceiling];
+		if (portal != NULL) for(int k=0;k<sec->subsectorcount;k++)
 		{
-			seg_t * seg = sub->firstline + j;
-			if (seg->PartnerSeg)
+			subsector_t * sub = sec->subsectors[k];
+			if (ss_renderflags[sub-subsectors] & SSRF_PROCESSED)
 			{
-				subsector_t * backsub = seg->PartnerSeg->Subsector();
+				HandledSubsectors.Clear();
+				for(DWORD j=0;j<sub->numlines;j++)
+				{
+					seg_t * seg = sub->firstline + j;
+					if (seg->PartnerSeg)
+					{
+						subsector_t * backsub = seg->PartnerSeg->Subsector();
 
-				if (backsub->validcount!=validcount) CollectSectorStacksCeiling (backsub, sub->render_sector);
-			}
-		}
+						if (backsub->validcount!=validcount) CollectSectorStacksCeiling (backsub, sec);
+					}
+				}
+				for(unsigned int j=0;j<HandledSubsectors.Size();j++)
+				{				
+					subsector_t *sub = HandledSubsectors[j];
+					ss_renderflags[DWORD(sub-subsectors)] &= ~SSRF_RENDERCEILING;
 
-		for(unsigned int j=0;j<HandledSubsectors.Size();j++)
-		{				
-			ss_renderflags[DWORD(HandledSubsectors[j]-subsectors)] &= ~SSRF_RENDERCEILING;
+					if (sub->portalcoverage[sector_t::ceiling].subsectors == NULL)
+					{
+						gl_BuildPortalCoverage(&sub->portalcoverage[sector_t::ceiling],	sub, portal);
+					}
 
-			if (sub->render_sector->CeilingSkyBox->PlaneAlpha!=0)
-			{
-				gl_subsectorrendernode * node = SSR_List.GetNew();
-				node->sub = HandledSubsectors[j];
-				AddOtherCeilingPlane(sub->render_sector->sectornum, node);
+					portal->GetGLPortal()->AddSubsector(sub);
+
+					if (sec->GetAlpha(sector_t::ceiling) != 0 && sec->GetTexture(sector_t::ceiling) != skyflatnum)
+					{
+						gl_subsectorrendernode * node = SSR_List.GetNew();
+						node->sub = sub;
+						AddOtherCeilingPlane(sec->sectornum, node);
+					}
+				}
 			}
 		}
 	}
@@ -1160,30 +1200,45 @@ void FDrawInfo::ProcessSectorStacks()
 	validcount++;
 	for (i=0;i<FloorStacks.Size (); i++)
 	{
-		subsector_t * sub = FloorStacks[i];
-
-		HandledSubsectors.Clear();
-		for(DWORD j=0;j<sub->numlines;j++)
+		sector_t *sec = gl_FakeFlat(FloorStacks[i], &fake, false);
+		FPortal *portal = sec->portals[sector_t::floor];
+		if (portal != NULL) for(int k=0;k<sec->subsectorcount;k++)
 		{
-			seg_t * seg = sub->firstline + j;
-			if (seg->PartnerSeg)
+			subsector_t * sub = sec->subsectors[k];
+			if (ss_renderflags[sub-subsectors] & SSRF_PROCESSED)
 			{
-				subsector_t	* backsub = seg->PartnerSeg->Subsector();
+				HandledSubsectors.Clear();
+				for(DWORD j=0;j<sub->numlines;j++)
+				{
+					seg_t * seg = sub->firstline + j;
+					if (seg->PartnerSeg)
+					{
+						subsector_t	* backsub = seg->PartnerSeg->Subsector();
 
-				if (backsub->validcount!=validcount) CollectSectorStacksFloor (backsub, sub->render_sector);
-			}
-		}
+						if (backsub->validcount!=validcount) CollectSectorStacksFloor (backsub, sec);
+					}
+				}
 
-		for(unsigned int j=0;j<HandledSubsectors.Size();j++)
-		{				
-			//Printf("%d: ss %d, sec %d\n", j, HandledSubsectors[j]-subsectors, HandledSubsectors[j]->render_sector->sectornum);
-			ss_renderflags[DWORD(HandledSubsectors[j]-subsectors)] &= ~SSRF_RENDERFLOOR;
+				for(unsigned int j=0;j<HandledSubsectors.Size();j++)
+				{				
+					subsector_t *sub = HandledSubsectors[j];
+					ss_renderflags[DWORD(sub-subsectors)] &= ~SSRF_RENDERFLOOR;
 
-			if (sub->render_sector->FloorSkyBox->PlaneAlpha!=0)
-			{
-				gl_subsectorrendernode * node = SSR_List.GetNew();
-				node->sub = HandledSubsectors[j];
-				AddOtherFloorPlane(sub->render_sector->sectornum, node);
+					if (sub->portalcoverage[sector_t::floor].subsectors == NULL)
+					{
+						gl_BuildPortalCoverage(&sub->portalcoverage[sector_t::floor], sub, portal);
+					}
+
+					GLSectorStackPortal *glportal = portal->GetGLPortal();
+					glportal->AddSubsector(sub);
+
+					if (sec->GetAlpha(sector_t::floor) != 0 && sec->GetTexture(sector_t::floor) != skyflatnum)
+					{
+						gl_subsectorrendernode * node = SSR_List.GetNew();
+						node->sub = sub;
+						AddOtherFloorPlane(sec->sectornum, node);
+					}
+				}
 			}
 		}
 	}

@@ -18,7 +18,8 @@ class ADynamicLight;
 class FMaterial;
 struct GLDrawList;
 struct GLSkyInfo;
-struct GLSectorStackInfo;
+struct FTexCoordInfo;
+struct FPortal;
 
 
 enum WallTypes
@@ -134,7 +135,7 @@ public:
 		AActor * skybox;			// for skyboxes
 		GLSkyInfo * sky;			// for normal sky
 		GLHorizonInfo * horizon;	// for horizon information
-		GLSectorStackInfo * stack;	// for sector stacks
+		FPortal * portal;			// stacked sector portals
 		secplane_t * planemirror;	// for plane mirrors
 	};
 
@@ -162,19 +163,18 @@ private:
 
 	void FloodPlane(int pass);
 
-	void MirrorPlane(secplane_t * plane, bool ceiling);
-	void SkyTexture(int sky1,ASkyViewpoint * skyboxx, bool ceiling);
-
+	void SkyPlane(sector_t *sector, int plane, bool allowmirror);
 	void SkyNormal(sector_t * fs,vertex_t * v1,vertex_t * v2);
 	void SkyTop(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex_t * v2);
 	void SkyBottom(seg_t * seg,sector_t * fs,sector_t * bs,vertex_t * v1,vertex_t * v2);
+
 	void Put3DWall(lightlist_t * lightlist, bool translucent);
 	void SplitWall(sector_t * frontsector, bool translucent);
 	void LightPass();
 	void SetHorizon(vertex_t * ul, vertex_t * ur, vertex_t * ll, vertex_t * lr);
 	bool DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2);
 
-	bool SetWallCoordinates(seg_t * seg, float ceilingrefheight,
+	bool SetWallCoordinates(seg_t * seg, FTexCoordInfo *tci, float ceilingrefheight,
 							int topleft,int topright, int bottomleft,int bottomright, int texoffset);
 
 	void DoTexture(int type,seg_t * seg,int peg,
@@ -184,6 +184,7 @@ private:
 						   int v_offset);
 
 	void DoMidTexture(seg_t * seg, bool drawfogboundary,
+					  sector_t * front, sector_t * back,
 					  sector_t * realfront, sector_t * realback,
 					  fixed_t fch1, fixed_t fch2, fixed_t ffh1, fixed_t ffh2,
 					  fixed_t bch1, fixed_t bch2, fixed_t bfh1, fixed_t bfh2);
@@ -275,10 +276,10 @@ public:
 	void DrawSubsectorLights(subsector_t * sub, int pass);
 	void DrawSubsectors(int pass, bool istrans);
 
-	void PutFlat(bool fog = false);
+	void PutFlat(sector_t *fakesector, bool fog = false);
 	void Process(sector_t * model, int whichplane, bool notexture);
 	void SetFrom3DFloor(F3DFloor *rover, bool top, bool underside);
-	void ProcessSector(sector_t * frontsector, subsector_t * sub);
+	void ProcessSector(sector_t * frontsector);
 	void Draw(int pass);
 };
 
@@ -304,6 +305,7 @@ public:
 	FColormap Colormap;
 	FSpriteModelFrame * modelframe;
 	FRenderStyle RenderStyle;
+	int OverrideShader;
 
 	int translation;
 	int index;

@@ -46,9 +46,11 @@ public:
 private:
 
 	short texwidth, texheight;
-	float scalexfac, scaleyfac;
+	//float scalexfac, scaleyfac;
 	bool mipmap;
 	BYTE clampmode;
+	bool forcenofiltering;
+	bool forcenocompression;
 
 	unsigned int * glTexID;
 	TArray<TranslatedTexture> glTexID_Translated;
@@ -61,7 +63,7 @@ private:
 	void DeleteTexture(unsigned int texid);
 
 public:
-	FHardwareTexture(int w, int h, bool mip, bool wrap);
+	FHardwareTexture(int w, int h, bool mip, bool wrap, bool nofilter, bool nocompress);
 	~FHardwareTexture();
 
 	static void Unbind(int texunit);
@@ -74,22 +76,6 @@ public:
 	void Resize(int _width, int _height) ;
 
 	void Clean(bool all);
-
-
-	// Get right/bottom UV coordinates for patch drawing
-	float GetUL() const { return 0; }
-	float GetVT() const { return 0; }
-	float GetUR() const { return scalexfac; }
-	float GetVB() const { return scaleyfac; }
-	float GetU(float upix) const { return upix/(float)texwidth * scalexfac; }
-	float GetV(float vpix) const { return vpix/(float)texheight* scaleyfac; }
-	float GetWidth () const { return (float)texwidth * scalexfac; }
-	float GetHeight() const { return (float)texheight* scaleyfac; }
-
-	// gets a texture coordinate from a pixel coordinate
-	float FloatToTexU(float v) const { return v/(float)texwidth; }
-	float FloatToTexV(float v) const { return v/(float)texheight; }
-
 };
 
 #endif

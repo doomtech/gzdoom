@@ -81,7 +81,6 @@ static void PlayerLandedOnThing (AActor *mo, AActor *onmobj);
 
 extern cycle_t BotSupportCycles;
 extern int BotWTG;
-EXTERN_CVAR (Bool, r_drawfuzz);
 EXTERN_CVAR (Int,  cl_rockettrails)
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
@@ -258,18 +257,9 @@ void AActor::Serialize (FArchive &arc)
 		<< args[0] << args[1] << args[2] << args[3] << args[4]
 		<< goal
 		<< waterlevel
-		<< MinMissileChance;
-		if (SaveVersion >= 2826)
-		{
-			arc	<< SpawnFlags;
-		}
-		else
-		{
-			WORD w;
-			arc << w;
-			SpawnFlags = w;
-		}
-	arc	<< Inventory
+		<< MinMissileChance
+		<< SpawnFlags
+		<< Inventory
 		<< InventoryID
 		<< id
 		<< FloatBobPhase
@@ -281,12 +271,9 @@ void AActor::Serialize (FArchive &arc)
 		<< ActiveSound
 		<< UseSound
 		<< BounceSound
-		<< WallBounceSound;
-	if (SaveVersion >= 2234)
-	{
-		arc << CrushPainSound;
-	}
-	arc	<< Speed
+		<< WallBounceSound
+		<< CrushPainSound
+		<< Speed
 		<< FloatSpeed
 		<< Mass
 		<< PainChance
@@ -312,82 +299,27 @@ void AActor::Serialize (FArchive &arc)
 		<< BlockingLine
 		<< pushfactor
 		<< Species
-		<< Score
-		<< Tag;
-	if (SaveVersion >= 1904)
+		<< Score;
+	if (SaveVersion >= 3113)
 	{
-		arc << lastpush << lastbump;
+		arc << DesignatedTeam;
 	}
+	arc << lastpush << lastbump
+		<< PainThreshold
+		<< DamageFactor
+		<< WeaveIndexXY << WeaveIndexZ
+		<< PoisonDamageReceived << PoisonDurationReceived << PoisonPeriodReceived << Poisoner
+		<< PoisonDamage << PoisonDuration << PoisonPeriod
+		<< ConversationRoot << Conversation;
 
-	if (SaveVersion >= 1900)
 	{
-		arc << PainThreshold;
-	}
-	if (SaveVersion >= 1914)
-	{
-		arc << DamageFactor;
-	}
-	if (SaveVersion > 2036)
-	{
-		arc << WeaveIndexXY << WeaveIndexZ;
-	}
-	else
-	{
-		int index;
-
-		if (SaveVersion < 2036)
+		FString tagstr;
+		if (arc.IsStoring() && Tag != NULL && Tag->Len() > 0) tagstr = *Tag;
+		arc << tagstr;
+		if (arc.IsLoading())
 		{
-			index = special2;
-		}
-		else
-		{
-			arc << index;
-		}
-		// A_BishopMissileWeave and A_CStaffMissileSlither stored the weaveXY
-		// value in different parts of the index.
-		if (this->IsKindOf(PClass::FindClass("BishopFX")))
-		{
-			WeaveIndexXY = index >> 16;
-			WeaveIndexZ = index;
-		}
-		else
-		{
-			WeaveIndexXY = index;
-			WeaveIndexZ = 0;
-		}
-	}
-	if (SaveVersion >= 2450)
-	{
-		arc << PoisonDamageReceived << PoisonDurationReceived << PoisonPeriodReceived << Poisoner;
-		arc << PoisonDamage << PoisonDuration << PoisonPeriod;
-	}
-
-	// Skip past uservar array in old savegames
-	if (SaveVersion < 1933)
-	{
-		int foo;
-		for (int i = 0; i < 10; ++i)
-			arc << foo;
-	}
-
-	if (SaveVersion > 2560)
-	{
-		arc << ConversationRoot << Conversation;
-	}
-	else	// old code which uses relative indexing.
-	{
-		int convnum;
-
-		convnum = arc.ReadCount();
-		if (GetConversation(GetClass()->TypeName) == -1)
-		{
-			Conversation = NULL;
-			ConversationRoot = -1;
-		}
-		else
-		{
-			// This cannot be restored anymore.
-			I_Error("Cannot load old savegames with active dialogues");
+			if (tagstr.Len() == 0) Tag = NULL;
+			else Tag = mStringPropertyData.Alloc(tagstr);
 		}
 	}
 
@@ -547,7 +479,7 @@ bool AActor::SetState (FState *newstate, bool nofunction)
 				// for Dehacked, I would move sprite changing out of the states
 				// altogether, since actors rarely change their sprites after
 				// spawning.
-					if (player != NULL)
+					if (player != NULL && skins != NULL)
 					{
 						sprite = skins[player->userinfo.skin].sprite;
 					}
@@ -847,6 +779,7 @@ void AActor::CopyFriendliness (AActor *other, bool changeTarget)
 	flags3 = (flags3 & ~(MF3_NOSIGHTCHECK | MF3_HUNTPLAYERS)) | (other->flags3 & (MF3_NOSIGHTCHECK | MF3_HUNTPLAYERS));
 	flags4 = (flags4 & ~MF4_NOHATEPLAYERS) | (other->flags4 & MF4_NOHATEPLAYERS);
 	FriendPlayer = other->FriendPlayer;
+	DesignatedTeam = other->DesignatedTeam;
 	if (changeTarget && other->target != NULL && !(other->target->flags3 & MF3_NOTARGET))
 	{
 		// LastHeard must be set as well so that A_Look can react to the new target if called
@@ -2237,7 +2170,7 @@ void P_ZMovement (AActor *mo, fixed_t oldfloorz)
 			mo->z = mo->floorz;
 			if (mo->velz < 0)
 			{
-				const fixed_t minvel = -9*FRACUNIT;	// landing speed from a jump with normal gravity
+				const fixed_t minvel = -8*FRACUNIT;	// landing speed from a jump with normal gravity
 
 				// Spawn splashes, etc.
 				P_HitFloor (mo);
@@ -2253,7 +2186,7 @@ void P_ZMovement (AActor *mo, fixed_t oldfloorz)
 				mo->HitFloor ();
 				if (mo->player)
 				{
-					if (mo->player->jumpTics != 0 && mo->velz < -grav*4)
+					if (mo->player->jumpTics < 0 || mo->velz < minvel)
 					{ // delay any jumping for a short while
 						mo->player->jumpTics = 7;
 					}
@@ -2817,6 +2750,11 @@ void AActor::Tick ()
 			//Added by MC: Freeze mode.
 			if (bglobal.freeze || level.flags2 & LEVEL2_FROZEN)
 			{
+				// Boss cubes shouldn't be accelerated by timefreeze
+				if (flags6 & MF6_BOSSCUBE)
+				{
+					special2++;
+				}
 				return;
 			}
 		}
@@ -2847,6 +2785,11 @@ void AActor::Tick ()
 
 		if (!(flags5 & MF5_NOTIMEFREEZE))
 		{
+			// Boss cubes shouldn't be accelerated by timefreeze
+			if (flags6 & MF6_BOSSCUBE)
+			{
+				special2++;
+			}
 			//Added by MC: Freeze mode.
 			if (bglobal.freeze && !(player && !player->isbot))
 			{
@@ -4447,7 +4390,7 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 	mobj->tid = mthing->thingid;
 	mobj->AddToHash ();
 
-	mobj->PrevAngle = mobj->angle = (DWORD)((mthing->angle * UCONST64(0x100000000)) / 360);
+	mobj->PrevAngle = mobj->angle = (DWORD)((mthing->angle * CONST64(0x100000000)) / 360);
 
 	// Check if this actor's mapthing has a conversation defined
 	if (mthing->Conversation > 0)
@@ -4556,6 +4499,8 @@ void P_SpawnBlood (fixed_t x, fixed_t y, fixed_t z, angle_t dir, int damage, AAc
 		th = Spawn (bloodcls, x, y, z, NO_REPLACE); // GetBloodType already performed the replacement
 		th->velz = FRACUNIT*2;
 		th->angle = dir;
+		// [NG] Applying PUFFGETSOWNER to the blood will make it target the owner
+		if (th->flags5 & MF5_PUFFGETSOWNER) th->target = originator;
 		if (gameinfo.gametype & GAME_DoomChex)
 		{
 			th->tics -= pr_spawnblood() & 3;
@@ -4697,6 +4642,8 @@ void P_RipperBlood (AActor *mo, AActor *bleeder)
 	{
 		AActor *th;
 		th = Spawn (bloodcls, x, y, z, NO_REPLACE); // GetBloodType already performed the replacement
+		// [NG] Applying PUFFGETSOWNER to the blood will make it target the owner
+		if (th->flags5 & MF5_PUFFGETSOWNER) th->target = bleeder;
 		if (gameinfo.gametype == GAME_Heretic)
 			th->flags |= MF_NOGRAVITY;
 		th->velx = mo->velx >> 1;
@@ -4939,7 +4886,7 @@ bool P_HitFloor (AActor *thing)
 
 void P_CheckSplash(AActor *self, fixed_t distance)
 {
-	if (self->z <= self->floorz + (distance<<FRACBITS) && self->floorsector == self->Sector)
+	if (self->z <= self->floorz + (distance<<FRACBITS) && self->floorsector == self->Sector && self->Sector->GetHeightSec() == NULL)
 	{
 		// Explosion splashes never alert monsters. This is because A_Explode has
 		// a separate parameter for that so this would get in the way of proper 
@@ -5394,12 +5341,18 @@ AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 
 bool AActor::IsTeammate (AActor *other)
 {
-	if (!player || !other || !other->player)
+	if (!other)
 		return false;
-	if (!deathmatch)
+	else if (!deathmatch && player && other->player)
 		return true;
-	if (teamplay && other->player->userinfo.team != TEAM_NONE &&
-		player->userinfo.team == other->player->userinfo.team)
+	int myTeam = DesignatedTeam;
+	int otherTeam = other->DesignatedTeam;
+	if (player)
+		myTeam = player->userinfo.team;
+	if (other->player)
+		otherTeam = other->player->userinfo.team;
+	if (teamplay && myTeam != TEAM_NONE &&
+		myTeam == otherTeam)
 	{
 		return true;
 	}
@@ -5451,6 +5404,11 @@ bool AActor::IsFriend (AActor *other)
 {
 	if (flags & other->flags & MF_FRIENDLY)
 	{
+		if (deathmatch && teamplay)
+			return IsTeammate(other) ||
+				(FriendPlayer != 0 && other->FriendPlayer != 0 &&
+					players[FriendPlayer-1].mo->IsTeammate(players[other->FriendPlayer-1].mo));
+
 		return !deathmatch ||
 			FriendPlayer == other->FriendPlayer ||
 			FriendPlayer == 0 ||
@@ -5476,6 +5434,11 @@ bool AActor::IsHostile (AActor *other)
 	// Both monsters are friendly and belong to the same player if applicable.
 	if (flags & other->flags & MF_FRIENDLY)
 	{
+		if (deathmatch && teamplay)
+			return !IsTeammate(other) &&
+				!(FriendPlayer != 0 && other->FriendPlayer != 0 &&
+					players[FriendPlayer-1].mo->IsTeammate(players[other->FriendPlayer-1].mo));
+
 		return deathmatch &&
 			FriendPlayer != other->FriendPlayer &&
 			FriendPlayer !=0 &&
@@ -5629,11 +5592,13 @@ bool AActor::IsSentient() const
 }
 
 
+FSharedStringArena AActor::mStringPropertyData;
+
 const char *AActor::GetTag(const char *def) const
 {
-	if (Tag != NAME_None)
+	if (Tag != NULL)
 	{
-		const char *tag = Tag.GetChars();
+		const char *tag = Tag->GetChars();
 		if (tag[0] == '$')
 		{
 			return GStrings(tag + 1);
@@ -5653,10 +5618,22 @@ const char *AActor::GetTag(const char *def) const
 	}
 }
 
+void AActor::SetTag(const char *def)
+{
+	if (def == NULL || *def == 0) 
+	{
+		Tag = NULL;
+	}
+	else 
+	{
+		Tag = mStringPropertyData.Alloc(def);
+	}
+}
+
 
 void AActor::ClearCounters()
 {
-	if (CountsAsKill())
+	if (CountsAsKill() && health > 0)
 	{
 		level.total_monsters--;
 		flags &= ~MF_COUNTKILL;
@@ -5693,12 +5670,13 @@ void FreeDropItemChain(FDropItem *chain)
 	}
 }
 
-FDropItemPtrArray::~FDropItemPtrArray()
+void FDropItemPtrArray::Clear()
 {
 	for (unsigned int i = 0; i < Size(); ++i)
 	{
 		FreeDropItemChain ((*this)[i]);
 	}
+	TArray<FDropItem *>::Clear();
 }
 
 int StoreDropItemChain(FDropItem *chain)

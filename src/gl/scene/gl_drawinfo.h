@@ -191,6 +191,7 @@ struct FDrawInfo
 
 	TArray<BYTE> sectorrenderflags;
 	TArray<BYTE> ss_renderflags;
+	TArray<BYTE> no_renderflags;
 
 	TArray<MissingTextureInfo> MissingUpperTextures;
 	TArray<MissingTextureInfo> MissingLowerTextures;
@@ -203,8 +204,8 @@ struct FDrawInfo
 	TArray<gl_subsectorrendernode*> otherfloorplanes;
 	TArray<gl_subsectorrendernode*> otherceilingplanes;
 
-	TArray<subsector_t *> CeilingStacks;
-	TArray<subsector_t *> FloorStacks;
+	TArray<sector_t *> CeilingStacks;
+	TArray<sector_t *> FloorStacks;
 
 	TArray<subsector_t *> HandledSubsectors;
 
@@ -227,14 +228,14 @@ struct FDrawInfo
 	void CollectSectorStacksCeiling(subsector_t * sub, sector_t * anchor);
 	void CollectSectorStacksFloor(subsector_t * sub, sector_t * anchor);
 
-	void AddUpperMissingTexture(seg_t * seg, fixed_t backheight);
-	void AddLowerMissingTexture(seg_t * seg, fixed_t backheight);
+	void AddUpperMissingTexture(side_t * side, subsector_t *sub, fixed_t backheight);
+	void AddLowerMissingTexture(side_t * side, subsector_t *sub, fixed_t backheight);
 	void HandleMissingTextures();
 	void DrawUnhandledMissingTextures();
 	void AddHackedSubsector(subsector_t * sub);
 	void HandleHackedSubsectors();
-	void AddFloorStack(subsector_t * sub);
-	void AddCeilingStack(subsector_t * sub);
+	void AddFloorStack(sector_t * sec);
+	void AddCeilingStack(sector_t * sec);
 	void ProcessSectorStacks();
 
 	void AddOtherFloorPlane(int sector, gl_subsectorrendernode * node);

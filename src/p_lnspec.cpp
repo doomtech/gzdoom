@@ -548,6 +548,12 @@ FUNC(LS_Ceiling_LowerAndCrush)
 	return EV_DoCeiling (DCeiling::ceilLowerAndCrush, ln, arg0, SPEED(arg1), SPEED(arg1), 0, arg2, 0, 0, CRUSHTYPE(arg3));
 }
 
+FUNC(LS_Ceiling_LowerAndCrushDist)
+// Ceiling_LowerAndCrush (tag, speed, crush, dist, crushtype)
+{
+	return EV_DoCeiling (DCeiling::ceilLowerAndCrushDist, ln, arg0, SPEED(arg1), SPEED(arg1), arg3*FRACUNIT, arg2, 0, 0, CRUSHTYPE(arg4));
+}
+
 FUNC(LS_Ceiling_CrushStop)
 // Ceiling_CrushStop (tag)
 {
@@ -890,8 +896,7 @@ FUNC(LS_Teleport_EndGame)
 {
 	if (!backSide && CheckIfExitIsGood (it, NULL))
 	{
-		G_SetForEndGame (level.nextmap);
-		G_ExitLevel (0, false);
+		G_ChangeLevel(NULL, 0, 0);
 		return true;
 	}
 	return false;
@@ -1703,10 +1708,18 @@ FUNC(LS_FloorAndCeiling_RaiseByValue)
 }
 
 FUNC(LS_FloorAndCeiling_LowerRaise)
-// FloorAndCeiling_LowerRaise (tag, fspeed, cspeed)
+// FloorAndCeiling_LowerRaise (tag, fspeed, cspeed, boomemu)
 {
-	return EV_DoCeiling (DCeiling::ceilRaiseToHighest, ln, arg0, SPEED(arg2), 0, 0, 0, 0, 0, false) |
-		   EV_DoFloor     (DFloor::floorLowerToLowest, ln, arg0, SPEED(arg1), 0, 0, 0, false);
+	bool res = EV_DoCeiling (DCeiling::ceilRaiseToHighest, ln, arg0, SPEED(arg2), 0, 0, 0, 0, 0, false);
+	// The switch based Boom equivalents of FloorandCeiling_LowerRaise do incorrect checks
+	// which cause the floor only to move when the ceiling fails to do so.
+	// To avoid problems with maps that have incorrect args this only uses a 
+	// more or less unintuitive value for the fourth arg to trigger Boom's broken behavior
+	if (arg3 != 1998 || !res)	// (1998 for the year in which Boom was released... :P)
+	{
+		res |= EV_DoFloor (DFloor::floorLowerToLowest, ln, arg0, SPEED(arg1), 0, 0, 0, false);
+	}
+	return res;
 }
 
 FUNC(LS_Elevator_MoveToFloor)
@@ -1917,7 +1930,7 @@ void AdjustPusher (int tag, int magnitude, int angle, DPusher::EPusher type)
 		unsigned int i;
 		for (i = 0; i < numcollected; i++)
 		{
-			if (Collection[i].RefNum == sectors[secnum].tag)
+			if (Collection[i].RefNum == sectors[secnum].sectornum)
 				break;
 		}
 		if (i == numcollected)
@@ -2485,6 +2498,7 @@ FUNC(LS_Line_SetBlocking)
 		ML_BLOCKEVERYTHING,
 		ML_RAILING,
 		ML_BLOCKUSE,
+		ML_BLOCKSIGHT,
 		-1
 	};
 
@@ -2810,6 +2824,7 @@ FUNC(LS_Autosave)
 {
 	if (gameaction != ga_savegame)
 	{
+		level.flags2 &= ~LEVEL2_NOAUTOSAVEHINT;
 		Net_WriteByte (DEM_CHECKAUTOSAVE);
 	}
 	return true;
@@ -3247,7 +3262,7 @@ lnSpecFunc LineSpecials[256] =
 	/*  94 */ LS_Pillar_BuildAndCrush,
 	/*  95 */ LS_FloorAndCeiling_LowerByValue,
 	/*  96 */ LS_FloorAndCeiling_RaiseByValue,
-	/*  97 */ LS_NOP,
+	/*  97 */ LS_Ceiling_LowerAndCrushDist,
 	/*  98 */ LS_NOP,
 	/*  99 */ LS_NOP,
 	/* 100 */ LS_NOP,		// Scroll_Texture_Left

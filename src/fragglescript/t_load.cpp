@@ -306,7 +306,7 @@ bool FScriptLoader::ParseInfo(MapData * map)
 		new DFraggleThinker;
 		DFraggleThinker::ActiveThinker->LevelScript->data = copystring(scriptsrc.GetChars());
 
-		if (drownflag==-1) drownflag = ((level.flags&LEVEL_HEXENFORMAT) || fsglobal);
+		if (drownflag==-1) drownflag = ((level.maptype == MAPTYPE_HEXEN) || fsglobal);
 		if (!drownflag) level.airsupply=0;	// Legacy doesn't to water damage.
 
 		FFsOptions *opt = level.info->GetOptData<FFsOptions>("fragglescript", false);
@@ -343,7 +343,7 @@ void T_LoadScripts(MapData *map)
 	// the default translator is being used.
 	// Custom translators will not be patched.
 	if ((gameinfo.gametype == GAME_Doom || gameinfo.gametype == GAME_Heretic) && level.info->Translator.IsEmpty() &&
-		!((level.flags&LEVEL_HEXENFORMAT)) && SimpleLineTranslations[272 - 2*HasScripts].special == FS_Execute)
+		(level.maptype == MAPTYPE_DOOM) && SimpleLineTranslations[272 - 2*HasScripts].special == FS_Execute)
 	{
 		FLineTrans t = SimpleLineTranslations[270];
 		SimpleLineTranslations[270] = SimpleLineTranslations[272];

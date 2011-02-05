@@ -123,17 +123,15 @@ CUSTOM_CVAR(Int,gl_fogmode,1,CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
 	if (self>2) self=2;
 	if (self<0) self=0;
-	if (self == 2 && gl.shadermodel == 2) self = 1;
-	if (gl.shadermodel == 3) GLRenderer->mShaderManager->Recompile();
+	if (self == 2 && gl.shadermodel < 4) self = 1;
 }
 
 CUSTOM_CVAR(Int, gl_lightmode, 3 ,CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
 	if (self>4) self=4;
 	if (self<0) self=0;
-	if (self == 2 && gl.shadermodel == 2) self = 3;
+	if (self == 2 && gl.shadermodel < 4) self = 3;
 	glset.lightmode = self;
-	if (gl.shadermodel == 3) GLRenderer->mShaderManager->Recompile();
 }
 
 
@@ -150,11 +148,12 @@ void gl_GetRenderStyle(FRenderStyle style, bool drawopaque, bool allowcolorblend
 					   int *tm, int *sb, int *db, int *be)
 {
 	static int blendstyles[] = { GL_ZERO, GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA };
-	static int renderops[] = { 0, GL_FUNC_ADD, GL_FUNC_SUBTRACT, GL_FUNC_REVERSE_SUBTRACT, -1, -1, -1, -1};
+	static int renderops[] = { 0, GL_FUNC_ADD, GL_FUNC_SUBTRACT, GL_FUNC_REVERSE_SUBTRACT, -1, -1, -1, -1, 
+		-1, -1, -1, -1, -1, -1, -1, -1 };
 
 	int srcblend = blendstyles[style.SrcAlpha&3];
 	int dstblend = blendstyles[style.DestAlpha&3];
-	int blendequation = renderops[style.BlendOp&7];
+	int blendequation = renderops[style.BlendOp&15];
 	int texturemode = drawopaque? TM_OPAQUE : TM_MODULATE;
 
 	if (style.Flags & STYLEF_ColorIsFixed)
@@ -400,7 +399,7 @@ bool gl_CheckFog(sector_t *frontsector, sector_t *backsector)
 	{
 		frontfog = true;
 	}
-	else  if (fogdensity!=0)
+	else  if (fogdensity!=0 || (glset.lightmode & 4))
 	{
 		// case 3: level has fog density set
 		frontfog = true;
@@ -423,7 +422,7 @@ bool gl_CheckFog(sector_t *frontsector, sector_t *backsector)
 	{
 		backfog = true;
 	}
-	else  if (fogdensity!=0)
+	else  if (fogdensity!=0 || (glset.lightmode & 4))
 	{
 		// case 3: level has fog density set
 		backfog = true;
@@ -554,7 +553,7 @@ void gl_SetFog(int lightlevel, int rellight, const FColormap *cmap, bool isaddit
 void gl_ModifyColor(BYTE & red, BYTE & green, BYTE & blue, int cm)
 {
 	int gray = (red*77 + green*143 + blue*36)>>8;
-	if (cm >= CM_FIRSTSPECIALCOLORMAP && cm < CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size())
+	if (cm >= CM_FIRSTSPECIALCOLORMAP && cm < CM_MAXCOLORMAP)
 	{
 		PalEntry pe = SpecialColormaps[cm - CM_FIRSTSPECIALCOLORMAP].GrayscaleToColor[gray];
 		red = pe.r;

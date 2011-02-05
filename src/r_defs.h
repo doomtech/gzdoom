@@ -25,6 +25,7 @@
 
 #include "doomdef.h"
 #include "templates.h"
+#include "memarena.h"
 
 // Some more or less basic data types
 // we depend on.
@@ -70,6 +71,16 @@ extern size_t MaxDrawSegs;
 // Note: transformed values not buffered locally,
 //	like some DOOM-alikes ("wt", "WebView") did.
 //
+enum
+{
+	VERTEXFLAG_ZCeilingEnabled = 0x01,
+	VERTEXFLAG_ZFloorEnabled   = 0x02
+};
+struct vertexdata_t
+{
+	fixed_t zCeiling, zFloor;
+	DWORD flags;
+};
 struct vertex_t
 {
 	fixed_t x, y;
@@ -83,9 +94,25 @@ struct vertex_t
 	sector_t ** sectors;
 	float * heightlist;
 
+	vertex_t()
+	{
+		x = y = 0;
+		fx = fy = 0;
+		viewangle = 0;
+		dirty = true;
+		numheights = numsectors = 0;
+		sectors = NULL;
+		heightlist = NULL;
+	}
+
 	bool operator== (const vertex_t &other)
 	{
 		return x == other.x && y == other.y;
+	}
+
+	bool operator!= (const vertex_t &other)
+	{
+		return x != other.x || y != other.y;
 	}
 
 	void clear()
@@ -215,6 +242,12 @@ struct secplane_t
 
 	fixed_t a, b, c, d, ic;
 
+	// Returns the value of z at (0,0) This is used by the 3D floor code which does not handle slopes
+	fixed_t Zat0 () const
+	{
+		return ic < 0? d:-d;
+	}
+
 	// Returns the value of z at (x,y)
 	fixed_t ZatPoint (fixed_t x, fixed_t y) const
 	{
@@ -319,6 +352,7 @@ struct subsector_t;
 struct sector_t;
 struct side_t;
 extern bool gl_plane_reflection_i;
+struct FPortal;
 
 // Ceiling/floor flags
 enum
@@ -356,24 +390,6 @@ enum
 
 struct FDynamicColormap;
 
-struct FLightStack
-{
-	secplane_t Plane;		// Plane above this light (points up)
-	sector_t *Master;		// Sector to get light from (NULL for owner)
-	BITFIELD bBottom:1;		// Light is from the bottom of a block?
-	BITFIELD bFlooder:1;	// Light floods lower lights until another flooder is reached?
-	BITFIELD bOverlaps:1;	// Plane overlaps the next one
-};
-
-struct FExtraLight
-{
-	short Tag;
-	WORD NumLights;
-	WORD NumUsedLights;
-	FLightStack *Lights;	// Lights arranged from top to bottom
-
-	void InsertLight (const secplane_t &plane, line_t *line, int type);
-};
 
 struct FLinkedSector
 {
@@ -488,6 +504,7 @@ struct sector_t
 		FTransform xform;
 		int Flags;
 		int Light;
+		fixed_t alpha;
 		FTextureID Texture;
 		fixed_t TexZ;
 	};
@@ -575,6 +592,16 @@ struct sector_t
 		planes[pos].xform.base_angle = o;
 	}
 
+	void SetAlpha(int pos, fixed_t o)
+	{
+		planes[pos].alpha = o;
+	}
+
+	fixed_t GetAlpha(int pos) const
+	{
+		return planes[pos].alpha;
+	}
+
 	int GetFlags(int pos) const 
 	{
 		return planes[pos].Flags;
@@ -625,7 +652,10 @@ struct sector_t
 
 	sector_t *GetHeightSec() const 
 	{
-		return (heightsec && !(heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC))? heightsec : NULL;
+		return (heightsec &&
+			!(heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC) &&
+			!(this->e && this->e->XFloor.ffloors.Size())
+			)? heightsec : NULL;
 	}
 
 	void ChangeLightLevel(int newval)
@@ -735,17 +765,13 @@ struct sector_t
 	// regular sky.
 	TObjPtr<ASkyViewpoint> FloorSkyBox, CeilingSkyBox;
 
-	// Planes that partition this sector into different light zones.
-	FExtraLight *ExtraLights;
-
-	vertex_t *Triangle[3];	// Three points that can define a plane
 	short						secretsector;		//jff 2/16/98 remembers if sector WAS secret (automap)
 	int							sectornum;			// for comparing sector copies
 
 	extsector_t	*				e;		// This stores data that requires construction/destruction. Such data must not be copied by R_FakeFlat.
 
 	// GL only stuff starts here
-	float						ceiling_reflect, floor_reflect;
+	float						reflect[2];
 
 	int							dirtyframe[3];		// last frame this sector was marked dirty
 	bool						dirty;				// marked for recalculation
@@ -753,6 +779,7 @@ struct sector_t
 	fixed_t						transdoorheight;	// for transparent door hacks
 	int							subsectorcount;		// list of subsectors
 	subsector_t **				subsectors;
+	FPortal *					portals[2];			// floor and ceiling portals
 
 	enum
 	{
@@ -768,8 +795,7 @@ struct sector_t
 	int				ibocount;
 #endif
 
-	float GetFloorReflect() { return gl_plane_reflection_i? floor_reflect : 0; }
-	float GetCeilingReflect() { return gl_plane_reflection_i? ceiling_reflect : 0; }
+	float GetReflect(int pos) { return gl_plane_reflection_i? reflect[pos] : 0; }
 	bool VBOHeightcheck(int pos) const { return vboheight[pos] == GetPlaneTexZ(pos); }
 
 	enum
@@ -1059,6 +1085,12 @@ enum
 	SSECF_POLYORG = 4,
 };
 
+struct FPortalCoverage
+{
+	DWORD *		subsectors;
+	int			sscount;
+};
+
 struct subsector_t
 {
 	sector_t	*sector;
@@ -1071,10 +1103,11 @@ struct subsector_t
 
 	// subsector related GL data
 	FLightNode *	lighthead[2];	// Light nodes (blended and additive)
-	fixed_t			bbox[4];		// Bounding box
 	int				validcount;
+	short			mapsection;
 	char			hacked;			// 1: is part of a render hack
 									// 2: has one-sided walls
+	FPortalCoverage	portalcoverage[2];
 };
 
 
@@ -1131,7 +1164,6 @@ struct column_t
 
 typedef BYTE lighttable_t;	// This could be wider for >8 bit display.
 
-
 // A vissprite_t is a thing
 //	that will be drawn during a refresh.
 // I.e. a sprite object that is partly visible.
@@ -1139,8 +1171,9 @@ struct vissprite_t
 {
 	short			x1, x2;
 	fixed_t			cx;				// for line side calculation
-	fixed_t			gx, gy;			// for fake floor clipping
-	fixed_t			gz, gzt;		// global bottom / top for silhouette clipping
+	fixed_t			gx, gy, gz;		// origin in world coordinates
+	angle_t			angle;
+	fixed_t			gzb, gzt;		// global bottom / top for silhouette clipping
 	fixed_t			startfrac;		// horizontal position of x1
 	fixed_t			xscale, yscale;
 	fixed_t			xiscale;		// negative if flipped
@@ -1151,14 +1184,21 @@ struct vissprite_t
 	lighttable_t	*colormap;
 	sector_t		*heightsec;		// killough 3/27/98: height sector for underwater/fake ceiling
 	sector_t		*sector;		// [RH] sector this sprite is in
+	F3DFloor	*fakefloor;
+	F3DFloor	*fakeceiling;
 	fixed_t			alpha;
 	fixed_t			floorclip;
-	FTexture		*pic;
+	union
+	{
+		FTexture	  *pic;
+		struct FVoxel *voxel;
+	};
+	BYTE			bIsVoxel:1;		// [RH] Use voxel instead of pic
+	BYTE			bSplitSprite:1;	// [RH] Sprite was split by a drawseg
+	BYTE			FakeFlatStat;	// [RH] which side of fake/floor ceiling sprite is on
 	short 			renderflags;
 	DWORD			Translation;	// [RH] for color translation
 	FRenderStyle	RenderStyle;
-	BYTE			FakeFlatStat;	// [RH] which side of fake/floor ceiling sprite is on
-	BYTE			bSplitSprite;	// [RH] Sprite was split by a drawseg
 };
 
 enum
@@ -1180,14 +1220,16 @@ enum
 //
 struct spriteframe_t
 {
+	struct FVoxelDef *Voxel;// voxel to use for this frame
 	FTextureID Texture[16];	// texture to use for view angles 0-15
-	WORD Flip;			// flip (1 = flip) to use for view angles 0-15.
+	WORD Flip;				// flip (1 = flip) to use for view angles 0-15.
 };
 
 //
 // A sprite definition:
 //	a number of animation frames.
 //
+
 struct spritedef_t
 {
 	union
@@ -1218,6 +1260,81 @@ public:
 	int			sprite;
 	int			crouchsprite;
 	int			namespc;	// namespace for this skin
+};
+
+
+// [RH] Voxels from Build
+
+#define MAXVOXMIPS 5
+
+struct kvxslab_t
+{
+	BYTE		ztop;			// starting z coordinate of top of slab
+	BYTE		zleng;			// # of bytes in the color array - slab height
+	BYTE		backfacecull;	// low 6 bits tell which of 6 faces are exposed
+	BYTE		col[1/*zleng*/];// color data from top to bottom
+};
+
+struct FVoxelMipLevel
+{
+	FVoxelMipLevel();
+	~FVoxelMipLevel();
+
+	int			SizeX;
+	int			SizeY;
+	int			SizeZ;
+	fixed_t		PivotX;		// 24.8 fixed point
+	fixed_t		PivotY;		// ""
+	fixed_t		PivotZ;		// ""
+	int			*OffsetX;
+	short		*OffsetXY;
+	BYTE		*SlabData;
+};
+
+struct FVoxel
+{
+	int LumpNum;
+	int NumMips;
+	int VoxelIndex;
+	BYTE *Palette;
+	FVoxelMipLevel Mips[MAXVOXMIPS];
+
+	FVoxel();
+	~FVoxel();
+	void Remap();
+};
+
+struct FVoxelDef
+{
+	FVoxel *Voxel;
+	int PlacedSpin;			// degrees/sec to spin actors without MF_DROPPED set
+	int DroppedSpin;		// degrees/sec to spin actors with MF_DROPPED set
+	int VoxeldefIndex;
+	fixed_t Scale;
+	angle_t AngleOffset;	// added to actor's angle to compensate for wrong-facing voxels
+};
+
+// [RH] A c-buffer. Used for keeping track of offscreen voxel spans.
+
+struct FCoverageBuffer
+{
+	struct Span
+	{
+		Span *NextSpan;
+		short Start, Stop;
+	};
+
+	FCoverageBuffer(int size);
+	~FCoverageBuffer();
+
+	void Clear();
+	void InsertSpan(int listnum, int start, int stop);
+	Span *AllocSpan();
+
+	FMemArena SpanArena;
+	Span **Spans;	// [0..NumLists-1] span lists
+	Span *FreeSpans;
+	unsigned int NumLists;
 };
 
 // Doom 64 Lights
