@@ -666,7 +666,7 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 				if (lightbottom<viewz && (!lightlist[i].caster || !(lightlist[i].caster->flags&FF_FADEWALLS)))
 				{
 					// 3d floor 'fog' is rendered as a blending value
-					blendv=(lightlist[i].extra_colormap)->Fade;
+					blendv=(COLORMAP_SELECT(lightlist[i].extra_colormap, LIGHT_FLOOR))->Fade;
 					// If this is the same as the sector's it doesn't apply!
 					if (blendv == viewsector->ColorMaps[LIGHT_GLOBAL]->Fade) blendv=0;
 					// a little hack to make this work for Legacy maps.

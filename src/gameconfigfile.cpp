@@ -154,7 +154,6 @@ FGameConfigFile::FGameConfigFile ()
 #elif !defined(unix)
 		SetValueForKey ("Path", "$PROGDIR", true);
 #else
-		SetValueForKey ("Path", "~/" GAME_DIR, true);
 		SetValueForKey ("Path", SHARE_DIR, true);
 #endif
 		SetValueForKey ("Path", "$DOOMWADDIR", true);
@@ -349,7 +348,6 @@ void FGameConfigFile::DoGameSetup (const char *gamename)
 {
 	const char *key;
 	const char *value;
-	enum { Doom, Heretic, Hexen, Strife, Chex, Doom64 } game;
 
 	if (bMigrating)
 	{

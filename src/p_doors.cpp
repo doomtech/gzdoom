@@ -63,11 +63,6 @@ void DDoor::Serialize (FArchive &arc)
 }
 
 //============================================================================
-//
-// Split Door
-//
-//============================================================================
-
 IMPLEMENT_CLASS (DSplitDoor)
 
 DSplitDoor::DSplitDoor ()
@@ -390,7 +385,6 @@ bool EV_DoSplitDoor (DDoor::EVlDoor type, line_t *line, AActor *thing,
 
 
 
-//============================================================================
 //
 // T_VerticalDoor
 //

@@ -2176,9 +2176,9 @@ void R_DrawPSprite (pspdef_t* psp, int pspnum, AActor *owner, fixed_t sx, fixed_
 
 	vis->texturemid = MulScale16((BASEYCENTER<<FRACBITS) - sy, tex->yScale) + (tex->TopOffset << FRACBITS);
 
-	// Doom 64 hack
-	if (gameinfo.gametype == GAME_Doom64)
-		vis->texturemid += 40<<FRACBITS;
+    // Doom 64 hack
+    if (gameinfo.gametype == GAME_Doom64)
+        vis->texturemid += 40<<FRACBITS;
 
 	if (camera->player && (RenderTarget != screen ||
 		viewheight == RenderTarget->GetHeight() ||
@@ -2360,7 +2360,7 @@ void R_DrawPlayerSprites ()
 						break;
 					sec = rover->model;
 					if(rover->flags & FF_FADEWALLS)
-						basecolormap = sec->ColorMap;
+						basecolormap = sec->ColorMaps[LIGHT_THING];
 					else
 						basecolormap = EXTRACOLORMAP(&viewsector->e->XFloor.lightlist[i], LIGHT_THING);
 				}
@@ -2368,7 +2368,7 @@ void R_DrawPlayerSprites ()
 			}
 		if(!sec) {
 			sec = viewsector;
-			basecolormap = sec->ColorMap;
+			basecolormap = sec->ColorMaps[LIGHT_THING];
 		}
 		floorlight = ceilinglight = sec->lightlevel;
 	} else {
@@ -2378,7 +2378,7 @@ void R_DrawPlayerSprites ()
 			&ceilinglight, false);
 
 		// [RH] set basecolormap
-		basecolormap = sec->ColorMap;
+		basecolormap = COLORMAP(sec, LIGHT_THING);
 	}
 
 	// [RH] set foggy flag
@@ -2759,7 +2759,7 @@ void R_DrawSprite (vissprite_t *spr)
 					sec = rover->model;
 					if (rover->flags & FF_FADEWALLS)
 					{
-						mybasecolormap = sec->ColorMap;
+						mybasecolormap = sec->ColorMaps[LIGHT_THING];
 					}
 					else
 					{

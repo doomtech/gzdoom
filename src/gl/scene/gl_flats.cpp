@@ -539,8 +539,10 @@ void GLFlat::SetFrom3DFloor(F3DFloor *rover, bool top, bool underside)
 	lightlist_t *light = P_GetPlaneLight(sector, plane.plane, underside);
 	lightlevel = *light->p_lightlevel;
 	
-	if (rover->flags & FF_FOG) Colormap.LightColor = (light->extra_colormap)->Fade;
-	else Colormap.CopyLightColor(light->extra_colormap);
+	// Floor or ceiling?
+	int lightpos = top ? LIGHT_CEILING : LIGHT_FLOOR;
+	if (rover->flags & FF_FOG) Colormap.LightColor = (COLORMAP_SELECT(light->extra_colormap, lightpos))->Fade;
+	else Colormap.CopyLightColor(COLORMAP_SELECT(light->extra_colormap, lightpos));
 
 	alpha = rover->alpha/255.0f;
 	renderstyle = rover->flags&FF_ADDITIVETRANS? STYLE_Add : STYLE_Translucent;
@@ -600,7 +602,7 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 		srf |= SSRF_RENDERFLOOR;
 
 		lightlevel = GetFloorLight(frontsector);
-		Colormap=frontsector->ColorMap;
+		Colormap=COLORMAP(frontsector, LIGHT_FLOOR);
 		if ((stack = (frontsector->portals[sector_t::floor] != NULL)))
 		{
 			gl_drawinfo->AddFloorStack(sector);
@@ -628,7 +630,7 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 			if (!(sector->GetFlags(sector_t::floor)&PLANEF_ABSLIGHTING) || light!=&x.lightlist[0])	
 				lightlevel = *light->p_lightlevel;
 
-			Colormap.CopyLightColor(light->extra_colormap);
+			Colormap.CopyLightColor(COLORMAP_SELECT(light->extra_colormap, LIGHT_FLOOR));
 		}
 		renderstyle = STYLE_Translucent;
 		if (alpha!=0.0f) Process(frontsector, false, false);
@@ -648,7 +650,7 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 		srf |= SSRF_RENDERCEILING;
 
 		lightlevel = GetCeilingLight(frontsector);
-		Colormap=frontsector->ColorMap;
+		Colormap=COLORMAP(frontsector, LIGHT_CEILING);
 		if ((stack = (frontsector->portals[sector_t::ceiling] != NULL))) 
 		{
 			gl_drawinfo->AddCeilingStack(sector);
@@ -676,7 +678,7 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 			light = P_GetPlaneLight(sector, &sector->ceilingplane, true);
 
 			if(!(sector->GetFlags(sector_t::ceiling)&PLANEF_ABSLIGHTING)) lightlevel = *light->p_lightlevel;
-			Colormap.CopyLightColor(light->extra_colormap);
+			Colormap.CopyLightColor(COLORMAP_SELECT(light->extra_colormap, LIGHT_CEILING));
 		}
 		renderstyle = STYLE_Translucent;
 		if (alpha!=0.0f) Process(frontsector, true, false);
@@ -722,7 +724,7 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 						if (FIXED2FLOAT(viewz) <= rover->top.plane->ZatPoint(FIXED2FLOAT(viewx), FIXED2FLOAT(viewy)))
 						{
 							SetFrom3DFloor(rover, true, !!(rover->flags&FF_FOG));
-							Colormap.FadeColor=frontsector-ColorMaps[LIGHT_GLOBAL]->Fade;
+							Colormap.FadeColor=frontsector->ColorMaps[LIGHT_GLOBAL]->Fade;
 							Process(rover->top.model, rover->top.isceiling, !!(rover->flags&FF_FOG));
 						}
 						lastceilingheight=ff_top;

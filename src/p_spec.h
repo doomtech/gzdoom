@@ -628,6 +628,31 @@ inline FArchive &operator<< (FArchive &arc, DDoor::EVlDoor &type)
 	return arc;
 }
 
+class DSplitDoor : public DDoor
+{
+	DECLARE_CLASS (DSplitDoor, DDoor)
+public:
+	DSplitDoor (sector_t *sector);
+	DSplitDoor (sector_t *sec, EVlDoor type, fixed_t speed, int delay, int lightTag);
+
+	void Serialize (FArchive &arc);
+	void Tick ();
+protected:
+	// To manage Doom 64 split doors, we need a bit more stuff...
+	fixed_t		m_BottomDist;	// Equivalent of m_TopDist for the bottom part
+	fixed_t		m_OriginalDist;	// The starting position for a door that opens, or the middle otherwise
+	void StopInterpolation();	// Since we need to interpolate the bottom as well
+
+	friend bool	EV_DoSplitDoor (DDoor::EVlDoor type, line_t *line, AActor *thing,
+						int tag, int speed, int delay, int lightTag);
+private:
+	DSplitDoor ();
+	TObjPtr<DInterpolation> SplitInterpolation;	// Bottom part interpolation
+};
+
+bool EV_DoSplitDoor (DDoor::EVlDoor type, line_t *line, AActor *thing,
+				int tag, int speed, int delay, int lightTag);
+
 class DAnimatedDoor : public DMovingCeiling
 {
 	DECLARE_CLASS (DAnimatedDoor, DMovingCeiling)
