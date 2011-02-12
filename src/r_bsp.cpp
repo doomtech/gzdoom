@@ -1197,6 +1197,7 @@ void R_Subsector (subsector_t *sub)
 					frontsector->GetTexture(sector_t::ceiling),
 					ceilinglightlevel + r_actualextralight,				// killough 4/11/98
 					frontsector->GetAlpha(sector_t::ceiling),
+					!!(frontsector->GetFlags(sector_t::ceiling) & PLANEF_ADDITIVE),
 					frontsector->GetXOffset(sector_t::ceiling),		// killough 3/7/98
 					frontsector->GetYOffset(sector_t::ceiling),		// killough 3/7/98
 					frontsector->GetXScale(sector_t::ceiling),
@@ -1232,6 +1233,7 @@ void R_Subsector (subsector_t *sub)
 					frontsector->GetTexture(sector_t::floor),
 					floorlightlevel + r_actualextralight,				// killough 3/16/98
 					frontsector->GetAlpha(sector_t::floor),
+					!!(frontsector->GetFlags(sector_t::floor) & PLANEF_ADDITIVE),
 					frontsector->GetXOffset(sector_t::floor),		// killough 3/7/98
 					frontsector->GetYOffset(sector_t::floor),		// killough 3/7/98
 					frontsector->GetXScale(sector_t::floor),
@@ -1292,6 +1294,7 @@ void R_Subsector (subsector_t *sub)
 					frontsector->GetTexture(sector_t::floor),
 					floorlightlevel + r_actualextralight,				// killough 3/16/98
 					frontsector->GetAlpha(sector_t::floor),
+					!!(frontsector->GetFlags(sector_t::floor) & PLANEF_ADDITIVE),
 					frontsector->GetXOffset(sector_t::floor),		// killough 3/7/98
 					frontsector->GetYOffset(sector_t::floor),		// killough 3/7/98
 					frontsector->GetXScale(sector_t::floor),
@@ -1356,6 +1359,7 @@ void R_Subsector (subsector_t *sub)
 					frontsector->GetTexture(sector_t::ceiling),
 					ceilinglightlevel + r_actualextralight,				// killough 4/11/98
 					frontsector->GetAlpha(sector_t::ceiling),
+					!!(frontsector->GetFlags(sector_t::ceiling) & PLANEF_ADDITIVE),
 					frontsector->GetXOffset(sector_t::ceiling),		// killough 3/7/98
 					frontsector->GetYOffset(sector_t::ceiling),		// killough 3/7/98
 					frontsector->GetXScale(sector_t::ceiling),
