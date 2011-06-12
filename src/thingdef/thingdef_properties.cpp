@@ -159,6 +159,67 @@ void HandleDeprecatedFlags(AActor *defaults, FActorInfo *info, bool set, int ind
 	}
 }
 
+//===========================================================================
+//
+// CheckDeprecatedFlags
+//
+// Checks properties related to deprecated flags, and returns true only
+// if the relevant properties are configured exactly as they would have
+// been by setting the flag in HandleDeprecatedFlags.
+//
+//===========================================================================
+
+bool CheckDeprecatedFlags(AActor *actor, FActorInfo *info, int index)
+{
+	// A deprecated flag is false if
+	// a) it hasn't been added here
+	// b) any property of the actor differs from what it would be after setting the flag using HandleDeprecatedFlags
+
+	// Deprecated flags are normally replaced by something more flexible, which means a multitude of related configurations
+	// will report "false".
+
+	switch (index)
+	{
+	case DEPF_FIREDAMAGE:
+		return actor->DamageType == NAME_Fire;
+	case DEPF_ICEDAMAGE:
+		return actor->DamageType == NAME_Ice;
+	case DEPF_LOWGRAVITY:
+		return actor->gravity == FRACUNIT/8;
+	case DEPF_SHORTMISSILERANGE:
+		return actor->maxtargetrange == 896*FRACUNIT;
+	case DEPF_LONGMELEERANGE:
+		return actor->meleethreshold == 196*FRACUNIT;
+	case DEPF_QUARTERGRAVITY:
+		return actor->gravity == FRACUNIT/4;
+	case DEPF_FIRERESIST:
+		if (info->DamageFactors)
+		{
+			fixed_t *df = info->DamageFactors->CheckKey(NAME_Fire);
+			return df && (*df) == FRACUNIT / 2;
+		}
+		return false;
+
+	case DEPF_HERETICBOUNCE:
+		return (actor->BounceFlags & (BOUNCE_TypeMask|BOUNCE_UseSeeSound)) == BOUNCE_HereticCompat;
+
+	case DEPF_HEXENBOUNCE:
+		return (actor->BounceFlags & (BOUNCE_TypeMask|BOUNCE_UseSeeSound)) == BOUNCE_HexenCompat;
+	
+	case DEPF_DOOMBOUNCE:
+		return (actor->BounceFlags & (BOUNCE_TypeMask|BOUNCE_UseSeeSound)) == BOUNCE_DoomCompat;
+
+	case DEPF_PICKUPFLASH:
+		return static_cast<AInventory*>(actor)->PickupFlash == PClass::FindClass("PickupFlash");
+		// A pure name lookup may or may not be more efficient, but I know no static identifier for PickupFlash.
+
+	case DEPF_INTERHUBSTRIP:
+		return !(static_cast<AInventory*>(actor)->InterHubAmount);
+	}
+
+	return false; // Any entirely unknown flag is not set
+}
+
 //==========================================================================
 //
 // 
@@ -2128,18 +2189,31 @@ DEFINE_CLASS_PROPERTY_PREFIX(player, crouchsprite, S, PlayerPawn)
 //==========================================================================
 //
 //==========================================================================
-DEFINE_CLASS_PROPERTY_PREFIX(player, damagescreencolor, Cf, PlayerPawn)
+DEFINE_CLASS_PROPERTY_PREFIX(player, damagescreencolor, Cfs, PlayerPawn)
 {
 	PROP_COLOR_PARM(c, 0);
-	defaults->DamageFade = c;
+
+	PalEntry color = c;
+
 	if (PROP_PARM_COUNT < 3)		// Because colors count as 2 parms
 	{
-		defaults->DamageFade.a = 255;
+		color.a = 255;
+		defaults->DamageFade = color;
+	}
+	else if (PROP_PARM_COUNT < 4)
+	{
+		PROP_FLOAT_PARM(a, 2);
+
+		color.a = BYTE(255 * clamp(a, 0.f, 1.f));
+		defaults->DamageFade = color;
 	}
 	else
 	{
 		PROP_FLOAT_PARM(a, 2);
-		defaults->DamageFade.a = BYTE(255 * clamp(a, 0.f, 1.f));
+		PROP_STRING_PARM(type, 3);
+
+		color.a = BYTE(255 * clamp(a, 0.f, 1.f));
+		info->SetPainFlash(type, color);
 	}
 }
 
