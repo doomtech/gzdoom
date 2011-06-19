@@ -137,99 +137,6 @@ bool ACustomInventory::CallStateChain (AActor *actor, FState * State)
 	return result;
 }
 
-
-
-//==========================================================================
-//
-// Checks whether this actor is a missile
-// Unfortunately this was buggy in older versions of the code and many
-// released DECORATE monsters rely on this bug so it can only be fixed
-// with an optional flag
-//
-//==========================================================================
-inline static bool isMissile(AActor * self, bool precise=true)
-{
-	return self->flags&MF_MISSILE || (precise && self->GetDefault()->flags&MF_MISSILE);
-}
-
-
-//==========================================================================
-//
-// Pointer-based operations
-//
-//==========================================================================
-
-
-enum PTROP
- {
-	PTROP_UNSAFETARGET = 1,
-	PTROP_UNSAFEMASTER = 2,
-	PTROP_NOSAFEGUARDS = PTROP_UNSAFETARGET|PTROP_UNSAFEMASTER
-};
-
-
-// [FDARI] Exported logic for guarding against loops in Target (for missiles) and Master (for all) chains.
-// It is called from multiple locations.
-// The code may be in need of optimisation.
-
-void VerifyTargetChain(AActor *self, bool preciseMissileCheck=true)
-{
-	if (!(self && isMissile(self, preciseMissileCheck))) return;
-	AActor *origin = self;
-	AActor *next = origin->target;
-
-	// origin: the most recent actor that has been verified as appearing only once
-	// next: the next actor to be verified; will be "origin" in the next iteration
-
-	while (next && isMissile(next, preciseMissileCheck)) // we only care when there are missiles involved
-	{
-		AActor *compare = self;
-		// every new actor must prove not to be the first actor in the chain, or any subsequent actor
-		// any actor up to and including "origin" has only appeared once
-		for (;;)
- 		{
-			if (compare == next)
-			{
-				// if any of the actors from self to (inclusive) origin match the next actor,
-				// self has reached/created a loop
-				self->target = NULL;
-				return;
-			}
-			if (compare == origin) break; // when "compare" = origin, we know that the next actor is, and should be "next"
-			compare = compare->target;
-		}
-
-		origin = next;
-		next = next->target;
-	}
-}
-
-void VerifyMasterChain(AActor *self)
-{
-	// See VerifyTargetChain for detailed comments.
-
-	if (!self) return;
-	AActor *origin = self;
-	AActor *next = origin->master;
-	while (next) // We always care (See "VerifyTargetChain")
-	{
-		AActor *compare = self;
-		for (;;)
-		{
-			if (compare == next)
-			{
-				self->master = NULL;
-				return;
-			}
-			if (compare == origin) break;
-			compare = compare->master;
-		}
-
-		origin = next;
-		next = next->master;
-	}
-}
-
 //==========================================================================
 //
 // A_RearrangePointers
@@ -308,7 +215,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_RearrangePointers)
 // A_TransferPointer
 //
 // Copy one pointer (MASTER, TARGET or TRACER) from this actor (SELF),
-// or from an this actor's MASTER, TARGET or TRACER.
+// or from this actor's MASTER, TARGET or TRACER.
 //
 // You can copy any one of that actor's pointers
 //
@@ -333,31 +240,18 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_TransferPointer)
 
 	// Exchange pointers with actors to whom you have pointers (or with yourself, if you must)
 
-	COPY_AAPTR(self, source, ptr_source);
+	source = COPY_AAPTR(self, ptr_source);
 	COPY_AAPTR_NOT_NULL(self, recepient, ptr_recepient); // pick an actor to store the provided pointer value
 
 	// convert source from dataprovider to data
  
-	COPY_AAPTR(source, source, ptr_sourcefield);
+	source = COPY_AAPTR(source, ptr_sourcefield);
 
 	if (source == recepient) source = NULL; // The recepient should not acquire a pointer to itself; will write NULL
 
 	if (ptr_recepientfield == AAPTR_DEFAULT) ptr_recepientfield = ptr_sourcefield; // If default: Write to same field as data was read from
 
-	switch (ptr_recepientfield) // assignment and safeguards (optional)
-	{
-	case AAPTR_TARGET:
-		recepient->target = source;
-		if (!(PTROP_UNSAFETARGET & flags)) VerifyTargetChain(recepient);
-		break;
-	case AAPTR_MASTER:
-		recepient->master = source;
-		if (!(PTROP_UNSAFEMASTER & flags)) VerifyMasterChain(recepient);
-		break;
-	case AAPTR_TRACER:
-		recepient->tracer = source;
-		break;
-	}
+	ASSIGN_AAPTR(recepient, ptr_recepientfield, source, flags);
 }
 
 //==========================================================================
@@ -1033,10 +927,10 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomMissile)
 	
 				// handle projectile shooting projectiles - track the
 				// links back to a real owner
-                if (isMissile(self, !!(flags & CMF_TRACKOWNER)))
+                if (self->isMissile(!!(flags & CMF_TRACKOWNER)))
                 {
                 	AActor * owner=self ;//->target;
-                	while (isMissile(owner, !!(flags & CMF_TRACKOWNER)) && owner->target) owner=owner->target;
+                	while (owner->isMissile(!!(flags & CMF_TRACKOWNER)) && owner->target) owner=owner->target;
                 	targ=owner;
                 	missile->target=owner;
 					// automatic handling of seeker missiles
@@ -1777,7 +1671,7 @@ static bool InitSpawnedItem(AActor *self, AActor *mo, int flags)
 
 		mo->angle=self->angle;
 		if (flags & SIXF_TRANSFERPITCH) mo->pitch = self->pitch;
-		while (originator && isMissile(originator)) originator = originator->target;
+		while (originator && originator->isMissile()) originator = originator->target;
 
 		if (flags & SIXF_TELEFRAG) 
 		{
@@ -4019,3 +3913,165 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_WolfAttack)
 }
 
 
+//==========================================================================
+//
+// A_Warp
+//
+//==========================================================================
+
+enum WARPF
+{
+	WARPF_ABSOLUTEOFFSET = 0x1,
+	WARPF_ABSOLUTEANGLE = 0x2,
+	WARPF_USECALLERANGLE = 0x4,
+
+	WARPF_NOCHECKPOSITION = 0x8,
+
+	WARPF_INTERPOLATE = 0x10,
+	WARPF_WARPINTERPOLATION = 0x20,
+	WARPF_COPYINTERPOLATION = 0x40,
+
+	WARPF_STOP = 0x80,
+	WARPF_TOFLOOR = 0x100,
+	WARPF_TESTONLY = 0x200
+};
+
+DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Warp)
+{
+	ACTION_PARAM_START(7);
+
+	ACTION_PARAM_INT(destination_selector, 0);
+	ACTION_PARAM_FIXED(xofs, 1);
+	ACTION_PARAM_FIXED(yofs, 2);
+	ACTION_PARAM_FIXED(zofs, 3);
+	ACTION_PARAM_ANGLE(angle, 4);
+	ACTION_PARAM_INT(flags, 5);
+	ACTION_PARAM_STATE(success_state, 6);
+
+	fixed_t
+
+		oldx,
+		oldy,
+		oldz;
+
+	AActor *reference = COPY_AAPTR(self, destination_selector);
+
+	if (!reference)
+	{
+		ACTION_SET_RESULT(false);
+		return;
+	}
+
+	if (!(flags & WARPF_ABSOLUTEANGLE))
+	{
+		angle += (flags & WARPF_USECALLERANGLE) ? self->angle : reference->angle;
+	}
+
+	if (!(flags & WARPF_ABSOLUTEOFFSET))
+	{
+		angle_t fineangle = angle>>ANGLETOFINESHIFT;
+		oldx = xofs;
+
+		// (borrowed from A_SpawnItemEx, assumed workable)
+		// in relative mode negative y values mean 'left' and positive ones mean 'right'
+		// This is the inverse orientation of the absolute mode!
+
+		xofs = FixedMul(oldx, finecosine[fineangle]) + FixedMul(yofs, finesine[fineangle]);
+		yofs = FixedMul(oldx, finesine[fineangle]) - FixedMul(yofs, finecosine[fineangle]);
+	}
+
+	oldx = self->x;
+	oldy = self->y;
+	oldz = self->z;
+
+	if (flags & WARPF_TOFLOOR)
+	{
+		// set correct xy
+
+		self->SetOrigin(
+			reference->x + xofs,
+			reference->y + yofs,
+			reference->z);
+
+		// now the caller's floorz should be appropriate for the assigned xy-position
+		// assigning position again with
+		
+		if (zofs)
+		{
+			// extra unlink, link and environment calculation
+			self->SetOrigin(
+				self->x,
+				self->y,
+				self->floorz + zofs);
+		}
+		else
+		{
+			// if there is no offset, there should be no ill effect from moving down to the
+			// already identified floor
+
+			// A_Teleport does the same thing anyway
+			self->z = self->floorz;
+		}
+	}
+	else
+	{
+		self->SetOrigin(
+			reference->x + xofs,
+			reference->y + yofs,
+			reference->z + zofs);
+	}
+	
+	if ((flags & WARPF_NOCHECKPOSITION) || P_TestMobjLocation(self))
+	{
+		if (flags & WARPF_TESTONLY)
+		{
+			self->SetOrigin(oldx, oldy, oldz);
+		}
+		else
+		{
+			self->angle = angle;
+
+			if (flags & WARPF_STOP)
+			{
+				self->velx = 0;
+				self->vely = 0;
+				self->velz = 0;
+			}
+
+			if (flags & WARPF_WARPINTERPOLATION)
+			{
+				self->PrevX += self->x - oldx;
+				self->PrevY += self->y - oldy;
+				self->PrevZ += self->z - oldz;
+			}
+			else if (flags & WARPF_COPYINTERPOLATION)
+			{
+				self->PrevX = self->x + reference->PrevX - reference->x;
+				self->PrevY = self->y + reference->PrevY - reference->y;
+				self->PrevZ = self->z + reference->PrevZ - reference->z;
+			}
+			else if (! (flags & WARPF_INTERPOLATE))
+			{
+				self->PrevX = self->x;
+				self->PrevY = self->y;
+				self->PrevZ = self->z;
+			}
+		}
+
+		if (success_state)
+		{
+			ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
+			// in this case, you have the statejump to help you handle all the success anyway.
+			ACTION_JUMP(success_state);
+			return;
+		}
+
+		ACTION_SET_RESULT(true);
+	}
+	else
+	{
+		self->SetOrigin(oldx, oldy, oldz);
+		ACTION_SET_RESULT(false);
+	}
+
+}

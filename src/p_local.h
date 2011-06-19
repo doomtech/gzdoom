@@ -100,7 +100,8 @@ enum EPuffFlags
 {
 	PF_HITTHING = 1,
 	PF_MELEERANGE = 2,
-	PF_TEMPORARY = 4
+	PF_TEMPORARY = 4,
+	PF_HITTHINGBLEED = 8
 };
 
 AActor *P_SpawnPuff (AActor *source, const PClass *pufftype, fixed_t x, fixed_t y, fixed_t z, angle_t dir, int updown, int flags = 0);
@@ -143,11 +144,6 @@ int		P_Thing_Damage (int tid, AActor *whofor0, int amount, FName type);
 void	P_Thing_SetVelocity(AActor *actor, fixed_t vx, fixed_t vy, fixed_t vz, bool add, bool setbob);
 void P_RemoveThing(AActor * actor);
 bool P_Thing_Raise(AActor *thing);
-
-//
-// P_ENEMY
-//
-void	P_NoiseAlert (AActor* target, AActor* emmiter, bool splash);
 
 
 //
@@ -483,7 +479,7 @@ extern FBlockNode**		blocklinks; 	// for thing chains
 //
 void P_TouchSpecialThing (AActor *special, AActor *toucher);
 void P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage, FName mod, int flags=0);
-void P_PoisonMobj (AActor *target, AActor *inflictor, AActor *source, int damage, int duration, int period);
+void P_PoisonMobj (AActor *target, AActor *inflictor, AActor *source, int damage, int duration, int period, FName type);
 bool P_GiveBody (AActor *actor, int num);
 bool P_PoisonPlayer (player_t *player, AActor *poisoner, AActor *source, int poison);
 void P_PoisonDamage (player_t *player, AActor *source, int damage, bool playPainSound);

@@ -71,6 +71,7 @@
 #include "m_png.h"
 #include "p_setup.h"
 #include "po_man.h"
+#include "actorptrselect.h"
 
 #include "g_shared/a_pickups.h"
 
@@ -1721,6 +1722,25 @@ void FBehavior::SetArrayVal (int arraynum, int index, int value)
 	array->Elements[index] = value;
 }
 
+inline bool FBehavior::CopyStringToArray(int arraynum, int index, int maxLength, const char *string)
+{
+	 // false if the operation was incomplete or unsuccessful
+
+	if ((unsigned)arraynum >= (unsigned)NumTotalArrays || index < 0)
+		return false;
+	const ArrayInfo *array = Arrays[arraynum];
+	
+	if ((signed)array->ArraySize - index < maxLength) maxLength = (signed)array->ArraySize - index;
+
+	while (maxLength-- > 0)
+	{
+		array->Elements[index++] = *string;
+		if (!(*string)) return true; // written terminating 0
+		string++;
+	}
+	return !(*string); // return true if only terminating 0 was not written
+}
+
 BYTE *FBehavior::FindChunk (DWORD id) const
 {
 	BYTE *chunk = Chunks;
@@ -3095,6 +3115,7 @@ enum EACSFunctions
     ACSF_CheckSight,
 	ACSF_SpawnForced,
 	ACSF_AnnouncerSound,	// Skulltag
+	ACSF_SetPointer,
 };
 
 int DLevelScript::SideFromID(int id, int side)
@@ -3229,8 +3250,29 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
 			actor = SingleActorFromTID(args[0], activator);
 			return actor != NULL? actor->velz : 0;
 
+		case ACSF_SetPointer:
+			if (activator)
+			{
+				AActor *ptr = SingleActorFromTID(args[1], activator);
+				if (argCount > 2)
+				{
+					ptr = COPY_AAPTR(ptr, args[2]);
+				}
+				if (ptr == activator) ptr = NULL;
+				ASSIGN_AAPTR(activator, args[0], ptr, (argCount > 3) ? args[3] : 0);
+				return ptr != NULL;
+			}
+			return 0;
+
 		case ACSF_SetActivator:
-			activator = SingleActorFromTID(args[0], NULL);
+			if (argCount > 1 && args[1] != AAPTR_DEFAULT) // condition (x != AAPTR_DEFAULT) is essentially condition (x).
+			{
+				activator = COPY_AAPTR(SingleActorFromTID(args[0], activator), args[1]);
+			}
+			else
+			{
+				activator = SingleActorFromTID(args[0], NULL);
+			}
 			return activator != NULL;
 		
 		case ACSF_SetActivatorToTarget:
@@ -3246,16 +3288,16 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
 				{
 					actor = actor->target;
 				}
-			}
-			if (actor != NULL)
-			{
-				activator = actor;
-				return 1;
+				if (actor != NULL) // [FDARI] moved this (actor != NULL)-branch inside the other, so that it is only tried when it can be true
+				{
+					activator = actor;
+					return 1;
+				}
 			}
 			return 0;
 
 		case ACSF_GetActorViewHeight:
-			actor = SingleActorFromTID(args[0], NULL);
+			actor = SingleActorFromTID(args[0], activator);
 			if (actor != NULL)
 			{
 				if (actor->player != NULL)
@@ -5112,43 +5154,101 @@ int DLevelScript::RunScript ()
 
 		// [JB] Print map character array
 		case PCD_PRINTMAPCHARARRAY:
+		case PCD_PRINTMAPCHRANGE:
 			{
+				int capacity, offset;
+
+				if (pcd == PCD_PRINTMAPCHRANGE)
+				{
+					capacity = STACK(1);
+					offset = STACK(2);
+					if (capacity < 1 || offset < 0)
+					{
+						sp -= 4;
+						break;
+					}
+					sp -= 2;
+				}
+				else
+				{
+					capacity = 0x7FFFFFFF;
+					offset = 0;
+				}
+
 				int a = *(activeBehavior->MapVars[STACK(1)]);
-				int offset = STACK(2);
+				offset += STACK(2);
 				int c;
-				while((c = activeBehavior->GetArrayVal (a, offset)) != '\0') {
+				while(capacity-- && (c = activeBehavior->GetArrayVal (a, offset)) != '\0') {
 					work += (char)c;
 					offset++;
 				}
-				sp-=2;
+				sp-= 2;
 			}
 			break;
 
 		// [JB] Print world character array
 		case PCD_PRINTWORLDCHARARRAY:
+		case PCD_PRINTWORLDCHRANGE:
 			{
+				int capacity, offset;
+				if (pcd == PCD_PRINTWORLDCHRANGE)
+				{
+					capacity = STACK(1);
+					offset = STACK(2);
+					if (capacity < 1 || offset < 0)
+					{
+						sp -= 4;
+						break;
+					}
+					sp -= 2;
+				}
+				else
+				{
+					capacity = 0x7FFFFFFF;
+					offset = 0;
+				}
+
 				int a = STACK(1);
-				int offset = STACK(2);
+				offset += STACK(2);
 				int c;
-				while((c = ACS_WorldArrays[a][offset]) != '\0') {
+				while(capacity-- && (c = ACS_WorldArrays[a][offset]) != '\0') {
 					work += (char)c;
 					offset++;
 				}
-				sp-=2;
+				sp-= 2;
 			}
 			break;
 
 		// [JB] Print global character array
 		case PCD_PRINTGLOBALCHARARRAY:
+		case PCD_PRINTGLOBALCHRANGE:
 			{
+				int capacity, offset;
+				if (pcd == PCD_PRINTGLOBALCHRANGE)
+				{
+					capacity = STACK(1);
+					offset = STACK(2);
+					if (capacity < 1 || offset < 0)
+					{
+						sp -= 4;
+						break;
+					}
+					sp -= 2;
+				}
+				else
+				{
+					capacity = 0x7FFFFFFF;
+					offset = 0;
+				}
+
 				int a = STACK(1);
-				int offset = STACK(2);
+				offset += STACK(2);
 				int c;
-				while((c = ACS_GlobalArrays[a][offset]) != '\0') {
+				while(capacity-- && (c = ACS_GlobalArrays[a][offset]) != '\0') {
 					work += (char)c;
 					offset++;
 				}
-				sp-=2;
+				sp-= 2;
 			}
 			break;
 
@@ -6729,6 +6829,84 @@ int DLevelScript::RunScript ()
 				}
 				STRINGBUILDER_FINISH(work);
 			}		
+			break;
+
+		case PCD_STRCPYTOMAPCHRANGE:
+		case PCD_STRCPYTOWORLDCHRANGE:
+		case PCD_STRCPYTOGLOBALCHRANGE:
+			// source: stringid(2); stringoffset(1)
+			// destination: capacity (3); stringoffset(4); arrayid (5); offset(6)
+
+			{
+				int index = STACK(4);
+				int capacity = STACK(3);
+
+				if (index < 0 || STACK(1) < 0)
+				{
+					// no writable destination, or negative offset to source string
+					sp -= 5;
+					Stack[sp-1] = 0; // false
+					break;
+				}
+
+				index += STACK(6);
+				
+				lookup = FBehavior::StaticLookupString (STACK(2));
+				
+				if (!lookup) {
+					// no data, operation complete
+	STRCPYTORANGECOMPLETE:
+					sp -= 5;
+					Stack[sp-1] = 1; // true
+					break;
+				}
+
+				for (int i = 0;i < STACK(1); i++)
+				{
+					if (! (*(lookup++)))
+					{
+						// no data, operation complete
+						goto STRCPYTORANGECOMPLETE;
+					}
+				}
+
+				switch (pcd)
+				{
+					case PCD_STRCPYTOMAPCHRANGE:
+						{
+							Stack[sp-6] = activeBehavior->CopyStringToArray(STACK(5), index, capacity, lookup);
+						}
+						break;
+					case PCD_STRCPYTOWORLDCHRANGE:
+						{
+							int a = STACK(5);
+
+							while (capacity-- > 0)
+							{
+								ACS_WorldArrays[a][index++] = *lookup;
+								if (! (*(lookup++))) goto STRCPYTORANGECOMPLETE; // complete with terminating 0
+							}
+							
+							Stack[sp-6] = !(*lookup); // true/success if only terminating 0 was not copied
+						}
+						break;
+					case PCD_STRCPYTOGLOBALCHRANGE:
+						{
+							int a = STACK(5);
+
+							while (capacity-- > 0)
+							{
+								ACS_GlobalArrays[a][index++] = *lookup;
+								if (! (*(lookup++))) goto STRCPYTORANGECOMPLETE; // complete with terminating 0
+							}
+							
+							Stack[sp-6] = !(*lookup); // true/success if only terminating 0 was not copied
+						}
+						break;
+					
+				}
+				sp -= 5;
+			}
 			break;
 
  		}
