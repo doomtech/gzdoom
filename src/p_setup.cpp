@@ -66,6 +66,7 @@
 #include "md5.h"
 #include "compatibility.h"
 #include "po_man.h"
+#include "resources/colormaps.h"
 
 #include "gl/gl_functions.h"
 
