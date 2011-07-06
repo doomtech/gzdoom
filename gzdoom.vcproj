@@ -2325,10 +2325,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\r_data.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\src\r_draw.cpp"
 					>
 				</File>
@@ -2382,10 +2378,6 @@
 				</File>
 				<File
 					RelativePath=".\src\r_bsp.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\r_data.h"
 					>
 				</File>
 				<File
@@ -7141,12 +7133,20 @@
 					RelativePath=".\src\resources\colormaps.h"
 					>
 				</File>
+				<File
+					RelativePath=".\src\resources\voxels.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Resource Sources"
 				>
 				<File
 					RelativePath=".\src\resources\colormaps.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\resources\voxels.cpp"
 					>
 				</File>
 			</Filter>
