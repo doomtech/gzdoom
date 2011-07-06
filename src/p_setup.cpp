@@ -58,15 +58,15 @@
 #include "s_sndseq.h"
 #include "sbar.h"
 #include "p_setup.h"
-#include "r_translate.h"
-#include "r_interpolate.h"
+#include "r_data/r_translate.h"
+#include "r_data/r_interpolate.h"
 #include "r_sky.h"
 #include "cmdlib.h"
 #include "g_level.h"
 #include "md5.h"
 #include "compatibility.h"
 #include "po_man.h"
-#include "resources/colormaps.h"
+#include "r_data/colormaps.h"
 
 #include "gl/gl_functions.h"
 
