@@ -66,9 +66,8 @@
 #include "md5.h"
 #include "compatibility.h"
 #include "po_man.h"
+#include "r_renderer.h"
 #include "r_data/colormaps.h"
-
-#include "gl/gl_functions.h"
 
 #include "fragglescript/t_fs.h"
 
@@ -3275,7 +3274,7 @@ extern polyblock_t **PolyBlockMap;
 
 void P_FreeLevelData ()
 {
-	gl_CleanLevelData();
+	Renderer->CleanLevelData();
 	FPolyObj::ClearAllSubsectorLinks(); // can't be done as part of the polyobj deletion process.
 	SN_StopAllSequences ();
 	DThinker::DestroyAllThinkers ();
@@ -3449,7 +3448,7 @@ void P_SetupLevel (char *lumpname, int position)
 
 	// This is motivated as follows:
 
-	bool RequireGLNodes = true;	// The GL renderer requires GL nodes
+	bool RequireGLNodes = Renderer->RequireGLNodes() || am_textured;
 
 	for (i = 0; i < (int)countof(times); ++i)
 	{
@@ -3760,7 +3759,7 @@ void P_SetupLevel (char *lumpname, int position)
 	bool BuildGLNodes;
 	if (ForceNodeBuild)
 	{
-		BuildGLNodes = true; //am_textured || multiplayer || demoplayback || demorecording || genglnodes;
+		BuildGLNodes = Renderer->RequireGLNodes() || am_textured || multiplayer || demoplayback || demorecording || genglnodes;
 
 		startTime = I_FPSTime ();
 		TArray<FNodeBuilder::FPolyStart> polyspots, anchors;
@@ -3867,8 +3866,6 @@ void P_SetupLevel (char *lumpname, int position)
 
 	deathmatchstarts.Clear ();
 
-	gl_InitSegs();
-
 	if (!buildmap)
 	{
 		// [RH] Spawn slope creating things first.
@@ -3907,7 +3904,7 @@ void P_SetupLevel (char *lumpname, int position)
 	P_SpawnSpecials ();
 
 	// This must be done BEFORE the PolyObj Spawn!!!
-	gl_PreprocessLevel();
+	Renderer->PreprocessLevel();
 
 	times[16].Clock();
 	if (reloop) P_LoopSidedefs (false);
@@ -4008,13 +4005,11 @@ void P_SetupLevel (char *lumpname, int position)
 	}
 	MapThingsConverted.Clear();
 
-	/* still needed by the GL renderer
 	if (glsegextras != NULL)
 	{
 		delete[] glsegextras;
 		glsegextras = NULL;
 	}
-	*/
 }
 
 
