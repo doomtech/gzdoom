@@ -740,6 +740,8 @@ add_executable( zdoom WIN32
 	p_xlat.cpp
 	parsecontext.cpp
 	po_man.cpp
+	r_swrenderer.cpp
+	r_utility.cpp
 	r_3dfloors.cpp
 	r_bsp.cpp
 	r_draw.cpp
@@ -850,7 +852,6 @@ add_executable( zdoom WIN32
 	gl/textures/gl_material.cpp
 	gl/textures/gl_hirestex.cpp
 	gl/textures/gl_bitmap.cpp
-	gl/textures/gl_cameratexture.cpp
 	gl/textures/gl_translate.cpp
 	gl/textures/gl_hqresize.cpp
 	gl/textures/gl_skyboxtexture.cpp
@@ -995,8 +996,6 @@ include_directories( .
 	g_raven
 	g_strife
 	g_shared
-	fragglescript
-	Linux
 	oplsynth
 	sound
 	textures

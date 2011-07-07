@@ -46,7 +46,9 @@
 #include "c_dispatch.h"
 #include "sc_man.h"
 #include "g_level.h"
+#ifdef GLSUPPORT
 #include "gl/gl_functions.h"
+#endif
 
 //==========================================================================
 //
@@ -184,7 +186,9 @@ void FS_EmulateCmd(char * string)
 		{
 			sc.MustGetNumber();
 			// Using this disables most MAPINFO fog options!
+#ifdef GLSUPPORT
 			gl_SetFogParams(sc.Number*70/400, 0xff000000, 0, 0);
+#endif
 		}
 		else if (sc.Compare("gr_fogcolor"))
 		{

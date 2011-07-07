@@ -39,7 +39,7 @@
 //
 // As this may be a problem for you, I hereby grant an exception to my 
 // copyright on the SMMU source (including FraggleScript). You may use 
-// any code from SMMU in GZDoom, provided that:
+// any code from SMMU in (G)ZDoom, provided that:
 //
 //    * For any binary release of the port, the source code is also made 
 //      available.
@@ -68,17 +68,12 @@
 #include "r_data/colormaps.h"
 #include "farchive.h"
 
-#include "gl/gl_functions.h"
-
 static FRandom pr_script("FScript");
 
 
 #define AngleToFixed(x)  ((((double) x) / ((double) ANG45/45)) * FRACUNIT)
 #define FixedToAngle(x)  ((((double) x) / FRACUNIT) * ANG45/45)
 #define FIXED_TO_FLOAT(f) ((f)/(float)FRACUNIT)
-
-// Disables Legacy-incompatible bug fixes.
-//CVAR(Bool, fs_forcecompatible, false, CVAR_ARCHIVE|CVAR_SERVERINFO)
 
 // functions. FParser::SF_ means Script Function not, well.. heh, me
 
