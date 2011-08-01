@@ -989,6 +989,7 @@ include_directories( .
 	g_raven
 	g_strife
 	g_shared
+	Linux
 	oplsynth
 	sound
 	textures
