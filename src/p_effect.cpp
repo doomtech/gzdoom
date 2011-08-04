@@ -222,8 +222,8 @@ void P_InitEffects ()
 
 	int kind = gameinfo.defaultbloodparticlecolor;
 	int kind3 = MAKERGB(RPART(kind)/3, GPART(kind)/3, BPART(kind)/3);
-	blood1 = blood1 | (ColorMatcher.Pick(RPART(kind), GPART(kind), BPART(kind)) << 24);
-	blood2 = blood2 | (ColorMatcher.Pick(RPART(kind3), GPART(kind3), BPART(kind3)) << 24);
+	blood1 = kind  | (ColorMatcher.Pick(RPART(kind), GPART(kind), BPART(kind)) << 24);
+	blood2 = kind3 | (ColorMatcher.Pick(RPART(kind3), GPART(kind3), BPART(kind3)) << 24);
 }
 
 
