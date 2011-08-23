@@ -17,7 +17,6 @@
 #else if defined (__APPLE__)
 #include <signal.h>
 #endif
-#endif
 
 
 static const char crash_switch[] = "--cc-handle-crash";
