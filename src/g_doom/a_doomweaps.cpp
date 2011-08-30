@@ -574,17 +574,11 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_BFGSpray)
 		if (!linetarget)
 			continue;
 
-		FName damagetype = NAME_BFGSplash;
-
 		AActor *spray = Spawn (spraytype, linetarget->x, linetarget->y,
 			linetarget->z + (linetarget->height>>2), ALLOW_REPLACE);
 
-		if (spray)
-		{
-			damagetype = spray->DamageType;
-			if (spray->flags5 & MF5_PUFFGETSOWNER)
-				spray->target = self->target;
-		}
+		if (spray && (spray->flags5 & MF5_PUFFGETSOWNER))
+			spray->target = self->target;
 
 		
 		damage = 0;
@@ -592,7 +586,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_BFGSpray)
 			damage += (pr_bfgspray() & 7) + 1;
 
 		thingToHit = linetarget;
-		P_DamageMobj (thingToHit, self->target, self->target, damage, damagetype);
+		P_DamageMobj (thingToHit, self->target, self->target, damage, spray != NULL? FName(spray->DamageType) : FName(NAME_BFGSplash));
 		P_TraceBleed (damage, thingToHit, self->target);
 	}
 }
