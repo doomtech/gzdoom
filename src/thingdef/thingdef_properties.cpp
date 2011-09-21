@@ -1235,6 +1235,27 @@ DEFINE_PROPERTY(designatedteam, I, Actor)
 }
 
 //==========================================================================
+// [BB]
+//==========================================================================
+DEFINE_PROPERTY(visibletoteam, I, Actor)
+{
+	PROP_INT_PARM(i, 0);
+	defaults->VisibleToTeam=i+1;
+}
+
+//==========================================================================
+// [BB]
+//==========================================================================
+DEFINE_PROPERTY(visibletoplayerclass, S_s, Actor)
+{
+	for(int i = 0;i < PROP_PARM_COUNT;++i)
+	{
+		PROP_STRING_PARM(n, i);
+		info->VisibleToPlayerClass.Push(FindClassTentative(n, "PlayerPawn"));
+	}
+}
+
+//==========================================================================
 //
 // Special inventory properties
 //
