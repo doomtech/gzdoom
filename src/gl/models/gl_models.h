@@ -317,6 +317,8 @@ enum
 	MDL_ROTATING					= 4,
 	MDL_INTERPOLATEDOUBLEDFRAMES	= 8,
 	MDL_NOINTERPOLATION				= 16,
+	MDL_INHERITACTORPITCH			= 32,
+	MDL_INHERITACTORROLL			= 64, // useless for now
 };
 
 struct FSpriteModelFrame
@@ -326,7 +328,8 @@ struct FSpriteModelFrame
 	int modelframes[MAX_MODELS_PER_FRAME];
 	float xscale, yscale, zscale;
 	// [BB] Added zoffset, rotation parameters and flags.
-	float zoffset;
+	// Added xoffset, yoffset
+	float xoffset, yoffset, zoffset;
 	float xrotate, yrotate, zrotate;
 	float rotationCenterX, rotationCenterY, rotationCenterZ;
 	float rotationSpeed;
@@ -337,6 +340,8 @@ struct FSpriteModelFrame
 	FState * state;	// for later!
 	int hashnext;
 	angle_t angleoffset;
+	// added pithoffset, rolloffset.
+	float pitchoffset, rolloffset; // I don't want to bother with type transformations, so I made this variables float.
 };
 
 class GLSprite;
