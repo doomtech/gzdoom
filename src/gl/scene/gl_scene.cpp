@@ -1151,8 +1151,8 @@ EXTERN_CVAR(Float, maxviewpitch)
 
 int FGLInterface::GetMaxViewPitch(bool down)
 {
-	if (netgame) return down? MAX_DN_ANGLE*ANGLE_1 : -MAX_UP_ANGLE*ANGLE_1;
-	else return (down? maxviewpitch : -maxviewpitch) * ANGLE_1;
+	if (netgame) return down? MAX_DN_ANGLE : -MAX_UP_ANGLE;
+	else return down? maxviewpitch : -maxviewpitch;
 }
 
 //===========================================================================
