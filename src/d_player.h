@@ -104,6 +104,7 @@ public:
 	virtual void FilterCoopRespawnInventory (APlayerPawn *oldplayer);
 
 	void SetupWeaponSlots ();
+	void SetupPlayerPitch ();
 	void GiveDefaultInventory ();
 	void PlayAttacking ();
 	void PlayAttacking2 ();
