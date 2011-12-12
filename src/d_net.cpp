@@ -2453,8 +2453,8 @@ void Net_DoCommand (int type, BYTE **stream, int player)
 		break;
 
 	case DEM_SETPITCHLIMIT:
-		players[player].MinPitch = SBYTE(ReadByte(stream)) * ANGLE_1;		// up
-		players[player].MaxPitch = SBYTE(ReadByte(stream)) * ANGLE_1;		// down
+		players[player].MinPitch = ReadByte(stream) * -ANGLE_1;		// up
+		players[player].MaxPitch = ReadByte(stream) *  ANGLE_1;		// down
 		break;
 
 	case DEM_ADVANCEINTER:
