@@ -513,7 +513,6 @@ void APlayerPawn::Tick()
 void APlayerPawn::PostBeginPlay()
 {
 	SetupWeaponSlots();
-	SetupPlayerPitch();
 
 	// Voodoo dolls: restore original floorz/ceilingz logic
 	if (player == NULL || player->mo != this)
@@ -522,6 +521,14 @@ void APlayerPawn::PostBeginPlay()
 		ceilingz = Sector->ceilingplane.ZatPoint(x, y);
 		P_FindFloorCeiling(this, true);
 		z = floorz;
+	}
+	else if (player - players == consoleplayer)
+	{
+		// Ask the local player's renderer what pitch restrictions
+		// should be imposed and let everybody know.
+		Net_WriteByte(DEM_SETPITCHLIMIT);
+		Net_WriteByte(Renderer->GetMaxViewPitch(false));	// up
+		Net_WriteByte(Renderer->GetMaxViewPitch(true));		// down
 	}
 }
 
@@ -546,25 +553,6 @@ void APlayerPawn::SetupWeaponSlots()
 			local_slots.LocalSetup(GetClass());
 			local_slots.SendDifferences(player->weapons);
 		}
-	}
-}
-
-//===========================================================================
-//
-// APlayerPawn :: SetupSinglePlayerPitch
-//
-// Ask the local player's renderer what pitch restrictions
-// should be imposed and let everybody know.
-//
-//===========================================================================
-
-void APlayerPawn::SetupPlayerPitch()
-{
-	if (player != NULL && player->mo == this && player - players == consoleplayer)
-	{
-		Net_WriteByte(DEM_SETPITCHLIMIT);
-		Net_WriteByte(Renderer->GetMaxViewPitch(false));	// up
-		Net_WriteByte(Renderer->GetMaxViewPitch(true));		// down
 	}
 }
 

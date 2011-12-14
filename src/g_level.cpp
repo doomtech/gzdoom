@@ -1147,7 +1147,6 @@ void G_FinishTravel ()
 			pawndup->Destroy ();
 			pawn->LinkToWorld ();
 			pawn->AddToHash ();
-			pawn->SetupPlayerPitch();
 			pawn->SetState(pawn->SpawnState);
 
 			for (inv = pawn->Inventory; inv != NULL; inv = inv->Inventory)
