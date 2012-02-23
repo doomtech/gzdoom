@@ -425,7 +425,7 @@ public:
 	void FluidSettingInt(const char *setting, int value);
 	void FluidSettingNum(const char *setting, double value);
 	void FluidSettingStr(const char *setting, const char *value);
-	void CreateSMF(TArray<BYTE> &file);
+	void CreateSMF(TArray<BYTE> &file, int looplimit=0);
 
 protected:
 	MIDIStreamer(const char *dumpname, EMidiDevice type);
@@ -637,6 +637,7 @@ protected:
 
 	int FindXMIDforms(const BYTE *chunk, int len, TrackInfo *songs) const;
 	void FoundXMID(const BYTE *chunk, int len, TrackInfo *song) const;
+	void ScanForTempo(const TrackInfo *song);
 	bool SetMIDISubsong(int subsong);
 	void DoInitialSetup();
 	void DoRestart();
