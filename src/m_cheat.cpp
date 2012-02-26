@@ -40,7 +40,7 @@
 #include "a_keys.h"
 #include "templates.h"
 #include "c_console.h"
-#include "r_translate.h"
+#include "r_data/r_translate.h"
 #include "g_level.h"
 #include "d_net.h"
 #include "d_dehacked.h"
@@ -181,7 +181,7 @@ void cht_DoCheat (player_t *player, int cheat)
 	case CHT_POWER:
 		if (player->mo != NULL && player->health >= 0)
 		{
-			item = player->mo->FindInventory (RUNTIME_CLASS(APowerWeaponLevel2));
+			item = player->mo->FindInventory (RUNTIME_CLASS(APowerWeaponLevel2), true);
 			if (item != NULL)
 			{
 				item->Destroy ();

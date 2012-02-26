@@ -41,9 +41,8 @@
 #include "gl/system/gl_system.h"
 #include "files.h"
 #include "m_swap.h"
-#include "r_draw.h"
 #include "v_video.h"
-#include "r_main.h"
+#include "r_data/r_translate.h"
 #include "m_png.h"
 #include "m_crc32.h"
 #include "w_wad.h"
@@ -93,7 +92,7 @@ void FGLRenderer::Initialize()
 	mFBID = 0;
 	SetupLevel();
 	mShaderManager = new FShaderManager;
-	mThreadManager = new FGLThreadManager;
+	//mThreadManager = new FGLThreadManager;
 }
 
 FGLRenderer::~FGLRenderer() 
@@ -101,7 +100,7 @@ FGLRenderer::~FGLRenderer()
 	gl_CleanModelData();
 	gl_DeleteAllAttachedLights();
 	FMaterial::FlushAll();
-	if (mThreadManager != NULL) delete mThreadManager;
+	//if (mThreadManager != NULL) delete mThreadManager;
 	if (mShaderManager != NULL) delete mShaderManager;
 	if (mVBO != NULL) delete mVBO;
 	if (glpart2) delete glpart2;

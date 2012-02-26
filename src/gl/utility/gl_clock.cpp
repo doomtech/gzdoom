@@ -10,7 +10,8 @@
 #include "g_level.h"
 #include "c_console.h"
 #include "c_dispatch.h"
-#include "r_main.h"
+#include "r_utility.h"
+#include "v_video.h"
 #include "gl/utility/gl_clock.h"
 #include "gl/utility/gl_convert.h"
 
@@ -164,7 +165,6 @@ ADD_STAT(lightstats)
 }
 
 void AppendMissingTextureStats(FString &out);
-extern int viewpitch;
 
 
 static int printstats;

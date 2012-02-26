@@ -82,7 +82,7 @@ struct F3DFloor
 	planeref			bottom;
 	planeref			top;
 
-	unsigned char		*toplightlevel;
+	short				*toplightlevel;
 	
 	fixed_t				delta;
 	
@@ -100,7 +100,7 @@ struct F3DFloor
 	short	*ceilingclip;
 	int	validcount;
 
-	FDynamicColormap *GetColormap();
+	FDynamicColormap *GetColormap(int pos = LIGHT_WALLBOTH);
 	void UpdateColormap(FDynamicColormap **&map);
 	PalEntry GetBlend();
 };
@@ -110,7 +110,7 @@ struct F3DFloor
 struct lightlist_t
 {
 	secplane_t				plane;
-	unsigned char *			p_lightlevel;
+	short *					p_lightlevel;
 	FDynamicColormap **		extra_colormap;
 	PalEntry				blend;
 	int						flags;

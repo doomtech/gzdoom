@@ -47,6 +47,7 @@
 #include "stats.h"
 #include "a_sharedglobal.h"
 #include "dsectoreffect.h"
+#include "farchive.h"
 
 PClass DObject::_StaticType;
 ClassReg DObject::RegistrationInfo =
@@ -538,7 +539,7 @@ void DObject::SerializeUserVars(FArchive &arc)
 	PSymbolTable *symt;
 	FName varname;
 	DWORD count, j;
-	int *varloc;
+	int *varloc = NULL;
 
 	symt = &GetClass()->Symbols;
 

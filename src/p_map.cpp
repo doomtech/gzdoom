@@ -50,7 +50,7 @@
 
 #include "a_sharedglobal.h"
 #include "p_conversation.h"
-#include "r_translate.h"
+#include "r_data/r_translate.h"
 #include "g_level.h"
 
 #define WATER_SINK_FACTOR		3
@@ -64,7 +64,7 @@ CVAR (Int, sv_smartaim, 0, CVAR_ARCHIVE|CVAR_SERVERINFO)
 static void CheckForPushSpecial (line_t *line, int side, AActor *mobj);
 static void SpawnShootDecal (AActor *t1, const FTraceResults &trace);
 static void SpawnDeepSplash (AActor *t1, const FTraceResults &trace, AActor *puff,
-							 fixed_t vx, fixed_t vy, fixed_t vz, fixed_t shootz);
+							 fixed_t vx, fixed_t vy, fixed_t vz, fixed_t shootz, bool ffloor = false);
 
 static FRandom pr_tracebleed ("TraceBleed");
 static FRandom pr_checkthing ("CheckThing");
@@ -330,7 +330,7 @@ bool P_TeleportMove (AActor *thing, fixed_t x, fixed_t y, fixed_t z, bool telefr
 	FBlockLinesIterator it(box);
 	line_t *ld;
 
-	// P_LineOpening requires the thing's z to be the destination ín order to work.
+	// P_LineOpening requires the thing's z to be the destination ú‹ order to work.
 	fixed_t savedz = thing->z;
 	thing->z = z;
 	while ((ld = it.Next()))
@@ -655,7 +655,8 @@ bool PIT_CheckLine (line_t *ld, const FBoundingBox &box, FCheckPosition &tm)
 				P_DamageMobj (tm.thing, NULL, NULL, tm.thing->Mass >> 5, NAME_Melee);
 			}
 			tm.thing->BlockingLine = ld;
-			CheckForPushSpecial (ld, 0, tm.thing);
+			// Calculate line side based on the actor's original position, not the new one.
+			CheckForPushSpecial (ld, P_PointOnLineSide(tm.thing->x, tm.thing->y, ld), tm.thing);
 			return false;
 		}
 	}
@@ -1073,7 +1074,7 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 						// [RH] Don't hurt monsters that hate the same thing as you do
 						return false;
 					}
-					if (thing->GetSpecies() == tm.thing->target->GetSpecies())
+					if (thing->GetSpecies() == tm.thing->target->GetSpecies() && !(thing->flags6 & MF6_DOHARMSPECIES))
 					{
 						// Don't hurt same species or any relative -
 						// but only if the target isn't one's hostile.
@@ -1117,7 +1118,7 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 					// Do poisoning (if using new style poison)
 					if (tm.thing->PoisonDamage > 0 && tm.thing->PoisonDuration != INT_MIN)
 					{
-						P_PoisonMobj(thing, tm.thing, tm.thing->target, tm.thing->PoisonDamage, tm.thing->PoisonDuration, tm.thing->PoisonPeriod);
+						P_PoisonMobj(thing, tm.thing, tm.thing->target, tm.thing->PoisonDamage, tm.thing->PoisonDuration, tm.thing->PoisonPeriod, tm.thing->PoisonDamageType);
 					}
 
 					damage = tm.thing->GetMissileDamage (3, 2);
@@ -1145,7 +1146,7 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 		// Do poisoning (if using new style poison)
 		if (tm.thing->PoisonDamage > 0 && tm.thing->PoisonDuration != INT_MIN)
 		{
-			P_PoisonMobj(thing, tm.thing, tm.thing->target, tm.thing->PoisonDamage, tm.thing->PoisonDuration, tm.thing->PoisonPeriod);
+			P_PoisonMobj(thing, tm.thing, tm.thing->target, tm.thing->PoisonDamage, tm.thing->PoisonDuration, tm.thing->PoisonPeriod, tm.thing->PoisonDamageType);
 		}
 
 		// Do damage
@@ -1400,15 +1401,20 @@ bool P_CheckPosition (AActor *thing, fixed_t x, fixed_t y, FCheckPosition &tm)
 	//bool onthing = (thingdropoffz != tmdropoffz);
 	tm.floorz = tm.dropoffz;
 
+	bool good = true;
+
 	while ((ld = it.Next()))
 	{
-		if (!PIT_CheckLine(ld, box, tm))
-			return false;
+		good &= PIT_CheckLine(ld, box, tm);
 	}
-
-	if (tm.ceilingz - tm.floorz < thing->height)
+	if (!good)
+	{
 		return false;
-
+	}
+	if (tm.ceilingz - tm.floorz < thing->height)
+	{
+		return false;
+	}
 	if (tm.touchmidtex)
 	{
 		tm.dropoffz = tm.floorz;
@@ -1640,7 +1646,8 @@ static void CheckForPushSpecial (line_t *line, int side, AActor *mobj)
 bool P_TryMove (AActor *thing, fixed_t x, fixed_t y,
 				int dropoff, // killough 3/15/98: allow dropoff as option
 				const secplane_t *onfloor, // [RH] Let P_TryMove keep the thing on the floor
-				FCheckPosition &tm)
+				FCheckPosition &tm,
+				bool missileCheck)	// [GZ] Fired missiles ignore the drop-off test
 {
 	fixed_t 	oldx;
 	fixed_t 	oldy;
@@ -1771,7 +1778,7 @@ bool P_TryMove (AActor *thing, fixed_t x, fixed_t y,
 		if (dropoff==2 &&  // large jump down (e.g. dogs)
 			(tm.floorz-tm.dropoffz > 128*FRACUNIT || thing->target == NULL || thing->target->z >tm.dropoffz))
 		{
-				dropoff = false;
+			dropoff = false;
 		}
 
 
@@ -1789,8 +1796,9 @@ bool P_TryMove (AActor *thing, fixed_t x, fixed_t y,
 				}
 				
 				if (floorz - tm.dropoffz > thing->MaxDropOffHeight &&
-					!(thing->flags2 & MF2_BLASTED))
+					!(thing->flags2 & MF2_BLASTED)  && !missileCheck)
 				{ // Can't move over a dropoff unless it's been blasted
+				  // [GZ] Or missile-spawned
 					thing->z = oldz;
 					return false;
 				}
@@ -2842,6 +2850,7 @@ struct aim_t
 	fixed_t			attackrange;
 	fixed_t			shootz;			// Height if not aiming up or down
 	AActor*			shootthing;
+	AActor*			friender;		// actor to check friendliness again
 
 	fixed_t			toppitch, bottompitch;
 	AActor *		linetarget;
@@ -3141,11 +3150,15 @@ void aim_t::AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t e
 			}
 		}
 
-		if (sv_smartaim != 0 && !(flags & ALF_FORCENOSMART))
+		if ((flags & ALF_NOFRIENDS) && th->IsFriend(friender))
+		{
+			continue;
+		}
+		else if (sv_smartaim != 0 && !(flags & ALF_FORCENOSMART))
 		{
 			// try to be a little smarter about what to aim at!
-			// In particular avoid autoaiming at friends amd barrels.
-			if (th->IsFriend(shootthing))
+			// In particular avoid autoaiming at friends and barrels.
+			if (th->IsFriend(friender))
 			{
 				if (sv_smartaim < 2)
 				{
@@ -3154,7 +3167,7 @@ void aim_t::AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t e
 					pitch_friend = thingpitch;
 				}
 			}
-			else if (!(th->flags3&MF3_ISMONSTER) && th->player == NULL)
+			else if (!(th->flags3 & MF3_ISMONSTER) && th->player == NULL)
 			{
 				if (sv_smartaim < 3)
 				{
@@ -3186,7 +3199,7 @@ void aim_t::AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t e
 //============================================================================
 
 fixed_t P_AimLineAttack (AActor *t1, angle_t angle, fixed_t distance, AActor **pLineTarget, fixed_t vrange, 
-						 int flags, AActor *target)
+						 int flags, AActor *target, AActor *friender)
 {
 	fixed_t x2;
 	fixed_t y2;
@@ -3195,6 +3208,7 @@ fixed_t P_AimLineAttack (AActor *t1, angle_t angle, fixed_t distance, AActor **p
 	angle >>= ANGLETOFINESHIFT;
 	aim.flags = flags;
 	aim.shootthing = t1;
+	aim.friender = (friender == NULL) ? t1 : friender;
 
 	x2 = t1->x + (distance>>FRACBITS)*finecosine[angle];
 	y2 = t1->y + (distance>>FRACBITS)*finesine[angle];
@@ -3368,12 +3382,13 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 		shootz += 8*FRACUNIT;
 	}
 
-	hitGhosts = (t1->player != NULL &&
-		t1->player->ReadyWeapon != NULL &&
-		(t1->player->ReadyWeapon->flags2 & MF2_THRUGHOST));
-
 	// We need to check the defaults of the replacement here
 	AActor *puffDefaults = GetDefaultByType(pufftype->GetReplacement());
+
+	hitGhosts = (t1->player != NULL &&
+		t1->player->ReadyWeapon != NULL &&
+		(t1->player->ReadyWeapon->flags2 & MF2_THRUGHOST)) ||
+		(puffDefaults && (puffDefaults->flags2 & MF2_THRUGHOST));
 
 	// if the puff uses a non-standard damage type this will override default and melee damage type.
 	// All other explicitly passed damage types (currenty only MDK) will be preserved.
@@ -3478,6 +3493,9 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 				(trace.Actor->flags & MF_NOBLOOD) ||
 				(trace.Actor->flags2 & (MF2_INVULNERABLE|MF2_DORMANT)))
 			{
+				if (!(trace.Actor->flags & MF_NOBLOOD))
+					flags |= PF_HITTHINGBLEED;
+
 				// We must pass the unreplaced puff type here 
 				puff = P_SpawnPuff (t1, pufftype, hitx, hity, hitz, angle - ANG180, 2, flags|PF_HITTHING);
 			}
@@ -3516,7 +3534,7 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 			// Allow puffs to inflict poison damage, so that hitscans can poison, too.
 			if (puffDefaults->PoisonDamage > 0 && puffDefaults->PoisonDuration != INT_MIN)
 			{
-				P_PoisonMobj(trace.Actor, puff ? puff : t1, t1, puffDefaults->PoisonDamage, puffDefaults->PoisonDuration, puffDefaults->PoisonPeriod);
+				P_PoisonMobj(trace.Actor, puff ? puff : t1, t1, puffDefaults->PoisonDamage, puffDefaults->PoisonDuration, puffDefaults->PoisonPeriod, puffDefaults->PoisonDamageType);
 			}
 
 			// [GZ] If MF6_FORCEPAIN is set, we need to call P_DamageMobj even if damage is 0!
@@ -3545,7 +3563,7 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 				*victim = trace.Actor;
 			}
 		}
-		if (trace.CrossedWater)
+		if (trace.Crossed3DWater || trace.CrossedWater)
 		{
 
 			if (puff == NULL)
@@ -3553,7 +3571,7 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 				puff = P_SpawnPuff (t1, pufftype, hitx, hity, hitz, angle - ANG180, 2, flags|PF_HITTHING|PF_TEMPORARY);
 				killPuff = true;
 			}
-			SpawnDeepSplash (t1, trace, puff, vx, vy, vz, shootz);
+			SpawnDeepSplash (t1, trace, puff, vx, vy, vz, shootz, trace.Crossed3DWater != NULL);
 		}
 	}
 	if (killPuff && puff != NULL)
@@ -3890,7 +3908,7 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 		if (spawnpuff) P_SpawnPuff (source, puffclass, x, y, z, (source->angle + angleoffset) - ANG90, 1, PF_HITTHING);
 
 		if (puffDefaults && puffDefaults->PoisonDamage > 0 && puffDefaults->PoisonDuration != INT_MIN)
-			P_PoisonMobj(RailHits[i].HitActor, thepuff ? thepuff : source, source, puffDefaults->PoisonDamage, puffDefaults->PoisonDuration, puffDefaults->PoisonPeriod);
+			P_PoisonMobj(RailHits[i].HitActor, thepuff ? thepuff : source, source, puffDefaults->PoisonDamage, puffDefaults->PoisonDuration, puffDefaults->PoisonPeriod, puffDefaults->PoisonDamageType);
 
 		P_DamageMobj (RailHits[i].HitActor, thepuff? thepuff:source, source, damage, damagetype, DMG_INFLICTOR_IS_PUFF);
 	}
@@ -3915,11 +3933,11 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 			P_HitWater (thepuff, trace.Sector);
 		}
 	}
-	if (trace.CrossedWater)
+	if (trace.Crossed3DWater || trace.CrossedWater)
 	{
 		if (thepuff != NULL)
 		{
-			SpawnDeepSplash (source, trace, thepuff, vx, vy, vz, shootz);
+			SpawnDeepSplash (source, trace, thepuff, vx, vy, vz, shootz, trace.Crossed3DWater != NULL);
 		}
 	}
 	thepuff->Destroy ();
@@ -4263,8 +4281,8 @@ bool P_UsePuzzleItem (AActor *PuzzleItemUser, int PuzzleItemType)
 			{ // Item type doesn't match
 				return false;
 			}
-			P_StartScript (PuzzleItemUser, in->d.line, in->d.line->args[1], NULL, 0,
-				in->d.line->args[2], in->d.line->args[3], in->d.line->args[4], true, false);
+			int args[3] = { in->d.line->args[2], in->d.line->args[3], in->d.line->args[4] };
+			P_StartScript (PuzzleItemUser, in->d.line, in->d.line->args[1], NULL, args, 3, ACS_ALWAYS);
 			in->d.line->special = 0;
 			return true;
 		}
@@ -4278,8 +4296,8 @@ bool P_UsePuzzleItem (AActor *PuzzleItemUser, int PuzzleItemType)
 		{ // Item type doesn't match
 			continue;
 		}
-		P_StartScript (PuzzleItemUser, NULL, mobj->args[1], NULL, 0,
-			mobj->args[2], mobj->args[3], mobj->args[4], true, false);
+		int args[3] = { mobj->args[2], mobj->args[3], mobj->args[4] };
+		P_StartScript (PuzzleItemUser, NULL, mobj->args[1], NULL, args, 3, ACS_ALWAYS);
 		mobj->special = 0;
 		return true;
 	}
@@ -4427,7 +4445,7 @@ void P_RadiusAttack (AActor *bombspot, AActor *bombsource, int bombdamage, int b
 
 					if (!bombdodamage || !(bombspot->flags2 & MF2_NODMGTHRUST))
 					{
-						if (bombsource == NULL  || !(bombsource->flags2 & MF2_NODMGTHRUST))
+						if (bombsource == NULL || !(bombsource->flags2 & MF2_NODMGTHRUST))
 						{
 							thrust = points * 0.5f / (double)thing->Mass;
 							if (bombsource == thing)
@@ -4745,11 +4763,20 @@ int P_PushUp (AActor *thing, FChangePosition *cpos)
 	{
 		return 1;
 	}
+	// [GZ] Skip thing intersect test for THRUACTORS things.
+	if (thing->flags2 & MF2_THRUACTORS)
+		return 0;
 	P_FindAboveIntersectors (thing);
 	lastintersect = intersectors.Size ();
 	for (; firstintersect < lastintersect; firstintersect++)
 	{
 		AActor *intersect = intersectors[firstintersect];
+		// [GZ] Skip this iteration for THRUSPECIES things
+		// Should there be MF2_THRUGHOST / MF3_GHOST checks there too for consistency?
+		// Or would that risk breaking established behavior? THRUGHOST, like MTHRUSPECIES,
+		// is normally for projectiles which would have exploded by now anyway...
+		if (thing->flags6 & MF6_THRUSPECIES && thing->GetSpecies() == intersect->GetSpecies())
+			continue;
 		if (!(intersect->flags2 & MF2_PASSMOBJ) ||
 			(!(intersect->flags3 & MF3_ISMONSTER) && intersect->Mass > mymass) ||
 			(intersect->flags4 & MF4_ACTLIKEBRIDGE)
@@ -5459,13 +5486,16 @@ void SpawnShootDecal (AActor *t1, const FTraceResults &trace)
 //==========================================================================
 
 static void SpawnDeepSplash (AActor *t1, const FTraceResults &trace, AActor *puff,
-	fixed_t vx, fixed_t vy, fixed_t vz, fixed_t shootz)
+	fixed_t vx, fixed_t vy, fixed_t vz, fixed_t shootz, bool ffloor)
 {
-	if (!trace.CrossedWater->heightsec) return;
-	
-	fixed_t num, den, hitdist;
-	const secplane_t *plane = &trace.CrossedWater->heightsec->floorplane;
+	const secplane_t *plane; 
+	if (ffloor && trace.Crossed3DWater)
+		plane = trace.Crossed3DWater->top.plane;
+	else if (trace.CrossedWater && trace.CrossedWater->heightsec)
+		plane = &trace.CrossedWater->heightsec->floorplane;
+	else return;
 
+	fixed_t num, den, hitdist;
 	den = TMulScale16 (plane->a, vx, plane->b, vy, plane->c, vz);
 	if (den != 0)
 	{
@@ -5532,7 +5562,7 @@ bool P_ActivateThingSpecial(AActor * thing, AActor * trigger, bool death)
 	// Run the special, if any
 	if (thing->special)
 	{
-		res = !! LineSpecials[thing->special] (NULL,
+		res = !! P_ExecuteSpecial(thing->special, NULL,
 			// TriggerActs overrides the level flag, which only concerns thing activated by death
 			(((death && level.flags & LEVEL_ACTOWNSPECIAL && !(thing->activationtype & THINGSPEC_TriggerActs))
 			|| (thing->activationtype & THINGSPEC_ThingActs)) // Who triggers?

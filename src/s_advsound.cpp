@@ -46,10 +46,11 @@
 #include "gi.h"
 #include "doomstat.h"
 #include "i_sound.h"
-#include "r_data.h"
 #include "m_random.h"
 #include "d_netinf.h"
 #include "i_system.h"
+#include "d_player.h"
+#include "farchive.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -151,6 +152,7 @@ enum SICommands
 	SI_Rolloff,
 	SI_Volume,
 	SI_MusicAlias,
+	SI_EDFOverride,
 };
 
 // Blood was a cool game. If Monolith ever releases the source for it,
@@ -246,6 +248,7 @@ static const char *SICommandStrings[] =
 	"$rolloff",
 	"$volume",
 	"$musicalias",
+	"$edfoverride",
 	NULL
 };
 
@@ -292,6 +295,7 @@ float S_GetMusicVolume (const char *music)
 }
 
 //==========================================================================
+
 //
 // S_HashSounds
 //
@@ -1075,6 +1079,7 @@ static void S_AddSNDINFO (int lump)
 
 			case SI_Registered:
 				// I don't think Hexen even pays attention to the $registered command.
+			case SI_EDFOverride:
 				break;
 
 			case SI_ArchivePath:
@@ -2253,6 +2258,8 @@ class AMusicChanger : public ASectorAction
 	DECLARE_CLASS (AMusicChanger, ASectorAction)
 public:
 	virtual bool TriggerAction (AActor *triggerer, int activationType);
+	virtual void Tick();
+	virtual void PostBeginPlay();
 };
 
 IMPLEMENT_CLASS(AMusicChanger)
@@ -2261,19 +2268,46 @@ bool AMusicChanger::TriggerAction (AActor *triggerer, int activationType)
 {
 	if (activationType & SECSPAC_Enter)
 	{
-		if (args[0] != 0)
-		{
-			FName *music = level.info->MusicMap.CheckKey(args[0]);
-
-			if (music != NULL)
-			{
-				S_ChangeMusic(music->GetChars(), args[1]);
-			}
-		}
-		else
-		{
-			S_ChangeMusic("*");
+		if (args[0] == 0 || level.info->MusicMap.CheckKey(args[0]))
+ 		{
+			level.nextmusic = args[0];
+			reactiontime = 30;
 		}
 	}
 	return Super::TriggerAction (triggerer, activationType);
+}
+ 
+void AMusicChanger::Tick()
+{
+	Super::Tick();
+	if (reactiontime > -1 && --reactiontime == 0)
+	{
+		// Is it our music that's queued for being played?
+		if (level.nextmusic == args[0])
+		{
+			if (args[0] != 0)
+ 			{
+				FName *music = level.info->MusicMap.CheckKey(args[0]);
+
+				if (music != NULL)
+				{
+					S_ChangeMusic(music->GetChars(), args[1]);
+				}
+ 			}
+			else
+			{
+				S_ChangeMusic("*");
+			}
+ 		}
+ 	}
+ }
+
+void AMusicChanger::PostBeginPlay()
+{
+	// The music changer should consider itself activated if the player
+	// spawns in its sector as well as if it enters the sector during a P_TryMove.
+	if (players[consoleplayer].mo && players[consoleplayer].mo->Sector == this->Sector)
+	{
+		TriggerAction(players[consoleplayer].mo, SECSPAC_Enter);
+	}
 }

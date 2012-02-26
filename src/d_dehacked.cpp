@@ -60,18 +60,18 @@
 #include "gi.h"
 #include "c_dispatch.h"
 #include "decallib.h"
-#include "r_draw.h"
 #include "v_palette.h"
 #include "a_sharedglobal.h"
 #include "thingdef/thingdef.h"
 #include "thingdef/thingdef_exp.h"
 #include "vectors.h"
 #include "dobject.h"
-#include "r_translate.h"
+#include "r_data/r_translate.h"
 #include "sc_man.h"
 #include "i_system.h"
 #include "doomerrors.h"
 #include "p_effect.h"
+#include "farchive.h"
 
 // [SO] Just the way Randy said to do it :)
 // [RH] Made this CVAR_SERVERINFO
@@ -309,7 +309,7 @@ static const struct {
 	{ "[PARS]",		PatchPars },
 	{ "[CODEPTR]",	PatchCodePtrs },
 	{ "[MUSIC]",	PatchMusic },
-	{ NULL, },
+	{ NULL, NULL },
 };
 
 static int HandleMode (const char *mode, int num);
@@ -691,8 +691,11 @@ void SetDehParams(FState * state, int codepointer)
 		if (value2) StateParams.Set(ParamIndex+1, new FxConstant(SoundMap[value2-1], *pos));	// hit sound
 		break;
 	case MBF_PlaySound:
-		StateParams.Set(ParamIndex+0, new FxConstant(SoundMap[value1-1], *pos));			// soundid
-		StateParams.Set(ParamIndex+4, new FxConstant((value2?ATTN_NONE:ATTN_NORM), *pos));	// attenuation
+		StateParams.Set(ParamIndex+0, new FxConstant(SoundMap[value1-1], *pos));				// soundid
+		StateParams.Set(ParamIndex+1, new FxConstant(CHAN_BODY, *pos));							// channel
+		StateParams.Set(ParamIndex+2, new FxConstant(1.0, *pos));								// volume
+		StateParams.Set(ParamIndex+3, new FxConstant(false, *pos));								// looping
+		StateParams.Set(ParamIndex+4, new FxConstant((value2 ? ATTN_NONE : ATTN_NORM), *pos));	// attenuation
 		break;
 	case MBF_RandomJump:
 		StateParams.Set(ParamIndex+0, new FxConstant(2, *pos));					// count
@@ -1087,6 +1090,15 @@ static int PatchThing (int thingy)
 						value[0] &= ~MF_TRANSLUCENT; // clean the slot
 						vchanged[2] = true; value[2] |= 2; // let the TRANSLUCxx code below handle it
 					}
+					if ((info->flags & MF_MISSILE) && (info->flags2 & MF2_NOTELEPORT)
+						&& !(value[0] & MF_MISSILE))
+					{
+						// ZDoom gives missiles flags that did not exist in Doom: MF2_NOTELEPORT, 
+						// MF2_IMPACT, and MF2_PCROSS. The NOTELEPORT one can be a problem since 
+						// some projectile actors (those new to Doom II) were not excluded from 
+						// triggering line effects and can teleport when the missile flag is removed.
+						info->flags2 &= ~MF2_NOTELEPORT;
+					}
 					info->flags = value[0];
 				}
 				if (vchanged[1])
@@ -1182,15 +1194,21 @@ static int PatchThing (int thingy)
 			PushTouchedActor(const_cast<PClass *>(type));
 		}
 
-		// Make MF3_ISMONSTER match MF_COUNTKILL
+		// If MF_COUNTKILL is set, make sure the other standard monster flags are
+		// set, too. And vice versa.
 		if (info->flags & MF_COUNTKILL)
 		{
+			info->flags2 |= MF2_PUSHWALL | MF2_MCROSS | MF2_PASSMOBJ;
 			info->flags3 |= MF3_ISMONSTER;
 		}
 		else
 		{
+			info->flags2 &= ~(MF2_PUSHWALL | MF2_MCROSS);
 			info->flags3 &= ~MF3_ISMONSTER;
 		}
+		// Everything that's altered here gets the CANUSEWALLS flag, just in case
+		// it calls P_Move().
+		info->flags4 |= MF4_CANUSEWALLS;
 		if (patchedStates)
 		{
 			statedef.InstallStates(type->ActorInfo, info);
@@ -1712,7 +1730,7 @@ static int PatchMisc (int dummy)
 		{ "IDKFA Armor",			myoffsetof(struct DehInfo,KFAArmor) },
 		{ "IDKFA Armor Class",		myoffsetof(struct DehInfo,KFAAC) },
 		{ "No Autofreeze",			myoffsetof(struct DehInfo,NoAutofreeze) },
-		{ NULL, }
+		{ NULL, 0 }
 	};
 	int result;
 
@@ -1866,8 +1884,8 @@ static int PatchMisc (int dummy)
 		player->health = deh.StartHealth;
 
 		// Hm... I'm not sure that this is the right way to change this info...
-		unsigned int index = PClass::FindClass(NAME_DoomPlayer)->Meta.GetMetaInt (ACMETA_DropItems) - 1;
-		if (index >= 0 && index < DropItemList.Size())
+		int index = PClass::FindClass(NAME_DoomPlayer)->Meta.GetMetaInt (ACMETA_DropItems) - 1;
+		if (index >= 0 && index < (signed)DropItemList.Size())
 		{
 			FDropItem * di = DropItemList[index];
 			while (di != NULL)

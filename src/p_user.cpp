@@ -30,7 +30,6 @@
 #include "doomstat.h"
 #include "s_sound.h"
 #include "i_system.h"
-#include "r_draw.h"
 #include "gi.h"
 #include "m_random.h"
 #include "p_pspr.h"
@@ -53,6 +52,8 @@
 #include "g_level.h"
 #include "d_net.h"
 #include "gstrings.h"
+#include "farchive.h"
+#include "r_renderer.h"
 
 static FRandom pr_skullpop ("SkullPop");
 
@@ -210,6 +211,11 @@ CCMD (playerclasses)
 #define MAXBOB			0x100000
 
 bool onground;
+
+FArchive &operator<< (FArchive &arc, player_t *&p)
+{
+	return arc.SerializePointer (players, (BYTE **)&p, sizeof(*players));
+}
 
 // The player_t constructor. Since LogText is not a POD, we cannot just
 // memset it all to 0.
@@ -404,6 +410,26 @@ int player_t::GetSpawnClass()
 
 //===========================================================================
 //
+// player_t :: SendPitchLimits
+//
+// Ask the local player's renderer what pitch restrictions should be imposed
+// and let everybody know. Only sends data for the consoleplayer, since the
+// local player is the only one our data is valid for.
+//
+//===========================================================================
+
+void player_t::SendPitchLimits() const
+{
+	if (this - players == consoleplayer)
+	{
+		Net_WriteByte(DEM_SETPITCHLIMIT);
+		Net_WriteByte(Renderer->GetMaxViewPitch(false));	// up
+		Net_WriteByte(Renderer->GetMaxViewPitch(true));		// down
+	}
+}
+
+//===========================================================================
+//
 // APlayerPawn
 //
 //===========================================================================
@@ -515,6 +541,10 @@ void APlayerPawn::PostBeginPlay()
 		ceilingz = Sector->ceilingplane.ZatPoint(x, y);
 		P_FindFloorCeiling(this, true);
 		z = floorz;
+	}
+	else
+	{
+		player->SendPitchLimits();
 	}
 }
 
@@ -666,7 +696,7 @@ AWeapon *APlayerPawn::BestWeapon (const PClass *ammotype)
 	int bestOrder = INT_MAX;
 	AInventory *item;
 	AWeapon *weap;
-	bool tomed = NULL != FindInventory (RUNTIME_CLASS(APowerWeaponLevel2));
+	bool tomed = NULL != FindInventory (RUNTIME_CLASS(APowerWeaponLevel2), true);
 
 	// Find the best weapon the player has.
 	for (item = Inventory; item != NULL; item = item->Inventory)
@@ -1179,6 +1209,22 @@ void APlayerPawn::Die (AActor *source, AActor *inflictor)
 			{
 				AInventory *item;
 
+				// kgDROP - start - modified copy from a_action.cpp
+				FDropItem *di = weap->GetDropItems();
+
+				if (di != NULL)
+				{
+					while (di != NULL)
+					{
+						if (di->Name != NAME_None)
+						{
+							const PClass *ti = PClass::FindClass(di->Name);
+							if (ti) P_DropItem (player->mo, ti, di->amount, di->probability);
+						}
+						di = di->Next;
+					}
+				} else
+				// kgDROP - end
 				if (weap->SpawnState != NULL &&
 					weap->SpawnState != ::GetDefault<AActor>()->SpawnState)
 				{
@@ -2080,9 +2126,7 @@ void P_PlayerThink (player_t *player)
 		player->mo->flags &= ~MF_JUSTATTACKED;
 	}
 
-	bool totallyfrozen = (player->cheats & CF_TOTALLYFROZEN || gamestate == GS_TITLELEVEL ||
-		(( level.flags2 & LEVEL2_FROZEN ) && ( player == NULL || !( player->cheats & CF_TIMEFREEZE )))
-		);
+	bool totallyfrozen = P_IsPlayerTotallyFrozen(player);
 
 	// [RH] Being totally frozen zeros out most input parameters.
 	if (totallyfrozen)
@@ -2191,11 +2235,11 @@ void P_PlayerThink (player_t *player)
 				player->mo->pitch -= look;
 				if (look > 0)
 				{ // look up
-					player->mo->pitch = MAX(player->mo->pitch, screen->GetMaxViewPitch(false));
+					player->mo->pitch = MAX(player->mo->pitch, player->MinPitch);
 				}
 				else
 				{ // look down
-					player->mo->pitch = MIN(player->mo->pitch, screen->GetMaxViewPitch(true));
+					player->mo->pitch = MIN(player->mo->pitch, player->MaxPitch);
 				}
 			}
 		}
@@ -2475,6 +2519,7 @@ void P_UnPredictPlayer ()
 {
 	player_t *player = &players[consoleplayer];
 
+
 	if (player->cheats & CF_PREDICTING)
 	{
 		AActor *act = player->mo;
@@ -2676,3 +2721,10 @@ void P_EnumPlayerColorSets(FName classname, TArray<int> *out)
 	}
 }
 
+bool P_IsPlayerTotallyFrozen(const player_t *player)
+{
+	return
+		gamestate == GS_TITLELEVEL ||
+		player->cheats & CF_TOTALLYFROZEN ||
+		((level.flags2 & LEVEL2_FROZEN) && !(player->cheats & CF_TIMEFREEZE));
+}

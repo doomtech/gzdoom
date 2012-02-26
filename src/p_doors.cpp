@@ -35,7 +35,8 @@
 #include "i_system.h"
 #include "sc_man.h"
 #include "cmdlib.h"
-#include "r_interpolate.h"
+#include "farchive.h"
+#include "r_data/r_interpolate.h"
 
 //============================================================================
 //
@@ -44,6 +45,14 @@
 //============================================================================
 
 IMPLEMENT_CLASS (DDoor)
+
+inline FArchive &operator<< (FArchive &arc, DDoor::EVlDoor &type)
+{
+	BYTE val = (BYTE)type;
+	arc << val;
+	type = (DDoor::EVlDoor)val;
+	return arc;
+}
 
 DDoor::DDoor ()
 {

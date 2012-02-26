@@ -36,15 +36,16 @@
 
 #include "doomtype.h"
 #include "doomstat.h"
+#include "i_system.h"
 #include "c_cvars.h"
 #include "actor.h"
+#include "m_argv.h"
 #include "p_effect.h"
 #include "p_local.h"
 #include "g_level.h"
 #include "v_video.h"
 #include "m_random.h"
 #include "r_defs.h"
-#include "r_things.h"
 #include "s_sound.h"
 #include "templates.h"
 #include "gi.h"
@@ -55,8 +56,16 @@ CVAR (Int, cl_rockettrails, 1, CVAR_ARCHIVE);
 CVAR (Bool, r_rail_smartspiral, 0, CVAR_ARCHIVE);
 CVAR (Int, r_rail_spiralsparsity, 1, CVAR_ARCHIVE);
 CVAR (Int, r_rail_trailsparsity, 1, CVAR_ARCHIVE);
+CVAR (Bool, r_particles, true, 0);
 
 #define FADEFROMTTL(a)	(255/(a))
+
+// [RH] particle globals
+WORD			NumParticles;
+WORD			ActiveParticles;
+WORD			InactiveParticles;
+particle_t		*Particles;
+TArray<WORD>	ParticlesInSubsec;
 
 static int grey1, grey2, grey3, grey4, red, green, blue, yellow, black,
 		   red1, green1, blue1, yellow1, purple, purple1, white,
@@ -93,22 +102,148 @@ static const struct ColorList {
 	{&dred,		80,  0,   0  },
 	{&maroon1,	154, 49,  49 },
 	{&maroon2,	125, 24,  24 },
-	{NULL}
+	{NULL, 0, 0, 0 }
 };
+
+inline particle_t *NewParticle (void)
+{
+	particle_t *result = NULL;
+	if (InactiveParticles != NO_PARTICLE)
+	{
+		result = Particles + InactiveParticles;
+		InactiveParticles = result->tnext;
+		result->tnext = ActiveParticles;
+		ActiveParticles = WORD(result - Particles);
+	}
+	return result;
+}
+
+//
+// [RH] Particle functions
+//
+void P_InitParticles ();
+void P_DeinitParticles ();
+
+// [BC] Allow the maximum number of particles to be specified by a cvar (so people
+// with lots of nice hardware can have lots of particles!).
+CUSTOM_CVAR( Int, r_maxparticles, 4000, CVAR_ARCHIVE )
+{
+	if ( self == 0 )
+		self = 4000;
+	else if ( self < 100 )
+		self = 100;
+
+	if ( gamestate != GS_STARTUP )
+	{
+		P_DeinitParticles( );
+		P_InitParticles( );
+	}
+}
+
+void P_InitParticles ()
+{
+	const char *i;
+
+	if ((i = Args->CheckValue ("-numparticles")))
+		NumParticles = atoi (i);
+	// [BC] Use r_maxparticles now.
+	else
+		NumParticles = r_maxparticles;
+
+	// This should be good, but eh...
+	if ( NumParticles < 100 )
+		NumParticles = 100;
+
+	P_DeinitParticles();
+	Particles = new particle_t[NumParticles];
+	P_ClearParticles ();
+	atterm (P_DeinitParticles);
+}
+
+void P_DeinitParticles()
+{
+	if (Particles != NULL)
+	{
+		delete[] Particles;
+		Particles = NULL;
+	}
+}
+
+void P_ClearParticles ()
+{
+	int i;
+
+	memset (Particles, 0, NumParticles * sizeof(particle_t));
+	ActiveParticles = NO_PARTICLE;
+	InactiveParticles = 0;
+	for (i = 0; i < NumParticles-1; i++)
+		Particles[i].tnext = i + 1;
+	Particles[i].tnext = NO_PARTICLE;
+}
+
+// Group particles by subsectors. Because particles are always
+// in motion, there is little benefit to caching this information
+// from one frame to the next.
+
+void P_FindParticleSubsectors ()
+{
+	if (ParticlesInSubsec.Size() < (size_t)numsubsectors)
+	{
+		ParticlesInSubsec.Reserve (numsubsectors - ParticlesInSubsec.Size());
+	}
+
+	clearbufshort (&ParticlesInSubsec[0], numsubsectors, NO_PARTICLE);
+
+	if (!r_particles)
+	{
+		return;
+	}
+	for (WORD i = ActiveParticles; i != NO_PARTICLE; i = Particles[i].tnext)
+	{
+		subsector_t *ssec = R_PointInSubsector (Particles[i].x, Particles[i].y);
+		int ssnum = int(ssec-subsectors);
+		Particles[i].subsector = ssec;
+		Particles[i].snext = ParticlesInSubsec[ssnum];
+		ParticlesInSubsec[ssnum] = i;
+	}
+}
+
+static TMap<int, int> ColorSaver;
+
+static uint32 ParticleColor(int rgb)
+{
+	int *val;
+	int stuff;
+
+	val = ColorSaver.CheckKey(rgb);
+	if (val != NULL)
+	{
+		return *val;
+	}
+	stuff = rgb | (ColorMatcher.Pick(RPART(rgb), GPART(rgb), BPART(rgb)) << 24);
+	ColorSaver[rgb] = stuff;
+	return stuff;
+}
+
+static uint32 ParticleColor(int r, int g, int b)
+{
+	return ParticleColor(MAKERGB(r, g, b));
+}
 
 void P_InitEffects ()
 {
 	const struct ColorList *color = Colors;
 
+	P_InitParticles();
 	while (color->color)
 	{
-		*(color->color) = ColorMatcher.Pick (color->r, color->g, color->b);
+		*(color->color) = ParticleColor(color->r, color->g, color->b);
 		color++;
 	}
 
 	int kind = gameinfo.defaultbloodparticlecolor;
-	blood1 = ColorMatcher.Pick(RPART(kind), GPART(kind), BPART(kind));
-	blood2 = ColorMatcher.Pick(RPART(kind)/3, GPART(kind)/3, BPART(kind)/3);
+	blood1 = ParticleColor(kind);
+	blood2 = ParticleColor(RPART(kind)/3, GPART(kind)/3, BPART(kind)/3);
 }
 
 
@@ -407,8 +542,8 @@ void P_DrawSplash2 (int count, fixed_t x, fixed_t y, fixed_t z, angle_t angle, i
 		color2 = grey1;
 		break;
 	default:	// colorized blood
-		color1 = ColorMatcher.Pick(RPART(kind), GPART(kind), BPART(kind));
-		color2 = ColorMatcher.Pick(RPART(kind)>>1, GPART(kind)>>1, BPART(kind)>>1);
+		color1 = ParticleColor(kind);
+		color2 = ParticleColor(RPART(kind)/3, GPART(kind)/3, BPART(kind)/3);
 		break;
 	}
 
@@ -485,7 +620,7 @@ void P_DrawRailTrail (AActor *source, const FVector3 &start, const FVector3 &end
 			{
 
 				// Only consider sound in 2D (for now, anyway)
-				// [BB] You have to devide by lengthsquared here, not multiply with it.
+				// [BB] You have to divide by lengthsquared here, not multiply with it.
 
 				r = ((start.Y - FIXED2FLOAT(mo->y)) * (-dir.Y) - (start.X - FIXED2FLOAT(mo->x)) * (dir.X)) / lengthsquared;
 				r = clamp<double>(r, 0., 1.);
@@ -533,7 +668,7 @@ void P_DrawRailTrail (AActor *source, const FVector3 &start, const FVector3 &end
 		FVector3 spiral_step = step * r_rail_spiralsparsity;
 		int spiral_steps = steps * r_rail_spiralsparsity;
 		
-		color1 = color1 == 0 ? -1 : ColorMatcher.Pick(RPART(color1), GPART(color1), BPART(color1));
+		color1 = color1 == 0 ? -1 : ParticleColor(color1);
 		pos = start;
 		deg = FAngle(270);
 		for (i = spiral_steps; i; i--)
@@ -586,7 +721,7 @@ void P_DrawRailTrail (AActor *source, const FVector3 &start, const FVector3 &end
 		FVector3 trail_step = step * r_rail_trailsparsity;
 		int trail_steps = steps * r_rail_trailsparsity;
 
-		color2 = color2 == 0 ? -1 : ColorMatcher.Pick(RPART(color2), GPART(color2), BPART(color2));
+		color2 = color2 == 0 ? -1 : ParticleColor(color2);
 		FVector3 diff(0, 0, 0);
 
 		pos = start;

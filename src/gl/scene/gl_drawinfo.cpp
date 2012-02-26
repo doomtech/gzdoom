@@ -41,7 +41,9 @@
 */
 #include "gl/system/gl_system.h"
 #include "r_sky.h"
-#include "r_main.h"
+#include "r_utility.h"
+#include "r_state.h"
+#include "doomstat.h"
 
 #include "gl/system/gl_cvars.h"
 #include "gl/data/gl_data.h"
@@ -1060,7 +1062,7 @@ void FDrawInfo::DrawFloodedPlane(wallseg * ws, float planez, sector_t * sec, boo
 			Colormap.LightColor.r = Colormap.LightColor.g = Colormap.LightColor.b = 0xff;
 			lightlevel = 255;
 		}
-		else lightlevel = abs(ceiling? GetCeilingLight(sec) : GetFloorLight(sec));
+		else lightlevel=abs(ceiling? sec->GetCeilingLight() : sec->GetFloorLight());
 	}
 
 	int rel = extralight * gl_weaponlight;

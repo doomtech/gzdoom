@@ -40,10 +40,12 @@
 
 #include "gl/system/gl_system.h"
 #include "a_sharedglobal.h"
+#include "r_defs.h"
 #include "r_sky.h"
-#include "r_main.h"
+#include "r_utility.h"
 #include "g_level.h"
 #include "doomstat.h"
+#include "d_player.h"
 
 #include "gl/system/gl_cvars.h"
 #include "gl/renderer/gl_renderer.h"
@@ -511,8 +513,8 @@ void GLFlat::Process(sector_t * model, int whichplane, bool fog)
 	}
 	else 
 	{
-		gltexture=NULL;
-		lightlevel=abs(lightlevel);
+		gltexture = NULL;
+		lightlevel = abs(lightlevel);
 	}
 
 	// get height from vplane
@@ -601,7 +603,7 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 
 		srf |= SSRF_RENDERFLOOR;
 
-		lightlevel = GetFloorLight(frontsector);
+		lightlevel = gl_ClampLight(frontsector->GetFloorLight());
 		Colormap=COLORMAP(frontsector, LIGHT_FLOOR);
 		if ((stack = (frontsector->portals[sector_t::floor] != NULL)))
 		{
@@ -649,7 +651,7 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 
 		srf |= SSRF_RENDERCEILING;
 
-		lightlevel = GetCeilingLight(frontsector);
+		lightlevel = gl_ClampLight(frontsector->GetCeilingLight());
 		Colormap=COLORMAP(frontsector, LIGHT_CEILING);
 		if ((stack = (frontsector->portals[sector_t::ceiling] != NULL))) 
 		{
@@ -768,8 +770,8 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 
 							if (rover->flags&FF_FIX)
 							{
-								lightlevel = rover->model->lightlevel;
-								Colormap = rover->model->ColorMaps[LIGHT_GLOBAL];
+								lightlevel = gl_ClampLight(rover->model->lightlevel);
+								Colormap = rover->GetColormap(LIGHT_GLOBAL);
 							}
 
 							Process(rover->bottom.model, rover->bottom.isceiling, !!(rover->flags&FF_FOG));

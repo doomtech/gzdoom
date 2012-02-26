@@ -39,9 +39,10 @@
 */
 #include "gl/system/gl_system.h"
 #include "sbar.h"
-#include "r_main.h"
+#include "r_utility.h"
 #include "v_video.h"
 #include "doomstat.h"
+#include "d_player.h"
 #include "gi.h"
 
 #include "gl/system/gl_cvars.h"
@@ -221,7 +222,7 @@ void FGLRenderer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 		fakesec    = gl_FakeFlat(viewsector, &fs, false);
 
 		// calculate light level for weapon sprites
-		lightlevel = fakesec->lightlevel;
+		lightlevel = gl_ClampLight(fakesec->lightlevel);
 
 		lightlevel = gl_CheckSpriteGlow(viewsector->GetTexture(sector_t::floor), lightlevel, playermo->z-playermo->floorz);
 
@@ -258,7 +259,7 @@ void FGLRenderer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 	}
 
 	PalEntry ThingColor = playermo->fillcolor;
-	vissprite_t vis;
+	visstyle_t vis;
 
 	vis.RenderStyle=playermo->RenderStyle;
 	vis.alpha=playermo->alpha;

@@ -50,6 +50,7 @@
 #include "timidity/timidity.h"
 #include "g_level.h"
 #include "po_man.h"
+#include "farchive.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -100,7 +101,7 @@ extern float S_GetMusicVolume (const char *music);
 
 // PRIVATE FUNCTION PROTOTYPES ---------------------------------------------
 
-static bool S_CheckSoundLimit(sfxinfo_t *sfx, const FVector3 &pos, int near_limit, float limit_range);
+static bool S_CheckSoundLimit(sfxinfo_t *sfx, const FVector3 &pos, int near_limit, float limit_range, AActor *actor, int channel);
 static bool S_IsChannelUsed(AActor *actor, int channel, int *seen);
 static void S_ActivatePlayList(bool goBack);
 static void CalcPosVel(FSoundChan *chan, FVector3 *pos, FVector3 *vel);
@@ -951,7 +952,7 @@ static FSoundChan *S_StartSound(AActor *actor, const sector_t *sec, const FPolyO
 
 	// If this sound doesn't like playing near itself, don't play it if
 	// that's what would happen.
-	if (near_limit > 0 && S_CheckSoundLimit(sfx, pos, near_limit, limit_range))
+	if (near_limit > 0 && S_CheckSoundLimit(sfx, pos, near_limit, limit_range, actor, channel))
 	{
 		chanflags |= CHAN_EVICTED;
 	}
@@ -1156,7 +1157,7 @@ void S_RestartSound(FSoundChan *chan)
 
 		// If this sound doesn't like playing near itself, don't play it if
 		// that's what would happen.
-		if (chan->NearLimit > 0 && S_CheckSoundLimit(&S_sfx[chan->SoundID], pos, chan->NearLimit, chan->LimitRange))
+		if (chan->NearLimit > 0 && S_CheckSoundLimit(&S_sfx[chan->SoundID], pos, chan->NearLimit, chan->LimitRange, NULL, 0))
 		{
 			return;
 		}
@@ -1388,12 +1389,19 @@ bool S_CheckSingular(int sound_id)
 //
 // Limits the number of nearby copies of a sound that can play near
 // each other. If there are NearLimit instances of this sound already
-// playing within 256 units of the new sound, the new sound will not
-// start.
+// playing within sqrt(limit_range) (typically 256 units) of the new sound, the
+// new sound will not start.
+//
+// If an actor is specified, and it is already playing the same sound on
+// the same channel, this sound will not be limited. In this case, we're
+// restarting an already playing sound, so there's no need to limit it.
+//
+// Returns true if the sound should not play.
 //
 //==========================================================================
 
-bool S_CheckSoundLimit(sfxinfo_t *sfx, const FVector3 &pos, int near_limit, float limit_range)
+bool S_CheckSoundLimit(sfxinfo_t *sfx, const FVector3 &pos, int near_limit, float limit_range,
+	AActor *actor, int channel)
 {
 	FSoundChan *chan;
 	int count;
@@ -1403,6 +1411,12 @@ bool S_CheckSoundLimit(sfxinfo_t *sfx, const FVector3 &pos, int near_limit, floa
 		if (!(chan->ChanFlags & CHAN_EVICTED) && &S_sfx[chan->SoundID] == sfx)
 		{
 			FVector3 chanorigin;
+
+			if (actor != NULL && chan->EntChannel == channel &&
+				chan->SourceType == SOURCE_Actor && chan->Actor == actor)
+			{ // We are restarting a playing sound. Always let it play.
+				return false;
+			}
 
 			CalcPosVel(chan, &chanorigin, NULL);
 			if ((chanorigin - pos).LengthSquared() <= limit_range)
@@ -2519,6 +2533,21 @@ void S_RestartMusic ()
 
 //==========================================================================
 //
+// S_MIDIDeviceChanged
+//
+//==========================================================================
+
+void S_MIDIDeviceChanged()
+{
+	if (mus_playing.handle != NULL && mus_playing.handle->IsMIDI())
+	{
+		mus_playing.handle->Stop();
+		mus_playing.handle->Start(mus_playing.loop, -1, mus_playing.baseorder);
+	}
+}
+
+//==========================================================================
+//
 // S_GetMusic
 //
 //==========================================================================
@@ -2575,7 +2604,44 @@ CCMD (playsound)
 {
 	if (argv.argc() > 1)
 	{
-		S_Sound (CHAN_AUTO | CHAN_UI, argv[1], 1.f, ATTN_NONE);
+		FSoundID id = argv[1];
+		if (id == 0)
+		{
+			Printf("'%s' is not a sound\n", argv[1]);
+		}
+		else
+		{
+			S_Sound (CHAN_AUTO | CHAN_UI, id, 1.f, ATTN_NONE);
+		}
+	}
+}
+
+//==========================================================================
+//
+// CCMD loopsound
+//
+//==========================================================================
+
+CCMD (loopsound)
+{
+	if (players[consoleplayer].mo != NULL && !netgame && argv.argc() > 1)
+	{
+		FSoundID id = argv[1];
+		if (id == 0)
+		{
+			Printf("'%s' is not a sound\n", argv[1]);
+		}
+		else
+		{
+			AActor *icon = Spawn("SpeakerIcon", players[consoleplayer].mo->x,
+				players[consoleplayer].mo->y,
+				players[consoleplayer].mo->z + 32*FRACUNIT,
+				ALLOW_REPLACE);
+			if (icon != NULL)
+			{
+				S_Sound(icon, CHAN_BODY | CHAN_LOOP, id, 1.f, ATTN_IDLE);
+			}
+		}
 	}
 }
 

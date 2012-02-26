@@ -17,6 +17,7 @@
 #include "doomstat.h"
 #include "g_level.h"
 #include "d_net.h"
+#include "farchive.h"
 
 #define BONUSADD 6
 
@@ -71,6 +72,30 @@ void AWeapon::Serialize (FArchive &arc)
 //
 //===========================================================================
 
+bool AWeapon::TryPickupRestricted (AActor *&toucher)
+{
+	// Wrong class, but try to pick up for ammo
+	if (ShouldStay())
+	{ // Can't pick up weapons for other classes in coop netplay
+		return false;
+	}
+
+	bool gaveSome = (NULL != AddAmmo (toucher, AmmoType1, AmmoGive1));
+	gaveSome |= (NULL != AddAmmo (toucher, AmmoType2, AmmoGive2));
+	if (gaveSome)
+	{
+		GoAwayAndDie ();
+	}
+	return gaveSome;
+}
+
+
+//===========================================================================
+//
+// AWeapon :: TryPickup
+//
+//===========================================================================
+
 bool AWeapon::TryPickup (AActor *&toucher)
 {
 	FState * ReadyState = FindState(NAME_Ready);
@@ -101,7 +126,7 @@ bool AWeapon::Use (bool pickup)
 	// weapon, if one exists.
 	if (SisterWeapon != NULL &&
 		SisterWeapon->WeaponFlags & WIF_POWERED_UP &&
-		Owner->FindInventory (RUNTIME_CLASS(APowerWeaponLevel2)))
+		Owner->FindInventory (RUNTIME_CLASS(APowerWeaponLevel2), true))
 	{
 		useweap = SisterWeapon;
 	}
@@ -757,6 +782,10 @@ AWeapon *FWeaponSlot::PickWeapon(player_t *player, bool checkammo)
 {
 	int i, j;
 
+	if (player->mo == NULL)
+	{
+		return NULL;
+	}
 	// Does this slot even have any weapons?
 	if (Weapons.Size() == 0)
 	{

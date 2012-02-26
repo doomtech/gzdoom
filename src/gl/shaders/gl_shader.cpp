@@ -46,6 +46,8 @@
 #include "i_system.h"
 #include "doomerrors.h"
 #include "v_palette.h"
+#include "sc_man.h"
+#include "cmdlib.h"
 
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_renderstate.h"
@@ -380,6 +382,8 @@ struct FDefaultShader
 	const char * gettexelfunc;
 };
 
+// Note: the FIRST_USER_SHADER constant in gl_shader.h needs 
+// to be updated whenever the size of this array is modified.
 static const FDefaultShader defaultshaders[]=
 {	
 	{"Default",	"shaders/glsl/func_normal.fp"},

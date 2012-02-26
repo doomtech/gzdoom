@@ -18,6 +18,7 @@
 #include "d_event.h"
 #include "c_cvars.h"
 #include "m_random.h"
+#include "p_enemy.h"
 #include "p_local.h"
 #include "s_sound.h"
 #include "doomstat.h"
@@ -26,6 +27,8 @@
 #include "templates.h"
 #include "thingdef/thingdef.h"
 #include "g_level.h"
+#include "farchive.h"
+
 
 // MACROS ------------------------------------------------------------------
 
@@ -152,7 +155,7 @@ void P_BringUpWeapon (player_t *player)
 	if (weapon != NULL &&
 		weapon->SisterWeapon &&
 		weapon->SisterWeapon->WeaponFlags & WIF_POWERED_UP &&
-		player->mo->FindInventory (RUNTIME_CLASS(APowerWeaponLevel2)))
+		player->mo->FindInventory (RUNTIME_CLASS(APowerWeaponLevel2), true))
 	{
 		weapon = weapon->SisterWeapon;
 	}
@@ -660,16 +663,16 @@ DEFINE_ACTION_FUNCTION(AInventory, A_Raise)
 //
 // A_GunFlash
 //
-enum GunFlashFlags
+enum GF_Flags
 {
-	GFF_NOEXTCHANGE = 16,
+	GFF_NOEXTCHANGE = 1,
 };
 
 DEFINE_ACTION_FUNCTION_PARAMS(AInventory, A_GunFlash)
 {
 	ACTION_PARAM_START(2)
 	ACTION_PARAM_STATE(flash, 0);
-	ACTION_PARAM_INT(flags, 1);
+	ACTION_PARAM_INT(Flags, 1);
 
 	player_t *player = self->player;
 
@@ -677,7 +680,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AInventory, A_GunFlash)
 	{
 		return;
 	}
-	if (!(flags & GFF_NOEXTCHANGE)) player->mo->PlayAttacking2 ();
+	if(!(Flags & GFF_NOEXTCHANGE)) player->mo->PlayAttacking2 ();
 
 	if (flash == NULL)
 	{

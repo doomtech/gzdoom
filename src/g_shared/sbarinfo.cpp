@@ -43,15 +43,13 @@
 #include "m_random.h"
 #include "d_player.h"
 #include "st_stuff.h"
-#include "r_local.h"
 #include "m_swap.h"
 #include "a_keys.h"
 #include "templates.h"
 #include "i_system.h"
 #include "sbarinfo.h"
 #include "gi.h"
-#include "r_translate.h"
-#include "r_main.h"
+#include "r_data/r_translate.h"
 #include "a_weaponpiece.h"
 #include "a_strifeglobal.h"
 #include "g_level.h"
@@ -997,7 +995,7 @@ public:
 			if(script->completeBorder) //Fill the statusbar with the border before we draw.
 			{
 				FTexture *b = TexMan[gameinfo.border->b];
-				R_DrawBorder(viewwindowx, viewwindowy + viewheight + b->GetHeight(), viewwindowx + viewwidth, SCREENHEIGHT);
+				V_DrawBorder(viewwindowx, viewwindowy + viewheight + b->GetHeight(), viewwindowx + viewwidth, SCREENHEIGHT);
 				if(screenblocks == 10)
 					screen->FlatFill(viewwindowx, viewwindowy + viewheight, viewwindowx + viewwidth, viewwindowy + viewheight + b->GetHeight(), b, true);
 			}

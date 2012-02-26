@@ -124,10 +124,6 @@ extern	"C"	int			halfviewwidth;		// [RH] Half view width, for plane drawing
 
 
 
-// This one is related to the 3-screen display mode.
-// ANG90 = left side, ANG270 = right
-extern	int				viewangleoffset;
-
 // Player taking events. i.e. The local player.
 extern	int				consoleplayer;	
 
@@ -244,6 +240,7 @@ EXTERN_CVAR (Int, dmflags);
 EXTERN_CVAR (Int, dmflags2);	// [BC]
 
 EXTERN_CVAR (Int, compatflags);
-extern int i_compatflags, ii_compatflags, ib_compatflags;
+EXTERN_CVAR (Int, compatflags2);
+extern int i_compatflags, i_compatflags2, ii_compatflags, ii_compatflags2, ib_compatflags;
 
 #endif

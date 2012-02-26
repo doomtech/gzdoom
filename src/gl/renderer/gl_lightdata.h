@@ -2,11 +2,16 @@
 #define __GL_LIGHTDATA
 
 #include "v_palette.h"
-#include "r_blend.h"
+#include "r_data/renderstyle.h"
 #include "gl/renderer/gl_colormap.h"
 
 bool gl_BrightmapsActive();
 bool gl_GlowActive();
+
+inline int gl_ClampLight(int lightlevel)
+{
+	return clamp(lightlevel, 0, 255);
+}
 
 void gl_GetRenderStyle(FRenderStyle style, bool drawopaque, bool allowcolorblending,
 					   int *tm, int *sb, int *db, int *be);
@@ -49,6 +54,8 @@ __forceinline void gl_Desaturate(int gray, int ired, int igreen, int iblue, BYTE
 }
 
 void gl_ModifyColor(BYTE & red, BYTE & green, BYTE & blue, int cm);
+void gl_DeleteAllAttachedLights();
+void gl_RecreateAllAttachedLights();
 
 extern int fogdensity;
 extern int outsidefogdensity;

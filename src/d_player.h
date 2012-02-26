@@ -256,6 +256,7 @@ public:
 
 	void SetLogNumber (int num);
 	void SetLogText (const char *text);
+	void SendPitchLimits() const;
 
 	APlayerPawn	*mo;
 	BYTE		playerstate;
@@ -282,6 +283,8 @@ public:
 
 	bool		centering;
 	BYTE		turnticks;
+
+
 	bool		attackdown;
 	bool		usedown;
 	DWORD		oldbuttons;
@@ -342,9 +345,9 @@ public:
 
 
 	TObjPtr<AActor>		enemy;		// The dead meat.
-	TObjPtr<AActor>		missile;	// A threathing missile that got to be avoided.
-	TObjPtr<AActor>		mate;		// Friend (used for grouping in templay or coop.
-	TObjPtr<AActor>		last_mate;	// If bots mate dissapeared (not if died) that mate is
+	TObjPtr<AActor>		missile;	// A threatening missile that needs to be avoided.
+	TObjPtr<AActor>		mate;		// Friend (used for grouping in teamplay or coop).
+	TObjPtr<AActor>		last_mate;	// If bots mate disappeared (not if died) that mate is
 							// pointed to by this. Allows bot to roam to it if
 							// necessary.
 
@@ -380,6 +383,9 @@ public:
 
 	FString		LogText;	// [RH] Log for Strife
 
+	int			MinPitch;	// Viewpitch limits (negative is up, positive is down)
+	int			MaxPitch;
+
 	SBYTE	crouching;
 	SBYTE	crouchdir;
 	fixed_t crouchfactor;
@@ -413,15 +419,14 @@ public:
 // Bookkeeping on players - state.
 extern player_t players[MAXPLAYERS];
 
-inline FArchive &operator<< (FArchive &arc, player_t *&p)
-{
-	return arc.SerializePointer (players, (BYTE **)&p, sizeof(*players));
-}
+FArchive &operator<< (FArchive &arc, player_t *&p);
 
 void P_CheckPlayerSprites();
 
 
 #define CROUCHSPEED (FRACUNIT/12)
+
+bool P_IsPlayerTotallyFrozen(const player_t *player);
 
 // [GRB] Custom player classes
 enum

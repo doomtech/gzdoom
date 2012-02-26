@@ -35,8 +35,6 @@
 #include <assert.h>
 
 #include "actor.h"
-#include "r_data.h"
-#include "r_main.h"
 #include "p_conversation.h"
 #include "w_wad.h"
 #include "cmdlib.h"
@@ -61,6 +59,7 @@
 #include "sbar.h"
 #include "farchive.h"
 #include "p_lnspec.h"
+#include "r_utility.h"
 #include "menu/menu.h"
 
 // The conversations as they exist inside a SCRIPTxx lump.
@@ -361,7 +360,7 @@ static FStrifeDialogueNode *ReadRetailNode (FileReader *lump, DWORD &prevSpeaker
 	type = GetStrifeType (speech.SpeakerType);
 	node->SpeakerType = type;
 
-	if (speech.SpeakerType >= 0 && prevSpeakerType != speech.SpeakerType)
+	if ((signed)(speech.SpeakerType) >= 0 && prevSpeakerType != speech.SpeakerType)
 	{
 		if (type != NULL)
 		{
@@ -434,7 +433,7 @@ static FStrifeDialogueNode *ReadTeaserNode (FileReader *lump, DWORD &prevSpeaker
 	type = GetStrifeType (speech.SpeakerType);
 	node->SpeakerType = type;
 
-	if (speech.SpeakerType >= 0 && prevSpeakerType != speech.SpeakerType)
+	if ((signed)speech.SpeakerType >= 0 && prevSpeakerType != speech.SpeakerType)
 	{
 		if (type != NULL)
 		{
@@ -1307,7 +1306,7 @@ static void HandleReply(player_t *player, bool isconsole, int nodenum, int reply
 
 	if (reply->ActionSpecial != 0)
 	{
-		takestuff |= !!LineSpecials[reply->ActionSpecial](NULL, player->mo, false,
+		takestuff |= !!P_ExecuteSpecial(reply->ActionSpecial, NULL, player->mo, false,
 			reply->Args[0], reply->Args[1], reply->Args[2], reply->Args[3], reply->Args[4]);
 	}
 

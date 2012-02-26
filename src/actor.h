@@ -37,7 +37,7 @@
 
 #include "doomdef.h"
 #include "textures/textures.h"
-#include "r_blend.h"
+#include "r_data/renderstyle.h"
 #include "s_sound.h"
 #include "memarena.h"
 
@@ -326,6 +326,10 @@ enum
 	MF6_ADDITIVEPOISONDURATION	= 0x00200000,
 	MF6_NOMENU			= 0x00400000,	// Player class should not appear in the class selection menu.
 	MF6_BOSSCUBE		= 0x00800000,	// Actor spawned by A_BrainSpit, flagged for timefreeze reasons.
+	MF6_SEEINVISIBLE	= 0x01000000,	// Monsters can see invisible player.
+	MF6_DONTCORPSE		= 0x02000000,	// [RC] Don't autoset MF_CORPSE upon death and don't force Crash state change.
+	MF6_POISONALWAYS	= 0x04000000,	// Always apply poison, even when target can't take the damage.
+	MF6_DOHARMSPECIES	= 0x08000000,	// Do hurt one's own species with projectiles.
 
 // --- mobj.renderflags ---
 
@@ -687,7 +691,7 @@ public:
 	void ConversationAnimation (int animnum);
 
 	// Make this actor hate the same things as another actor
-	void CopyFriendliness (AActor *other, bool changeTarget);
+	void CopyFriendliness (AActor *other, bool changeTarget, bool resetHealth=true);
 
 	// Moves the other actor's inventory to this one
 	void ObtainInventory (AActor *other);
@@ -716,6 +720,11 @@ public:
 	// Return starting health adjusted by skill level
 	int SpawnHealth();
 	int GibHealth();
+
+	inline bool isMissile(bool precise=true)
+	{
+		return (flags&MF_MISSILE) || (precise && GetDefault()->flags&MF_MISSILE);
+	}
 
 	// Check for monsters that count as kill but excludes all friendlies.
 	bool CountsAsKill() const
@@ -757,6 +766,8 @@ public:
 		}
 		return bloodcls;
 	}
+
+	bool IsVisibleToPlayer() const;
 
 	// Calculate amount of missile damage
 	virtual int GetMissileDamage(int mask, int add);
@@ -802,12 +813,17 @@ public:
 	SDWORD			tics;				// state tic counter
 	FState			*state;
 	SDWORD			Damage;			// For missiles and monster railgun
+	int				projectileKickback;
 	DWORD			flags;
 	DWORD			flags2;			// Heretic flags
 	DWORD			flags3;			// [RH] Hexen/Heretic actor-dependant behavior made flaggable
 	DWORD			flags4;			// [RH] Even more flags!
 	DWORD			flags5;			// OMG! We need another one.
 	DWORD			flags6;			// Shit! Where did all the flags go?
+
+	// [BB] If 0, everybody can see the actor, if > 0, only members of team (VisibleToTeam-1) can see it.
+	DWORD			VisibleToTeam;
+
 	int				special1;		// Special info
 	int				special2;		// Special info
 	int 			health;
@@ -869,10 +885,12 @@ public:
 	line_t			*BlockingLine;	// Line that blocked the last move
 
 	int PoisonDamage; // Damage received per tic from poison.
+	FNameNoInit PoisonDamageType; // Damage type dealt by poison.
 	int PoisonDuration; // Duration left for receiving poison damage.
 	int PoisonPeriod; // How often poison damage is applied. (Every X tics.)
 
 	int PoisonDamageReceived; // Damage received per tic from poison.
+	FNameNoInit PoisonDamageTypeReceived; // Damage type received by poison.
 	int PoisonDurationReceived; // Duration left for receiving poison damage.
 	int PoisonPeriodReceived; // How often poison damage is applied. (Every X tics.)
 	TObjPtr<AActor> Poisoner; // Last source of received poison damage.
@@ -909,7 +927,11 @@ public:
 	SWORD PainChance;
 	int PainThreshold;
 	FNameNoInit DamageType;
+	FNameNoInit DamageTypeReceived;
 	fixed_t DamageFactor;
+
+	FNameNoInit PainType;
+	FNameNoInit DeathType;
 
 	FState *SpawnState;
 	FState *SeeState;
@@ -1051,6 +1073,7 @@ inline T *Spawn (fixed_t x, fixed_t y, fixed_t z, replace_t allowreplacement)
 {
 	return static_cast<T *>(AActor::StaticSpawn (RUNTIME_CLASS(T), x, y, z, allowreplacement));
 }
+
 
 void PrintMiscActorInfo(AActor * query);
 

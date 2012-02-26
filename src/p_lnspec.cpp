@@ -52,10 +52,11 @@
 #include "m_random.h"
 #include "p_conversation.h"
 #include "a_strifeglobal.h"
-#include "r_translate.h"
+#include "r_data/r_translate.h"
 #include "p_3dmidtex.h"
 #include "d_net.h"
 #include "d_event.h"
+#include "r_data/colormaps.h"
 #include "p_macro.h"
 
 #define FUNC(a) static int a (line_t *ln, AActor *it, bool backSide, \
@@ -68,6 +69,19 @@
 #define CRUSHTYPE(a)	((a)==1? false : (a)==2? true : gameinfo.gametype == GAME_Hexen)
 
 static FRandom pr_glass ("GlassBreak");
+
+// There are aliases for the ACS specials that take names instead of numbers.
+// This table maps them onto the real number-based specials.
+BYTE NamedACSToNormalACS[7] =
+{
+	ACS_Execute,
+	ACS_Suspend,
+	ACS_Terminate,
+	ACS_LockedExecute,
+	ACS_LockedExecuteDoor,
+	ACS_ExecuteWithResult,
+	ACS_ExecuteAlways,
+};
 
 FName MODtoDamageType (int mod)
 {
@@ -275,9 +289,9 @@ FUNC(LS_Floor_LowerToLowest)
 }
 
 FUNC(LS_Floor_LowerToHighest)
-// Floor_LowerToHighest (tag, speed, adjust)
+// Floor_LowerToHighest (tag, speed, adjust, hereticlower)
 {
-	return EV_DoFloor (DFloor::floorLowerToHighest, ln, arg0, SPEED(arg1), (arg2-128)*FRACUNIT, 0, 0, false);
+	return EV_DoFloor (DFloor::floorLowerToHighest, ln, arg0, SPEED(arg1), (arg2-128)*FRACUNIT, 0, 0, false, arg3==1);
 }
 
 FUNC(LS_Floor_LowerToNearest)
@@ -616,6 +630,12 @@ FUNC(LS_Ceiling_CrushAndRaiseA)
 	return EV_DoCeiling (DCeiling::ceilCrushAndRaise, ln, arg0, SPEED(arg1), SPEED(arg2), 0, arg3, 0, 0, CRUSHTYPE(arg4));
 }
 
+FUNC(LS_Ceiling_CrushAndRaiseDist)
+// Ceiling_CrushAndRaiseDist (tag, dist, speed, damage, crushtype)
+{
+	return EV_DoCeiling (DCeiling::ceilCrushAndRaiseDist, ln, arg0, SPEED(arg2), SPEED(arg2), arg1*FRACUNIT, arg3, 0, 0, CRUSHTYPE(arg4));
+}
+
 FUNC(LS_Ceiling_CrushAndRaiseSilentA)
 // Ceiling_CrushAndRaiseSilentA (tag, dnspeed, upspeed, damage, crushtype)
 {
@@ -855,9 +875,9 @@ FUNC( LS_Teleport_NoStop )
 }
 
 FUNC(LS_Teleport_NoFog)
-// Teleport_NoFog (tid, useang, sectortag)
+// Teleport_NoFog (tid, useang, sectortag, keepheight)
 {
-	return EV_Teleport (arg0, arg2, ln, backSide, it, false, false, !arg1);
+	return EV_Teleport (arg0, arg2, ln, backSide, it, false, false, !arg1, true, !!arg3);
 }
 
 FUNC(LS_Teleport_ZombieChanger)
@@ -1622,24 +1642,46 @@ FUNC(LS_ACS_Execute)
 // ACS_Execute (script, map, s_arg1, s_arg2, s_arg3)
 {
 	level_info_t *info;
+	const char *mapname = NULL;
+	int args[3] = { arg2, arg3, arg4 };
+	int flags = (backSide ? ACS_BACKSIDE : 0);
 
 	if (arg1 == 0)
-		return P_StartScript (it, ln, arg0, level.mapname, backSide, arg2, arg3, arg4, false, false);
-	else if ((info = FindLevelByNum (arg1)) )
-		return P_StartScript (it, ln, arg0, info->mapname, backSide, arg2, arg3, arg4, false, false);
-	else return false;
+	{
+		mapname = level.mapname;
+	}
+	else if ((info = FindLevelByNum(arg1)) != NULL)
+	{
+		mapname = info->mapname;
+	}
+	else
+	{
+		return false;
+	}
+	return P_StartScript(it, ln, arg0, mapname, args, 3, flags);
 }
 
 FUNC(LS_ACS_ExecuteAlways)
 // ACS_ExecuteAlways (script, map, s_arg1, s_arg2, s_arg3)
 {
 	level_info_t *info;
+	const char *mapname = NULL;
+	int args[3] = { arg2, arg3, arg4 };
+	int flags = (backSide ? ACS_BACKSIDE : 0) | ACS_ALWAYS;
 
 	if (arg1 == 0)
-		return P_StartScript (it, ln, arg0, level.mapname, backSide, arg2, arg3, arg4, true, false);
-	else if ((info = FindLevelByNum (arg1)) )
-		return P_StartScript (it, ln, arg0, info->mapname, backSide, arg2, arg3, arg4, true, false);
-	else return false;
+	{
+		mapname = level.mapname;
+	}
+	else if ((info = FindLevelByNum(arg1)) != NULL)
+	{
+		mapname = info->mapname;
+	}
+	else
+	{
+		return false;
+	}
+	return P_StartScript(it, ln, arg0, mapname, args, 3, flags);
 }
 
 FUNC(LS_ACS_LockedExecute)
@@ -1661,12 +1703,15 @@ FUNC(LS_ACS_LockedExecuteDoor)
 }
 
 FUNC(LS_ACS_ExecuteWithResult)
-// ACS_ExecuteWithResult (script, s_arg1, s_arg2, s_arg3)
+// ACS_ExecuteWithResult (script, s_arg1, s_arg2, s_arg3, s_arg4)
 {
 	// This is like ACS_ExecuteAlways, except the script is always run on
 	// the current map, and the return value is whatever the script sets
 	// with SetResultValue.
-	return P_StartScript (it, ln, arg0, level.mapname, backSide, arg1, arg2, arg3, true, true);
+	int args[4] = { arg1, arg2, arg3, arg4 };
+	int flags = (backSide ? ACS_BACKSIDE : 0) | ACS_ALWAYS | ACS_WANTRESULT;
+
+	return P_StartScript (it, ln, arg0, level.mapname, args, 4, flags);
 }
 
 FUNC(LS_ACS_Suspend)
@@ -2381,7 +2426,7 @@ FUNC(LS_Line_AlignCeiling)
 		I_Error ("Sector_AlignCeiling: Lineid %d is undefined", arg0);
 	do
 	{
-		ret |= R_AlignFlat (line, !!arg1, 1);
+		ret |= P_AlignFlat (line, !!arg1, 1);
 	} while ( (line = P_FindLineFromID (arg0, line)) >= 0);
 	return ret;
 }
@@ -2396,7 +2441,7 @@ FUNC(LS_Line_AlignFloor)
 		I_Error ("Sector_AlignFloor: Lineid %d is undefined", arg0);
 	do
 	{
-		ret |= R_AlignFlat (line, !!arg1, 0);
+		ret |= P_AlignFlat (line, !!arg1, 0);
 	} while ( (line = P_FindLineFromID (arg0, line)) >= 0);
 	return ret;
 }
@@ -2680,7 +2725,7 @@ FUNC(LS_SetPlayerProperty)
 			{ // Take power from activator
 				if (power != 4)
 				{
-					AInventory *item = it->FindInventory (powers[power]);
+					AInventory *item = it->FindInventory (powers[power], true);
 					if (item != NULL)
 					{
 						item->Destroy ();
@@ -3350,7 +3395,7 @@ lnSpecFunc LineSpecials[256] =
 	/* 165 */ LS_Sector_Transform,
 	/* 166 */ LS_Thing_Enable,
 	/* 167 */ LS_NOP,
-	/* 168 */ LS_NOP,
+	/* 168 */ LS_Ceiling_CrushAndRaiseDist,
 	/* 169 */ LS_Generic_Crusher2,
 	/* 170 */ LS_Sector_SetCeilingScale2,
 	/* 171 */ LS_Sector_SetFloorScale2,
@@ -3494,6 +3539,30 @@ int P_FindLineSpecial (const char *string, int *min_args, int *max_args)
 		{
 			max = mid - 1;
 		}
+	}
+	return 0;
+}
+
+
+//==========================================================================
+//
+// P_ExecuteSpecial
+//
+//==========================================================================
+
+int P_ExecuteSpecial(int			num,
+					 struct line_t	*line,
+					 class AActor	*activator,
+					 bool			backSide,
+					 int			arg1,
+					 int			arg2,
+					 int			arg3,
+					 int			arg4,
+					 int			arg5)
+{
+	if (num >= 0 && num <= 255)
+	{
+		return LineSpecials[num](line, activator, backSide, arg1, arg2, arg3, arg4, arg5);
 	}
 	return 0;
 }

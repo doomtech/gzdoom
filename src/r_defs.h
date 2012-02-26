@@ -40,7 +40,6 @@ struct FGLSection;
 struct seg_t;
 
 #include "dthinker.h"
-#include "farchive.h"
 #include "r_sky.h"
 
 #define MAXWIDTH 2560
@@ -132,6 +131,7 @@ class FScanner;
 class FBitmap;
 struct FCopyInfo;
 class DInterpolation;
+class FArchive;
 
 enum
 {
@@ -335,18 +335,12 @@ struct secplane_t
 	{
 		return -TMulScale16 (a, v->x, b, v->y, z, c);
 	}
+
+	bool CopyPlaneIfValid (secplane_t *dest, const secplane_t *opp) const;
+
 };
 
-inline FArchive &operator<< (FArchive &arc, secplane_t &plane)
-{
-	arc << plane.a << plane.b << plane.c << plane.d;
-	//if (plane.c != 0)
-	{	// plane.c should always be non-0. Otherwise, the plane
-		// would be perfectly vertical.
-		plane.ic = DivScale32 (1, plane.c);
-	}
-	return arc;
-}
+FArchive &operator<< (FArchive &arc, secplane_t &plane);
 
 enum
 {
@@ -492,6 +486,8 @@ struct sector_t
 	void SetColor(int r, int g, int b, int desat);
 	void SetFade(int r, int g, int b);
 	void ClosestPoint(fixed_t x, fixed_t y, fixed_t &ox, fixed_t &oy) const;
+	int GetFloorLight () const;
+	int GetCeilingLight () const;
 
 	DInterpolation *SetInterpolation(int position, bool attach);
 	void StopInterpolation(int position);
@@ -663,14 +659,19 @@ struct sector_t
 			)? heightsec : NULL;
 	}
 
+	static inline short ClampLight(int level)
+	{
+		return (short)clamp(level, SHRT_MIN, SHRT_MAX);
+	}
+
 	void ChangeLightLevel(int newval)
 	{
-		lightlevel = (BYTE)clamp(lightlevel + newval, 0, 255);
+		lightlevel = ClampLight(lightlevel + newval);
 	}
 
 	void SetLightLevel(int newval)
 	{
-		lightlevel = (BYTE)clamp(newval, 0, 255);
+		lightlevel = ClampLight(newval);
 	}
 
 	int GetLightLevel() const
@@ -696,18 +697,18 @@ struct sector_t
 	// [RH] give floor and ceiling even more properties
 	FDynamicColormap *ColorMaps[7];	// [RH] Per-sector colormaps
 
-	BYTE		lightlevel;
 
 	TObjPtr<AActor> SoundTarget;
-	BYTE 		soundtraversed;	// 0 = untraversed, 1,2 = sndlines -1
 
 	short		special;
 	short		oldspecial;		// Keep track of what special it had during setup
 	short		tag;
+	short		lightlevel;
+	short		seqType;		// this sector's sound sequence
+
 	int			nexttag,firsttag;	// killough 1/30/98: improves searches for tags.
 
 	int			sky;
-	short		seqType;		// this sector's sound sequence
 	FNameNoInit	SeqName;		// Sound sequence name. Setting seqType non-negative will override this.
 
 	fixed_t		soundorg[2];	// origin for any sounds played by the sector
@@ -733,6 +734,7 @@ struct sector_t
 	};
 	TObjPtr<DInterpolation> interpolations[4];
 
+	BYTE 		soundtraversed;	// 0 = untraversed, 1,2 = sndlines -1
 	// jff 2/26/98 lockout machinery for stairbuilding
 	SBYTE stairlock;	// -2 on first locked -1 after thinker done 0 normally
 	SWORD prevsec;		// -1 or number of sector for previous step
@@ -1010,6 +1012,7 @@ struct line_t
 	slopetype_t	slopetype;	// To aid move clipping.
 	sector_t	*frontsector, *backsector;
 	int 		validcount;	// if == validcount, already checked
+	int		locknumber;	// [Dusk] lock number for special
 };
 
 // phares 3/14/98
@@ -1058,10 +1061,9 @@ struct seg_t
 	sector_t*		backsector;		// NULL for one-sided lines
 
 	seg_t*			PartnerSeg;
+	subsector_t*	Subsector;
 
 	float			sidefrac;		// relative position of seg's ending vertex on owning sidedef
-
-	subsector_t *	Subsector() const;
 };
 
 struct glsegextra_t
@@ -1071,11 +1073,6 @@ struct glsegextra_t
 };
 
 extern seg_t *segs;
-extern glsegextra_t *glsegextras;
-__forceinline subsector_t *	seg_t::Subsector() const
-{
-	return glsegextras[this-segs].Subsector;
-}
 
 
 //
@@ -1108,6 +1105,7 @@ struct subsector_t
 	DWORD		numlines;
 	int			flags;
 
+	void BuildPolyBSP();
 	// subsector related GL data
 	FLightNode *	lighthead[2];	// Light nodes (blended and additive)
 	int				validcount;
@@ -1144,8 +1142,6 @@ struct node_t
 
 struct FMiniBSP
 {
-	FMiniBSP();
-
 	bool bDirty;
 
 	TArray<node_t> Nodes;
@@ -1156,193 +1152,20 @@ struct FMiniBSP
 
 
 
-// posts are runs of non masked source pixels
-struct column_t
-{
-	BYTE		topdelta;		// -1 is the last post in a column
-	BYTE		length; 		// length data bytes follows
-};
-
-
-
 //
 // OTHER TYPES
 //
 
 typedef BYTE lighttable_t;	// This could be wider for >8 bit display.
 
-// A vissprite_t is a thing
-//	that will be drawn during a refresh.
-// I.e. a sprite object that is partly visible.
-struct vissprite_t
+// This encapsulates the fields of vissprite_t that can be altered by AlterWeaponSprite
+struct visstyle_t
 {
-	short			x1, x2;
-	fixed_t			cx;				// for line side calculation
-	fixed_t			gx, gy, gz;		// origin in world coordinates
-	angle_t			angle;
-	fixed_t			gzb, gzt;		// global bottom / top for silhouette clipping
-	fixed_t			startfrac;		// horizontal position of x1
-	fixed_t			xscale, yscale;
-	fixed_t			xiscale;		// negative if flipped
-	fixed_t			depth;
-	fixed_t			idepth;			// 1/z
-	fixed_t			texturemid;
-	DWORD			FillColor;
 	lighttable_t	*colormap;
-	sector_t		*heightsec;		// killough 3/27/98: height sector for underwater/fake ceiling
-	sector_t		*sector;		// [RH] sector this sprite is in
-	F3DFloor	*fakefloor;
-	F3DFloor	*fakeceiling;
 	fixed_t			alpha;
-	fixed_t			floorclip;
-	union
-	{
-		FTexture	  *pic;
-		struct FVoxel *voxel;
-	};
-	BYTE			bIsVoxel:1;		// [RH] Use voxel instead of pic
-	BYTE			bSplitSprite:1;	// [RH] Sprite was split by a drawseg
-	BYTE			FakeFlatStat;	// [RH] which side of fake/floor ceiling sprite is on
-	short 			renderflags;
-	DWORD			Translation;	// [RH] for color translation
 	FRenderStyle	RenderStyle;
 };
 
-enum
-{
-	FAKED_Center,
-	FAKED_BelowFloor,
-	FAKED_AboveCeiling
-};
-
-//
-// Sprites are patches with a special naming convention so they can be
-// recognized by R_InitSprites. The base name is NNNNFx or NNNNFxFx, with
-// x indicating the rotation, x = 0, 1-7. The sprite and frame specified
-// by a thing_t is range checked at run time.
-// A sprite is a patch_t that is assumed to represent a three dimensional
-// object and may have multiple rotations pre drawn. Horizontal flipping
-// is used to save space, thus NNNNF2F5 defines a mirrored patch.
-// Some sprites will only have one picture used for all views: NNNNF0
-//
-struct spriteframe_t
-{
-	struct FVoxelDef *Voxel;// voxel to use for this frame
-	FTextureID Texture[16];	// texture to use for view angles 0-15
-	WORD Flip;				// flip (1 = flip) to use for view angles 0-15.
-};
-
-//
-// A sprite definition:
-//	a number of animation frames.
-//
-
-struct spritedef_t
-{
-	union
-	{
-		char name[5];
-		DWORD dwName;
-	};
-	BYTE numframes;
-	WORD spriteframes;
-};
-
-extern TArray<spriteframe_t> SpriteFrames;
-
-//
-// [RH] Internal "skin" definition.
-//
-class FPlayerSkin
-{
-public:
-	char		name[17];	// 16 chars + NULL
-	char		face[4];	// 3 chars ([MH] + NULL so can use as a C string)
-	BYTE		gender;		// This skin's gender (not really used)
-	BYTE		range0start;
-	BYTE		range0end;
-	bool		othergame;	// [GRB]
-	fixed_t		ScaleX;
-	fixed_t		ScaleY;
-	int			sprite;
-	int			crouchsprite;
-	int			namespc;	// namespace for this skin
-};
-
-
-// [RH] Voxels from Build
-
-#define MAXVOXMIPS 5
-
-struct kvxslab_t
-{
-	BYTE		ztop;			// starting z coordinate of top of slab
-	BYTE		zleng;			// # of bytes in the color array - slab height
-	BYTE		backfacecull;	// low 6 bits tell which of 6 faces are exposed
-	BYTE		col[1/*zleng*/];// color data from top to bottom
-};
-
-struct FVoxelMipLevel
-{
-	FVoxelMipLevel();
-	~FVoxelMipLevel();
-
-	int			SizeX;
-	int			SizeY;
-	int			SizeZ;
-	fixed_t		PivotX;		// 24.8 fixed point
-	fixed_t		PivotY;		// ""
-	fixed_t		PivotZ;		// ""
-	int			*OffsetX;
-	short		*OffsetXY;
-	BYTE		*SlabData;
-};
-
-struct FVoxel
-{
-	int LumpNum;
-	int NumMips;
-	int VoxelIndex;
-	BYTE *Palette;
-	FVoxelMipLevel Mips[MAXVOXMIPS];
-
-	FVoxel();
-	~FVoxel();
-	void Remap();
-};
-
-struct FVoxelDef
-{
-	FVoxel *Voxel;
-	int PlacedSpin;			// degrees/sec to spin actors without MF_DROPPED set
-	int DroppedSpin;		// degrees/sec to spin actors with MF_DROPPED set
-	int VoxeldefIndex;
-	fixed_t Scale;
-	angle_t AngleOffset;	// added to actor's angle to compensate for wrong-facing voxels
-};
-
-// [RH] A c-buffer. Used for keeping track of offscreen voxel spans.
-
-struct FCoverageBuffer
-{
-	struct Span
-	{
-		Span *NextSpan;
-		short Start, Stop;
-	};
-
-	FCoverageBuffer(int size);
-	~FCoverageBuffer();
-
-	void Clear();
-	void InsertSpan(int listnum, int start, int stop);
-	Span *AllocSpan();
-
-	FMemArena SpanArena;
-	Span **Spans;	// [0..NumLists-1] span lists
-	Span *FreeSpans;
-	unsigned int NumLists;
-};
 
 // Doom 64 Lights
 struct light_t

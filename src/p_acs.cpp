@@ -3,7 +3,7 @@
 ** General BEHAVIOR management and ACS execution environment
 **
 **---------------------------------------------------------------------------
-** Copyright 1998-2008 Randy Heit
+** Copyright 1998-2012 Randy Heit
 ** All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without
@@ -66,11 +66,13 @@
 #include "sc_man.h"
 #include "c_bind.h"
 #include "info.h"
-#include "r_translate.h"
+#include "r_data/r_translate.h"
 #include "cmdlib.h"
 #include "m_png.h"
 #include "p_setup.h"
 #include "po_man.h"
+#include "actorptrselect.h"
+#include "farchive.h"
 
 #include "g_shared/a_pickups.h"
 
@@ -122,7 +124,8 @@ struct CallReturn
 };
 
 static DLevelScript *P_GetScriptGoing (AActor *who, line_t *where, int num, const ScriptPtr *code, FBehavior *module,
-	bool lineSide, int arg0, int arg1, int arg2, int always);
+	const int *args, int argcount, int flags);
+
 
 struct FBehavior::ArrayInfo
 {
@@ -147,6 +150,22 @@ FWorldGlobalArray ACS_WorldArrays[NUM_WORLDVARS];
 SDWORD ACS_GlobalVars[NUM_GLOBALVARS];
 FWorldGlobalArray ACS_GlobalArrays[NUM_GLOBALVARS];
 
+
+//============================================================================
+//
+// On the fly strings
+//
+//============================================================================
+
+#define LIB_ACSSTRINGS_ONTHEFLY 0x7fff
+#define ACSSTRING_OR_ONTHEFLY (LIB_ACSSTRINGS_ONTHEFLY<<16)
+
+TArray<FString>
+	ACS_StringsOnTheFly,
+	ACS_StringBuilderStack;
+
+#define STRINGBUILDER_START(Builder) if (*Builder.GetChars() || ACS_StringBuilderStack.Size()) { ACS_StringBuilderStack.Push(Builder); Builder = ""; }
+#define STRINGBUILDER_FINISH(Builder) if (!ACS_StringBuilderStack.Pop(Builder)) Builder = "";
 
 //============================================================================
 //
@@ -766,7 +785,7 @@ void DPlaneWatcher::Tick ()
 	if ((LastD < WatchD && newd >= WatchD) ||
 		(LastD > WatchD && newd <= WatchD))
 	{
-		LineSpecials[Special] (Line, Activator, LineSide, Arg0, Arg1, Arg2, Arg3, Arg4);
+		P_ExecuteSpecial(Special, Line, Activator, LineSide, Arg0, Arg1, Arg2, Arg3, Arg4);
 		Destroy ();
 	}
 
@@ -941,6 +960,8 @@ void FBehavior::SerializeVarSet (FArchive &arc, SDWORD *vars, int max)
 	{
 		SDWORD truelast;
 
+		memset (vars, 0, max*sizeof(*vars));
+
 		arc << last;
 		if (last == 0)
 		{
@@ -954,8 +975,6 @@ void FBehavior::SerializeVarSet (FArchive &arc, SDWORD *vars, int max)
 		{
 			last = max;
 		}
-
-		memset (vars, 0, max*sizeof(*vars));
 
 		while (first < last)
 		{
@@ -1244,7 +1263,7 @@ FBehavior::FBehavior (int lumpnum, FileReader * fr, int len)
 						module = StaticLoadModule (lump);
 					}
 					if (module != NULL) Imports.Push (module);
-					do ; while (parse[++i]);
+					do {;} while (parse[++i]);
 				}
 				++i;
 			}
@@ -1307,7 +1326,7 @@ FBehavior::FBehavior (int lumpnum, FileReader * fr, int len)
 						{
 							MapVars[varNum] = &lib->MapVarStore[impNum];
 						}
-						do ; while (parse[++j]);
+						do {;} while (parse[++j]);
 						++j;
 					}
 				}
@@ -1336,7 +1355,7 @@ FBehavior::FBehavior (int lumpnum, FileReader * fr, int len)
 									ModuleName, expectedSize);
 							}
 						}
-						do ; while (*++parse);
+						do {;} while (*++parse);
 						++parse;
 					}
 				}
@@ -1516,11 +1535,11 @@ void FBehavior::LoadScriptsDirectory ()
 		}
 	}
 
-	// Load script var counts
+	// Load script var counts. (Only recorded for scripts that use more than LOCAL_SIZE variables.)
 	scripts.b = FindChunk (MAKE_ID('S','V','C','T'));
 	if (scripts.dw != NULL)
 	{
-		max = scripts.dw[1];
+		max = scripts.dw[1] / 4;
 		scripts.dw += 2;
 		for (i = max; i > 0; --i, scripts.w += 2)
 		{
@@ -1530,6 +1549,27 @@ void FBehavior::LoadScriptsDirectory ()
 				ptr->VarCount = LittleShort(scripts.w[1]);
 			}
 		}
+	}
+
+	// Load script names (if any)
+	scripts.b = FindChunk(MAKE_ID('S','N','A','M'));
+	if (scripts.dw != NULL)
+	{
+		for (i = 0; i < NumScripts; ++i)
+		{
+			// ACC stores script names as an index into the SNAM chunk, with the first index as
+			// -1 and counting down from there. We convert this from an index into SNAM into
+			// a negative index into the global name table.
+			if (Scripts[i].Number < 0)
+			{
+				const char *str = (const char *)(scripts.b + 8 + scripts.dw[3 + (-Scripts[i].Number - 1)]);
+				FName name(str);
+				Scripts[i].Number = -name;
+			}
+		}
+		// We need to resort scripts, because the new numbers for named scripts likely
+		// do not match the order they were originally in.
+		qsort (Scripts, NumScripts, sizeof(ScriptPtr), SortScripts);
 	}
 }
 
@@ -1608,8 +1648,8 @@ bool FBehavior::IsGood ()
 
 const ScriptPtr *FBehavior::FindScript (int script) const
 {
-	const ScriptPtr *ptr = BinarySearch<ScriptPtr, WORD>
-		((ScriptPtr *)Scripts, NumScripts, &ScriptPtr::Number, (WORD)script);
+	const ScriptPtr *ptr = BinarySearch<ScriptPtr, int>
+		((ScriptPtr *)Scripts, NumScripts, &ScriptPtr::Number, script);
 
 	// If the preceding script has the same number, return it instead.
 	// See the note by the script sorting above for why.
@@ -1710,6 +1750,25 @@ void FBehavior::SetArrayVal (int arraynum, int index, int value)
 	array->Elements[index] = value;
 }
 
+inline bool FBehavior::CopyStringToArray(int arraynum, int index, int maxLength, const char *string)
+{
+	 // false if the operation was incomplete or unsuccessful
+
+	if ((unsigned)arraynum >= (unsigned)NumTotalArrays || index < 0)
+		return false;
+	const ArrayInfo *array = Arrays[arraynum];
+	
+	if ((signed)array->ArraySize - index < maxLength) maxLength = (signed)array->ArraySize - index;
+
+	while (maxLength-- > 0)
+	{
+		array->Elements[index++] = *string;
+		if (!(*string)) return true; // written terminating 0
+		string++;
+	}
+	return !(*string); // return true if only terminating 0 was not written
+}
+
 BYTE *FBehavior::FindChunk (DWORD id) const
 {
 	BYTE *chunk = Chunks;
@@ -1743,6 +1802,14 @@ BYTE *FBehavior::NextChunk (BYTE *chunk) const
 const char *FBehavior::StaticLookupString (DWORD index)
 {
 	DWORD lib = index >> 16;
+	
+	switch (lib)
+	{
+	case LIB_ACSSTRINGS_ONTHEFLY:
+		index &= 0xffff;
+		return (ACS_StringsOnTheFly.Size() > index) ? ACS_StringsOnTheFly[index].GetChars() : NULL;
+	}
+
 	if (lib >= (DWORD)StaticModules.Size())
 	{
 		return NULL;
@@ -1794,7 +1861,7 @@ void FBehavior::StartTypedScripts (WORD type, AActor *activator, bool always, in
 		if (ptr->Type == type)
 		{
 			DLevelScript *runningScript = P_GetScriptGoing (activator, NULL, ptr->Number,
-				ptr, this, 0, arg1, 0, 0, always);
+				ptr, this, &arg1, 1, always ? ACS_ALWAYS : 0);
 			if (runNow)
 			{
 				runningScript->RunScript ();
@@ -1819,6 +1886,50 @@ void FBehavior::StaticStopMyScripts (AActor *actor)
 	}
 }
 
+//==========================================================================
+//
+// P_SerializeACSScriptNumber
+//
+// Serializes a script number. If it's negative, it's really a name, so
+// that will get serialized after it.
+//
+//==========================================================================
+
+void P_SerializeACSScriptNumber(FArchive &arc, int &scriptnum, bool was2byte)
+{
+	if (SaveVersion < 3359)
+	{
+		if (was2byte)
+		{
+			WORD oldver;
+			arc << oldver;
+			scriptnum = oldver;
+		}
+		else
+		{
+			arc << scriptnum;
+		}
+	}
+	else
+	{
+		arc << scriptnum;
+		// If the script number is negative, then it's really a name.
+		// So read/store the name after it.
+		if (scriptnum < 0)
+		{
+			if (arc.IsStoring())
+			{
+				arc.WriteName(FName(ENamedName(-scriptnum)).GetChars());
+			}
+			else
+			{
+				const char *nam = arc.ReadName();
+				scriptnum = -FName(nam);
+			}
+		}
+	}
+}
+
 //---- The ACS Interpreter ----//
 
 IMPLEMENT_POINTY_CLASS (DACSThinker)
@@ -1840,8 +1951,7 @@ DACSThinker::DACSThinker ()
 		ActiveThinker = this;
 		Scripts = NULL;
 		LastScript = NULL;
-		for (int i = 0; i < 1000; i++)
-			RunningScripts[i] = NULL;
+		RunningScripts.Clear();
 	}
 }
 
@@ -1853,27 +1963,34 @@ DACSThinker::~DACSThinker ()
 
 void DACSThinker::Serialize (FArchive &arc)
 {
+	int scriptnum;
+
 	Super::Serialize (arc);
 	arc << Scripts << LastScript;
 	if (arc.IsStoring ())
 	{
-		WORD i;
-		for (i = 0; i < 1000; i++)
+		ScriptMap::Iterator it(RunningScripts);
+		ScriptMap::Pair *pair;
+
+		while (it.NextPair(pair))
 		{
-			if (RunningScripts[i])
-				arc << RunningScripts[i] << i;
+			assert(pair->Value != NULL);
+			arc << pair->Value;
+			scriptnum = pair->Key;
+			P_SerializeACSScriptNumber(arc, scriptnum, true);
 		}
 		DLevelScript *nilptr = NULL;
 		arc << nilptr;
 	}
-	else
+	else // Loading
 	{
-		WORD scriptnum;
 		DLevelScript *script = NULL;
+		RunningScripts.Clear();
+
 		arc << script;
 		while (script)
 		{
-			arc << scriptnum;
+			P_SerializeACSScriptNumber(arc, scriptnum, true);
 			RunningScripts[scriptnum] = script;
 			arc << script;
 		}
@@ -1889,6 +2006,15 @@ void DACSThinker::Tick ()
 		DLevelScript *next = script->next;
 		script->RunScript ();
 		script = next;
+	}
+
+	ACS_StringsOnTheFly.Clear();
+
+	if (ACS_StringBuilderStack.Size())
+	{
+		int size = ACS_StringBuilderStack.Size();
+		ACS_StringBuilderStack.Clear();
+		I_Error("Error: %d garbage entries on ACS string builder stack.", size);
 	}
 }
 
@@ -1913,13 +2039,22 @@ IMPLEMENT_POINTY_CLASS (DLevelScript)
  DECLARE_POINTER(activator)
 END_POINTERS
 
+inline FArchive &operator<< (FArchive &arc, DLevelScript::EScriptState &state)
+{
+	BYTE val = (BYTE)state;
+	arc << val;
+	state = (DLevelScript::EScriptState)val;
+	return arc;
+}
+
 void DLevelScript::Serialize (FArchive &arc)
 {
 	DWORD i;
 
 	Super::Serialize (arc);
-	arc << next << prev
-		<< script;
+	arc << next << prev;
+
+	P_SerializeACSScriptNumber(arc, script, false);
 
 	arc	<< state
 		<< statedata
@@ -2347,7 +2482,7 @@ int DLevelScript::DoSpawnSpotFacing (int type, int spot, int tid, bool force)
 
 void DLevelScript::DoFadeTo (int r, int g, int b, int a, fixed_t time)
 {
-	DoFadeRange (0, 0, 0, -1, r, g, b, a, time);
+	DoFadeRange (0, 0, 0, -1, clamp(r, 0, 255), clamp(g, 0, 255), clamp(b, 0, 255), clamp(a, 0, FRACUNIT), time);
 }
 
 void DLevelScript::DoFadeRange (int r1, int g1, int b1, int a1,
@@ -2719,6 +2854,7 @@ void DLevelScript::DoSetActorProperty (AActor *actor, int property, int value)
 
 	case APROP_Score:
 		actor->Score = value;
+		break;
 
 	case APROP_NameTag:
 		actor->SetTag(FBehavior::StaticLookupString(value));
@@ -3071,6 +3207,15 @@ enum EACSFunctions
 	ACSF_GetPolyobjY,
     ACSF_CheckSight,
 	ACSF_SpawnForced,
+	ACSF_AnnouncerSound,	// Skulltag
+	ACSF_SetPointer,
+	ACSF_ACS_NamedExecute,
+	ACSF_ACS_NamedSuspend,
+	ACSF_ACS_NamedTerminate,
+	ACSF_ACS_NamedLockedExecute,
+	ACSF_ACS_NamedLockedExecuteDoor,
+	ACSF_ACS_NamedExecuteWithResult,
+	ACSF_ACS_NamedExecuteAlways,
 };
 
 int DLevelScript::SideFromID(int id, int side)
@@ -3205,8 +3350,29 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
 			actor = SingleActorFromTID(args[0], activator);
 			return actor != NULL? actor->velz : 0;
 
+		case ACSF_SetPointer:
+			if (activator)
+			{
+				AActor *ptr = SingleActorFromTID(args[1], activator);
+				if (argCount > 2)
+				{
+					ptr = COPY_AAPTR(ptr, args[2]);
+				}
+				if (ptr == activator) ptr = NULL;
+				ASSIGN_AAPTR(activator, args[0], ptr, (argCount > 3) ? args[3] : 0);
+				return ptr != NULL;
+			}
+			return 0;
+
 		case ACSF_SetActivator:
-			activator = SingleActorFromTID(args[0], NULL);
+			if (argCount > 1 && args[1] != AAPTR_DEFAULT) // condition (x != AAPTR_DEFAULT) is essentially condition (x).
+			{
+				activator = COPY_AAPTR(SingleActorFromTID(args[0], activator), args[1]);
+			}
+			else
+			{
+				activator = SingleActorFromTID(args[0], NULL);
+			}
 			return activator != NULL;
 		
 		case ACSF_SetActivatorToTarget:
@@ -3222,16 +3388,16 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
 				{
 					actor = actor->target;
 				}
-			}
-			if (actor != NULL)
-			{
-				activator = actor;
-				return 1;
+				if (actor != NULL) // [FDARI] moved this (actor != NULL)-branch inside the other, so that it is only tried when it can be true
+				{
+					activator = actor;
+					return 1;
+				}
 			}
 			return 0;
 
 		case ACSF_GetActorViewHeight:
-			actor = SingleActorFromTID(args[0], NULL);
+			actor = SingleActorFromTID(args[0], activator);
 			if (actor != NULL)
 			{
 				if (actor->player != NULL)
@@ -3521,8 +3687,6 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
 			{
 				TActorIterator<AActor> srciter (args[0]);
 
-				if (args[1] == 0) dest = (AActor *) activator;
-	                
 				while ( (source = srciter.Next ()) )
 				{
 					if (args[1] != 0)
@@ -3535,7 +3699,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
 					}
 					else
 					{
-						if (P_CheckSight(source, dest, flags)) return 1;
+						if (P_CheckSight(source, activator, flags)) return 1;
 					}
 				}
 			}
@@ -3544,6 +3708,25 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
 
 		case ACSF_SpawnForced:
 			return DoSpawn(args[0], args[1], args[2], args[3], args[4], args[5], true);
+
+		case ACSF_ACS_NamedExecute:
+		case ACSF_ACS_NamedSuspend:
+		case ACSF_ACS_NamedTerminate:
+		case ACSF_ACS_NamedLockedExecute:
+		case ACSF_ACS_NamedLockedExecuteDoor:
+		case ACSF_ACS_NamedExecuteWithResult:
+		case ACSF_ACS_NamedExecuteAlways:
+			{
+				int scriptnum = -FName(FBehavior::StaticLookupString(args[0]));
+				int arg1 = argCount > 1 ? args[1] : 0;
+				int arg2 = argCount > 2 ? args[2] : 0;
+				int arg3 = argCount > 3 ? args[3] : 0;
+				int arg4 = argCount > 4 ? args[4] : 0;
+				return P_ExecuteSpecial(NamedACSToNormalACS[funcIndex - ACSF_ACS_NamedExecute],
+					activationline, activator, backSide,
+					scriptnum, arg1, arg2, arg3, arg4);
+			}
+			break;
 
 		default:
 			break;
@@ -3602,6 +3785,9 @@ int DLevelScript::RunScript ()
 	FRemapTable *translation = 0;
 	int resultValue = 1;
 
+	// Hexen truncates all special arguments to bytes.
+	const int specialargmask = (level.flags2 & LEVEL2_HEXENHACK) ? 255 : ~0;
+
 	switch (state)
 	{
 	case SCRIPT_Delayed:
@@ -3636,13 +3822,13 @@ int DLevelScript::RunScript ()
 
 	case SCRIPT_ScriptWaitPre:
 		// Wait for a script to start running, then enter state scriptwait
-		if (controller->RunningScripts[statedata])
+		if (controller->RunningScripts.CheckKey(statedata) != NULL)
 			state = SCRIPT_ScriptWait;
 		break;
 
 	case SCRIPT_ScriptWait:
 		// Wait for a script to stop running, then enter state running
-		if (controller->RunningScripts[statedata])
+		if (controller->RunningScripts.CheckKey(statedata) != NULL)
 			return resultValue;
 
 		state = SCRIPT_Running;
@@ -3770,106 +3956,128 @@ int DLevelScript::RunScript ()
 			break;
 
 		case PCD_LSPEC1:
-			LineSpecials[NEXTBYTE] (activationline, activator, backSide,
-									STACK(1), 0, 0, 0, 0);
+			P_ExecuteSpecial(NEXTBYTE, activationline, activator, backSide,
+									STACK(1) & specialargmask, 0, 0, 0, 0);
 			sp -= 1;
 			break;
 
 		case PCD_LSPEC2:
-			LineSpecials[NEXTBYTE] (activationline, activator, backSide,
-									STACK(2), STACK(1), 0, 0, 0);
+			P_ExecuteSpecial(NEXTBYTE, activationline, activator, backSide,
+									STACK(2) & specialargmask,
+									STACK(1) & specialargmask, 0, 0, 0);
 			sp -= 2;
 			break;
 
 		case PCD_LSPEC3:
-			LineSpecials[NEXTBYTE] (activationline, activator, backSide,
-									STACK(3), STACK(2), STACK(1), 0, 0);
+			P_ExecuteSpecial(NEXTBYTE, activationline, activator, backSide,
+									STACK(3) & specialargmask,
+									STACK(2) & specialargmask,
+									STACK(1) & specialargmask, 0, 0);
 			sp -= 3;
 			break;
 
 		case PCD_LSPEC4:
-			LineSpecials[NEXTBYTE] (activationline, activator, backSide,
-									STACK(4), STACK(3), STACK(2),
-									STACK(1), 0);
+			P_ExecuteSpecial(NEXTBYTE, activationline, activator, backSide,
+									STACK(4) & specialargmask,
+									STACK(3) & specialargmask,
+									STACK(2) & specialargmask,
+									STACK(1) & specialargmask, 0);
 			sp -= 4;
 			break;
 
 		case PCD_LSPEC5:
-			LineSpecials[NEXTBYTE] (activationline, activator, backSide,
-									STACK(5), STACK(4), STACK(3),
-									STACK(2), STACK(1));
+			P_ExecuteSpecial(NEXTBYTE, activationline, activator, backSide,
+									STACK(5) & specialargmask,
+									STACK(4) & specialargmask,
+									STACK(3) & specialargmask,
+									STACK(2) & specialargmask,
+									STACK(1) & specialargmask);
 			sp -= 5;
 			break;
 
 		case PCD_LSPEC5RESULT:
-			STACK(5) = LineSpecials[NEXTBYTE] (activationline, activator, backSide,
-									STACK(5), STACK(4), STACK(3),
-									STACK(2), STACK(1));
+			STACK(5) = P_ExecuteSpecial(NEXTBYTE, activationline, activator, backSide,
+									STACK(5) & specialargmask,
+									STACK(4) & specialargmask,
+									STACK(3) & specialargmask,
+									STACK(2) & specialargmask,
+									STACK(1) & specialargmask);
 			sp -= 4;
 			break;
 
 		case PCD_LSPEC1DIRECT:
 			temp = NEXTBYTE;
-			LineSpecials[temp] (activationline, activator, backSide,
-								uallong(pc[0]), 0, 0, 0, 0);
+			P_ExecuteSpecial(temp, activationline, activator, backSide,
+								uallong(pc[0]) & specialargmask ,0, 0, 0, 0);
 			pc += 1;
 			break;
 
 		case PCD_LSPEC2DIRECT:
 			temp = NEXTBYTE;
-			LineSpecials[temp] (activationline, activator, backSide,
-								uallong(pc[0]), uallong(pc[1]), 0, 0, 0);
+			P_ExecuteSpecial(temp, activationline, activator, backSide,
+								uallong(pc[0]) & specialargmask,
+								uallong(pc[1]) & specialargmask, 0, 0, 0);
 			pc += 2;
 			break;
 
 		case PCD_LSPEC3DIRECT:
 			temp = NEXTBYTE;
-			LineSpecials[temp] (activationline, activator, backSide,
-								uallong(pc[0]), uallong(pc[1]), uallong(pc[2]), 0, 0);
+			P_ExecuteSpecial(temp, activationline, activator, backSide,
+								uallong(pc[0]) & specialargmask,
+								uallong(pc[1]) & specialargmask,
+								uallong(pc[2]) & specialargmask, 0, 0);
 			pc += 3;
 			break;
 
 		case PCD_LSPEC4DIRECT:
 			temp = NEXTBYTE;
-			LineSpecials[temp] (activationline, activator, backSide,
-								uallong(pc[0]), uallong(pc[1]), uallong(pc[2]), uallong(pc[3]), 0);
+			P_ExecuteSpecial(temp, activationline, activator, backSide,
+								uallong(pc[0]) & specialargmask,
+								uallong(pc[1]) & specialargmask,
+								uallong(pc[2]) & specialargmask,
+								uallong(pc[3]) & specialargmask, 0);
 			pc += 4;
 			break;
 
 		case PCD_LSPEC5DIRECT:
 			temp = NEXTBYTE;
-			LineSpecials[temp] (activationline, activator, backSide,
-								uallong(pc[0]), uallong(pc[1]), uallong(pc[2]), uallong(pc[3]), uallong(pc[4]));
+			P_ExecuteSpecial(temp, activationline, activator, backSide,
+								uallong(pc[0]) & specialargmask,
+								uallong(pc[1]) & specialargmask,
+								uallong(pc[2]) & specialargmask,
+								uallong(pc[3]) & specialargmask,
+								uallong(pc[4]) & specialargmask);
 			pc += 5;
 			break;
 
+		// Parameters for PCD_LSPEC?DIRECTB are by definition bytes so never need and-ing.
 		case PCD_LSPEC1DIRECTB:
-			LineSpecials[((BYTE *)pc)[0]] (activationline, activator, backSide,
+			P_ExecuteSpecial(((BYTE *)pc)[0], activationline, activator, backSide,
 				((BYTE *)pc)[1], 0, 0, 0, 0);
 			pc = (int *)((BYTE *)pc + 2);
 			break;
 
 		case PCD_LSPEC2DIRECTB:
-			LineSpecials[((BYTE *)pc)[0]] (activationline, activator, backSide,
+			P_ExecuteSpecial(((BYTE *)pc)[0], activationline, activator, backSide,
 				((BYTE *)pc)[1], ((BYTE *)pc)[2], 0, 0, 0);
 			pc = (int *)((BYTE *)pc + 3);
 			break;
 
 		case PCD_LSPEC3DIRECTB:
-			LineSpecials[((BYTE *)pc)[0]] (activationline, activator, backSide,
+			P_ExecuteSpecial(((BYTE *)pc)[0], activationline, activator, backSide,
 				((BYTE *)pc)[1], ((BYTE *)pc)[2], ((BYTE *)pc)[3], 0, 0);
 			pc = (int *)((BYTE *)pc + 4);
 			break;
 
 		case PCD_LSPEC4DIRECTB:
-			LineSpecials[((BYTE *)pc)[0]] (activationline, activator, backSide,
+			P_ExecuteSpecial(((BYTE *)pc)[0], activationline, activator, backSide,
 				((BYTE *)pc)[1], ((BYTE *)pc)[2], ((BYTE *)pc)[3],
 				((BYTE *)pc)[4], 0);
 			pc = (int *)((BYTE *)pc + 5);
 			break;
 
 		case PCD_LSPEC5DIRECTB:
-			LineSpecials[((BYTE *)pc)[0]] (activationline, activator, backSide,
+			P_ExecuteSpecial(((BYTE *)pc)[0], activationline, activator, backSide,
 				((BYTE *)pc)[1], ((BYTE *)pc)[2], ((BYTE *)pc)[3],
 				((BYTE *)pc)[4], ((BYTE *)pc)[5]);
 			pc = (int *)((BYTE *)pc + 6);
@@ -4917,7 +5125,7 @@ int DLevelScript::RunScript ()
 
 		case PCD_SCRIPTWAIT:
 			statedata = STACK(1);
-			if (controller->RunningScripts[statedata])
+			if (controller->RunningScripts.CheckKey(statedata) != NULL)
 				state = SCRIPT_ScriptWait;
 			else
 				state = SCRIPT_ScriptWaitPre;
@@ -4983,7 +5191,7 @@ int DLevelScript::RunScript ()
 			break;
 
 		case PCD_BEGINPRINT:
-			work = "";
+			STRINGBUILDER_START(work);
 			break;
 
 		case PCD_PRINTSTRING:
@@ -5090,43 +5298,101 @@ int DLevelScript::RunScript ()
 
 		// [JB] Print map character array
 		case PCD_PRINTMAPCHARARRAY:
+		case PCD_PRINTMAPCHRANGE:
 			{
+				int capacity, offset;
+
+				if (pcd == PCD_PRINTMAPCHRANGE)
+				{
+					capacity = STACK(1);
+					offset = STACK(2);
+					if (capacity < 1 || offset < 0)
+					{
+						sp -= 4;
+						break;
+					}
+					sp -= 2;
+				}
+				else
+				{
+					capacity = 0x7FFFFFFF;
+					offset = 0;
+				}
+
 				int a = *(activeBehavior->MapVars[STACK(1)]);
-				int offset = STACK(2);
+				offset += STACK(2);
 				int c;
-				while((c = activeBehavior->GetArrayVal (a, offset)) != '\0') {
+				while(capacity-- && (c = activeBehavior->GetArrayVal (a, offset)) != '\0') {
 					work += (char)c;
 					offset++;
 				}
-				sp-=2;
+				sp-= 2;
 			}
 			break;
 
 		// [JB] Print world character array
 		case PCD_PRINTWORLDCHARARRAY:
+		case PCD_PRINTWORLDCHRANGE:
 			{
+				int capacity, offset;
+				if (pcd == PCD_PRINTWORLDCHRANGE)
+				{
+					capacity = STACK(1);
+					offset = STACK(2);
+					if (capacity < 1 || offset < 0)
+					{
+						sp -= 4;
+						break;
+					}
+					sp -= 2;
+				}
+				else
+				{
+					capacity = 0x7FFFFFFF;
+					offset = 0;
+				}
+
 				int a = STACK(1);
-				int offset = STACK(2);
+				offset += STACK(2);
 				int c;
-				while((c = ACS_WorldArrays[a][offset]) != '\0') {
+				while(capacity-- && (c = ACS_WorldArrays[a][offset]) != '\0') {
 					work += (char)c;
 					offset++;
 				}
-				sp-=2;
+				sp-= 2;
 			}
 			break;
 
 		// [JB] Print global character array
 		case PCD_PRINTGLOBALCHARARRAY:
+		case PCD_PRINTGLOBALCHRANGE:
 			{
+				int capacity, offset;
+				if (pcd == PCD_PRINTGLOBALCHRANGE)
+				{
+					capacity = STACK(1);
+					offset = STACK(2);
+					if (capacity < 1 || offset < 0)
+					{
+						sp -= 4;
+						break;
+					}
+					sp -= 2;
+				}
+				else
+				{
+					capacity = 0x7FFFFFFF;
+					offset = 0;
+				}
+
 				int a = STACK(1);
-				int offset = STACK(2);
+				offset += STACK(2);
 				int c;
-				while((c = ACS_GlobalArrays[a][offset]) != '\0') {
+				while(capacity-- && (c = ACS_GlobalArrays[a][offset]) != '\0') {
 					work += (char)c;
 					offset++;
 				}
-				sp-=2;
+				sp-= 2;
 			}
 			break;
 
@@ -5157,6 +5423,7 @@ int DLevelScript::RunScript ()
 			if (pcd == PCD_ENDLOG)
 			{
 				Printf ("%s\n", work.GetChars());
+				STRINGBUILDER_FINISH(work);
 			}
 			else if (pcd != PCD_MOREHUDMESSAGE)
 			{
@@ -5175,6 +5442,7 @@ int DLevelScript::RunScript ()
 				{
 					C_MidPrint (activefont, work);
 				}
+				STRINGBUILDER_FINISH(work);
 			}
 			else
 			{
@@ -5272,6 +5540,7 @@ int DLevelScript::RunScript ()
 					}
 				}
 			}
+			STRINGBUILDER_FINISH(work);
 			sp = optstart-6;
 			break;
 
@@ -5492,12 +5761,21 @@ int DLevelScript::RunScript ()
 		case PCD_SETLINESPECIAL:
 			{
 				int linenum = -1;
+				int specnum = STACK(6);
+				int arg0 = STACK(5);
 
-				while ((linenum = P_FindLineFromID (STACK(7), linenum)) >= 0) {
+				// Convert named ACS "specials" into real specials.
+				if (specnum >= -ACSF_ACS_NamedExecuteAlways && specnum <= -ACSF_ACS_NamedExecute)
+				{
+					specnum = NamedACSToNormalACS[-specnum - ACSF_ACS_NamedExecute];
+					arg0 = -FName(FBehavior::StaticLookupString(arg0));
+				}
+
+				while ((linenum = P_FindLineFromID (STACK(7), linenum)) >= 0)
+				{
 					line_t *line = &lines[linenum];
-
-					line->special = STACK(6);
-					line->args[0] = STACK(5);
+					line->special = specnum;
+					line->args[0] = arg0;
 					line->args[1] = STACK(4);
 					line->args[2] = STACK(3);
 					line->args[3] = STACK(2);
@@ -5509,6 +5787,16 @@ int DLevelScript::RunScript ()
 
 		case PCD_SETTHINGSPECIAL:
 			{
+				int specnum = STACK(6);
+				int arg0 = STACK(5);
+
+				// Convert named ACS "specials" into real specials.
+				if (specnum >= -ACSF_ACS_NamedExecuteAlways && specnum <= -ACSF_ACS_NamedExecute)
+				{
+					specnum = NamedACSToNormalACS[-specnum - ACSF_ACS_NamedExecute];
+					arg0 = -FName(FBehavior::StaticLookupString(arg0));
+				}
+
 				if (STACK(7) != 0)
 				{
 					FActorIterator iterator (STACK(7));
@@ -5516,8 +5804,8 @@ int DLevelScript::RunScript ()
 
 					while ( (actor = iterator.Next ()) )
 					{
-						actor->special = STACK(6);
-						actor->args[0] = STACK(5);
+						actor->special = specnum;
+						actor->args[0] = arg0;
 						actor->args[1] = STACK(4);
 						actor->args[2] = STACK(3);
 						actor->args[3] = STACK(2);
@@ -5526,8 +5814,8 @@ int DLevelScript::RunScript ()
 				}
 				else if (activator != NULL)
 				{
-					activator->special = STACK(6);
-					activator->args[0] = STACK(5);
+					activator->special = specnum;
+					activator->args[0] = arg0;
 					activator->args[1] = STACK(4);
 					activator->args[2] = STACK(3);
 					activator->args[3] = STACK(2);
@@ -6689,6 +6977,101 @@ int DLevelScript::RunScript ()
 				sp -= 1;
 			}	
 			break;
+
+		case PCD_SAVESTRING:
+			// Saves the string
+			{
+				unsigned int str_otf = ACS_StringsOnTheFly.Push(strbin1(work));
+				if (str_otf > 0xffff)
+				{
+					PushToStack(-1);
+				}
+				else
+				{
+					PushToStack((SDWORD)str_otf|ACSSTRING_OR_ONTHEFLY);
+				}
+				STRINGBUILDER_FINISH(work);
+			}		
+			break;
+
+		case PCD_STRCPYTOMAPCHRANGE:
+		case PCD_STRCPYTOWORLDCHRANGE:
+		case PCD_STRCPYTOGLOBALCHRANGE:
+			// source: stringid(2); stringoffset(1)
+			// destination: capacity (3); stringoffset(4); arrayid (5); offset(6)
+
+			{
+				int index = STACK(4);
+				int capacity = STACK(3);
+
+				if (index < 0 || STACK(1) < 0)
+				{
+					// no writable destination, or negative offset to source string
+					sp -= 5;
+					Stack[sp-1] = 0; // false
+					break;
+				}
+
+				index += STACK(6);
+				
+				lookup = FBehavior::StaticLookupString (STACK(2));
+				
+				if (!lookup) {
+					// no data, operation complete
+	STRCPYTORANGECOMPLETE:
+					sp -= 5;
+					Stack[sp-1] = 1; // true
+					break;
+				}
+
+				for (int i = 0;i < STACK(1); i++)
+				{
+					if (! (*(lookup++)))
+					{
+						// no data, operation complete
+						goto STRCPYTORANGECOMPLETE;
+					}
+				}
+
+				switch (pcd)
+				{
+					case PCD_STRCPYTOMAPCHRANGE:
+						{
+							Stack[sp-6] = activeBehavior->CopyStringToArray(STACK(5), index, capacity, lookup);
+						}
+						break;
+					case PCD_STRCPYTOWORLDCHRANGE:
+						{
+							int a = STACK(5);
+
+							while (capacity-- > 0)
+							{
+								ACS_WorldArrays[a][index++] = *lookup;
+								if (! (*(lookup++))) goto STRCPYTORANGECOMPLETE; // complete with terminating 0
+							}
+							
+							Stack[sp-6] = !(*lookup); // true/success if only terminating 0 was not copied
+						}
+						break;
+					case PCD_STRCPYTOGLOBALCHRANGE:
+						{
+							int a = STACK(5);
+
+							while (capacity-- > 0)
+							{
+								ACS_GlobalArrays[a][index++] = *lookup;
+								if (! (*(lookup++))) goto STRCPYTORANGECOMPLETE; // complete with terminating 0
+							}
+							
+							Stack[sp-6] = !(*lookup); // true/success if only terminating 0 was not copied
+						}
+						break;
+					
+				}
+				sp -= 5;
+			}
+			break;
+
  		}
  	}
 
@@ -6705,8 +7088,12 @@ int DLevelScript::RunScript ()
 	if (state == SCRIPT_PleaseRemove)
 	{
 		Unlink ();
-		if (controller->RunningScripts[script] == this)
-			controller->RunningScripts[script] = NULL;
+		DLevelScript **running;
+		if ((running = controller->RunningScripts.CheckKey(script)) != NULL &&
+			*running == this)
+		{
+			controller->RunningScripts.Remove(script);
+		}
 	}
 	else
 	{
@@ -6719,50 +7106,44 @@ int DLevelScript::RunScript ()
 #undef PushtoStack
 
 static DLevelScript *P_GetScriptGoing (AActor *who, line_t *where, int num, const ScriptPtr *code, FBehavior *module,
-	bool backSide, int arg0, int arg1, int arg2, int always)
+	const int *args, int argcount, int flags)
 {
 	DACSThinker *controller = DACSThinker::ActiveThinker;
+	DLevelScript **running;
 
-	if (controller && !always && controller->RunningScripts[num])
+	if (controller && !(flags & ACS_ALWAYS) && (running = controller->RunningScripts.CheckKey(num)) != NULL)
 	{
-		if (controller->RunningScripts[num]->GetState () == DLevelScript::SCRIPT_Suspended)
+		if ((*running)->GetState() == DLevelScript::SCRIPT_Suspended)
 		{
-			controller->RunningScripts[num]->SetState (DLevelScript::SCRIPT_Running);
-			return controller->RunningScripts[num];
+			(*running)->SetState(DLevelScript::SCRIPT_Running);
+			return *running;
 		}
 		return NULL;
 	}
 
-	return new DLevelScript (who, where, num, code, module, backSide, arg0, arg1, arg2, always);
+	return new DLevelScript (who, where, num, code, module, args, argcount, flags);
 }
 
 DLevelScript::DLevelScript (AActor *who, line_t *where, int num, const ScriptPtr *code, FBehavior *module,
-							bool backside, int arg0, int arg1, int arg2, int always)
+	const int *args, int argcount, int flags)
 	: activeBehavior (module)
 {
 	if (DACSThinker::ActiveThinker == NULL)
 		new DACSThinker;
 
 	script = num;
+	assert(code->VarCount >= code->ArgCount);
 	numlocalvars = code->VarCount;
 	localvars = new SDWORD[code->VarCount];
-	if (code->VarCount > 0)
+	memset(localvars, 0, code->VarCount * sizeof(SDWORD));
+	for (int i = 0; i < MIN<int>(argcount, code->ArgCount); ++i)
 	{
-		localvars[0] = arg0;
-		if (code->VarCount > 1)
-		{
-			localvars[1] = arg1;
-			if (code->VarCount > 2)
-			{
-				localvars[2] = arg2;
-			}
-		}
+		localvars[i] = args[i];
 	}
-	memset (localvars+code->ArgCount, 0, (code->VarCount-code->ArgCount)*sizeof(SDWORD));
-	pc = module->GetScriptAddress (code);
+	pc = module->GetScriptAddress(code);
 	activator = who;
 	activationline = where;
-	backSide = backside;
+	backSide = flags & ACS_BACKSIDE;
 	activefont = SmallFont;
 	hudwidth = hudheight = 0;
 	state = SCRIPT_Running;
@@ -6772,25 +7153,28 @@ DLevelScript::DLevelScript (AActor *who, line_t *where, int num, const ScriptPtr
 	// set in an editor. If an open script sets them, it looks dumb if a second
 	// goes by while they're in their default state.
 
-	if (!always)
+	if (!(flags & ACS_ALWAYS))
 		DACSThinker::ActiveThinker->RunningScripts[num] = this;
 
-	Link ();
+	Link();
 
 	if (level.flags2 & LEVEL2_HEXENHACK)
 	{
 		PutLast();
 	}
 
-	DPrintf ("Script %d started.\n", num);
+	DPrintf("Script %d started.\n", num);
 }
 
 static void SetScriptState (int script, DLevelScript::EScriptState state)
 {
 	DACSThinker *controller = DACSThinker::ActiveThinker;
+	DLevelScript **running;
 
-	if (controller != NULL && controller->RunningScripts[script])
-		controller->RunningScripts[script]->SetState (state);
+	if (controller != NULL && (running = controller->RunningScripts.CheckKey(script)) != NULL)
+	{
+		(*running)->SetState (state);
+	}
 }
 
 void P_DoDeferedScripts ()
@@ -6815,8 +7199,8 @@ void P_DoDeferedScripts ()
 					playeringame[def->playernum] ? players[def->playernum].mo : NULL,
 					NULL, def->script,
 					scriptdata, module,
-					0, def->arg0, def->arg1, def->arg2,
-					def->type == acsdefered_t::defexealways);
+					def->args, 3,
+					def->type == acsdefered_t::defexealways ? ACS_ALWAYS : 0);
 			}
 			else
 			{
@@ -6826,12 +7210,12 @@ void P_DoDeferedScripts ()
 
 		case acsdefered_t::defsuspend:
 			SetScriptState (def->script, DLevelScript::SCRIPT_Suspended);
-			DPrintf ("Defered suspend of script %d\n", def->script);
+			DPrintf ("Deferred suspend of script %d\n", def->script);
 			break;
 
 		case acsdefered_t::defterminate:
 			SetScriptState (def->script, DLevelScript::SCRIPT_PleaseRemove);
-			DPrintf ("Defered terminate of script %d\n", def->script);
+			DPrintf ("Deferred terminate of script %d\n", def->script);
 			break;
 		}
 		delete def;
@@ -6840,18 +7224,24 @@ void P_DoDeferedScripts ()
 	level.info->defered = NULL;
 }
 
-static void addDefered (level_info_t *i, acsdefered_t::EType type, int script, int arg0, int arg1, int arg2, AActor *who)
+static void addDefered (level_info_t *i, acsdefered_t::EType type, int script, const int *args, int argcount, AActor *who)
 {
 	if (i)
 	{
 		acsdefered_t *def = new acsdefered_t;
+		int j;
 
 		def->next = i->defered;
 		def->type = type;
 		def->script = script;
-		def->arg0 = arg0;
-		def->arg1 = arg1;
-		def->arg2 = arg2;
+		for (j = 0; j < countof(def->args) && j < argcount; ++j)
+		{
+			def->args[j] = args[j];
+		}
+		while (j < countof(def->args))
+		{
+			def->args[j++] = 0;
+		}
 		if (who != NULL && who->player != NULL)
 		{
 			def->playernum = int(who->player - players);
@@ -6861,14 +7251,13 @@ static void addDefered (level_info_t *i, acsdefered_t::EType type, int script, i
 			def->playernum = -1;
 		}
 		i->defered = def;
-		DPrintf ("Script %d on map %s defered\n", script, i->mapname);
+		DPrintf ("Script %d on map %s deferred\n", script, i->mapname);
 	}
 }
 
 EXTERN_CVAR (Bool, sv_cheats)
 
-int P_StartScript (AActor *who, line_t *where, int script, char *map, bool backSide,
-					int arg0, int arg1, int arg2, int always, bool wantResultCode, bool net)
+int P_StartScript (AActor *who, line_t *where, int script, const char *map, const int *args, int argcount, int flags)
 {
 	if (map == NULL || 0 == strnicmp (level.mapname, map, 8))
 	{
@@ -6877,24 +7266,29 @@ int P_StartScript (AActor *who, line_t *where, int script, char *map, bool backS
 
 		if ((scriptdata = FBehavior::StaticFindScript (script, module)) != NULL)
 		{
-			if (net && netgame && !sv_cheats)
+			if ((flags & ACS_NET) && netgame && !sv_cheats)
 			{
 				// If playing multiplayer and cheats are disallowed, check to
 				// make sure only net scripts are run.
 				if (!(scriptdata->Flags & SCRIPTF_Net))
 				{
-					Printf (PRINT_BOLD, "%s tried to puke script %d (%d, %d, %d)\n",
-						who->player->userinfo.netname, script, arg0, arg1, arg2);
+					Printf(PRINT_BOLD, "%s tried to puke script %d (\n",
+						who->player->userinfo.netname, script);
+					for (int i = 0; i < argcount; ++i)
+					{
+						Printf(PRINT_BOLD, "%d%s", args[i], i == argcount-1 ? "" : ", ");
+					}
+					Printf(PRINT_BOLD, ")\n");
 					return false;
 				}
 			}
 			DLevelScript *runningScript = P_GetScriptGoing (who, where, script,
-				scriptdata, module, backSide, arg0, arg1, arg2, always);
+				scriptdata, module, args, argcount, flags);
 			if (runningScript != NULL)
 			{
-				if (wantResultCode)
+				if (flags & ACS_WANTRESULT)
 				{
-					return runningScript->RunScript ();
+					return runningScript->RunScript();
 				}
 				return true;
 			}
@@ -6902,17 +7296,17 @@ int P_StartScript (AActor *who, line_t *where, int script, char *map, bool backS
 		}
 		else
 		{
-			if (!net || (who && who->player == &players[consoleplayer]))
+			if (!(flags & ACS_NET) || (who && who->player == &players[consoleplayer]))
 			{
-				Printf ("P_StartScript: Unknown script %d\n", script);
+				Printf("P_StartScript: Unknown script %d\n", script);
 			}
 		}
 	}
 	else
 	{
 		addDefered (FindLevelInfo (map),
-					always ? acsdefered_t::defexealways : acsdefered_t::defexecute,
-					script, arg0, arg1, arg2, who);
+					(flags & ACS_ALWAYS) ? acsdefered_t::defexealways : acsdefered_t::defexecute,
+					script, args, argcount, who);
 		return true;
 	}
 	return false;
@@ -6921,7 +7315,7 @@ int P_StartScript (AActor *who, line_t *where, int script, char *map, bool backS
 void P_SuspendScript (int script, char *map)
 {
 	if (strnicmp (level.mapname, map, 8))
-		addDefered (FindLevelInfo (map), acsdefered_t::defsuspend, script, 0, 0, 0, NULL);
+		addDefered (FindLevelInfo (map), acsdefered_t::defsuspend, script, NULL, 0, NULL);
 	else
 		SetScriptState (script, DLevelScript::SCRIPT_Suspended);
 }
@@ -6929,7 +7323,7 @@ void P_SuspendScript (int script, char *map)
 void P_TerminateScript (int script, char *map)
 {
 	if (strnicmp (level.mapname, map, 8))
-		addDefered (FindLevelInfo (map), acsdefered_t::defterminate, script, 0, 0, 0, NULL);
+		addDefered (FindLevelInfo (map), acsdefered_t::defterminate, script, NULL, 0, NULL);
 	else
 		SetScriptState (script, DLevelScript::SCRIPT_PleaseRemove);
 }
@@ -6947,8 +7341,9 @@ FArchive &operator<< (FArchive &arc, acsdefered_t *&defertop)
 			BYTE type;
 			arc << more;
 			type = (BYTE)defer->type;
-			arc << type << defer->script << defer->playernum
-				<< defer->arg0 << defer->arg1 << defer->arg2;
+			arc << type;
+			P_SerializeACSScriptNumber(arc, defer->script, false);
+			arc << defer->playernum << defer->args[0] << defer->args[1] << defer->args[2];
 			defer = defer->next;
 		}
 		more = 0;
@@ -6964,8 +7359,8 @@ FArchive &operator<< (FArchive &arc, acsdefered_t *&defertop)
 			*defer = new acsdefered_t;
 			arc << more;
 			(*defer)->type = (acsdefered_t::EType)more;
-			arc << (*defer)->script << (*defer)->playernum
-				<< (*defer)->arg0 << (*defer)->arg1 << (*defer)->arg2;
+			P_SerializeACSScriptNumber(arc, (*defer)->script, false);
+			arc << (*defer)->playernum << (*defer)->args[0] << (*defer)->args[1] << (*defer)->args[2];
 			defer = &((*defer)->next);
 			arc << more;
 		}
@@ -7003,7 +7398,17 @@ void DACSThinker::DumpScriptStatus ()
 
 	while (script != NULL)
 	{
-		Printf ("%d: %s\n", script->script, stateNames[script->state]);
+		if (script->script < 0)
+		{
+			Printf("\"%s\": %s\n", FName(ENamedName(-script->script)).GetChars(), stateNames[script->state]);
+		}
+		else
+		{
+			Printf("%d: %s\n", script->script, stateNames[script->state]);
+		}
 		script = script->next;
 	}
 }
+
+#undef STRINGBUILDER_START
+#undef STRINGBUILDER_FINISH

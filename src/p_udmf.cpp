@@ -33,7 +33,7 @@
 **
 */
 
-#include "r_data.h"
+#include "doomstat.h"
 #include "p_setup.h"
 #include "p_lnspec.h"
 #include "templates.h"
@@ -43,6 +43,8 @@
 #include "g_level.h"
 #include "v_palette.h"
 #include "p_udmf.h"
+#include "r_state.h"
+#include "r_data/colormaps.h"
 
 //===========================================================================
 //
@@ -110,9 +112,8 @@ enum
 	// namespace for each game
 };
 
-
-void SetTexture (sector_t *sector, int index, int position, const char *name8);
-void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, mapsidedef_t *msd, int special, int tag, short *alpha);
+void SetTexture (sector_t *sector, int index, int position, const char *name8, FMissingTextureTracker &);
+void P_ProcessSideTextures(bool checktranmap, side_t *sd, sector_t *sec, mapsidedef_t *msd, int special, int tag, short *alpha, FMissingTextureTracker &);
 void P_AdjustLine (line_t *ld);
 void P_FinishLoadingLineDef(line_t *ld, int alpha);
 void SpawnMapThing(int index, FMapThing *mt, int position);
@@ -345,7 +346,7 @@ int GetUDMFInt(int type, int index, const char *key)
 			FUDMFKey *pKey = pKeys->Find(key);
 			if (pKey != NULL)
 			{
-				return FLOAT2FIXED(pKey->IntVal);
+				return pKey->IntVal;
 			}
 		}
 	}
@@ -393,9 +394,11 @@ class UDMFParser : public UDMFParserBase
 	TArray<vertexdata_t> ParsedVertexDatas;
 
 	FDynamicColormap	*fogMap, *normMap;
+	FMissingTextureTracker &missingTex;
 
 public:
-	UDMFParser()
+	UDMFParser(FMissingTextureTracker &missing)
+		: missingTex(missing)
 	{
 		linemap.Clear();
 		fogMap = normMap = NULL;
@@ -411,14 +414,14 @@ public:
 			{
 				switch (sc.TokenType)
 				{
-				case TK_Int:
+				case TK_IntConst:
 					keyarray[i] = sc.Number;
 					break;
-				case TK_Float:
+				case TK_FloatConst:
 					keyarray[i] = sc.Float;
 					break;
 				default:
-				case TK_String:
+				case TK_StringConst:
 					keyarray[i] = parsedString;
 					break;
 				case TK_True:
@@ -435,14 +438,14 @@ public:
 		ukey.Key = key;
 		switch (sc.TokenType)
 		{
-		case TK_Int:
+		case TK_IntConst:
 			ukey = sc.Number;
 			break;
-		case TK_Float:
+		case TK_FloatConst:
 			ukey = sc.Float;
 			break;
 		default:
-		case TK_String:
+		case TK_StringConst:
 			ukey = parsedString;
 			break;
 		case TK_True:
@@ -463,6 +466,8 @@ public:
 
 	void ParseThing(FMapThing *th)
 	{
+		FString arg0str;
+
 		memset(th, 0, sizeof(*th));
 		sc.MustGetToken('{');
 		while (!sc.CheckToken('}'))
@@ -511,6 +516,11 @@ public:
 			case NAME_Arg4:
 				CHECK_N(Hx | Zd | Zdt | Va)
 				th->args[int(key)-int(NAME_Arg0)] = CheckInt(key);
+				break;
+
+			case NAME_Arg0Str:
+				CHECK_N(Zd);
+				arg0str = CheckString(key);
 				break;
 
 			case NAME_Skill1:
@@ -613,6 +623,10 @@ public:
 				break;
 			}
 		}
+		if (arg0str.IsNotEmpty() && P_IsACSSpecial(th->special))
+		{
+			th->args[0] = -FName(arg0str);
+		}
 		// Thing specials are only valid in namespaces with Hexen-type specials
 		// and in ZDoomTranslated - which will use the translator on them.
 		if (namespc == NAME_ZDoomTranslated)
@@ -648,6 +662,7 @@ public:
 	{
 		bool passuse = false;
 		bool strifetrans = false;
+		FString arg0str;
 
 		memset(ld, 0, sizeof(*ld));
 		ld->Alpha = FRACUNIT;
@@ -703,6 +718,11 @@ public:
 				ld->args[int(key)-int(NAME_Arg0)] = CheckInt(key);
 				continue;
 
+			case NAME_Arg0Str:
+				CHECK_N(Zd);
+				arg0str = CheckString(key);
+				continue;
+
 			case NAME_Blocking:
 				Flag(ld->flags, ML_BLOCKING, key); 
 				continue;
@@ -749,7 +769,7 @@ public:
 				Flag(ld->flags, ML_BLOCK_FLOATERS, key); 
 				continue;
 
-			case NAME_Transparent:	
+			case NAME_Translucent:
 				CHECK_N(St | Zd | Zdt | Va)
 				strifetrans = CheckBool(key); 
 				continue;
@@ -877,6 +897,11 @@ public:
 			case NAME_blocksight:
 				Flag(ld->flags, ML_BLOCKSIGHT, key); 
 				continue;
+			
+			// [Dusk] lock number
+			case NAME_Locknumber:
+				ld->locknumber = CheckInt(key);
+				continue;
 
 			default:
 				break;
@@ -911,6 +936,10 @@ public:
 		{
 			ld->sidedef[0] = (side_t*)(intptr_t)(1);
 			Printf("Line %d has no first side.\n", index);
+		}
+		if (arg0str.IsNotEmpty() && P_IsACSSpecial(ld->special))
+		{
+			ld->args[0] = -FName(arg0str);
 		}
 	}
 
@@ -1113,15 +1142,15 @@ public:
 				continue;
 
 			case NAME_Texturefloor:
-				SetTexture(sec, index, sector_t::floor, CheckString(key));
+				SetTexture(sec, index, sector_t::floor, CheckString(key), missingTex);
 				continue;
 
 			case NAME_Textureceiling:
-				SetTexture(sec, index, sector_t::ceiling, CheckString(key));
+				SetTexture(sec, index, sector_t::ceiling, CheckString(key), missingTex);
 				continue;
 
 			case NAME_Lightlevel:
-				sec->lightlevel = (BYTE)clamp<int>(CheckInt(key), 0, 255);
+				sec->lightlevel = sector_t::ClampLight(CheckInt(key));
 				continue;
 
 			case NAME_Special:
@@ -1429,7 +1458,7 @@ public:
 					lines[line].sidedef[sd] = &sides[side];
 
 					P_ProcessSideTextures(!isExtended, &sides[side], sides[side].sector, &ParsedSideTextures[mapside],
-						lines[line].special, lines[line].args[0], &tempalpha[sd]);
+						lines[line].special, lines[line].args[0], &tempalpha[sd], missingTex);
 
 					side++;
 				}
@@ -1451,6 +1480,8 @@ public:
 		char *buffer = new char[map->Size(ML_TEXTMAP)];
 
 		isTranslated = true;
+		isExtended = false;
+		floordrop = false;
 
 		map->Read(ML_TEXTMAP, buffer);
 		sc.OpenMem(Wads.GetLumpFullName(map->lumpnum), buffer, map->Size(ML_TEXTMAP));
@@ -1569,6 +1600,12 @@ public:
 			}
 		}
 
+		// Catch bogus maps here rather than during nodebuilding
+		if (ParsedVertices.Size() == 0)	I_Error("Map has no vertices.\n");
+		if (ParsedSectors.Size() == 0)	I_Error("Map has no sectors. \n");
+		if (ParsedLines.Size() == 0)	I_Error("Map has no linedefs.\n");
+		if (ParsedSides.Size() == 0)	I_Error("Map has no sidedefs.\n");
+
 		// Create the real vertices
 		numvertexes = ParsedVertices.Size();
 		vertexes = new vertex_t[numvertexes];
@@ -1594,9 +1631,9 @@ public:
 	}
 };
 
-void P_ParseTextMap(MapData *map)
+void P_ParseTextMap(MapData *map, FMissingTextureTracker &missingtex)
 {
-	UDMFParser parse;
+	UDMFParser parse(missingtex);
 
 	parse.ParseTextMap(map);
 }

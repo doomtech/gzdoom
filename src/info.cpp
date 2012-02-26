@@ -61,7 +61,7 @@ extern void ClearStrifeTypes();
 //
 //==========================================================================
 
-int GetSpriteIndex(const char * spritename)
+int GetSpriteIndex(const char * spritename, bool add)
 {
 	static char lastsprite[5];
 	static int lastindex;
@@ -86,6 +86,10 @@ int GetSpriteIndex(const char * spritename)
 		{
 			return (lastindex = (int)i);
 		}
+	}
+	if (!add)
+	{
+		return (lastindex = -1);
 	}
 	spritedef_t temp;
 	strcpy (temp.name, upper);
@@ -306,6 +310,19 @@ void FActorInfo::SetPainChance(FName type, int chance)
 		if (PainChances != NULL) 
 			PainChances->Remove(type);
 	}
+}
+
+//==========================================================================
+//
+//
+//==========================================================================
+
+void FActorInfo::SetPainFlash(FName type, PalEntry color)
+{
+	if (PainFlashes == NULL)
+		PainFlashes = new PainFlashList;
+
+	PainFlashes->Insert(type, color);
 }
 
 //==========================================================================

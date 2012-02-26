@@ -42,7 +42,6 @@
 #include "m_random.h"
 #include "doomstat.h"
 #include "wi_stuff.h"
-#include "r_data.h"
 #include "w_wad.h"
 #include "am_map.h"
 #include "c_dispatch.h"
@@ -70,15 +69,18 @@
 #include "version.h"
 #include "statnums.h"
 #include "sbarinfo.h"
-#include "r_translate.h"
+#include "r_data/r_translate.h"
 #include "p_lnspec.h"
-#include "r_interpolate.h"
+#include "r_data/r_interpolate.h"
 #include "cmdlib.h"
 #include "d_net.h"
 #include "d_netinf.h"
 #include "v_palette.h"
 #include "menu/menu.h"
 #include "a_strifeglobal.h"
+#include "r_data/colormaps.h"
+#include "farchive.h"
+#include "r_renderer.h"
 
 #include "gi.h"
 
@@ -662,6 +664,9 @@ void G_DoCompleted (void)
 		}
 		else
 		{
+
+
+
 			level_info_t *nextinfo = FindLevelInfo (nextlevel);
 			wminfo.next = nextinfo->mapname;
 			wminfo.LName1 = TexMan[TexMan.CheckForTexture(nextinfo->pname, FTexture::TEX_MiscPatch)];
@@ -1144,6 +1149,7 @@ void G_FinishTravel ()
 			pawn->LinkToWorld ();
 			pawn->AddToHash ();
 			pawn->SetState(pawn->SpawnState);
+			pawn->player->SendPitchLimits();
 
 			for (inv = pawn->Inventory; inv != NULL; inv = inv->Inventory)
 			{
@@ -1251,6 +1257,7 @@ void G_InitLevelLocals ()
 	level.skypic2[8] = 0;
 
 	compatflags.Callback();
+	compatflags2.Callback();
 
 	NormalLight.ChangeFade (level.fadeto);
 
@@ -1348,7 +1355,7 @@ void G_SerializeLevel (FArchive &arc, bool hubLoad)
 {
 	int i = level.totaltime;
 	
-	screen->StartSerialize(arc);
+	Renderer->StartSerialize(arc);
 
 	arc << level.flags
 		<< level.flags2
@@ -1361,6 +1368,11 @@ void G_SerializeLevel (FArchive &arc, bool hubLoad)
 		<< level.teamdamage
 		<< level.maptime
 		<< i;
+
+	if (SaveVersion >= 3313)
+	{
+		arc << level.nextmusic;
+	}
 
 	// Hub transitions must keep the current total time
 	if (!hubLoad)
@@ -1467,7 +1479,7 @@ void G_SerializeLevel (FArchive &arc, bool hubLoad)
 			}
 		}
 	}
-	screen->EndSerialize(arc);
+	Renderer->EndSerialize(arc);
 }
 
 //==========================================================================
@@ -1861,10 +1873,13 @@ CCMD(listmaps)
 	for(unsigned i = 0; i < wadlevelinfos.Size(); i++)
 	{
 		level_info_t *info = &wadlevelinfos[i];
+		MapData *map = P_OpenMapData(info->mapname);
 
-		if (P_CheckMapData(info->mapname))
+		if (map != NULL)
 		{
-			Printf("%s: '%s'\n", info->mapname, info->LookupLevelName().GetChars());
+			Printf("%s: '%s' (%s)\n", info->mapname, info->LookupLevelName().GetChars(),
+				Wads.GetWadName(Wads.GetLumpFile(map->lumpnum)));
+			delete map;
 		}
 	}
 }

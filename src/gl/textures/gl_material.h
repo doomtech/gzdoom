@@ -2,9 +2,10 @@
 #ifndef __GL_TEXTURE_H
 #define __GL_TEXTURE_H
 
+#include "m_fixed.h"
+#include "textures/textures.h"
 #include "gl/textures/gl_hwtexture.h"
 #include "gl/renderer/gl_colormap.h"
-#include "r_data.h"
 #include "i_system.h"
 
 EXTERN_CVAR(Bool, gl_precache)
@@ -229,9 +230,16 @@ public:
 	{
 		if (mBaseLayer->bIsTransparent == -1) 
 		{
-			int w, h;
-			unsigned char *buffer = CreateTexBuffer(CM_DEFAULT, 0, w, h);
-			delete [] buffer;
+			if (!mBaseLayer->tex->bHasCanvas)
+			{
+				int w, h;
+				unsigned char *buffer = CreateTexBuffer(CM_DEFAULT, 0, w, h);
+				delete [] buffer;
+			}
+			else
+			{
+				mBaseLayer->bIsTransparent = 0;
+			}
 		}
 		return !!mBaseLayer->bIsTransparent;
 	}

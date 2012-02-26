@@ -53,7 +53,7 @@
 #include "thingdef/thingdef.h"
 #include "g_game.h"
 #include "teaminfo.h"
-#include "r_translate.h"
+#include "r_data/r_translate.h"
 #include "r_sky.h"
 #include "g_level.h"
 #include "d_event.h"
@@ -61,6 +61,9 @@
 #include "v_palette.h"
 #include "p_enemy.h"
 #include "gstrings.h"
+#include "farchive.h"
+#include "r_data/colormaps.h"
+#include "r_renderer.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -227,8 +230,12 @@ void AActor::Serialize (FArchive &arc)
 		<< velz
 		<< tics
 		<< state
-		<< Damage
-		<< flags
+		<< Damage;
+	if (SaveVersion >= 3227)
+	{
+		arc << projectileKickback;
+	}
+	arc	<< flags
 		<< flags2
 		<< flags3
 		<< flags4
@@ -253,8 +260,16 @@ void AActor::Serialize (FArchive &arc)
 		<< tracer
 		<< floorclip
 		<< tid
-		<< special
-		<< args[0] << args[1] << args[2] << args[3] << args[4]
+		<< special;
+	if (P_IsACSSpecial(special))
+	{
+		P_SerializeACSScriptNumber(arc, args[0], false);
+	}
+	else
+	{
+		arc << args[0];
+	}
+	arc << args[1] << args[2] << args[3] << args[4]
 		<< goal
 		<< waterlevel
 		<< MinMissileChance
@@ -290,13 +305,20 @@ void AActor::Serialize (FArchive &arc)
 		<< maxtargetrange
 		<< meleethreshold
 		<< meleerange
-		<< DamageType
-		<< gravity
+		<< DamageType;
+	if (SaveVersion >= 3237) 
+	{
+		arc
+		<< PainType
+		<< DeathType;
+	}
+	arc	<< gravity
 		<< FastChaseStrafeCount
 		<< master
 		<< smokecounter
 		<< BlockingMobj
 		<< BlockingLine
+		<< VisibleToTeam // [BB]
 		<< pushfactor
 		<< Species
 		<< Score;
@@ -309,8 +331,12 @@ void AActor::Serialize (FArchive &arc)
 		<< DamageFactor
 		<< WeaveIndexXY << WeaveIndexZ
 		<< PoisonDamageReceived << PoisonDurationReceived << PoisonPeriodReceived << Poisoner
-		<< PoisonDamage << PoisonDuration << PoisonPeriod
-		<< ConversationRoot << Conversation;
+		<< PoisonDamage << PoisonDuration << PoisonPeriod;
+	if (SaveVersion >= 3235)
+	{
+		arc << PoisonDamageType << PoisonDamageTypeReceived;
+	}
+	arc << ConversationRoot << Conversation;
 
 	{
 		FString tagstr;
@@ -364,6 +390,7 @@ AActor::AActor () throw()
 }
 
 AActor::AActor (const AActor &other) throw()
+	: DThinker()
 {
 	memcpy (&x, &other.x, (BYTE *)&this[1] - (BYTE *)&x);
 }
@@ -506,7 +533,7 @@ bool AActor::SetState (FState *newstate, bool nofunction)
 
 	if (screen != NULL)
 	{
-		screen->StateChanged(this);
+		Renderer->StateChanged(this);
 	}
 	return true;
 }
@@ -769,7 +796,7 @@ bool AActor::GiveAmmo (const PClass *type, int amount)
 //
 //============================================================================
 
-void AActor::CopyFriendliness (AActor *other, bool changeTarget)
+void AActor::CopyFriendliness (AActor *other, bool changeTarget, bool resetHealth)
 {
 	level.total_monsters -= CountsAsKill();
 	TIDtoHate = other->TIDtoHate;
@@ -785,7 +812,7 @@ void AActor::CopyFriendliness (AActor *other, bool changeTarget)
 		// LastHeard must be set as well so that A_Look can react to the new target if called
 		LastHeard = target = other->target;
 	}	
-	health = SpawnHealth();	
+	if (resetHealth) health = SpawnHealth();	
 	level.total_monsters += CountsAsKill();
 }
 
@@ -851,6 +878,46 @@ bool AActor::CheckLocalView (int playernum) const
 		return true;
 	}
 	return false;
+}
+
+//============================================================================
+//
+// AActor :: IsVisibleToPlayer
+//
+// Returns true if this actor should be seen by the console player.
+//
+//============================================================================
+
+bool AActor::IsVisibleToPlayer() const
+{
+	// [BB] Safety check. This should never be NULL. Nevertheless, we return true to leave the default ZDoom behavior unaltered.
+	if ( players[consoleplayer].camera == NULL )
+		return true;
+ 
+	if ( VisibleToTeam != 0 && teamplay &&
+		VisibleToTeam-1 != players[consoleplayer].userinfo.team )
+		return false;
+
+	const player_t* pPlayer = players[consoleplayer].camera->player;
+
+	if(pPlayer && pPlayer->mo && GetClass()->ActorInfo->VisibleToPlayerClass.Size() > 0)
+	{
+		bool visible = false;
+		for(unsigned int i = 0;i < GetClass()->ActorInfo->VisibleToPlayerClass.Size();++i)
+		{
+			const PClass *cls = GetClass()->ActorInfo->VisibleToPlayerClass[i];
+			if(cls && pPlayer->mo->GetClass()->IsDescendantOf(cls))
+			{
+				visible = true;
+				break;
+			}
+		}
+		if(!visible)
+			return false;
+	}
+
+	// [BB] Passed all checks.
+	return true;
 }
 
 //============================================================================
@@ -1409,16 +1476,18 @@ bool AActor::CanSeek(AActor *target) const
 //
 //----------------------------------------------------------------------------
 
-bool P_SeekerMissile (AActor *actor, angle_t thresh, angle_t turnMax, bool precise)
+bool P_SeekerMissile (AActor *actor, angle_t thresh, angle_t turnMax, bool precise, bool usecurspeed)
 {
 	int dir;
 	int dist;
 	angle_t delta;
 	angle_t angle;
 	AActor *target;
+	fixed_t speed;
 
+	speed = !usecurspeed ? actor->Speed : xs_CRoundToInt(TVector3<double>(actor->velx, actor->vely, actor->velz).Length());
 	target = actor->tracer;
-	if (target == NULL || actor->Speed == 0 || !actor->CanSeek(target))
+	if (target == NULL || speed == 0 || !actor->CanSeek(target))
 	{
 		return false;
 	}
@@ -1448,8 +1517,8 @@ bool P_SeekerMissile (AActor *actor, angle_t thresh, angle_t turnMax, bool preci
 	
 	if (!precise)
 	{
-		actor->velx = FixedMul (actor->Speed, finecosine[angle]);
-		actor->vely = FixedMul (actor->Speed, finesine[angle]);
+		actor->velx = FixedMul (speed, finecosine[angle]);
+		actor->vely = FixedMul (speed, finesine[angle]);
 
 		if (!(actor->flags3 & (MF3_FLOORHUGGER|MF3_CEILINGHUGGER)))
 		{
@@ -1457,7 +1526,7 @@ bool P_SeekerMissile (AActor *actor, angle_t thresh, angle_t turnMax, bool preci
 				target->z + target->height < actor->z)
 			{ // Need to seek vertically
 				dist = P_AproxDistance (target->x - actor->x, target->y - actor->y);
-				dist = dist / actor->Speed;
+				dist = dist / speed;
 				if (dist < 1)
 				{
 					dist = 1;
@@ -1482,8 +1551,8 @@ bool P_SeekerMissile (AActor *actor, angle_t thresh, angle_t turnMax, bool preci
 			pitch >>= ANGLETOFINESHIFT;
 		}
 
-		fixed_t xyscale = FixedMul(actor->Speed, finecosine[pitch]);
-		actor->velz = FixedMul(actor->Speed, finesine[pitch]);
+		fixed_t xyscale = FixedMul(speed, finecosine[pitch]);
+		actor->velz = FixedMul(speed, finesine[pitch]);
 		actor->velx = FixedMul(xyscale, finecosine[angle]);
 		actor->vely = FixedMul(xyscale, finesine[angle]);
 	}
@@ -1811,6 +1880,8 @@ fixed_t P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 					{
 						goto explode;
 					}
+
+
 
 					// Reflect the missile along angle
 					mo->angle = angle;
@@ -2408,6 +2479,7 @@ void P_NightmareRespawn (AActor *mobj)
 
 	z = mo->z;
 
+
 	// inherit attributes from deceased one
 	mo->SpawnPoint[0] = mobj->SpawnPoint[0];
 	mo->SpawnPoint[1] = mobj->SpawnPoint[1];
@@ -2718,6 +2790,7 @@ void AActor::Tick ()
 
 	static const BYTE HereticScrollDirs[4] = { 6, 9, 1, 4 };
 	static const BYTE HereticSpeedMuls[5] = { 5, 10, 25, 30, 35 };
+
 
 	AActor *onmo;
 	int i;
@@ -3226,7 +3299,7 @@ void AActor::Tick ()
 		// Check for poison damage, but only once per PoisonPeriod tics (or once per second if none).
 		if (PoisonDurationReceived && (level.time % (PoisonPeriodReceived ? PoisonPeriodReceived : TICRATE) == 0))
 		{
-			P_DamageMobj(this, NULL, Poisoner, PoisonDamageReceived, NAME_Poison, 0);
+			P_DamageMobj(this, NULL, Poisoner, PoisonDamageReceived, PoisonDamageTypeReceived ? PoisonDamageTypeReceived : (FName)NAME_Poison, 0);
 
 			--PoisonDurationReceived;
 
@@ -3590,7 +3663,7 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 	}
 	if (screen != NULL)
 	{
-		screen->StateChanged(actor);
+		Renderer->StateChanged(actor);
 	}
 	return actor;
 }
@@ -3921,6 +3994,10 @@ APlayerPawn *P_SpawnPlayer (FMapThing *mthing, bool tempplayer)
 		{
 			spawn_angle = ANG45 * (mthing->angle / 45);
 		}
+		if (i_compatflags2 & COMPATF2_BADANGLES)
+		{
+			spawn_angle += 1 << ANGLETOFINESHIFT;
+		}
 	}
 
 	mobj = static_cast<APlayerPawn *>
@@ -3989,6 +4066,7 @@ APlayerPawn *P_SpawnPlayer (FMapThing *mthing, bool tempplayer)
 	p->BlendR = p->BlendG = p->BlendB = p->BlendA = 0.f;
 	p->mo->ResetAirSupply(false);
 	p->Uncrouch();
+	p->MinPitch = p->MaxPitch = 0;	// will be filled in by PostBeginPlay()/netcode
 
 	p->velx = p->vely = 0;		// killough 10/98: initialize bobbing to 0.
 
@@ -4446,6 +4524,10 @@ AActor *P_SpawnPuff (AActor *source, const PClass *pufftype, fixed_t x, fixed_t 
 	{
 		puff->SetState (crashstate);
 	}
+	else if ((flags & PF_HITTHINGBLEED) && (crashstate = puff->FindState(NAME_Death, NAME_Extreme, true)) != NULL)
+	{
+		puff->SetState (crashstate);
+	}
 	else if ((flags & PF_MELEERANGE) && puff->MeleeState != NULL)
 	{
 		// handle the hard coded state jump of Doom's bullet puff
@@ -4704,7 +4786,16 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t x, fixed_t y, fixed_t z
 	if (y == FIXED_MIN) y = thing->y;
 	if (z == FIXED_MIN) z = thing->z;
 	// don't splash above the object
-	if (checkabove && z > thing->z + (thing->height >> 1)) return false;
+	if (checkabove)
+	{
+		fixed_t compare_z = thing->z + (thing->height >> 1);
+		// Missiles are typically small and fast, so they might
+		// end up submerged by the move that calls P_HitWater.
+		if (thing->flags & MF_MISSILE)
+			compare_z -= thing->velz;
+		if (z > compare_z) 
+			return false;
+	}
 
 #if 0 // needs some rethinking before activation
 
@@ -4964,7 +5055,7 @@ bool P_CheckMissileSpawn (AActor* th)
 		bool MBFGrenade = (!(th->flags & MF_MISSILE) || (th->BounceFlags & BOUNCE_MBF));
 
 		// killough 3/15/98: no dropoff (really = don't care for missiles)
-		if (!(P_TryMove (th, th->x, th->y, false, NULL, tm)))
+		if (!(P_TryMove (th, th->x, th->y, false, NULL, tm, true)))
 		{
 			// [RH] Don't explode ripping missiles that spawn inside something
 			if (th->BlockingMobj == NULL || !(th->flags2 & MF2_RIP) || (th->BlockingMobj->flags5 & MF5_DONTRIP))
@@ -5100,7 +5191,8 @@ AActor *P_SpawnMissileXYZ (fixed_t x, fixed_t y, fixed_t z,
 	th->velz = (fixed_t)(velocity.Z);
 
 	// invisible target: rotate velocity vector in 2D
-	if (dest->flags & MF_SHADOW)
+	// [RC] Now monsters can aim at invisible player as if they were fully visible.
+	if (dest->flags & MF_SHADOW && !(source->flags6 & MF6_SEEINVISIBLE))
 	{
 		angle_t an = pr_spawnmissile.Random2 () << 20;
 		an >>= ANGLETOFINESHIFT;
@@ -5247,7 +5339,7 @@ AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 {
 	static const int angdiff[3] = { -1<<26, 1<<26, 0 };
 	int i;
-	angle_t an;
+	angle_t an = angle;
 	angle_t pitch;
 	AActor *linetarget;
 	int vrange = nofreeaim? ANGLE_1*35 : 0;
@@ -5490,6 +5582,10 @@ int AActor::TakeSpecialDamage (AActor *inflictor, AActor *source, int damage, FN
 	{
 		return damage;
 	}
+	
+	if (inflictor && inflictor->DeathType != NAME_None)
+		damagetype = inflictor->DeathType;
+
 	if (damagetype == NAME_Ice)
 	{
 		death = FindState (NAME_Death, NAME_Ice, true);
@@ -5513,6 +5609,9 @@ int AActor::GibHealth()
 
 void AActor::Crash()
 {
+	// [RC] Weird that this forces the Crash state regardless of flag.
+	if(!(flags6 & MF6_DONTCORPSE))
+	{
 	if (((flags & MF_CORPSE) || (flags6 & MF6_KILLED)) &&
 		!(flags3 & MF3_CRASHED) &&
 		!(flags & MF_ICECORPSE))
@@ -5538,6 +5637,7 @@ void AActor::Crash()
 		// Set MF3_CRASHED regardless of the presence of a crash state
 		// so this code doesn't have to be executed repeatedly.
 		flags3 |= MF3_CRASHED;
+	}
 	}
 }
 
@@ -5570,7 +5670,7 @@ FDropItem *AActor::GetDropItems()
 {
 	unsigned int index = GetClass()->Meta.GetMetaInt (ACMETA_DropItems) - 1;
 
-	if (index >= 0 && index < DropItemList.Size())
+	if (index < DropItemList.Size())
 	{
 		return DropItemList[index];
 	}

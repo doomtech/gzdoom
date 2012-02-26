@@ -37,7 +37,6 @@
 
 #include "templates.h"
 #include "m_random.h"
-#include "r_main.h"
 #include "p_local.h"
 #include "c_dispatch.h"
 #include "g_level.h"
@@ -542,8 +541,8 @@ void ADynamicLight::CollectWithinRadius(subsector_t *subSec, float radius)
 		seg_t *partner = seg->PartnerSeg;
 		if (partner)
 		{
-			subsector_t *sub = partner->Subsector();
-			if (sub->validcount!=::validcount)
+			subsector_t *sub = partner->Subsector;
+			if (sub != NULL && sub->validcount!=::validcount)
 			{
 				// check distance from x/y to seg and if within radius add opposing subsector (lather/rinse/repeat)
 				if (DistToSeg(seg) <= radius)

@@ -46,11 +46,13 @@
 #include "dobject.h"
 #include "doomstat.h"
 #include "g_level.h"
-#include "r_interpolate.h"
-#include "r_main.h"
-#include "r_things.h"
+#include "r_data/r_interpolate.h"
+#include "r_utility.h"
+#include "d_player.h"
+#include "p_effect.h"
 #include "sbar.h"
 #include "po_man.h"
+#include "r_utility.h"
 #include "gl/gl_functions.h"
 
 #include "gl/system/gl_framebuffer.h"
@@ -93,11 +95,7 @@ DWORD			gl_fixedcolormap;
 area_t			in_area;
 TArray<BYTE> currentmapsection;
 
-
-void R_SetupFrame (AActor * camera);
-
-
-
+void gl_ParseDefs();
 
 //-----------------------------------------------------------------------------
 //
@@ -235,13 +233,7 @@ void FGLRenderer::SetCameraPos(fixed_t viewx, fixed_t viewy, fixed_t viewz, angl
 	mViewVector = FVector2(cos(DEG2RAD(fviewangle)), sin(DEG2RAD(fviewangle)));
 	mCameraPos = FVector3(FIXED2FLOAT(viewx), FIXED2FLOAT(viewy), FIXED2FLOAT(viewz));
 
-	angle_t ang = viewangle >> ANGLETOFINESHIFT;
-	fixed_t viewsin = finesine[ang];
-	fixed_t viewcos = finecosine[ang];
-
-	viewtansin = FixedMul (FocalTangent, viewsin);
-	viewtancos = FixedMul (FocalTangent, viewcos);
-
+	R_SetViewAngle();
 }
 	
 
@@ -666,6 +658,10 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 				if (lightbottom<viewz && (!lightlist[i].caster || !(lightlist[i].caster->flags&FF_FADEWALLS)))
 				{
 					// 3d floor 'fog' is rendered as a blending value
+					// D64FIXME: find out how to conciliate both statements below
+					// was: blendv=(lightlist[i].extra_colormap)->Fade;
+					// changed in trunk to: blendv=lightlist[i].blend;
+					// but the Doom 64 branch used this (and still does for now):
 					blendv=(COLORMAP_SELECT(lightlist[i].extra_colormap, LIGHT_FLOOR))->Fade;
 					// If this is the same as the sector's it doesn't apply!
 					if (blendv == viewsector->ColorMaps[LIGHT_GLOBAL]->Fade) blendv=0;
@@ -964,41 +960,10 @@ sector_t * FGLRenderer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, flo
 // renders the view
 //
 //-----------------------------------------------------------------------------
-static FRandom pr_glhom;
-EXTERN_CVAR(Int, r_clearbuffer)
 
 void FGLRenderer::RenderView (player_t* player)
 {
 	OpenGLFrameBuffer* GLTarget = static_cast<OpenGLFrameBuffer*>(screen);
-
-	if (r_clearbuffer != 0)
-	{
-		int color;
-		int hom = r_clearbuffer;
-
-		if (hom == 3)
-		{
-			hom = ((I_FPSTime() / 128) & 1) + 1;
-		}
-		if (hom == 1)
-		{
-			color = GPalette.BlackIndex;
-		}
-		else if (hom == 2)
-		{
-			color = GPalette.WhiteIndex;
-		}
-		else if (hom == 4)
-		{
-			color = (I_FPSTime() / 32) & 255;
-		}
-		else
-		{
-			color = pr_glhom();
-		}
-		GLTarget->Clear(0, 0, screen->GetWidth(), screen->GetHeight(), color, 0);
-	}
-
 	AActor *&LastCamera = GLTarget->LastCamera;
 
 	if (player->camera != LastCamera)
@@ -1019,7 +984,7 @@ void FGLRenderer::RenderView (player_t* player)
 	else r_TicFrac = I_GetTimeFrac (&r_FrameTime);
 	gl_frameMS = I_MSTime();
 
-	R_FindParticleSubsectors ();
+	P_FindParticleSubsectors ();
 
 	// prepare all camera textures that have been used in the last frame
 	FCanvasTextureInfo::UpdateAll();
@@ -1086,4 +1051,287 @@ void FGLRenderer::WriteSavePic (player_t *player, FILE *file, int width, int hei
 	M_CreatePNG (file, scr + ((height-1) * width * 3), NULL, SS_RGB, width, height, -width*3);
 	M_Free(scr);
 }
+
+
+//===========================================================================
+//
+//
+//
+//===========================================================================
+
+struct FGLInterface : public FRenderer
+{
+	bool UsesColormap() const;
+	void PrecacheTexture(FTexture *tex, int cache);
+	void RenderView(player_t *player);
+	void WriteSavePic (player_t *player, FILE *file, int width, int height);
+	void StateChanged(AActor *actor);
+	void StartSerialize(FArchive &arc);
+	void EndSerialize(FArchive &arc);
+	void RenderTextureView (FCanvasTexture *self, AActor *viewpoint, int fov);
+	sector_t *FakeFlat(sector_t *sec, sector_t *tempsec, int *floorlightlevel, int *ceilinglightlevel, bool back);
+	void SetFogParams(int _fogdensity, PalEntry _outsidefogcolor, int _outsidefogdensity, int _skyfog);
+	void PreprocessLevel();
+	void CleanLevelData();
+	bool RequireGLNodes();
+
+	int GetMaxViewPitch(bool down);
+	void ClearBuffer(int color);
+	void Init();
+};
+
+//===========================================================================
+//
+// The GL renderer has no use for colormaps so let's
+// not create them and save us some time.
+//
+//===========================================================================
+
+bool FGLInterface::UsesColormap() const
+{
+	return false;
+}
+
+//==========================================================================
+//
+// DFrameBuffer :: PrecacheTexture
+//
+//==========================================================================
+
+void FGLInterface::PrecacheTexture(FTexture *tex, int cache)
+{
+	if (tex != NULL)
+	{
+		if (cache)
+		{
+			tex->PrecacheGL();
+		}
+		else
+		{
+			tex->UncacheGL();
+		}
+	}
+}
+
+//==========================================================================
+//
+// DFrameBuffer :: StateChanged
+//
+//==========================================================================
+
+void FGLInterface::StateChanged(AActor *actor)
+{
+	gl_SetActorLights(actor);
+}
+
+//===========================================================================
+//
+// notify the renderer that serialization of the curent level is about to start/end
+//
+//===========================================================================
+
+void FGLInterface::StartSerialize(FArchive &arc)
+{
+	gl_DeleteAllAttachedLights();
+	arc << fogdensity << outsidefogdensity << skyfog;
+}
+
+void FGLInterface::EndSerialize(FArchive &arc)
+{
+	gl_RecreateAllAttachedLights();
+	if (arc.IsLoading()) gl_InitPortals();
+}
+
+//===========================================================================
+//
+// Get max. view angle (renderer specific information so it goes here now)
+//
+//===========================================================================
+
+EXTERN_CVAR(Float, maxviewpitch)
+
+#define MAX_DN_ANGLE	56		// Max looking down angle
+#define MAX_UP_ANGLE	32		// Max looking up angle
+
+int FGLInterface::GetMaxViewPitch(bool down)
+{
+	if (netgame) return down? MAX_DN_ANGLE : MAX_UP_ANGLE;
+	else return maxviewpitch;
+}
+
+//===========================================================================
+//
+// 
+//
+//===========================================================================
+
+void FGLInterface::ClearBuffer(int color)
+{
+	PalEntry pe = GPalette.BaseColors[color];
+	gl.ClearColor(pe.r/255.f, pe.g/255.f, pe.b/255.f, 1.f);
+	gl.Clear(GL_COLOR_BUFFER_BIT);
+}
+
+//===========================================================================
+//
+// Render the view to a savegame picture
+//
+//===========================================================================
+
+void FGLInterface::WriteSavePic (player_t *player, FILE *file, int width, int height)
+{
+	GLRenderer->WriteSavePic(player, file, width, height);
+}
+
+//===========================================================================
+//
+// 
+//
+//===========================================================================
+
+void FGLInterface::RenderView(player_t *player)
+{
+	GLRenderer->RenderView(player);
+}
+
+//===========================================================================
+//
+// 
+//
+//===========================================================================
+
+void FGLInterface::Init()
+{
+	gl_ParseDefs();
+}
+
+//===========================================================================
+//
+// Camera texture rendering
+//
+//===========================================================================
+CVAR(Bool, gl_usefb, false , CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
+extern TexFilter_s TexFilter[];
+
+void FGLInterface::RenderTextureView (FCanvasTexture *tex, AActor *Viewpoint, int FOV)
+{
+	FMaterial * gltex = FMaterial::ValidateTexture(tex);
+
+	int width = gltex->TextureWidth(GLUSE_TEXTURE);
+	int height = gltex->TextureHeight(GLUSE_TEXTURE);
+
+	gl_fixedcolormap=CM_DEFAULT;
+
+	bool usefb;
+
+	if (gl.flags & RFL_FRAMEBUFFER)
+	{
+		usefb = gl_usefb || width > screen->GetWidth() || height > screen->GetHeight();
+	}
+	else usefb = false;
+
+
+	if (!usefb)
+	{
+		gl.Flush();
+	}
+	else
+	{
+#if defined(_WIN32) && (defined(_MSC_VER) || defined(__INTEL_COMPILER))
+		__try
+#endif
+		{
+			GLRenderer->StartOffscreen();
+			gltex->BindToFrameBuffer();
+		}
+#if defined(_WIN32) && (defined(_MSC_VER) || defined(__INTEL_COMPILER))
+		__except(1)
+		{
+			usefb = false;
+			gl_usefb = false;
+			GLRenderer->EndOffscreen();
+			gl.Flush();
+		}
+#endif
+	}
+
+	GL_IRECT bounds;
+	bounds.left=bounds.top=0;
+	bounds.width=FHardwareTexture::GetTexDimension(gltex->GetWidth(GLUSE_TEXTURE));
+	bounds.height=FHardwareTexture::GetTexDimension(gltex->GetHeight(GLUSE_TEXTURE));
+
+	GLRenderer->RenderViewpoint(Viewpoint, &bounds, FOV, (float)width/height, (float)width/height, false, false);
+
+	if (!usefb)
+	{
+		gl.Flush();
+		gltex->Bind(CM_DEFAULT, 0, 0);
+		gl.CopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, bounds.width, bounds.height);
+	}
+	else
+	{
+		GLRenderer->EndOffscreen();
+	}
+
+	gltex->Bind(CM_DEFAULT, 0, 0);
+	gl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, TexFilter[gl_texture_filter].magfilter);
+	tex->SetUpdated();
+}
+
+//==========================================================================
+//
+//
+//
+//==========================================================================
+
+sector_t *FGLInterface::FakeFlat(sector_t *sec, sector_t *tempsec, int *floorlightlevel, int *ceilinglightlevel, bool back)
+{
+	if (floorlightlevel != NULL)
+	{
+		*floorlightlevel = sec->GetFloorLight ();
+	}
+	if (ceilinglightlevel != NULL)
+	{
+		*ceilinglightlevel = sec->GetCeilingLight ();
+	}
+	return gl_FakeFlat(sec, tempsec, back);
+}
+
+//===========================================================================
+//
+// 
+//
+//===========================================================================
+
+void FGLInterface::SetFogParams(int _fogdensity, PalEntry _outsidefogcolor, int _outsidefogdensity, int _skyfog)
+{
+	gl_SetFogParams(_fogdensity, _outsidefogcolor, _outsidefogdensity, _skyfog);
+}
+
+void FGLInterface::PreprocessLevel() 
+{
+	gl_PreprocessLevel();
+}
+
+void FGLInterface::CleanLevelData() 
+{
+	gl_CleanLevelData();
+}
+
+bool FGLInterface::RequireGLNodes() 
+{ 
+	return true; 
+}
+
+//===========================================================================
+//
+// 
+//
+//===========================================================================
+
+FRenderer *gl_CreateInterface()
+{
+	return new FGLInterface;
+}
+
 

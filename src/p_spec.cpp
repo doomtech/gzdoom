@@ -44,7 +44,6 @@
 #include "m_bbox.h"
 #include "w_wad.h"
 
-#include "r_local.h"
 #include "p_local.h"
 #include "p_lnspec.h"
 #include "p_terrain.h"
@@ -60,13 +59,15 @@
 #include "g_level.h"
 #include "v_font.h"
 #include "a_sharedglobal.h"
+#include "farchive.h"
+#include "a_keys.h"
 
 // State.
 #include "r_state.h"
 
 #include "c_console.h"
 
-#include "r_interpolate.h"
+#include "r_data/r_interpolate.h"
 
 static FRandom pr_playerinspecialsector ("PlayerInSpecialSector");
 void P_SetupPortals();
@@ -84,6 +85,14 @@ END_POINTERS
 IMPLEMENT_POINTY_CLASS (DPusher)
  DECLARE_POINTER (m_Source)
 END_POINTERS
+
+inline FArchive &operator<< (FArchive &arc, DScroller::EScrollType &type)
+{
+	BYTE val = (BYTE)type;
+	arc << val;
+	type = (DScroller::EScrollType)val;
+	return arc;
+}
 
 DScroller::DScroller ()
 {
@@ -107,6 +116,14 @@ void DScroller::Serialize (FArchive &arc)
 
 DPusher::DPusher ()
 {
+}
+
+inline FArchive &operator<< (FArchive &arc, DPusher::EPusher &type)
+{
+	BYTE val = (BYTE)type;
+	arc << val;
+	type = (DPusher::EPusher)val;
+	return arc;
 }
 
 void DPusher::Serialize (FArchive &arc)
@@ -219,11 +236,13 @@ bool P_ActivateLine (line_t *line, AActor *mo, int side, int activationType)
 	{
 		return false;
 	}
+	bool remote = (line->special != 7 && line->special != 8 && (line->special < 11 || line->special > 14));
+	if (line->locknumber > 0 && !P_CheckKeys (mo, line->locknumber, remote)) return false;
 	lineActivation = line->activation;
 	repeat = line->flags & ML_REPEAT_SPECIAL;
 	buttonSuccess = false;
-	buttonSuccess = LineSpecials[line->special]
-					(line, mo, side == 1, line->args[0],
+	buttonSuccess = P_ExecuteSpecial(line->special,
+					line, mo, side == 1, line->args[0],
 					line->args[1], line->args[2],
 					line->args[3], line->args[4]);
 
@@ -294,7 +313,7 @@ bool P_TestActivateLine (line_t *line, AActor *mo, int side, int activationType)
 	{
 		lineActivation |= SPAC_Cross|SPAC_MCross;
 	}
-	if (activationType ==SPAC_Use || activationType == SPAC_UseBack)
+	if (activationType == SPAC_Use || activationType == SPAC_UseBack)
 	{
 		if (!P_CheckSwitchRange(mo, line, side))
 		{
@@ -586,7 +605,7 @@ void P_GiveSecret(AActor *actor, bool printmessage, bool playsound)
 		if (actor->CheckLocalView (consoleplayer))
 		{
 			if (printmessage) C_MidPrint (SmallFont, secretmessage);
-			if (playsound) S_Sound (CHAN_AUTO, "misc/secret", 1, ATTN_NORM);
+			if (playsound) S_Sound (CHAN_AUTO | CHAN_UI, "misc/secret", 1, ATTN_NORM);
 		}
 	}
 	level.found_secrets++;
@@ -697,12 +716,12 @@ public:
 	void Tick ();
 
 protected:
-	static void DoTransfer (BYTE level, int target, bool floor);
+	static void DoTransfer (int level, int target, bool floor);
 
-	BYTE LastLight;
 	sector_t *Source;
 	int TargetTag;
 	bool CopyFloor;
+	short LastLight;
 };
 
 IMPLEMENT_CLASS (DLightTransfer)
@@ -710,7 +729,17 @@ IMPLEMENT_CLASS (DLightTransfer)
 void DLightTransfer::Serialize (FArchive &arc)
 {
 	Super::Serialize (arc);
-	arc << LastLight << Source << TargetTag << CopyFloor;
+	if (SaveVersion < 3223)
+	{
+		BYTE bytelight;
+		arc << bytelight;
+		LastLight = bytelight;
+	}
+	else
+	{
+		arc << LastLight;
+	}
+	arc << Source << TargetTag << CopyFloor;
 }
 
 DLightTransfer::DLightTransfer (sector_t *srcSec, int target, bool copyFloor)
@@ -737,7 +766,7 @@ DLightTransfer::DLightTransfer (sector_t *srcSec, int target, bool copyFloor)
 
 void DLightTransfer::Tick ()
 {
-	BYTE light = Source->lightlevel;
+	int light = Source->lightlevel;
 
 	if (light != LastLight)
 	{
@@ -746,7 +775,7 @@ void DLightTransfer::Tick ()
 	}
 }
 
-void DLightTransfer::DoTransfer (BYTE level, int target, bool floor)
+void DLightTransfer::DoTransfer (int level, int target, bool floor)
 {
 	int secnum;
 
@@ -780,12 +809,12 @@ public:
 	void Tick ();
 
 protected:
-	static void DoTransfer (BYTE level, int target, BYTE flags);
+	static void DoTransfer (short level, int target, BYTE flags);
 
-	BYTE LastLight;
-	BYTE Flags;
 	sector_t *Source;
 	int TargetID;
+	short LastLight;
+	BYTE Flags;
 };
 
 IMPLEMENT_CLASS (DWallLightTransfer)
@@ -793,7 +822,17 @@ IMPLEMENT_CLASS (DWallLightTransfer)
 void DWallLightTransfer::Serialize (FArchive &arc)
 {
 	Super::Serialize (arc);
-	arc << LastLight << Source << TargetID << Flags;
+	if (SaveVersion < 3223)
+	{
+		BYTE bytelight;
+		arc << bytelight;
+		LastLight = bytelight;
+	}
+	else
+	{
+		arc << LastLight;
+	}
+	arc << Source << TargetID << Flags;
 }
 
 DWallLightTransfer::DWallLightTransfer (sector_t *srcSec, int target, BYTE flags)
@@ -804,10 +843,16 @@ DWallLightTransfer::DWallLightTransfer (sector_t *srcSec, int target, BYTE flags
 	Source = srcSec;
 	TargetID = target;
 	Flags = flags;
-	DoTransfer (LastLight = srcSec->lightlevel, target, Flags);
+	DoTransfer (LastLight = srcSec->GetLightLevel(), target, Flags);
 
-	if (!(flags&WLF_NOFAKECONTRAST)) wallflags = WALLF_ABSLIGHTING;
-	else wallflags = WALLF_NOFAKECONTRAST|WALLF_ABSLIGHTING;
+	if (!(flags & WLF_NOFAKECONTRAST))
+	{
+		wallflags = WALLF_ABSLIGHTING;
+	}
+	else
+	{
+		wallflags = WALLF_ABSLIGHTING | WALLF_NOFAKECONTRAST;
+	}
 
 	for (linenum = -1; (linenum = P_FindLineFromID (target, linenum)) >= 0; )
 	{
@@ -826,7 +871,7 @@ DWallLightTransfer::DWallLightTransfer (sector_t *srcSec, int target, BYTE flags
 
 void DWallLightTransfer::Tick ()
 {
-	BYTE light = Source->lightlevel;
+	short light = sector_t::ClampLight(Source->lightlevel);
 
 	if (light != LastLight)
 	{
@@ -835,13 +880,13 @@ void DWallLightTransfer::Tick ()
 	}
 }
 
-void DWallLightTransfer::DoTransfer (BYTE lightlevel, int target, BYTE flags)
+void DWallLightTransfer::DoTransfer (short lightlevel, int target, BYTE flags)
 {
 	int linenum;
 
 	for (linenum = -1; (linenum = P_FindLineFromID (target, linenum)) >= 0; )
 	{
-		line_t * line = &lines[linenum];
+		line_t *line = &lines[linenum];
 
 		if (flags & WLF_SIDE1 && line->sidedef[0] != NULL)
 		{
@@ -1006,18 +1051,18 @@ void P_SpawnPortal(line_t *line, int sectortag, int plane, int alpha)
 			{
 				// Check if this portal needs to be copied to other sectors
 				// This must be done here to ensure that it gets done only after the portal is set up
-				if (lines[i].special == Sector_SetPortal &&
-					lines[i].args[1] == 1 &&
-					lines[i].args[2] == plane &&
-					lines[i].args[3] == sectortag)
+				if (lines[j].special == Sector_SetPortal &&
+					lines[j].args[1] == 1 &&
+					lines[j].args[2] == plane &&
+					lines[j].args[3] == sectortag)
 				{
-					if (lines[i].args[0] == 0)
+					if (lines[j].args[0] == 0)
 					{
-						SetPortal(lines[i].frontsector, plane, reference, alpha);
+						SetPortal(lines[j].frontsector, plane, reference, alpha);
 					}
 					else
 					{
-						for (int s=-1; (s = P_FindSectorFromTag(lines[i].args[0],s)) >= 0;)
+						for (int s=-1; (s = P_FindSectorFromTag(lines[j].args[0],s)) >= 0;)
 						{
 							SetPortal(&sectors[s], plane, reference, alpha);
 						}

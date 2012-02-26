@@ -9,6 +9,9 @@
 EXTERN_CVAR (Float, dimamount)
 EXTERN_CVAR (Color, dimcolor)
 
+struct FRenderer;
+FRenderer *gl_CreateInterface();
+
 class SDLGLVideo : public IVideo
 {
  public:
@@ -46,6 +49,8 @@ public:
 	bool IsValid ();
 	bool IsFullscreen ();
 
+	virtual void SetVSync( bool vsync );
+	
 	void NewRefreshRate ();
 
 	friend class SDLGLVideo;

@@ -14,7 +14,6 @@
 
 #include "doomdef.h"
 #include "p_local.h"
-#include "r_local.h"
 #include "i_system.h"
 #include "w_wad.h"
 #include "m_swap.h"
@@ -22,13 +21,14 @@
 #include "tables.h"
 #include "s_sndseq.h"
 #include "a_sharedglobal.h"
-#include "r_main.h"
+#include "p_3dmidtex.h"
 #include "p_lnspec.h"
-#include "r_interpolate.h"
+#include "r_data/r_interpolate.h"
 #include "g_level.h"
 #include "po_man.h"
 #include "p_setup.h"
 #include "vectors.h"
+#include "farchive.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -46,6 +46,16 @@ inline vertex_t *side_t::V2() const
 	return this == linedef->sidedef[0]? linedef->v2 : linedef->v1;
 }
 
+
+FArchive &operator<< (FArchive &arc, FPolyObj *&poly)
+{
+	return arc.SerializePointer (polyobjs, (BYTE **)&poly, sizeof(FPolyObj));
+}
+
+FArchive &operator<< (FArchive &arc, const FPolyObj *&poly)
+{
+	return arc.SerializePointer (polyobjs, (BYTE **)&poly, sizeof(FPolyObj));
+}
 
 inline FArchive &operator<< (FArchive &arc, podoortype_t &type)
 {
@@ -436,7 +446,7 @@ bool EV_RotatePoly (line_t *line, int polyNum, int speed, int byteAngle,
 			Printf ("EV_RotatePoly: Invalid polyobj num: %d\n", polyNum);
 			break;
 		}
-		if (poly && poly->specialdata && !overRide)
+		if (poly->specialdata && !overRide)
 		{ // mirroring poly is already in motion
 			break;
 		}
@@ -546,8 +556,8 @@ bool EV_MovePoly (line_t *line, int polyNum, int speed, angle_t angle,
 	while ( (mirror = poly->GetMirror()) )
 	{
 		poly = PO_GetPolyobj(mirror);
-		if (poly && poly->specialdata && !overRide)
-		{ // mirroring poly is already in motion
+		if (poly == NULL || (poly->specialdata != NULL && !overRide))
+		{ // mirroring poly does not exist or is already in motion
 			break;
 		}
 		pe = new DMovePoly (mirror);
@@ -646,8 +656,8 @@ bool EV_MovePolyTo(line_t *line, int polyNum, int speed, fixed_t targx, fixed_t 
 	while ( (mirror = poly->GetMirror()) )
 	{
 		poly = PO_GetPolyobj(mirror);
-		if (poly && poly->specialdata && !overRide)
-		{ // mirroring poly is already in motion
+		if (poly == NULL || (poly->specialdata != NULL && !overRide))
+		{ // mirroring poly does not exist or is already in motion
 			break;
 		}
 		// reverse the direction
@@ -832,8 +842,8 @@ bool EV_OpenPolyDoor (line_t *line, int polyNum, int speed, angle_t angle,
 	while ( (mirror = poly->GetMirror()) )
 	{
 		poly = PO_GetPolyobj (mirror);
-		if (poly && poly->specialdata)
-		{ // mirroring poly is already in motion
+		if (poly == NULL || poly->specialdata != NULL)
+		{ // mirroring poly does not exist or is already in motion
 			break;
 		}
 		pd = new DPolyDoor (mirror, type);
@@ -1282,6 +1292,23 @@ bool FPolyObj::CheckMobjBlocking (side_t *sd)
 					checker.Push (mobj);
 					if ((mobj->flags&MF_SOLID) && !(mobj->flags&MF_NOCLIP))
 					{
+						fixed_t top = -INT_MAX, bottom = INT_MAX;
+						bool above;
+						// [TN] Check wether this actor gets blocked by the line.
+						if (ld->backsector != NULL &&
+							!(ld->flags & (ML_BLOCKING|ML_BLOCKEVERYTHING))
+							&& !(ld->flags & ML_BLOCK_PLAYERS && mobj->player) 
+							&& !(ld->flags & ML_BLOCKMONSTERS && mobj->flags3 & MF3_ISMONSTER)
+							&& !((mobj->flags & MF_FLOAT) && (ld->flags & ML_BLOCK_FLOATERS))
+							&& (!(ld->flags & ML_3DMIDTEX) ||
+								(!P_LineOpening_3dMidtex(mobj, ld, bottom, top, &above) &&
+									(mobj->z + mobj->height < bottom)
+								) || (above && mobj->z > mobj->floorz))
+							)
+						{
+							continue;
+						}
+
 						FBoundingBox box(mobj->x, mobj->y, mobj->radius);
 
 						if (box.Right() <= ld->bbox[BOXLEFT]

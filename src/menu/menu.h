@@ -4,7 +4,7 @@
 
 #include "dobject.h"
 #include "d_player.h"
-#include "r_translate.h"
+#include "r_data/r_translate.h"
 #include "c_cvars.h"
 #include "v_font.h"
 #include "version.h"
@@ -669,6 +669,7 @@ void M_ActivateMenu(DMenu *menu);
 void M_ClearMenus ();
 void M_ParseMenuDefs();
 void M_StartupSkillMenu(FGameStartup *gs);
+int M_GetDefaultSkill();
 void M_StartControlPanel (bool makeSound);
 void M_SetMenu(FName menu, int param = -1);
 void M_NotifyNewSave (const char *file, const char *title, bool okForQuicksave);

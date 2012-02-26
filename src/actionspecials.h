@@ -36,7 +36,7 @@ DEFINE_SPECIAL(ClearForceField, 34, 1, 1, 1)    // [RH] Remove Strife's forcefie
 DEFINE_SPECIAL(Floor_RaiseByValueTimes8, 35, 3, 3, 3)
 DEFINE_SPECIAL(Floor_LowerByValueTimes8, 36, 3, 3, 3)
 DEFINE_SPECIAL(Floor_MoveToValue, 37, 3, 4, 4)
-DEFINE_SPECIAL(Ceiling_Waggle, 38, 5, 5, 4) // [RH] Complement of Floor_Waggle
+DEFINE_SPECIAL(Ceiling_Waggle, 38, 5, 5, 5) // [RH] Complement of Floor_Waggle
 DEFINE_SPECIAL(Teleport_ZombieChanger, 39, 2, 2, 2) // [RH] Needed for Strife
 DEFINE_SPECIAL(Ceiling_LowerByValue, 40, 3, 3, 3)
 DEFINE_SPECIAL(Ceiling_RaiseByValue, 41, 3, 3, 3)
@@ -69,7 +69,7 @@ DEFINE_SPECIAL(Floor_RaiseInstant, 67, 3, 3, 3)
 DEFINE_SPECIAL(Floor_MoveToValueTimes8, 68, 4, 4, 4)
 DEFINE_SPECIAL(Ceiling_MoveToValueTimes8, 69, 4, 4, 4)
 DEFINE_SPECIAL(Teleport, 70, 1, 3, 3)
-DEFINE_SPECIAL(Teleport_NoFog, 71, 1, 3, 3)
+DEFINE_SPECIAL(Teleport_NoFog, 71, 1, 4, 4)
 DEFINE_SPECIAL(ThrustThing, 72, 2, 4, 4)
 DEFINE_SPECIAL(DamageThing, 73, 1, 2, 2)
 DEFINE_SPECIAL(Teleport_NewMap, 74, 2, 3, 3)
@@ -82,7 +82,7 @@ DEFINE_SPECIAL(ACS_Execute, 80, 1, 5, 5)
 DEFINE_SPECIAL(ACS_Suspend, 81, 2, 2, 2)
 DEFINE_SPECIAL(ACS_Terminate, 82, 2, 2, 2)
 DEFINE_SPECIAL(ACS_LockedExecute, 83, 5, 5, 5)
-DEFINE_SPECIAL(ACS_ExecuteWithResult, 84, 1, 4, 4)
+DEFINE_SPECIAL(ACS_ExecuteWithResult, 84, 1, 5, 5)
 DEFINE_SPECIAL(ACS_LockedExecuteDoor, 85, 5, 5, 5)
 DEFINE_SPECIAL(Polyobj_MoveToSpot, 86, 3, 3, 3)
 DEFINE_SPECIAL(Polyobj_Stop, 87, 1, 1, 1)
@@ -153,6 +153,7 @@ DEFINE_SPECIAL(Sector_Transform, 165, 3, 3, 3)	// Doom 64 functions for slowly c
 DEFINE_SPECIAL(Thing_Enable, 166, 1, 1, 1)		// Doom 64 delayed spawn enabler
 
 // [RH] Begin new specials for ZDoom
+DEFINE_SPECIAL(Ceiling_CrushAndRaiseDist, 168, 3, 5, 5)
 DEFINE_SPECIAL(Generic_Crusher2, 169, 5, 5, 5)
 DEFINE_SPECIAL(Sector_SetCeilingScale2, 170, 3, 3, 3)
 DEFINE_SPECIAL(Sector_SetFloorScale2, 171, 3, 3, 3)
@@ -226,7 +227,7 @@ DEFINE_SPECIAL(Floor_RaiseToLowestCeiling, 238, 2, 2, 2)
 DEFINE_SPECIAL(Floor_RaiseByValueTxTy, 239, 3, 3, 3)
 DEFINE_SPECIAL(Floor_RaiseByTexture, 240, 2, 2, 2)
 DEFINE_SPECIAL(Floor_LowerToLowestTxTy, 241, 2, 2, 2)
-DEFINE_SPECIAL(Floor_LowerToHighest, 242, 3, 3, 3)
+DEFINE_SPECIAL(Floor_LowerToHighest, 242, 3, 4, 4)
 DEFINE_SPECIAL(Exit_Normal, 243, 1, 1, 1)
 DEFINE_SPECIAL(Exit_Secret, 244, 1, 1, 1)
 DEFINE_SPECIAL(Elevator_RaiseToNearest, 245, 2, 2, 2)

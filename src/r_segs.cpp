@@ -51,6 +51,7 @@
 #include "r_segs.h"
 #include "r_3dfloors.h"
 #include "v_palette.h"
+#include "r_data/colormaps.h"
 
 #define WALLYREPEAT 8
 
@@ -239,7 +240,11 @@ void R_RenderMaskedSegRange (drawseg_t *ds, int x1, int x2)
 	frontsector = curline->frontsector;
 	backsector = curline->backsector;
 
-	tex = TexMan(curline->sidedef->GetTexture(side_t::mid));
+	tex = TexMan(curline->sidedef->GetTexture(side_t::mid), true);
+	if (i_compatflags & COMPATF_MASKEDMIDTEX)
+	{
+		tex = tex->GetRawTexture();
+	}
 
 	// killough 4/13/98: get correct lightlevel for 2s normal textures
 	sec = R_FakeFlat (frontsector, &tempsec, NULL, NULL, false);
@@ -592,7 +597,7 @@ void R_RenderFakeWallRange (drawseg_t *ds, int x1, int x2)
 {
 	FTexture *const DONT_DRAW = ((FTexture*)(intptr_t)-1);
 	int i,j;
-	F3DFloor *rover, *fover;
+	F3DFloor *rover, *fover = NULL;
 	int passed, last;
 	fixed_t floorheight;
 	fixed_t ceilingheight;
@@ -621,6 +626,10 @@ void R_RenderFakeWallRange (drawseg_t *ds, int x1, int x2)
 	if (!(fake3D & FAKE3D_CLIPBOTTOM)) sclipBottom = floorheight;
 	if (!(fake3D & FAKE3D_CLIPTOP))    sclipTop = ceilingheight;
 
+	// maybe not visible
+	if (sclipBottom >= frontsector->CenterCeiling()) return;
+	if (sclipTop <= frontsector->CenterFloor()) return;
+
 	if (fake3D & FAKE3D_DOWN2UP)
 	{ // bottom to viewz
 		last = 0;
@@ -635,7 +644,8 @@ void R_RenderFakeWallRange (drawseg_t *ds, int x1, int x2)
 				rover->top.plane->a || rover->top.plane->b ||
 				rover->bottom.plane->a || rover->bottom.plane->b ||
 				rover->top.plane->Zat0() <= sclipBottom ||
-				rover->bottom.plane->Zat0() >= ceilingheight)
+				rover->bottom.plane->Zat0() >= ceilingheight ||
+				rover->top.plane->Zat0() <= floorheight)
 			{
 				if (!i)
 				{
@@ -695,15 +705,15 @@ void R_RenderFakeWallRange (drawseg_t *ds, int x1, int x2)
 				}
 				else if(fover->flags & FF_UPPERTEXTURE)
 				{
-					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::top));
+					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::top), true);
 				}
 				else if(fover->flags & FF_LOWERTEXTURE)
 				{
-					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::bottom));
+					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::bottom), true);
 				}
 				else
 				{
-					rw_pic = TexMan(fover->master->sidedef[0]->GetTexture(side_t::mid));
+					rw_pic = TexMan(fover->master->sidedef[0]->GetTexture(side_t::mid), true);
 				}
 			} 
 			else if (frontsector->e->XFloor.ffloors.Size()) 
@@ -754,15 +764,15 @@ void R_RenderFakeWallRange (drawseg_t *ds, int x1, int x2)
 				fover = NULL;
 				if (rover->flags & FF_UPPERTEXTURE)
 				{
-					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::top));
+					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::top), true);
 				}
 				else if(rover->flags & FF_LOWERTEXTURE)
 				{
-					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::bottom));
+					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::bottom), true);
 				}
 				else
 				{
-					rw_pic = TexMan(rover->master->sidedef[0]->GetTexture(side_t::mid));
+					rw_pic = TexMan(rover->master->sidedef[0]->GetTexture(side_t::mid), true);
 				}
 			}
 			// correct colors now
@@ -816,7 +826,8 @@ void R_RenderFakeWallRange (drawseg_t *ds, int x1, int x2)
 				rover->top.plane->a || rover->top.plane->b ||
 				rover->bottom.plane->a || rover->bottom.plane->b ||
 				rover->bottom.plane->Zat0() >= sclipTop ||
-				rover->top.plane->Zat0() <= floorheight)
+				rover->top.plane->Zat0() <= floorheight ||
+				rover->bottom.plane->Zat0() >= ceilingheight)
 			{
 				if ((unsigned)i == backsector->e->XFloor.ffloors.Size() - 1)
 				{
@@ -870,15 +881,15 @@ void R_RenderFakeWallRange (drawseg_t *ds, int x1, int x2)
 				}
 				else if (fover->flags & FF_UPPERTEXTURE)
 				{
-					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::top));
+					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::top), true);
 				}
 				else if (fover->flags & FF_LOWERTEXTURE)
 				{
-					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::bottom));
+					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::bottom), true);
 				}
 				else
 				{
-					rw_pic = TexMan(fover->master->sidedef[0]->GetTexture(side_t::mid));
+					rw_pic = TexMan(fover->master->sidedef[0]->GetTexture(side_t::mid), true);
 				}
 			}
 			else if (frontsector->e->XFloor.ffloors.Size())
@@ -926,15 +937,15 @@ void R_RenderFakeWallRange (drawseg_t *ds, int x1, int x2)
 				fover = NULL;
 				if (rover->flags & FF_UPPERTEXTURE)
 				{
-					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::top));
+					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::top), true);
 				}
 				else if (rover->flags & FF_LOWERTEXTURE)
 				{
-					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::bottom));
+					rw_pic = TexMan(curline->sidedef->GetTexture(side_t::bottom), true);
 				}
 				else
 				{
-					rw_pic = TexMan(rover->master->sidedef[0]->GetTexture(side_t::mid));
+					rw_pic = TexMan(rover->master->sidedef[0]->GetTexture(side_t::mid), true);
 				}
 			}
 			// correct colors now
@@ -1614,7 +1625,7 @@ void R_RenderSegLoop ()
 	// kg3D - fake planes clipping
 	if (fake3D & FAKE3D_REFRESHCLIP)
 	{
-		if (fake3D & FAKE3D_DOWN2UP)
+		if (fake3D & FAKE3D_CLIPBOTFRONT)
 		{
 			memcpy (fakeFloor->floorclip+x1, wallbottom+x1, (x2-x1)*sizeof(short));
 		}
@@ -1626,7 +1637,7 @@ void R_RenderSegLoop ()
 			}
 			memcpy (fakeFloor->floorclip+x1, walllower+x1, (x2-x1)*sizeof(short));
 		}
-		if (fake3D & FAKE3D_16)
+		if (fake3D & FAKE3D_CLIPTOPFRONT)
 		{
 			memcpy (fakeFloor->ceilingclip+x1, walltop+x1, (x2-x1)*sizeof(short));
 		}
@@ -1788,7 +1799,7 @@ void R_NewWall (bool needlights)
 			// [RH] Horizon lines do not need to be textured
 			if (linedef->special != Line_Horizon)
 			{
-				midtexture = TexMan(sidedef->GetTexture(side_t::mid));
+				midtexture = TexMan(sidedef->GetTexture(side_t::mid), true);
 				rw_offset_mid = sidedef->GetTextureXOffset(side_t::mid);
 				rowoffset = sidedef->GetTextureYOffset(side_t::mid);
 				rw_midtexturescalex = sidedef->GetTextureXScale(side_t::mid);
@@ -1934,7 +1945,7 @@ void R_NewWall (bool needlights)
 
 		if (rw_havehigh)
 		{ // top texture
-			toptexture = TexMan(sidedef->GetTexture(side_t::top));
+			toptexture = TexMan(sidedef->GetTexture(side_t::top), true);
 
 			rw_offset_top = sidedef->GetTextureXOffset(side_t::top);
 			rowoffset = sidedef->GetTextureYOffset(side_t::top);
@@ -1964,7 +1975,7 @@ void R_NewWall (bool needlights)
 		}
 		if (rw_havelow)
 		{ // bottom texture
-			bottomtexture = TexMan(sidedef->GetTexture(side_t::bottom));
+			bottomtexture = TexMan(sidedef->GetTexture(side_t::bottom), true);
 
 			rw_offset_bottom = sidedef->GetTextureXOffset(side_t::bottom);
 			rowoffset = sidedef->GetTextureYOffset(side_t::bottom);
@@ -2007,7 +2018,7 @@ void R_NewWall (bool needlights)
 			markceiling = false;
 	}
 
-	FTexture *midtex = TexMan(sidedef->GetTexture(side_t::mid));
+	FTexture *midtex = TexMan(sidedef->GetTexture(side_t::mid), true);
 
 	segtextured = midtex != NULL || toptexture != NULL || bottomtexture != NULL;
 
@@ -2037,62 +2048,6 @@ void R_NewWall (bool needlights)
 		}
 	}
 }
-
-CUSTOM_CVAR(Int, r_fakecontrast, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
-{
-	if (self < 0) self = 1;
-	else if (self > 2) self = 2;
-}
-
-int side_t::GetLightLevel (bool foggy, int baselight, int *pfakecontrast) const
-{
-	if (Flags & WALLF_ABSLIGHTING) 
-	{
-		baselight = (BYTE)Light;
-	}
-
-	if (pfakecontrast != NULL)
-	{
-		*pfakecontrast = 0;
-	}
-
-	if (!foggy) // Don't do relative lighting in foggy sectors
-	{
-		if (!(Flags & WALLF_NOFAKECONTRAST) && r_fakecontrast != 0)
-		{
-			int rel;
-			if (((level.flags2 & LEVEL2_SMOOTHLIGHTING) || (Flags & WALLF_SMOOTHLIGHTING) || r_fakecontrast == 2) &&
-				linedef->dx != 0)
-			{
-				rel = xs_RoundToInt // OMG LEE KILLOUGH LIVES! :/
-					(
-						level.WallHorizLight
-						+ fabs(atan(double(linedef->dy) / linedef->dx) / 1.57079)
-						* (level.WallVertLight - level.WallHorizLight)
-					);
-			}
-			else
-			{
-				rel = linedef->dx == 0 ? level.WallVertLight : 
-					  linedef->dy == 0 ? level.WallHorizLight : 0;
-			}
-			if (pfakecontrast != NULL)
-			{
-				*pfakecontrast = rel;
-			}
-			else
-			{
-				baselight += rel;
-			}
-		}
-		if (!(Flags & WALLF_ABSLIGHTING))
-		{
-			baselight += this->Light;
-		}
-	}
-	return clamp(baselight, 0, 255);
-}
-
 
 
 //
@@ -2243,7 +2198,7 @@ void R_StoreWallRange (int start, int stop)
 			}
 		}
 
-		if(!ds_p->fake && backsector->e && backsector->e->XFloor.ffloors.Size()) {
+		if(!ds_p->fake && r_3dfloors && backsector->e && backsector->e->XFloor.ffloors.Size()) {
 			for(i = 0; i < (int)backsector->e->XFloor.ffloors.Size(); i++) {
 				F3DFloor *rover = backsector->e->XFloor.ffloors[i];
 				if(rover->flags & FF_RENDERSIDES && (!(rover->flags & FF_INVERTSIDES) || rover->flags & FF_ALLSIDES)) {
@@ -2252,7 +2207,7 @@ void R_StoreWallRange (int start, int stop)
 				}
 			}
 		}
-		if(!ds_p->fake && frontsector->e && frontsector->e->XFloor.ffloors.Size()) {
+		if(!ds_p->fake && r_3dfloors && frontsector->e && frontsector->e->XFloor.ffloors.Size()) {
 			for(i = 0; i < (int)frontsector->e->XFloor.ffloors.Size(); i++) {
 				F3DFloor *rover = frontsector->e->XFloor.ffloors[i];
 				if(rover->flags & FF_RENDERSIDES && (rover->flags & FF_ALLSIDES || rover->flags & FF_INVERTSIDES)) {
@@ -2265,7 +2220,7 @@ void R_StoreWallRange (int start, int stop)
 		if(!ds_p->fake)
 		// allocate space for masked texture tables, if needed
 		// [RH] Don't just allocate the space; fill it in too.
-		if ((TexMan(sidedef->GetTexture(side_t::mid))->UseType != FTexture::TEX_Null || ds_p->bFakeBoundary || IsFogBoundary (frontsector, backsector)) &&
+		if ((TexMan(sidedef->GetTexture(side_t::mid), true)->UseType != FTexture::TEX_Null || ds_p->bFakeBoundary || IsFogBoundary (frontsector, backsector)) &&
 			(rw_ceilstat != 12 || !sidedef->GetTexture(side_t::top).isValid()) &&
 			(rw_floorstat != 3 || !sidedef->GetTexture(side_t::bottom).isValid()) &&
 			(WallSZ1 >= TOO_CLOSE_Z && WallSZ2 >= TOO_CLOSE_Z))
@@ -2275,6 +2230,10 @@ void R_StoreWallRange (int start, int stop)
 			int i;
 
 			maskedtexture = true;
+
+			// kg3D - backup for mid and fake walls
+			ds_p->bkup = R_NewOpening(stop - start);
+			memcpy(openings + ds_p->bkup, &ceilingclip[start], sizeof(short)*(stop - start));
 
 			ds_p->bFogBoundary = IsFogBoundary (frontsector, backsector);
 			if (sidedef->GetTexture(side_t::mid).isValid() || ds_p->bFakeBoundary)
@@ -2287,7 +2246,7 @@ void R_StoreWallRange (int start, int stop)
 
 				lwal = (fixed_t *)(openings + ds_p->maskedtexturecol);
 				swal = (fixed_t *)(openings + ds_p->swall);
-				FTexture *pic = TexMan(sidedef->GetTexture(side_t::mid));
+				FTexture *pic = TexMan(sidedef->GetTexture(side_t::mid), true);
 				fixed_t yrepeat = FixedMul(pic->yScale, sidedef->GetTextureYScale(side_t::mid));
 				fixed_t xoffset = sidedef->GetTextureXOffset(side_t::mid);
 
@@ -2371,9 +2330,6 @@ void R_StoreWallRange (int start, int stop)
 	{
 		ds_p->sprtopclip = R_NewOpening (stop - start);
 		memcpy (openings + ds_p->sprtopclip, &ceilingclip[start], sizeof(short)*(stop-start));
-		// kg3D - backup for mid and fake walls
-		ds_p->bkup = R_NewOpening (stop - start);
-		memcpy (openings + ds_p->bkup, &ceilingclip[start], sizeof(short)*(stop-start));
 	}
 
 	if ( ((ds_p->silhouette & SIL_BOTTOM) || maskedtexture) && ds_p->sprbottomclip == -1)
@@ -2596,6 +2552,7 @@ int WallMost (short *mostbuf, const secplane_t &plane)
 	{
 		clearbufshort (&mostbuf[ix1], ix2-ix1, viewheight);
 		return bad;
+
 	}
 
 	if (bad&3)
@@ -2805,7 +2762,7 @@ static void R_RenderDecal (side_t *wall, DBaseDecal *decal, drawseg_t *clipper, 
 	xscale = decal->ScaleX;
 	yscale = decal->ScaleY;
 
-	WallSpriteTile = TexMan(decal->PicNum);
+	WallSpriteTile = TexMan(decal->PicNum, true);
 	flipx = (BYTE)(decal->RenderFlags & RF_XFLIP);
 
 	if (WallSpriteTile == NULL || WallSpriteTile->UseType == FTexture::TEX_Null)

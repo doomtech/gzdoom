@@ -57,6 +57,7 @@
 #include "r_segs.h"
 #include "r_3dfloors.h"
 #include "v_palette.h"
+#include "r_data/colormaps.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4244)
@@ -66,8 +67,6 @@
 //EXTERN_CVAR (Int, ty)
 
 static void R_DrawSkyStriped (visplane_t *pl);
-
-EXTERN_CVAR (Bool, r_particles);
 
 planefunction_t 		floorfunc;
 planefunction_t 		ceilingfunc;
@@ -251,64 +250,88 @@ void STACK_ARGS R_CalcTiltedLighting (fixed_t lval, fixed_t lend, int width)
 	BYTE *basecolormapdata = basecolormap->Maps;
 	int i = 0;
 
-	lval = planeshade - lval;
-	lend = planeshade - lend;
-
 	if (width == 0 || lval == lend)
 	{ // Constant lighting
-		lightfiller = basecolormapdata + (GETPALOOKUP (-lval, 0) << COLORMAPSHIFT);
-	}
-	else if ((lstep = (lend - lval) / width) < 0)
-	{ // Going from dark to light
-		if (lval < FRACUNIT)
-		{ // All bright
-			lightfiller = basecolormapdata;
-		}
-		else
-		{
-			if (lval >= NUMCOLORMAPS*FRACUNIT)
-			{ // Starts beyond the dark end
-				BYTE *clight = basecolormapdata + ((NUMCOLORMAPS-1) << COLORMAPSHIFT);
-				while (lval >= NUMCOLORMAPS*FRACUNIT && i <= width)
-				{
-					tiltlighting[i++] = clight;
-					lval += lstep;
-				}
-				if (i > width)
-					return;
-			}
-			while (i <= width && lval >= 0)
-			{
-				tiltlighting[i++] = basecolormapdata + ((lval >> FRACBITS) << COLORMAPSHIFT);
-				lval += lstep;
-			}
-			lightfiller = basecolormapdata;
-		}
+		lightfiller = basecolormapdata + (GETPALOOKUP(lval, planeshade) << COLORMAPSHIFT);
 	}
 	else
-	{ // Going from light to dark
-		if (lval >= (NUMCOLORMAPS-1)*FRACUNIT)
-		{ // All dark
-			lightfiller = basecolormapdata + ((NUMCOLORMAPS-1) << COLORMAPSHIFT);
+	{
+		lstep = (lend - lval) / width;
+		if (lval >= MAXLIGHTVIS)
+		{ // lval starts "too bright".
+			lightfiller = basecolormapdata + (GETPALOOKUP(lval, planeshade) << COLORMAPSHIFT);
+			for (; i <= width && lval >= MAXLIGHTVIS; ++i)
+			{
+				tiltlighting[i] = lightfiller;
+				lval += lstep;
+			}
 		}
-		else
+		if (lend >= MAXLIGHTVIS)
+		{ // lend ends "too bright".
+			lightfiller = basecolormapdata + (GETPALOOKUP(lend, planeshade) << COLORMAPSHIFT);
+			for (; width > i && lend >= MAXLIGHTVIS; --width)
+			{
+				tiltlighting[width] = lightfiller;
+				lend -= lstep;
+			}
+		}
+		if (width > 0)
 		{
-			while (lval < 0 && i <= width)
-			{
-				tiltlighting[i++] = basecolormapdata;
-				lval += lstep;
+			lval = planeshade - lval;
+			lend = planeshade - lend;
+			lstep = (lend - lval) / width;
+			if (lstep < 0)
+			{ // Going from dark to light
+				if (lval < FRACUNIT)
+				{ // All bright
+					lightfiller = basecolormapdata;
+				}
+				else
+				{
+					if (lval >= NUMCOLORMAPS*FRACUNIT)
+					{ // Starts beyond the dark end
+						BYTE *clight = basecolormapdata + ((NUMCOLORMAPS-1) << COLORMAPSHIFT);
+						while (lval >= NUMCOLORMAPS*FRACUNIT && i <= width)
+						{
+							tiltlighting[i++] = clight;
+							lval += lstep;
+						}
+						if (i > width)
+							return;
+					}
+					while (i <= width && lval >= 0)
+					{
+						tiltlighting[i++] = basecolormapdata + ((lval >> FRACBITS) << COLORMAPSHIFT);
+						lval += lstep;
+					}
+					lightfiller = basecolormapdata;
+				}
 			}
-			if (i > width)
-				return;
-			while (i <= width && lval < (NUMCOLORMAPS-1)*FRACUNIT)
-			{
-				tiltlighting[i++] = basecolormapdata + ((lval >> FRACBITS) << COLORMAPSHIFT);
-				lval += lstep;
+			else
+			{ // Going from light to dark
+				if (lval >= (NUMCOLORMAPS-1)*FRACUNIT)
+				{ // All dark
+					lightfiller = basecolormapdata + ((NUMCOLORMAPS-1) << COLORMAPSHIFT);
+				}
+				else
+				{
+					while (lval < 0 && i <= width)
+					{
+						tiltlighting[i++] = basecolormapdata;
+						lval += lstep;
+					}
+					if (i > width)
+						return;
+					while (i <= width && lval < (NUMCOLORMAPS-1)*FRACUNIT)
+					{
+						tiltlighting[i++] = basecolormapdata + ((lval >> FRACBITS) << COLORMAPSHIFT);
+						lval += lstep;
+					}
+					lightfiller = basecolormapdata + ((NUMCOLORMAPS-1) << COLORMAPSHIFT);
+				}
 			}
-			lightfiller = basecolormapdata + ((NUMCOLORMAPS-1) << COLORMAPSHIFT);
 		}
 	}
-
 	for (; i <= width; i++)
 	{
 		tiltlighting[i] = lightfiller;
@@ -1057,7 +1080,7 @@ void R_DrawSinglePlane (visplane_t *pl, fixed_t alpha, bool additive, bool maske
 	}
 	else
 	{ // regular flat
-		FTexture *tex = TexMan(pl->picnum);
+		FTexture *tex = TexMan(pl->picnum, true);
 
 		if (tex->UseType == FTexture::TEX_Null)
 		{
@@ -1345,9 +1368,9 @@ void R_DrawSkyPlane (visplane_t *pl)
 		if (!(pl->sky & PL_SKYFLAT))
 		{	// use sky1
 		sky1:
-			frontskytex = TexMan(sky1tex);
+			frontskytex = TexMan(sky1tex, true);
 			if (level.flags & LEVEL_DOUBLESKY)
-				backskytex = TexMan(sky2tex);
+				backskytex = TexMan(sky2tex, true);
 			else
 				backskytex = NULL;
 			skyflip = 0;
@@ -1358,7 +1381,7 @@ void R_DrawSkyPlane (visplane_t *pl)
 		}
 		else if (pl->sky == PL_SKYFLAT)
 		{	// use sky2
-			frontskytex = TexMan(sky2tex);
+			frontskytex = TexMan(sky2tex, true);
 			backskytex = NULL;
 			frontcyl = sky2cyl;
 			skyflip = 0;
@@ -1384,7 +1407,7 @@ void R_DrawSkyPlane (visplane_t *pl)
 				pos = side_t::top;
 			}
 
-			frontskytex = TexMan(s->GetTexture(pos));
+			frontskytex = TexMan(s->GetTexture(pos), true);
 			if (frontskytex == NULL || frontskytex->UseType == FTexture::TEX_Null)
 			{ // [RH] The blank texture: Use normal sky instead.
 				goto sky1;
@@ -1760,37 +1783,5 @@ bool R_PlaneInitData ()
 		}
 	}
 
-	return true;
-}
-
-//==========================================================================
-//
-// R_AlignFlat
-//
-//==========================================================================
-
-bool R_AlignFlat (int linenum, int side, int fc)
-{
-	line_t *line = lines + linenum;
-	sector_t *sec = side ? line->backsector : line->frontsector;
-
-	if (!sec)
-		return false;
-
-	fixed_t x = line->v1->x;
-	fixed_t y = line->v1->y;
-
-	angle_t angle = R_PointToAngle2 (x, y, line->v2->x, line->v2->y);
-	angle_t norm = (angle-ANGLE_90) >> ANGLETOFINESHIFT;
-
-	fixed_t dist = -DMulScale16 (finecosine[norm], x, finesine[norm], y);
-
-	if (side)
-	{
-		angle = angle + ANGLE_180;
-		dist = -dist;
-	}
-
-	sec->SetBase(fc, dist & ((1<<(FRACBITS+8))-1), 0-angle);
 	return true;
 }

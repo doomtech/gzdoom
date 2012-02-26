@@ -339,6 +339,10 @@ void MIDIStreamer::Play(bool looping, int subsong)
 	if (MIDI->Preprocess(this, looping))
 	{
 		StartPlayback();
+		if (MIDI == NULL)
+		{ // The MIDI file had no content and has been automatically closed.
+			return;
+		}
 	}
 
 	if (0 != MIDI->Resume())
@@ -725,7 +729,7 @@ void MIDIStreamer::Update()
 		CloseHandle(PlayerThread);
 		PlayerThread = NULL;
 		Printf ("MIDI playback failure: ");
-		if (code >= 0 && code < countof(MMErrorCodes))
+		if (code < countof(MMErrorCodes))
 		{
 			Printf("%s\n", MMErrorCodes[code]);
 		}
@@ -1058,14 +1062,14 @@ void MIDIStreamer::Precache()
 //
 //==========================================================================
 
-void MIDIStreamer::CreateSMF(TArray<BYTE> &file)
+void MIDIStreamer::CreateSMF(TArray<BYTE> &file, int looplimit)
 {
 	DWORD delay = 0;
 	BYTE running_status = 0;
 
 	// Always create songs aimed at GM devices.
 	CheckCaps(MOD_MIDIPORT);
-	LoopLimit = EXPORT_LOOP_LIMIT;
+	LoopLimit = looplimit <= 0 ? EXPORT_LOOP_LIMIT : looplimit;
 	DoRestart();
 	Tempo = InitialTempo;
 

@@ -474,6 +474,10 @@
 			Filter="c;cpp"
 			>
 			<File
+				RelativePath=".\src\actorptrselect.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\am_map.cpp"
 				>
 			</File>
@@ -1092,6 +1096,10 @@
 			</File>
 			<File
 				RelativePath=".\src\actor.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\actorptrselect.h"
 				>
 			</File>
 			<File
@@ -2329,19 +2337,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\r_data.cpp"
-					>
-				</File>
-				<File
 					RelativePath=".\src\r_draw.cpp"
 					>
 				</File>
 				<File
 					RelativePath=".\src\r_drawt.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\r_interpolate.cpp"
 					>
 				</File>
 				<File
@@ -2361,15 +2361,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\r_sky.cpp"
+					RelativePath=".\src\r_swrenderer.cpp"
 					>
 				</File>
 				<File
 					RelativePath=".\src\r_things.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\r_translate.cpp"
 					>
 				</File>
 			</Filter>
@@ -2381,31 +2377,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\r_blend.h"
-					>
-				</File>
-				<File
 					RelativePath=".\src\r_bsp.h"
 					>
 				</File>
 				<File
-					RelativePath=".\src\r_data.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\r_defs.h"
-					>
-				</File>
-				<File
 					RelativePath=".\src\r_draw.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\r_interpolate.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\r_jpeg.h"
 					>
 				</File>
 				<File
@@ -2429,111 +2405,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\src\r_sky.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\r_state.h"
+					RelativePath=".\src\r_swrenderer.h"
 					>
 				</File>
 				<File
 					RelativePath=".\src\r_things.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\r_translate.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Textures"
-				>
-				<File
-					RelativePath=".\src\textures\anim_switches.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\animations.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\automaptexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\bitmap.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\bitmap.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\buildtexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\canvastexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\ddstexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\emptytexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\flattexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\imgztexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\jpegtexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\multipatchtexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\patchtexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\pcxtexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\pngtexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\rawpagetexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\texture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\texturemanager.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\textures.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\tgatexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\textures\warptexture.cpp"
 					>
 				</File>
 			</Filter>
@@ -3937,10 +3813,6 @@
 				</File>
 				<File
 					RelativePath=".\src\gl\textures\gl_bitmap.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\gl\textures\gl_cameratexture.cpp"
 					>
 				</File>
 				<File
@@ -7226,6 +7098,190 @@
 					>
 				</File>
 			</Filter>
+		</Filter>
+		<Filter
+			Name="Render Data"
+			>
+			<Filter
+				Name="Textures"
+				>
+				<File
+					RelativePath=".\src\textures\anim_switches.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\animations.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\automaptexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\bitmap.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\bitmap.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\buildtexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\canvastexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\ddstexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\emptytexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\flattexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\imgztexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\jpegtexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\multipatchtexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\patchtexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\pcxtexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\pngtexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\rawpagetexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\texture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\texturemanager.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\textures.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\tgatexture.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\textures\warptexture.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Resource Headers"
+				>
+				<File
+					RelativePath=".\src\r_data\colormaps.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\r_data\r_interpolate.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\r_data\r_translate.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\r_data\renderstyle.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\r_data\sprites.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\r_data\voxels.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Resource Sources"
+				>
+				<File
+					RelativePath=".\src\r_data\colormaps.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\r_data\r_interpolate.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\r_data\r_translate.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\r_data\renderstyle.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\r_data\sprites.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\r_data\voxels.cpp"
+					>
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="Render Interface"
+			>
+			<File
+				RelativePath=".\src\r_defs.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\r_renderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\r_sky.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\r_sky.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\r_state.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\r_utility.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\r_utility.h"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

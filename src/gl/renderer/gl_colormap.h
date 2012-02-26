@@ -3,6 +3,7 @@
 
 #include "doomtype.h"
 #include "v_palette.h"
+#include "r_data/colormaps.h"
 
 extern DWORD gl_fixedcolormap;
 

@@ -37,7 +37,7 @@
 //
 // As this may be a problem for you, I hereby grant an exception to my 
 // copyright on the SMMU source (including FraggleScript). You may use 
-// any code from SMMU in GZDoom, provided that:
+// any code from SMMU in (G)ZDoom, provided that:
 //
 //    * For any binary release of the port, the source code is also made 
 //      available.
@@ -45,7 +45,6 @@
 //
 //
 
-#include "r_local.h"
 #include "t_script.h"
 #include "p_lnspec.h"
 #include "a_keys.h"
@@ -55,6 +54,7 @@
 #include "i_system.h"
 #include "doomerrors.h"
 #include "doomstat.h"
+#include "farchive.h"
 
 //==========================================================================
 //

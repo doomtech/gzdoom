@@ -45,6 +45,7 @@
 #include "g_level.h"
 #include "templates.h"
 #include "vectors.h"
+#include "r_defs.h"
 #include "r_sky.h"
 
 #include "gl/system/gl_cvars.h"
@@ -509,7 +510,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 		{
 			type = RENDERWALL_HORIZON;
 			hi.plane.GetFromSector(fs, true);
-			hi.lightlevel = GetCeilingLight(fs);
+			hi.lightlevel = gl_ClampLight(fs->GetCeilingLight());
 			hi.colormap = fs->ColorMaps[LIGHT_GLOBAL];
 
 			if (fs->e->XFloor.ffloors.Size())
@@ -538,7 +539,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 		{
 			type = RENDERWALL_HORIZON;
 			hi.plane.GetFromSector(fs, false);
-			hi.lightlevel = GetFloorLight(fs);
+			hi.lightlevel = gl_ClampLight(fs->GetFloorLight());
 			hi.colormap = fs->ColorMaps[LIGHT_GLOBAL];
 
 			if (fs->e->XFloor.ffloors.Size())
@@ -1525,7 +1526,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 	flags = (!gl_isBlack(Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE)? GLWF_FOGGY : 0;
 
 	int rel = 0;
-	lightlevel = seg->sidedef->GetLightLevel(!!(flags&GLWF_FOGGY), frontsector->lightlevel, &rel);
+	lightlevel = seg->sidedef->GetLightLevel(!!(flags&GLWF_FOGGY), gl_ClampLight(frontsector->lightlevel), &rel);
 	rellight = rel;
 
 	alpha=1.0f;
@@ -1662,8 +1663,17 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 
 		/* mid texture */
 		bool drawfogboundary = gl_CheckFog(frontsector, backsector);
+		FTexture *tex = TexMan(seg->sidedef->GetTexture(side_t::mid));
+		if (tex != NULL)
+		{
+			if (i_compatflags & COMPATF_MASKEDMIDTEX)
+			{
+				tex = tex->GetRawTexture();
+			}
+			gltexture=FMaterial::ValidateTexture(tex);
+		}
+		else gltexture = NULL;
 
-		gltexture=FMaterial::ValidateTexture(seg->sidedef->GetTexture(side_t::mid), true);
 		if (gltexture || drawfogboundary)
 		{
 			DoMidTexture(seg, drawfogboundary, frontsector, backsector, realfront, realback, 
@@ -1751,7 +1761,7 @@ void GLWall::ProcessLowerMiniseg(seg_t *seg, sector_t * frontsector, sector_t * 
 		flags = (!gl_isBlack(Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE)? GLWF_FOGGY : 0;
 
 		// can't do fake contrast without a sidedef
-		lightlevel = frontsector->lightlevel;
+		lightlevel = gl_ClampLight(frontsector->lightlevel);
 		rellight = 0;
 
 		alpha=1.0f;

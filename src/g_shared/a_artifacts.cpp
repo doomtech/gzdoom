@@ -19,6 +19,8 @@
 #include "g_level.h"
 #include "doomstat.h"
 #include "v_palette.h"
+#include "farchive.h"
+#include "r_data/colormaps.h"
 
 static FRandom pr_torch ("Torch");
 
@@ -463,7 +465,7 @@ void APowerInvulnerable::EndEffect ()
 //
 //===========================================================================
 
-int APowerInvulnerable::AlterWeaponSprite (vissprite_t *vis)
+int APowerInvulnerable::AlterWeaponSprite (visstyle_t *vis)
 {
 	int changed = Inventory == NULL ? false : Inventory->AlterWeaponSprite(vis);
 	if (Owner != NULL)
@@ -654,7 +656,7 @@ void APowerInvisibility::EndEffect ()
 //
 //===========================================================================
 
-int APowerInvisibility::AlterWeaponSprite (vissprite_t *vis)
+int APowerInvisibility::AlterWeaponSprite (visstyle_t *vis)
 {
 	int changed = Inventory == NULL ? false : Inventory->AlterWeaponSprite(vis);
 	// Blink if the powerup is wearing off

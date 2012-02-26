@@ -40,11 +40,12 @@
 #include "p_lnspec.h"
 #include "w_wad.h"
 #include "sc_man.h"
-#include "v_palette.h"
 #include "g_level.h"
+#include "r_data/colormaps.h"
 #include "r_sky.h"
 
 #ifdef _3DFLOORS
+EXTERN_CVAR(Int, vid_renderer)
 
 //==========================================================================
 //
@@ -58,17 +59,17 @@
 //
 //==========================================================================
 
-FDynamicColormap *F3DFloor::GetColormap()
+FDynamicColormap *F3DFloor::GetColormap(int pos)
 {
 	// If there's no fog in either model or target sector this is easy and fast.
-	if ((COLORMAP(target, LIGHT_WALLBOTH)->Fade == 0 && COLORMAP(model, LIGHT_WALLBOTH)->Fade == 0) || (flags & FF_FADEWALLS))
+	if ((COLORMAP(target, pos)->Fade == 0 && COLORMAP(model, pos)->Fade == 0) || (flags & FF_FADEWALLS))
 	{
-		return COLORMAP(model, LIGHT_WALLBOTH);
+		return COLORMAP(model, pos);
 	}
 	else
 	{
 		// We must create a new colormap combining the properties we need
-		return GetSpecialLights(COLORMAP(model, LIGHT_WALLBOTH)->Color, COLORMAP(target, LIGHT_WALLBOTH)->Fade, COLORMAP(model, LIGHT_WALLBOTH)->Desaturate);
+		return GetSpecialLights(COLORMAP(model, pos)->Color, COLORMAP(target, pos)->Fade, COLORMAP(model, pos)->Desaturate);
 	}
 }
 
@@ -218,7 +219,7 @@ static void P_Add3DFloor(sector_t* sec, sector_t* sec2, line_t* master, int flag
 
 	// kg3D - software renderer only hack
 	// this is really required because of ceilingclip and floorclip
-	if(flags & FF_BOTHPLANES) P_Add3DFloor(sec, sec2, master, FF_EXISTS | FF_THISINSIDE | FF_RENDERPLANES | FF_NOSHADE | FF_SEETHROUGH | FF_SHOOTTHROUGH | (flags & FF_INVERTSECTOR), transluc);
+	if(vid_renderer == 0 && flags & FF_BOTHPLANES) P_Add3DFloor(sec, sec2, master, FF_EXISTS | FF_THISINSIDE | FF_RENDERPLANES | FF_NOSHADE | FF_SEETHROUGH | FF_SHOOTTHROUGH | (flags & FF_INVERTSECTOR), transluc);
 }
 
 //==========================================================================
@@ -492,7 +493,13 @@ void P_Recalculate3DFloors(sector_t * sector)
 
 			oldlist.Delete(pickindex);
 
-			if (pick->flags&(FF_SWIMMABLE|FF_TRANSLUCENT) && pick->flags&FF_EXISTS)
+			if (pick->flags & FF_THISINSIDE)
+			{
+				// These have the floor higher than the ceiling and cannot be processed
+				// by the clipping code below.
+				ffloors.Push(pick);
+			}
+			else if (pick->flags&(FF_SWIMMABLE|FF_TRANSLUCENT) && pick->flags&FF_EXISTS)
 			{
 				clipped=pick;
 				clipped_top=height;

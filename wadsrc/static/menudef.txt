@@ -822,6 +822,13 @@ OptionMenu "AltHUDOptions"
 //
 //-------------------------------------------------------------------------------------------
 
+OptionValue Autosave
+{
+	0,	"Always"
+	1,	"Scripts Only"
+	2,	"Never"
+}
+
 OptionMenu "MiscOptions"
 {
 	Title "Miscellaneous Options"
@@ -834,8 +841,8 @@ OptionMenu "MiscOptions"
 	Option "Show IWAD selection dialog",			"queryiwad", "OnOff"
 	StaticText " "
 	Option "Enable cheats from all games",			"allcheats", "OnOff"
-	Option "Enable autosaves",						"disableautosave", "OffOn"
-	Slider "Number of autosaves",					"autosavecount", 1, 32, 1, 0
+	Option "Enable autosaves",						"disableautosave", "Autosave"
+	Slider "Number of autosaves",					"autosavecount", 1, 20, 1, 0
 	StaticText " "
 	Option "Cache nodes",							"gl_cachenodes", "OnOff"
 	Slider "Time threshold for node caching",		"gl_cachetime", 0.0, 2.0, 0.1
@@ -1138,6 +1145,7 @@ OptionMenu GameplayOptions
 	Option "Chasecam cheat",		"sv_chasecam", "YesNo"
 	Option "Check ammo for weapon switch",	"sv_dontcheckammo", "NoYes"
 	Option "Killing Romero kills all his spawns",	"sv_killbossmonst", "YesNo"
+	Option "Count monsters in end level sectors",	"sv_nocountendmonst", "NoYes"
 
 	StaticText " "
 	StaticText "Deathmatch Settings",1
@@ -1223,6 +1231,8 @@ OptionMenu "CompatibilityOptions"
 	Option "Use Doom code for hitscan checks",			"compat_HITSCAN", "YesNo"
 	Option "Cripple sound for silent BFG trick",		"compat_soundslots", "YesNo"
 	Option "Draw polyobjects like Hexen",				"compat_POLYOBJ", "YesNo"
+	Option "Ignore Y offsets on masked midtextures",	"compat_MASKEDMIDTEX", "YesNo"
+	Option "Cannot travel straight NSEW",			"compat_badangles", "YesNo"
 	
 	Class "CompatibilityMenu"
 }
@@ -1295,6 +1305,7 @@ OptionString SoundOutputsUnix
 	"ALSA",			"ALSA"
 	"SDL",			"SDL"
 	"ESD",			"ESD"
+	"PulseAudio",	"PulseAudio"
 	"No sound",		"No sound"
 }
 

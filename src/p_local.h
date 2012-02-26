@@ -23,9 +23,12 @@
 #ifndef __P_LOCAL__
 #define __P_LOCAL__
 
-#ifndef __R_LOCAL__
-#include "r_local.h"
-#endif
+#include "doomtype.h"
+#include "doomdef.h"
+#include "tables.h"
+#include "r_state.h"
+#include "r_utility.h"
+#include "d_player.h"
 
 #include "a_morph.h"
 
@@ -94,13 +97,14 @@ APlayerPawn *P_SpawnPlayer (FMapThing *mthing, bool tempplayer=false);
 
 void P_ThrustMobj (AActor *mo, angle_t angle, fixed_t move);
 int P_FaceMobj (AActor *source, AActor *target, angle_t *delta);
-bool P_SeekerMissile (AActor *actor, angle_t thresh, angle_t turnMax, bool precise = false);
+bool P_SeekerMissile (AActor *actor, angle_t thresh, angle_t turnMax, bool precise = false, bool usecurspeed=false);
 
 enum EPuffFlags
 {
 	PF_HITTHING = 1,
 	PF_MELEERANGE = 2,
-	PF_TEMPORARY = 4
+	PF_TEMPORARY = 4,
+	PF_HITTHINGBLEED = 8
 };
 
 AActor *P_SpawnPuff (AActor *source, const PClass *pufftype, fixed_t x, fixed_t y, fixed_t z, angle_t dir, int updown, int flags = 0);
@@ -143,11 +147,6 @@ int		P_Thing_Damage (int tid, AActor *whofor0, int amount, FName type);
 void	P_Thing_SetVelocity(AActor *actor, fixed_t vx, fixed_t vy, fixed_t vz, bool add, bool setbob);
 void P_RemoveThing(AActor * actor);
 bool P_Thing_Raise(AActor *thing);
-
-//
-// P_ENEMY
-//
-void	P_NoiseAlert (AActor* target, AActor* emmiter, bool splash);
 
 
 //
@@ -384,7 +383,7 @@ bool	P_CheckPosition (AActor *thing, fixed_t x, fixed_t y, FCheckPosition &tm);
 bool	P_CheckPosition (AActor *thing, fixed_t x, fixed_t y);
 AActor	*P_CheckOnmobj (AActor *thing);
 void	P_FakeZMovement (AActor *mo);
-bool	P_TryMove (AActor* thing, fixed_t x, fixed_t y, int dropoff, const secplane_t * onfloor, FCheckPosition &tm);
+bool	P_TryMove (AActor* thing, fixed_t x, fixed_t y, int dropoff, const secplane_t * onfloor, FCheckPosition &tm, bool missileCheck = false);
 bool	P_TryMove (AActor* thing, fixed_t x, fixed_t y, int dropoff, const secplane_t * onfloor = NULL);
 bool	P_CheckMove(AActor *thing, fixed_t x, fixed_t y);
 void	P_ApplyTorque(AActor *mo);
@@ -411,7 +410,7 @@ void	P_FindFloorCeiling (AActor *actor, bool onlymidtex = false);
 
 bool	P_ChangeSector (sector_t* sector, int crunch, int amt, int floorOrCeil, bool isreset);
 
-fixed_t P_AimLineAttack (AActor *t1, angle_t angle, fixed_t distance, AActor **pLineTarget = NULL, fixed_t vrange=0, int flags = 0, AActor *target=NULL);
+fixed_t P_AimLineAttack (AActor *t1, angle_t angle, fixed_t distance, AActor **pLineTarget = NULL, fixed_t vrange=0, int flags = 0, AActor *target=NULL, AActor *friender=NULL);
 
 enum
 {
@@ -419,6 +418,7 @@ enum
 	ALF_CHECK3D = 2,
 	ALF_CHECKNONSHOOTABLE = 4,
 	ALF_CHECKCONVERSATION = 8,
+	ALF_NOFRIENDS = 16,
 };
 
 AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance, int pitch, int damage, FName damageType, const PClass *pufftype, bool ismelee = false, AActor **victim = NULL);
@@ -483,7 +483,7 @@ extern FBlockNode**		blocklinks; 	// for thing chains
 //
 void P_TouchSpecialThing (AActor *special, AActor *toucher);
 void P_DamageMobj (AActor *target, AActor *inflictor, AActor *source, int damage, FName mod, int flags=0);
-void P_PoisonMobj (AActor *target, AActor *inflictor, AActor *source, int damage, int duration, int period);
+void P_PoisonMobj (AActor *target, AActor *inflictor, AActor *source, int damage, int duration, int period, FName type);
 bool P_GiveBody (AActor *actor, int num);
 bool P_PoisonPlayer (player_t *player, AActor *poisoner, AActor *source, int poison);
 void P_PoisonDamage (player_t *player, AActor *source, int damage, bool playPainSound);
@@ -551,5 +551,6 @@ FPolyObj *PO_GetPolyobj(int polyNum);
 //
 #include "p_spec.h"
 
+bool P_AlignFlat (int linenum, int side, int fc);
 
 #endif	// __P_LOCAL__

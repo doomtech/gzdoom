@@ -73,7 +73,7 @@
 #include "st_stuff.h"
 #include "am_map.h"
 #include "p_setup.h"
-#include "r_local.h"
+#include "r_utility.h"
 #include "r_sky.h"
 #include "d_main.h"
 #include "d_dehacked.h"
@@ -87,7 +87,6 @@
 #include "gameconfigfile.h"
 #include "sbar.h"
 #include "decallib.h"
-#include "r_polymost.h"
 #include "version.h"
 #include "v_text.h"
 #include "st_start.h"
@@ -106,6 +105,11 @@
 #include "sc_man.h"
 #include "po_man.h"
 #include "resourcefiles/resourcefile.h"
+#include "r_renderer.h"
+
+#ifdef USE_POLYMOST
+#include "r_polymost.h"
+#endif
 
 EXTERN_CVAR(Bool, hud_althud)
 void DrawHUD();
@@ -161,7 +165,6 @@ extern bool demorecording;
 extern bool M_DemoNoPlay;	// [RH] if true, then skip any demos in the loop
 extern bool insave;
 
-extern cycle_t WallCycles, PlaneCycles, MaskedCycles, WallScanCycles;
 
 // PUBLIC DATA DEFINITIONS -------------------------------------------------
 
@@ -183,6 +186,9 @@ CUSTOM_CVAR (Int, fraglimit, 0, CVAR_SERVERINFO)
 	}
 }
 
+#ifdef USE_POLYMOST
+CVAR(Bool, testpolymost, false, 0)
+#endif
 CVAR (Float, timelimit, 0.f, CVAR_SERVERINFO);
 CVAR (Int, wipetype, 1, CVAR_ARCHIVE);
 CVAR (Int, snd_drawoutput, 0, 0);
@@ -275,8 +281,10 @@ void D_ProcessEvents (void)
 			continue;				// console ate the event
 		if (M_Responder (ev))
 			continue;				// menu ate the event
-		if (testpolymost)
-			Polymost_Responder (ev);
+		#ifdef USE_POLYMOST
+			if (testpolymost)
+				Polymost_Responder (ev);
+		#endif
 		G_Responder (ev);
 	}
 }
@@ -297,8 +305,11 @@ void D_PostEvent (const event_t *ev)
 		return;
 	}
 	events[eventhead] = *ev;
-	if (ev->type == EV_Mouse && !testpolymost && !paused && menuactive == MENU_Off &&
-		ConsoleState != c_down && ConsoleState != c_falling)
+	if (ev->type == EV_Mouse && !paused && menuactive == MENU_Off && ConsoleState != c_down && ConsoleState != c_falling
+#ifdef USE_POLYMOST
+		&& !testpolymost		
+#endif
+		)
 	{
 		if (Button_Mlook.bDown || freelook)
 		{
@@ -497,14 +508,15 @@ CVAR (Flag, sv_disallowsuicide,		dmflags2, DF2_NOSUICIDE);
 CVAR (Flag, sv_noautoaim,			dmflags2, DF2_NOAUTOAIM);
 CVAR (Flag, sv_dontcheckammo,		dmflags2, DF2_DONTCHECKAMMO);
 CVAR (Flag, sv_killbossmonst,		dmflags2, DF2_KILLBOSSMONST);
+CVAR (Flag, sv_nocountendmonst,		dmflags2, DF2_NOCOUNTENDMONST);
 //==========================================================================
 //
 // CVAR compatflags
 //
 //==========================================================================
 
-int i_compatflags;	// internal compatflags composed from the compatflags CVAR and MAPINFO settings
-int ii_compatflags, ib_compatflags;
+int i_compatflags, i_compatflags2;	// internal compatflags composed from the compatflags CVAR and MAPINFO settings
+int ii_compatflags, ii_compatflags2, ib_compatflags;
 
 EXTERN_CVAR(Int, compatmode)
 
@@ -514,19 +526,30 @@ static int GetCompatibility(int mask)
 	else return (mask & ~level.info->compatmask) | (level.info->compatflags & level.info->compatmask);
 }
 
+static int GetCompatibility2(int mask)
+{
+	return (level.info == NULL) ? mask
+		: (mask & ~level.info->compatmask2) | (level.info->compatflags2 & level.info->compatmask2);
+}
+
 CUSTOM_CVAR (Int, compatflags, 0, CVAR_ARCHIVE|CVAR_SERVERINFO)
 {
 	int old = i_compatflags;
 	i_compatflags = GetCompatibility(self) | ii_compatflags;
-	if ((old ^i_compatflags) & COMPATF_POLYOBJ)
+	if ((old ^ i_compatflags) & COMPATF_POLYOBJ)
 	{
 		FPolyObj::ClearAllSubsectorLinks();
 	}
 }
 
+CUSTOM_CVAR (Int, compatflags2, 0, CVAR_ARCHIVE|CVAR_SERVERINFO)
+{
+	i_compatflags2 = GetCompatibility2(self) | ii_compatflags2;
+}
+
 CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
-	int v;
+	int v, w = 0;
 
 	switch (self)
 	{
@@ -545,7 +568,8 @@ CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_NOINITCALL)
 		v = COMPATF_SHORTTEX|COMPATF_STAIRINDEX|COMPATF_USEBLOCKING|COMPATF_NODOORLIGHT|COMPATF_SPRITESORT|
 			COMPATF_TRACE|COMPATF_MISSILECLIP|COMPATF_SOUNDTARGET|COMPATF_NO_PASSMOBJ|COMPATF_LIMITPAIN|
 			COMPATF_DEHHEALTH|COMPATF_INVISIBILITY|COMPATF_CROSSDROPOFF|COMPATF_CORPSEGIBS|COMPATF_HITSCAN|
-			COMPATF_WALLRUN|COMPATF_NOTOSSDROPS|COMPATF_LIGHT;
+			COMPATF_WALLRUN|COMPATF_NOTOSSDROPS|COMPATF_LIGHT|COMPATF_MASKEDMIDTEX;
+		w = COMPATF2_BADANGLES;
 		break;
 
 	case 3: // Boom compat mode
@@ -561,46 +585,49 @@ CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_NOINITCALL)
 			COMPATF_MBFMONSTERMOVE|COMPATF_NOBLOCKFRIENDS;
 		break;
 
-	case 6:	// Boom with some added settings to reenable spme 'broken' behavior
+	case 6:	// Boom with some added settings to reenable some 'broken' behavior
 		v = COMPATF_TRACE|COMPATF_SOUNDTARGET|COMPATF_BOOMSCROLL|COMPATF_MISSILECLIP|COMPATF_NO_PASSMOBJ|
 			COMPATF_INVISIBILITY|COMPATF_CORPSEGIBS|COMPATF_HITSCAN|COMPATF_WALLRUN|COMPATF_NOTOSSDROPS;
 		break;
 
 	}
 	compatflags = v;
+	compatflags2 = w;
 }
 
-CVAR (Flag, compat_shortTex,	compatflags, COMPATF_SHORTTEX);
-CVAR (Flag, compat_stairs,		compatflags, COMPATF_STAIRINDEX);
-CVAR (Flag, compat_limitpain,	compatflags, COMPATF_LIMITPAIN);
-CVAR (Flag, compat_silentpickup,compatflags, COMPATF_SILENTPICKUP);
-CVAR (Flag, compat_nopassover,	compatflags, COMPATF_NO_PASSMOBJ);
-CVAR (Flag, compat_soundslots,	compatflags, COMPATF_MAGICSILENCE);
-CVAR (Flag, compat_wallrun,		compatflags, COMPATF_WALLRUN);
-CVAR (Flag, compat_notossdrops,	compatflags, COMPATF_NOTOSSDROPS);
-CVAR (Flag, compat_useblocking,	compatflags, COMPATF_USEBLOCKING);
-CVAR (Flag, compat_nodoorlight,	compatflags, COMPATF_NODOORLIGHT);
-CVAR (Flag, compat_ravenscroll,	compatflags, COMPATF_RAVENSCROLL);
-CVAR (Flag, compat_soundtarget,	compatflags, COMPATF_SOUNDTARGET);
-CVAR (Flag, compat_dehhealth,	compatflags, COMPATF_DEHHEALTH);
-CVAR (Flag, compat_trace,		compatflags, COMPATF_TRACE);
-CVAR (Flag, compat_dropoff,		compatflags, COMPATF_DROPOFF);
-CVAR (Flag, compat_boomscroll,	compatflags, COMPATF_BOOMSCROLL);
-CVAR (Flag, compat_invisibility,compatflags, COMPATF_INVISIBILITY);
-CVAR (Flag, compat_silentinstantfloors,compatflags, COMPATF_SILENT_INSTANT_FLOORS);
-CVAR (Flag, compat_sectorsounds,compatflags, COMPATF_SECTORSOUNDS);
-CVAR (Flag, compat_missileclip,	compatflags, COMPATF_MISSILECLIP);
-CVAR (Flag, compat_crossdropoff,compatflags, COMPATF_CROSSDROPOFF);
-CVAR (Flag, compat_anybossdeath,compatflags, COMPATF_ANYBOSSDEATH);
-CVAR (Flag, compat_minotaur,	compatflags, COMPATF_MINOTAUR);
-CVAR (Flag, compat_mushroom,	compatflags, COMPATF_MUSHROOM);
-CVAR (Flag, compat_mbfmonstermove,compatflags, COMPATF_MBFMONSTERMOVE);
-CVAR (Flag, compat_corpsegibs,	compatflags, COMPATF_CORPSEGIBS);
-CVAR (Flag, compat_noblockfriends,compatflags,COMPATF_NOBLOCKFRIENDS);
-CVAR (Flag, compat_spritesort,	compatflags,COMPATF_SPRITESORT);
-CVAR (Flag, compat_hitscan,		compatflags,COMPATF_HITSCAN);
-CVAR (Flag, compat_light,		compatflags,COMPATF_LIGHT);
-CVAR (Flag, compat_polyobj,		compatflags,COMPATF_POLYOBJ);
+CVAR (Flag, compat_shortTex,			compatflags,  COMPATF_SHORTTEX);
+CVAR (Flag, compat_stairs,				compatflags,  COMPATF_STAIRINDEX);
+CVAR (Flag, compat_limitpain,			compatflags,  COMPATF_LIMITPAIN);
+CVAR (Flag, compat_silentpickup,		compatflags,  COMPATF_SILENTPICKUP);
+CVAR (Flag, compat_nopassover,			compatflags,  COMPATF_NO_PASSMOBJ);
+CVAR (Flag, compat_soundslots,			compatflags,  COMPATF_MAGICSILENCE);
+CVAR (Flag, compat_wallrun,				compatflags,  COMPATF_WALLRUN);
+CVAR (Flag, compat_notossdrops,			compatflags,  COMPATF_NOTOSSDROPS);
+CVAR (Flag, compat_useblocking,			compatflags,  COMPATF_USEBLOCKING);
+CVAR (Flag, compat_nodoorlight,			compatflags,  COMPATF_NODOORLIGHT);
+CVAR (Flag, compat_ravenscroll,			compatflags,  COMPATF_RAVENSCROLL);
+CVAR (Flag, compat_soundtarget,			compatflags,  COMPATF_SOUNDTARGET);
+CVAR (Flag, compat_dehhealth,			compatflags,  COMPATF_DEHHEALTH);
+CVAR (Flag, compat_trace,				compatflags,  COMPATF_TRACE);
+CVAR (Flag, compat_dropoff,				compatflags,  COMPATF_DROPOFF);
+CVAR (Flag, compat_boomscroll,			compatflags,  COMPATF_BOOMSCROLL);
+CVAR (Flag, compat_invisibility,		compatflags,  COMPATF_INVISIBILITY);
+CVAR (Flag, compat_silentinstantfloors,	compatflags,  COMPATF_SILENT_INSTANT_FLOORS);
+CVAR (Flag, compat_sectorsounds,		compatflags,  COMPATF_SECTORSOUNDS);
+CVAR (Flag, compat_missileclip,			compatflags,  COMPATF_MISSILECLIP);
+CVAR (Flag, compat_crossdropoff,		compatflags,  COMPATF_CROSSDROPOFF);
+CVAR (Flag, compat_anybossdeath,		compatflags,  COMPATF_ANYBOSSDEATH);
+CVAR (Flag, compat_minotaur,			compatflags,  COMPATF_MINOTAUR);
+CVAR (Flag, compat_mushroom,			compatflags,  COMPATF_MUSHROOM);
+CVAR (Flag, compat_mbfmonstermove,		compatflags,  COMPATF_MBFMONSTERMOVE);
+CVAR (Flag, compat_corpsegibs,			compatflags,  COMPATF_CORPSEGIBS);
+CVAR (Flag, compat_noblockfriends,		compatflags,  COMPATF_NOBLOCKFRIENDS);
+CVAR (Flag, compat_spritesort,			compatflags,  COMPATF_SPRITESORT);
+CVAR (Flag, compat_hitscan,				compatflags,  COMPATF_HITSCAN);
+CVAR (Flag, compat_light,				compatflags,  COMPATF_LIGHT);
+CVAR (Flag, compat_polyobj,				compatflags,  COMPATF_POLYOBJ);
+CVAR (Flag, compat_maskedmidtex,		compatflags,  COMPATF_MASKEDMIDTEX);
+CVAR (Flag, compat_badangles,			compatflags2, COMPATF2_BADANGLES);
 
 //==========================================================================
 //
@@ -708,6 +735,7 @@ void D_Display ()
 
 	hw2d = false;
 
+#ifdef USE_POLYMOST
 	if (testpolymost)
 	{
 		drawpolymosttest();
@@ -715,6 +743,7 @@ void D_Display ()
 		M_Drawer();
 	}
 	else
+#endif
 	{
 		unsigned int nowtime = I_FPSTime();
 		TexMan.UpdateAnimations(nowtime);
@@ -742,14 +771,14 @@ void D_Display ()
 			screen->SetBlendingRect(viewwindowx, viewwindowy,
 				viewwindowx + viewwidth, viewwindowy + viewheight);
 			P_CheckPlayerSprites();
-			screen->RenderView(&players[consoleplayer]);
+			Renderer->RenderView(&players[consoleplayer]);
 			if ((hw2d = screen->Begin2D(viewactive)))
 			{
 				// Redraw everything every frame when using 2D accel
 				SB_state = screen->GetPageCount();
 				BorderNeedRefresh = screen->GetPageCount();
 			}
-			screen->DrawRemainingPlayerSprites();
+			Renderer->DrawRemainingPlayerSprites();
 			screen->DrawBlendingRect();
 			if (automapactive)
 			{
@@ -763,7 +792,7 @@ void D_Display ()
 			}
 			if (!automapactive || viewactive)
 			{
-				R_RefreshViewBorder ();
+				V_RefreshViewBorder ();
 			}
 
 			if (hud_althud && viewheight == SCREENHEIGHT && screenblocks > 10)
@@ -897,6 +926,7 @@ void D_Display ()
 
 void D_ErrorCleanup ()
 {
+	savegamerestore = false;
 	screen->Unlock ();
 	bglobal.RemoveAllBots (true);
 	D_QuitNetGame ();
@@ -913,6 +943,7 @@ void D_ErrorCleanup ()
 		menuactive = MENU_Off;
 	}
 	insave = false;
+	Renderer->ErrorCleanup();
 }
 
 //==========================================================================
@@ -1194,12 +1225,17 @@ void D_DoAdvanceDemo (void)
 	static int pagecount;
 	const char *pagename = NULL;
 
+	advancedemo = false;
+
+	if (gameaction != ga_nothing)
+	{
+		return;
+	}
+
 	V_SetBlend (0,0,0,0);
 	players[consoleplayer].playerstate = PST_LIVE;	// not reborn
-	advancedemo = false;
 	usergame = false;				// no save / end game here
 	paused = 0;
-	gameaction = ga_nothing;
 
 	// [RH] If you want something more dynamic for your title, create a map
 	// and name it TITLEMAP. That map will be loaded and used as the title.
@@ -1587,10 +1623,6 @@ static void GetCmdLineFiles(TArray<FString> &wadfiles)
 	int i, argc;
 
 	argc = Args->CheckParmList("-file", &args);
-	if ((gameinfo.flags & GI_SHAREWARE) && argc > 0)
-	{
-		I_FatalError ("You cannot -file with the shareware version. Register!");
-	}
 	for (i = 0; i < argc; ++i)
 	{
 		D_AddWildFile(wadfiles, args[i]);
@@ -1668,6 +1700,25 @@ static FString ParseGameInfo(TArray<FString> &pwads, const char *fn, const char 
 			sc.MustGetStringName(",");
 			sc.MustGetString();
 			DoomStartupInfo.BkColor = V_GetColor(NULL, sc.String);
+		}
+		else if (!nextKey.CompareNoCase("STARTUPTYPE"))
+		{
+			sc.MustGetString();
+			FString sttype = sc.String;
+			if (!sttype.CompareNoCase("DOOM"))
+				DoomStartupInfo.Type = FStartupInfo::DoomStartup;
+			else if (!sttype.CompareNoCase("HERETIC"))
+				DoomStartupInfo.Type = FStartupInfo::HereticStartup;
+			else if (!sttype.CompareNoCase("HEXEN"))
+				DoomStartupInfo.Type = FStartupInfo::HexenStartup;
+			else if (!sttype.CompareNoCase("STRIFE"))
+				DoomStartupInfo.Type = FStartupInfo::StrifeStartup;
+			else DoomStartupInfo.Type = FStartupInfo::DefaultStartup;
+		}
+		else if (!nextKey.CompareNoCase("STARTUPSONG"))
+		{
+			sc.MustGetString();
+			DoomStartupInfo.Song = sc.String;
 		}
 	}
 	return iwad;
@@ -2044,7 +2095,7 @@ void D_DoomMain (void)
 		GetCmdLineFiles(pwads);
 		FString iwad = CheckGameInfo(pwads);
 
-		// The IWAD selection dialogue dpes not show in fullscreen so if the
+		// The IWAD selection dialogue does not show in fullscreen so if the
 		// restart is initiated without a defined IWAD assume for now that it's not going to change.
 		if (iwad.Len() == 0) iwad = lastIWAD;
 
@@ -2054,6 +2105,11 @@ void D_DoomMain (void)
 		gameinfo.flags = iwad_info->flags;
 		gameinfo.ConfigName = iwad_info->Configname;
 		lastIWAD = iwad;
+
+		if ((gameinfo.flags & GI_SHAREWARE) && pwads.Size() > 0)
+		{
+			I_FatalError ("You cannot -file with the shareware version. Register!");
+		}
 
 		FBaseCVar::DisableCallbacks();
 		GameConfig->DoGameSetup (gameinfo.ConfigName);
@@ -2097,6 +2153,7 @@ void D_DoomMain (void)
 		{
 			Printf ("I_Init: Setting up machine state.\n");
 			I_Init ();
+			I_CreateRenderer();
 		}
 
 		Printf ("V_Init: allocate screen.\n");
@@ -2289,7 +2346,7 @@ void D_DoomMain (void)
 				G_LoadGame (file);
 			}
 
-			if (gameaction != ga_loadgame)
+			if (gameaction != ga_loadgame && gameaction != ga_loadgamehidecon)
 			{
 				if (autostart || netgame)
 				{
@@ -2451,97 +2508,3 @@ void FStartupScreen::NetMessage(char const *,...) {}
 void FStartupScreen::NetDone(void) {}
 bool FStartupScreen::NetLoop(bool (*)(void *),void *) { return false; }
 
-//==========================================================================
-//
-// STAT fps
-//
-// Displays statistics about rendering times
-//
-//==========================================================================
-
-//==========================================================================
-//
-// STAT fps
-//
-// Displays statistics about rendering times
-//
-//==========================================================================
-
-ADD_STAT (fps)
-{
-	FString out;
-	out.Format("frame=%04.1f ms  walls=%04.1f ms  planes=%04.1f ms  masked=%04.1f ms",
-		FrameCycles.TimeMS(), WallCycles.TimeMS(), PlaneCycles.TimeMS(), MaskedCycles.TimeMS());
-	return out;
-}
-
-
-static double f_acc, w_acc,p_acc,m_acc;
-static int acc_c;
-
-ADD_STAT (fps_accumulated)
-{
-	f_acc += FrameCycles.TimeMS();
-	w_acc += WallCycles.TimeMS();
-	p_acc += PlaneCycles.TimeMS();
-	m_acc += MaskedCycles.TimeMS();
-	acc_c++;
-	FString out;
-	out.Format("frame=%04.1f ms  walls=%04.1f ms  planes=%04.1f ms  masked=%04.1f ms  %d counts",
-		f_acc/acc_c, w_acc/acc_c, p_acc/acc_c, m_acc/acc_c, acc_c);
-	Printf(PRINT_LOG, "%s\n", out.GetChars());
-	return out;
-}
-
-//==========================================================================
-//
-// STAT wallcycles
-//
-// Displays the minimum number of cycles spent drawing walls
-//
-//==========================================================================
-
-static double bestwallcycles = HUGE_VAL;
-
-ADD_STAT (wallcycles)
-{
-	FString out;
-	double cycles = WallCycles.Time();
-	if (cycles && cycles < bestwallcycles)
-		bestwallcycles = cycles;
-	out.Format ("%g", bestwallcycles);
-	return out;
-}
-
-//==========================================================================
-//
-// CCMD clearwallcycles
-//
-// Resets the count of minimum wall drawing cycles
-//
-//==========================================================================
-
-CCMD (clearwallcycles)
-{
-	bestwallcycles = HUGE_VAL;
-}
-
-#if 1
-// To use these, also uncomment the clock/unclock in wallscan
-static double bestscancycles = HUGE_VAL;
-
-ADD_STAT (scancycles)
-{
-	FString out;
-	double scancycles = WallScanCycles.Time();
-	if (scancycles && scancycles < bestscancycles)
-		bestscancycles = scancycles;
-	out.Format ("%g", bestscancycles);
-	return out;
-}
-
-CCMD (clearscancycles)
-{
-	bestscancycles = HUGE_VAL;
-}
-#endif

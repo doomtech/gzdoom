@@ -28,6 +28,7 @@ A80E7EE40E0D0C76A6FBD242BE29FE27 // map15
 6DA6FCBA8089161BDEC6A1D3F6C8D60F // Eternal Doom MAP25
 {
 	stairs
+	maskedmidtex
 }
 
 10E1E2B36302D31AC4AE68C84B5DC457 // Eternal Doom MAP28
@@ -140,3 +141,10 @@ DCE862393CAAA6FF1294FB7056B53057 // UAC Ultra map07: Contains a scroller dependi
 {
 	ignoreteleporttags
 }
+
+8FF30D57F6CE64F085A6567EC302842A // Enjay's test map for this flag
+9D7893D09FEE55C31B73C670DF850962 // Memento Mori II, map12
+{
+	badangles
+}
+

@@ -42,7 +42,7 @@
 #include "p_local.h"
 #include "a_sharedglobal.h"
 #include "r_sky.h"
-#include "r_bsp.h"
+#include "p_effect.h"
 #include "po_man.h"
 
 #include "gl/renderer/gl_renderer.h"
@@ -277,7 +277,7 @@ static void AddPolyobjs(subsector_t *sub)
 {
 	if (sub->BSP == NULL || sub->BSP->bDirty)
 	{
-		R_BuildPolyBSP(sub);
+		sub->BuildPolyBSP();
 	}
 	if (sub->BSP->Nodes.Size() == 0)
 	{

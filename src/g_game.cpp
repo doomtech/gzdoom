@@ -61,9 +61,7 @@
 #include "p_local.h" 
 #include "s_sound.h"
 #include "gstrings.h"
-#include "r_data.h"
 #include "r_sky.h"
-#include "r_draw.h"
 #include "g_game.h"
 #include "g_level.h"
 #include "b_bot.h"			//Added by MC:
@@ -73,12 +71,15 @@
 #include "gi.h"
 #include "a_keys.h"
 #include "a_artifacts.h"
-#include "r_translate.h"
+#include "r_data/r_translate.h"
 #include "cmdlib.h"
 #include "d_net.h"
 #include "d_event.h"
 #include "p_acs.h"
 #include "m_joy.h"
+#include "farchive.h"
+#include "r_renderer.h"
+#include "r_data/colormaps.h"
 
 #include <zlib.h>
 
@@ -1015,6 +1016,7 @@ void G_Ticker ()
 			G_DoNewGame ();
 			break;
 		case ga_loadgame:
+		case ga_loadgamehidecon:
 		case ga_autoloadgame:
 			G_DoLoadGame ();
 			break;
@@ -1631,12 +1633,12 @@ void G_ScreenShot (char *filename)
 // G_InitFromSavegame
 // Can be called by the startup code or the menu task.
 //
-void G_LoadGame (const char* name)
+void G_LoadGame (const char* name, bool hidecon)
 {
 	if (name != NULL)
 	{
 		savename = name;
-		gameaction = ga_loadgame;
+		gameaction = !hidecon ? ga_loadgame : ga_loadgamehidecon;
 	}
 }
 
@@ -1696,11 +1698,13 @@ void G_DoLoadGame ()
 	char sigcheck[20];
 	char *text = NULL;
 	char *map;
+	bool hidecon;
 
 	if (gameaction != ga_autoloadgame)
 	{
 		demoplayback = false;
 	}
+	hidecon = gameaction == ga_loadgamehidecon;
 	gameaction = ga_nothing;
 
 	FILE *stdfile = fopen (savename.GetChars(), "rb");
@@ -1746,13 +1750,19 @@ void G_DoLoadGame ()
 		delete[] engine;
 	}
 
+	SaveVersion = 0;
 	if (!M_GetPNGText (png, "ZDoom Save Version", sigcheck, 20) ||
 		0 != strncmp (sigcheck, SAVESIG, 9) ||		// ZDOOMSAVE is the first 9 chars
 		(SaveVersion = atoi (sigcheck+9)) < MINSAVEVER)
 	{
-		Printf ("Savegame is from an incompatible version\n");
 		delete png;
 		fclose (stdfile);
+		Printf ("Savegame is from an incompatible version");
+		if (SaveVersion != 0)
+		{
+			Printf(": %d (%d is the oldest supported)", SaveVersion, MINSAVEVER);
+		}
+		Printf("\n");
 		return;
 	}
 
@@ -1768,6 +1778,13 @@ void G_DoLoadGame ()
 		Printf ("Savegame is missing the current map\n");
 		fclose (stdfile);
 		return;
+	}
+
+	// Now that it looks like we can load this save, hide the fullscreen console if it was up
+	// when the game was selected from the menu.
+	if (hidecon && gamestate == GS_FULLCONSOLE)
+	{
+		gamestate = GS_HIDECONSOLE;
 	}
 
 	// Read intermission data for hubs
@@ -2018,7 +2035,7 @@ static void PutSavePic (FILE *file, int width, int height)
 	else
 	{
 		P_CheckPlayerSprites();
-		screen->WriteSavePic(&players[consoleplayer], file, width, height);
+		Renderer->WriteSavePic(&players[consoleplayer], file, width, height);
 	}
 }
 
@@ -2517,7 +2534,7 @@ void G_DoPlayDemo (void)
 
 	if (ReadLong (&demo_p) != FORM_ID)
 	{
-		const char *eek = "Cannot play non-ZDoom demos.\n(They would go out of sync badly.)\n";
+		const char *eek = "Cannot play non-ZDoom demos.\n";
 
 		C_ForgetCVars();
 		M_Free(demobuffer);

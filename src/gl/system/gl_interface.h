@@ -1,6 +1,10 @@
 #ifndef R_RENDER
 #define R_RENDER
 
+#if defined(__APPLE__)
+#define APIENTRY
+#endif // __APPLE__
+
 enum RenderFlags
 {
 	RFL_NPOT_TEXTURE=1,
@@ -54,7 +58,7 @@ struct RenderContext
 	void (APIENTRY * SetTextureMode) (int type);
 	void (APIENTRY * PrintStartupLog) ();
 	BOOL (APIENTRY * SetVSync) (int on);
-#ifndef unix
+#if !defined (unix) && !defined (__APPLE__)
 	bool (APIENTRY * InitHardware) (HWND, bool allowsoftware, bool nostencil, int multisample);
 	void (APIENTRY * Shutdown) ();
 #else

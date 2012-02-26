@@ -43,19 +43,20 @@
 #include "d_netinf.h"
 #include "d_net.h"
 #include "d_protocol.h"
+#include "d_player.h"
 #include "c_dispatch.h"
 #include "v_palette.h"
 #include "v_video.h"
 #include "i_system.h"
-#include "r_draw.h"
 #include "r_state.h"
 #include "sbar.h"
 #include "gi.h"
 #include "m_random.h"
 #include "teaminfo.h"
-#include "r_translate.h"
+#include "r_data/r_translate.h"
 #include "templates.h"
 #include "cmdlib.h"
+#include "farchive.h"
 
 static FRandom pr_pickteam ("PickRandomTeam");
 

@@ -42,7 +42,6 @@
 
 #include "doomtype.h"
 #include "colormatcher.h"
-#include "r_translate.h"
 #include "i_system.h"
 #include "p_local.h"
 #include "p_lnspec.h"
@@ -489,7 +488,7 @@ CCMD(dumpgeometry)
 				}
 				if (seg->PartnerSeg) 
 				{
-					subsector_t * sub2 = seg->PartnerSeg->Subsector();
+					subsector_t * sub2 = seg->PartnerSeg->Subsector;
 					Printf(PRINT_LOG, ", back sector = %d, real back sector = %d", sub2->render_sector->sectornum, seg->PartnerSeg->frontsector->sectornum);
 				}
 				else if (seg->backsector)
