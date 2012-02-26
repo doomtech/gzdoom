@@ -81,6 +81,12 @@ graphic optional "TITLEPIC", 320, 240
 	patch "TITLE", 60, 42
 }
 
+graphic optional "INTERPIC", 320, 240
+{
+	patch "BACKGRND", 0, 0
+	patch "EVIL", 62, 24
+}
+
 graphic optional "LEGAL", 320, 240
 {
 	patch "BACKGRND", 0, 0

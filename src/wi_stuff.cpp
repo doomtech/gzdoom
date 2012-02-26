@@ -339,6 +339,7 @@ void WI_LoadBackground(bool isenterpic)
 		{
 		case GAME_Chex:
 		case GAME_Doom:
+		case GAME_Doom64:
 			if (!(gameinfo.flags & GI_MAPxx))
 			{
 				const char *level = isenterpic ? wbs->next : wbs->current;
