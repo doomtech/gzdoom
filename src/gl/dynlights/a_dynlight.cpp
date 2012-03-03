@@ -517,9 +517,6 @@ void ADynamicLight::CollectWithinRadius(subsector_t *subSec, float radius)
 {
 	if (!subSec) return;
 
-	// Quick hack to prevent crashes on startup because partner segs haven't been initialized yet
-	if (level.maptime == 0) return;
-
 	bool additive = (flags4&MF4_ADDITIVE) || gl_lights_additive;
 
 	subSec->validcount = ::validcount;
@@ -542,7 +539,7 @@ void ADynamicLight::CollectWithinRadius(subsector_t *subSec, float radius)
 		}
 
 		seg_t *partner = seg->PartnerSeg;
-		if (partner)
+		if (partner && level.maptime)
 		{
 			subsector_t *sub = partner->Subsector;
 			if (sub != NULL && sub->validcount!=::validcount)
