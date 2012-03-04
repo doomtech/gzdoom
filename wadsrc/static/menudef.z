@@ -181,7 +181,7 @@ OptionMenu "GLPrefOptions"
 	Option "Fuzz Style",				gl_fuzztype,					"FuzzStyle"
 	Option "Sprite billboard",			gl_billboard_mode,				"BillboardModes"
 	Option "Particle style",			gl_particles_style,				"Particles"
-	Slider "Ambient light level",		gl_light_ambient,				1.0, 255.0, 5.0
+	Slider "Ambient light level",		gl_light_ambient,				1.0, 255.0, 1.0
 	Option "Rendering quality",			gl_render_precise,				"Precision"
 	Option "Use vertex buffer",			gl_usevbo,						"VBOModes"
 }
