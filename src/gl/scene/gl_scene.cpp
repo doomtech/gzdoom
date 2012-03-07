@@ -1146,13 +1146,9 @@ void FGLInterface::EndSerialize(FArchive &arc)
 
 EXTERN_CVAR(Float, maxviewpitch)
 
-#define MAX_DN_ANGLE	56		// Max looking down angle
-#define MAX_UP_ANGLE	32		// Max looking up angle
-
 int FGLInterface::GetMaxViewPitch(bool down)
 {
-	if (netgame) return down? MAX_DN_ANGLE : MAX_UP_ANGLE;
-	else return maxviewpitch;
+	return int(down? maxviewpitch : -maxviewpitch);
 }
 
 //===========================================================================
