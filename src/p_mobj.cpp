@@ -230,12 +230,9 @@ void AActor::Serialize (FArchive &arc)
 		<< velz
 		<< tics
 		<< state
-		<< Damage;
-	if (SaveVersion >= 3227)
-	{
-		arc << projectileKickback;
-	}
-	arc	<< flags
+		<< Damage
+		<< projectileKickback
+		<< flags
 		<< flags2
 		<< flags3
 		<< flags4
@@ -270,6 +267,8 @@ void AActor::Serialize (FArchive &arc)
 		arc << args[0];
 	}
 	arc << args[1] << args[2] << args[3] << args[4]
+		<< accuracy
+		<< stamina
 		<< goal
 		<< waterlevel
 		<< MinMissileChance
@@ -305,14 +304,10 @@ void AActor::Serialize (FArchive &arc)
 		<< maxtargetrange
 		<< meleethreshold
 		<< meleerange
-		<< DamageType;
-	if (SaveVersion >= 3237) 
-	{
-		arc
+		<< DamageType
 		<< PainType
-		<< DeathType;
-	}
-	arc	<< gravity
+		<< DeathType
+		<< gravity
 		<< FastChaseStrafeCount
 		<< master
 		<< smokecounter
@@ -321,22 +316,16 @@ void AActor::Serialize (FArchive &arc)
 		<< VisibleToTeam // [BB]
 		<< pushfactor
 		<< Species
-		<< Score;
-	if (SaveVersion >= 3113)
-	{
-		arc << DesignatedTeam;
-	}
-	arc << lastpush << lastbump
+		<< Score
+		<< DesignatedTeam
+		<< lastpush << lastbump
 		<< PainThreshold
 		<< DamageFactor
 		<< WeaveIndexXY << WeaveIndexZ
 		<< PoisonDamageReceived << PoisonDurationReceived << PoisonPeriodReceived << Poisoner
-		<< PoisonDamage << PoisonDuration << PoisonPeriod;
-	if (SaveVersion >= 3235)
-	{
-		arc << PoisonDamageType << PoisonDamageTypeReceived;
-	}
-	arc << ConversationRoot << Conversation;
+		<< PoisonDamage << PoisonDuration << PoisonPeriod
+		<< PoisonDamageType << PoisonDamageTypeReceived
+		<< ConversationRoot << Conversation;
 
 	{
 		FString tagstr;
@@ -531,7 +520,7 @@ bool AActor::SetState (FState *newstate, bool nofunction)
 		newstate = newstate->GetNextState();
 	} while (tics == 0);
 
-	if (screen != NULL)
+	if (Renderer != NULL)
 	{
 		Renderer->StateChanged(this);
 	}
@@ -3661,10 +3650,6 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 	{
 		level.total_secrets++;
 	}
-	if (screen != NULL)
-	{
-		Renderer->StateChanged(actor);
-	}
 	return actor;
 }
 
@@ -3691,8 +3676,15 @@ AActor *Spawn (FName classname, fixed_t x, fixed_t y, fixed_t z, replace_t allow
 void AActor::LevelSpawned ()
 {
 	if (tics > 0 && !(flags4 & MF4_SYNCHRONIZED))
+	{
 		tics = 1 + (pr_spawnmapthing() % tics);
-	flags &= ~MF_DROPPED;		// [RH] clear MF_DROPPED flag
+	}
+	// [RH] Clear MF_DROPPED flag if the default version doesn't have it set.
+	// (AInventory::BeginPlay() makes all inventory items spawn with it set.)
+	if (!(GetDefault()->flags & MF_DROPPED))
+	{
+		flags &= ~MF_DROPPED;
+	}
 	HandleSpawnFlags ();
 }
 
@@ -3754,6 +3746,10 @@ void AActor::BeginPlay ()
 
 void AActor::PostBeginPlay ()
 {
+	if (Renderer != NULL)
+	{
+		Renderer->StateChanged(this);
+	}
 	PrevAngle = angle;
 }
 

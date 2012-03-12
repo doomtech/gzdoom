@@ -2981,6 +2981,7 @@ void STACK_ARGS D3DFB::DrawTextureV (FTexture *img, double x, double y, uint32 t
 		x1 -= (parms.texwidth - parms.windowright) * xscale;
 		u1 = float(u1 - (parms.texwidth - parms.windowright) * uscale);
 	}
+
 #if 0
 	float vscale = 1.f / tex->Box->Owner->Height / yscale;
 	if (y0 < parms.uclip)
@@ -3030,7 +3031,7 @@ void STACK_ARGS D3DFB::DrawTextureV (FTexture *img, double x, double y, uint32 t
 
 	if (!SetStyle(tex, parms, color0, color1, *quad))
 	{
-		return;
+		goto done;
 	}
 
 	quad->Texture = tex->Box->Owner->Tex;
@@ -3109,7 +3110,7 @@ void STACK_ARGS D3DFB::DrawTextureV (FTexture *img, double x, double y, uint32 t
 	QuadBatchPos++;
 	VertexPos += 4;
 	IndexPos += 6;
-
+done:
 	if (scissoring)
 	{
 		EndQuadBatch();
@@ -3548,6 +3549,7 @@ void D3DFB::EndQuadBatch()
 		}
 		else if ((quad->Flags & BQF_Paletted) == BQF_CustomPalette)
 		{
+			assert(quad->Palette != NULL);
 			SetPaletteTexture(quad->Palette->Tex, quad->Palette->RoundedPaletteSize, quad->Palette->BorderColor);
 		}
 #if 0

@@ -658,11 +658,7 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 				if (lightbottom<viewz && (!lightlist[i].caster || !(lightlist[i].caster->flags&FF_FADEWALLS)))
 				{
 					// 3d floor 'fog' is rendered as a blending value
-					// D64FIXME: find out how to conciliate both statements below
-					// was: blendv=(lightlist[i].extra_colormap)->Fade;
-					// changed in trunk to: blendv=lightlist[i].blend;
-					// but the Doom 64 branch used this (and still does for now):
-					blendv=(COLORMAP_SELECT(lightlist[i].extra_colormap, LIGHT_FLOOR))->Fade;
+					blendv=lightlist[i].blend;
 					// If this is the same as the sector's it doesn't apply!
 					if (blendv == viewsector->ColorMaps[LIGHT_GLOBAL]->Fade) blendv=0;
 					// a little hack to make this work for Legacy maps.
@@ -1150,13 +1146,9 @@ void FGLInterface::EndSerialize(FArchive &arc)
 
 EXTERN_CVAR(Float, maxviewpitch)
 
-#define MAX_DN_ANGLE	56		// Max looking down angle
-#define MAX_UP_ANGLE	32		// Max looking up angle
-
 int FGLInterface::GetMaxViewPitch(bool down)
 {
-	if (netgame) return down? MAX_DN_ANGLE : MAX_UP_ANGLE;
-	else return maxviewpitch;
+	return int(down? maxviewpitch : -maxviewpitch);
 }
 
 //===========================================================================

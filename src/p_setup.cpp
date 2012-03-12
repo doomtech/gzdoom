@@ -4293,7 +4293,7 @@ void P_SetupLevel (char *lumpname, int position)
 		}
 
 		map->file->Read (&id, 4);
-		if (id == idcheck || id == idcheck2 || id == idcheck3 || id == idcheck4)
+		if (id != 0 && (id == idcheck || id == idcheck2 || id == idcheck3 || id == idcheck4))
 		{
 			try
 			{
