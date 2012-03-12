@@ -294,6 +294,43 @@ void FTextureManager::InitAnimDefs ()
 					Texture(picnum)->SkyOffset = sc.Number;
 				}
 			}
+			// Doom 64 ANIMDEFS have a different syntax, yay
+			else if (sc.Compare("animpic"))
+			{
+				sc.MustGetString();	// Animation name
+				// TODO: implement
+				sc.MustGetToken('{');
+				while (!sc.CheckToken('}'))
+				{
+					sc.GetString();
+					if (sc.Compare("restartdelay"))
+					{
+						sc.MustGetToken('=');
+						sc.MustGetNumber();
+						// TODO: implement
+					}
+					else if (sc.Compare("frames"))
+					{
+						sc.MustGetToken('=');
+						sc.MustGetNumber();
+						// TODO: implement
+					}
+					else if (sc.Compare("speed"))
+					{
+						sc.MustGetToken('=');
+						sc.MustGetNumber();
+						// TODO: implement
+					}
+					else if (sc.Compare("rewind"))
+					{
+						// TODO: implement
+					}
+					else if (sc.Compare("cyclepalettes"))
+					{
+						// TODO: implement
+					}
+				}
+			}
 			else
 			{
 				sc.ScriptError (NULL);

@@ -733,6 +733,23 @@ void FMapInfoParser::ParseCluster()
 		{
 			clusterinfo->flags |= CLUSTER_EXITTEXTINLUMP;
 		}
+		// Doom 64 features, not implemented yet but shouldn't trigger errors
+		else if (sc.Compare("pic_x"))
+		{
+			ParseAssign();
+			sc.MustGetNumber();
+			// TODO: implement
+		}
+		else if (sc.Compare("pic_y"))
+		{
+			ParseAssign();
+			sc.MustGetNumber();
+			// TODO: implement
+		}
+		else if (sc.Compare("scrolltextend"))
+		{
+			// TODO: implement
+		}
 		else if (!ParseCloseBrace())
 		{
 			// Unknown
@@ -1145,6 +1162,46 @@ DEFINE_MAP_OPTION(defaultenvironment, false)
 	}
 	info->DefaultEnvironment = id;
 }
+
+// Doom 64 MAPINFO options follow
+// They may not be implemented, but they should not provoke an error.
+
+DEFINE_MAP_OPTION(classtype, false)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetNumber();
+	// TODO: implement
+}
+
+DEFINE_MAP_OPTION(exitdelay, false)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetNumber();
+	// TODO: implement
+}
+
+DEFINE_MAP_OPTION(continuemusiconexit, false)
+{
+	// TODO: implement
+}
+
+DEFINE_MAP_OPTION(forcegodmode, false)
+{
+	// TODO: implement
+}
+
+DEFINE_MAP_OPTION(compat_collision, false)
+{
+	parse.ParseAssign();
+	parse.sc.MustGetNumber();
+	// TODO: implement if needed (as a true compatibility option?)
+}
+
+DEFINE_MAP_OPTION(clearcheats, false)
+{
+	// TODO: implement
+}
+
 
 
 //==========================================================================
@@ -1872,6 +1929,9 @@ void G_ParseMapInfo (const char *basemapinfo)
 			int altlump = Wads.CheckNumForName("ZMAPINFO", ns_global, wad, true);
 
 			if (altlump >= 0) continue;
+
+			// The Doom 64 IWAD now contains some incompatible syntax for cluster definitions. :(
+			if (gameinfo.gametype == GAME_Doom64) continue;
 		}
 		FMapInfoParser parse(nindex == 1? FMapInfoParser::FMT_New : FMapInfoParser::FMT_Unknown);
 		level_info_t defaultinfo;

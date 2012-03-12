@@ -27,7 +27,7 @@ IWad
 	Game = "Doom64"
 	Config = "Doom"
 	Mapinfo = "mapinfo/doom64.txt"
-	MustContain = "ROMINFO"
+	MustContain = "FANCRED", "CRSHAIRS", "BUTTONS", "CONFONT", "MAPINFO", "ANIMDEFS", "SKYDEFS", "ENDOFWAD"
 	BannerColors = "a8 00 00", "a8 a8 a8"
 }
 

@@ -290,6 +290,20 @@ void P_TranslateLineDef (line_t *ld, maplinedef_t *mld)
 
 void P_TranslateLineDef (line_t *ld, maplinedefdoom64_t *mld)
 {
+	enum Doom64SpecialFlags
+	{
+		ML_SPECIALMASK		= 0x00FF,
+		ML_FLAGMASK			= 0xFE00,
+		ML_MACROLINE		= 0x0100,
+		ML_REDKEYLOCK		= 0x0200,
+		ML_BLUEKEYLOCK		= 0x0400,
+		ML_YELLOWKEYLOCK	= 0x0800,
+		ML_ALLKEYSLOCK		= 0x0E00,
+		ML_LINECROSSTRIGGER	= 0x1000,
+		ML_SHOOTABLETRIGGER	= 0x2000,
+		ML_ACTIVATETRIGGER	= 0x4000,
+		ML_REPEATTRIGGER	= 0x8000,
+	};
 	// The main difference between the Doom linedef and Doom64 Linedef is the wider flags field.
 	// In effect, there are the "normal" flags on two bytes, then on a byte each the "render flags"
 	// and the "sidedef flags".
@@ -301,8 +315,8 @@ void P_TranslateLineDef (line_t *ld, maplinedefdoom64_t *mld)
 	// Todo: address this point from the specs:
 	// * Unpeg Top Linedef flag also aligns the y offset of all textures to the nearest 64 grid
 
-	if (mld->special & 0x100) tmp.special = 0;		// This is a macro line! It doesn't work normally
-	else tmp.special = mld->special & 0xFF;			// the upper byte is used for SPAC flags
+	if (mld->special & ML_MACROLINE) tmp.special = 0;	// This is a macro line! It doesn't work normally
+	else tmp.special = mld->special & ML_SPECIALMASK;	// the upper byte is used for SPAC flags
 
 	tmp.tag = mld->tag;
 	tmp.sidenum[0] = mld->sidenum[0];
@@ -310,29 +324,33 @@ void P_TranslateLineDef (line_t *ld, maplinedefdoom64_t *mld)
 	P_TranslateLineDef (ld, &tmp);
 
 	// Use flags. Specs say the order is macro, red, blue, yellow key, cross, shootable, use, repeatable
-	if (mld->special & 0xFE00)
+	if (mld->special & ML_FLAGMASK)
 	{
 		ld->activation = 0;
-		// Todo: handle keys. Investigation showed they were only used with the following specials in the
-		// original maps: 1, 2, 6, 8, 9, 12, 14, 15, 16, 18, 19, 31, 38, 52, 109, 117, 118
-		// Specs do not mention what specials 9, 12, 14, 15 and 16 do. Many other corresponds to types
-		// that are not normally locked in ZDoom: 6: Ceiling Crush/Raise Fast, 8: Stairs Raise 8,
-		// 18: Floor Raise/Nearest, 19: Floor Lower, 38: Floor Lower/Lowest, and 52: Exit Level.
-		// Presumably, nothing prevents the Doom 64 method from being applied to just about any special
-		// in custom maps, so we're probably looking at another change needed for proper support.
- 		//KEYSPAM
+		ld->locknumber = 0;
+		// Not sure this actually happens, or how the engine handles it if it does
+		if (mld->special & ML_ALLKEYSLOCK)		ld->locknumber = 229;
+
+		// Red key
+		if (mld->special & ML_REDKEYLOCK)		ld->locknumber = 129;
+
+		// Blue key
+		if (mld->special & ML_BLUEKEYLOCK)		ld->locknumber = 130;
+
+		// Yellow key
+		if (mld->special & ML_YELLOWKEYLOCK)	ld->locknumber = 131;
 
 		// cross - more investigation needed to check monster and projectile crossing
-		if (mld->special & 0x1000)	ld->activation |= SPAC_Cross;// |SPAC_MCross|SPAC_PCross);
+		if (mld->special & ML_LINECROSSTRIGGER)	ld->activation |= SPAC_Cross;// |SPAC_MCross|SPAC_PCross);
 
 		// shootable
-		if (mld->special & 0x2000)	ld->activation |= SPAC_Impact;
+		if (mld->special & ML_SHOOTABLETRIGGER)	ld->activation |= SPAC_Impact;
 
 		// use
-		if (mld->special & 0x4000)	ld->activation |= (SPAC_Use|SPAC_MUse);
+		if (mld->special & ML_ACTIVATETRIGGER)	ld->activation |= (SPAC_Use|SPAC_MUse);
 
 		// repeatable
-		if (mld->special & 0x8000)	ld->flags |= ML_REPEAT_SPECIAL;
+		if (mld->special & ML_REPEATTRIGGER)	ld->flags |= ML_REPEAT_SPECIAL;
 
 		// Special 125 is forbidden to player
 		if ((mld->special & 0xFF) == 125) ld->activation &= ~SPAC_PlayerActivate;
