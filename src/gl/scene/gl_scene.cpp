@@ -1148,7 +1148,7 @@ EXTERN_CVAR(Float, maxviewpitch)
 
 int FGLInterface::GetMaxViewPitch(bool down)
 {
-	return int(down? maxviewpitch : -maxviewpitch);
+	return int(maxviewpitch);
 }
 
 //===========================================================================
