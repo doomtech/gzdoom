@@ -1519,7 +1519,7 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 	flags = (!gl_isBlack(Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE)? GLWF_FOGGY : 0;
 
 	int rel = 0;
-	lightlevel = seg->sidedef->GetLightLevel(!!(flags&GLWF_FOGGY), gl_ClampLight(frontsector->lightlevel), &rel);
+	lightlevel = seg->sidedef->GetLightLevel(!!(flags&GLWF_FOGGY), gl_ClampLight(frontsector->lightlevel), false, &rel);
 	rellight = rel;
 
 	alpha=1.0f;
