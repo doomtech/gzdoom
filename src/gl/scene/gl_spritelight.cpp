@@ -72,49 +72,48 @@ bool gl_GetSpriteLight(AActor *self, fixed_t x, fixed_t y, fixed_t z, subsector_
 	
 	out[0]=out[1]=out[2]=0;
 
-	for(int j=0;j<2;j++)
+	if (line == NULL || P_PointOnLineSide(x, y, line) == side)
 	{
-		// Go through both light lists
-		FLightNode * node = subsec->lighthead[j];
-		while (node)
+		for(int j=0;j<2;j++)
 		{
-			light=node->lightsource;
-			if (!(light->flags2&MF2_DORMANT) &&
-				(!(light->flags4&MF4_DONTLIGHTSELF) || light->target != self))
+			// Go through both light lists
+			FLightNode * node = subsec->lighthead[j];
+			while (node)
 			{
-				float dist = FVector3( FIXED2FLOAT(x - light->x), FIXED2FLOAT(y - light->y), FIXED2FLOAT(z - light->z) ).Length();
-				radius = light->GetRadius() * gl_lights_size;
-				
-				if (dist < radius)
+				light=node->lightsource;
+				if (!(light->flags2&MF2_DORMANT) &&
+					(!(light->flags4&MF4_DONTLIGHTSELF) || light->target != self))
 				{
-					frac = 1.0f - (dist / radius);
-					
-					if (frac > 0)
+					float dist = FVector3( FIXED2FLOAT(x - light->x), FIXED2FLOAT(y - light->y), FIXED2FLOAT(z - light->z) ).Length();
+					radius = light->GetRadius() * gl_lights_size;
+
+					if (dist < radius)
 					{
-						if (line != NULL)
+						frac = 1.0f - (dist / radius);
+
+						if (frac > 0)
 						{
-							if (P_PointOnLineSide(x, y, line) != side) continue;
+							lr = light->GetRed() / 255.0f * gl_lights_intensity;
+							lg = light->GetGreen() / 255.0f * gl_lights_intensity;
+							lb = light->GetBlue() / 255.0f * gl_lights_intensity;
+							if (light->IsSubtractive())
+							{
+								float bright = FVector3(lr, lg, lb).Length();
+								FVector3 lightColor(lr, lg, lb);
+								lr = (bright - lr) * -1;
+								lg = (bright - lg) * -1;
+								lb = (bright - lb) * -1;
+							}
+
+							out[0] += lr * frac;
+							out[1] += lg * frac;
+							out[2] += lb * frac;
+							changed = true;
 						}
-						lr = light->GetRed() / 255.0f * gl_lights_intensity;
-						lg = light->GetGreen() / 255.0f * gl_lights_intensity;
-						lb = light->GetBlue() / 255.0f * gl_lights_intensity;
-						if (light->IsSubtractive())
-						{
-							float bright = FVector3(lr, lg, lb).Length();
-							FVector3 lightColor(lr, lg, lb);
-							lr = (bright - lr) * -1;
-							lg = (bright - lg) * -1;
-							lb = (bright - lb) * -1;
-						}
-						
-						out[0] += lr * frac;
-						out[1] += lg * frac;
-						out[2] += lb * frac;
-						changed = true;
 					}
 				}
+				node = node->nextLight;
 			}
-			node = node->nextLight;
 		}
 	}
 
