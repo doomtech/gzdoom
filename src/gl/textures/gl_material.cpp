@@ -670,18 +670,13 @@ FMaterial::FMaterial(FTexture * tx, bool forceexpand)
 
 	tx->gl_info.mExpanded = expanded;
 	FTexture *basetex = tx->GetRedirect(gl.shadermodel < 4);
-	if (expanded == basetex->gl_info.mExpanded)
+	if (!expanded && !basetex->gl_info.mExpanded)
 	{
 		// check if the texture is just a simple redirect to a patch
 		// If so we should use the patch for texture creation to
 		// avoid eventual redundancies. 
 		// This may only be done if both textures use the same expansion mode
-		mBaseLayer = ValidateSysTexture(basetex, expanded);
-	}
-	else if (!expanded)
-	{
-		// if we got a non-expanded texture that redirects to an expanded one
-		mBaseLayer = ValidateSysTexture(tx, false);
+		mBaseLayer = ValidateSysTexture(basetex, false);
 	}
 	else
 	{
