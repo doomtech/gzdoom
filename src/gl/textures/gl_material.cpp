@@ -678,6 +678,11 @@ FMaterial::FMaterial(FTexture * tx, bool forceexpand)
 		// This may only be done if both textures use the same expansion mode
 		mBaseLayer = ValidateSysTexture(basetex, false);
 	}
+	else if (!expanded)
+	{
+		// if we got a non-expanded texture that redirects to an expanded one
+		mBaseLayer = ValidateSysTexture(tx, false);
+	}
 	else
 	{
 		// a little adjustment to make sprites look better with texture filtering:
