@@ -60,6 +60,7 @@
 
 CVAR (Bool, cl_bloodsplats, true, CVAR_ARCHIVE)
 CVAR (Int, sv_smartaim, 0, CVAR_ARCHIVE|CVAR_SERVERINFO)
+CVAR (Bool, cl_doautoaim, false, CVAR_ARCHIVE)
 
 static void CheckForPushSpecial (line_t *line, int side, AActor *mobj, bool windowcheck);
 static void SpawnShootDecal (AActor *t1, const FTraceResults &trace);
@@ -2845,20 +2846,19 @@ bool P_BounceActor (AActor *mo, AActor * BlockingMobj)
 		|| ((BlockingMobj->player == NULL) && (!(BlockingMobj->flags3 & MF3_ISMONSTER)))
 		))
 	{
+		if (mo->bouncecount > 0 && --mo->bouncecount == 0) return false;
+		
 		fixed_t speed;
-		if (mo->bouncecount > 0 && --mo->bouncecount > 0)
-		{
-			angle_t angle = R_PointToAngle2 (BlockingMobj->x,
-			BlockingMobj->y, mo->x, mo->y) + ANGLE_1*((pr_bounce()%16)-8);
-			speed = P_AproxDistance (mo->velx, mo->vely);
-			speed = FixedMul (speed, mo->wallbouncefactor); // [GZ] was 0.75, using wallbouncefactor seems more consistent
-			mo->angle = angle;
-			angle >>= ANGLETOFINESHIFT;
-			mo->velx = FixedMul (speed, finecosine[angle]);
-			mo->vely = FixedMul (speed, finesine[angle]);
-			mo->PlayBounceSound(true);
-			return true;
-		}
+		angle_t angle = R_PointToAngle2 (BlockingMobj->x,
+		BlockingMobj->y, mo->x, mo->y) + ANGLE_1*((pr_bounce()%16)-8);
+		speed = P_AproxDistance (mo->velx, mo->vely);
+		speed = FixedMul (speed, mo->wallbouncefactor); // [GZ] was 0.75, using wallbouncefactor seems more consistent
+		mo->angle = angle;
+		angle >>= ANGLETOFINESHIFT;
+		mo->velx = FixedMul (speed, finecosine[angle]);
+		mo->vely = FixedMul (speed, finesine[angle]);
+		mo->PlayBounceSound(true);
+		return true;
 	}
 	return false;
 }
@@ -3088,6 +3088,12 @@ void aim_t::AimTraverse (fixed_t startx, fixed_t starty, fixed_t endx, fixed_t e
 			}
 		}
 		dist = FixedMul (attackrange, in->frac);
+
+		// Don't autoaim certain special actors
+		if (!cl_doautoaim && th->flags6 & MF6_NOTAUTOAIMED)
+		{
+			continue;
+		}
 
 #ifdef _3DFLOORS
 		// we must do one last check whether the trace has crossed a 3D floor
@@ -3838,8 +3844,7 @@ static bool ProcessNoPierceRailHit (FTraceResults &res)
 //
 //
 //==========================================================================
-
-void P_RailAttack (AActor *source, int damage, int offset, int color1, int color2, float maxdiff, bool silent, const PClass *puffclass, bool pierce, angle_t angleoffset, angle_t pitchoffset)
+void P_RailAttack (AActor *source, int damage, int offset, int color1, int color2, float maxdiff, bool silent, const PClass *puffclass, bool pierce, angle_t angleoffset, angle_t pitchoffset, fixed_t distance, bool fullbright, int duration, float sparsity, float drift, const PClass *spawnclass)
 {
 	fixed_t vx, vy, vz;
 	angle_t angle, pitch;
@@ -3882,8 +3887,7 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 
 	int flags;
 
-	AActor *puffDefaults = puffclass == NULL? 
-							NULL : GetDefaultByType (puffclass->GetReplacement());
+	AActor *puffDefaults = puffclass == NULL ? NULL : GetDefaultByType (puffclass->GetReplacement());
 
 	if (puffDefaults != NULL && puffDefaults->flags6 & MF6_NOTRIGGER) flags = 0;
 	else flags = TRACE_PCross|TRACE_Impact;
@@ -3891,13 +3895,13 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 	if (pierce)
 	{
 		Trace (x1, y1, shootz, source->Sector, vx, vy, vz,
-			8192*FRACUNIT, MF_SHOOTABLE, ML_BLOCKEVERYTHING, source, trace,
+			distance, MF_SHOOTABLE, ML_BLOCKEVERYTHING, source, trace,
 			flags, ProcessRailHit);
 	}
 	else
 	{
 		Trace (x1, y1, shootz, source->Sector, vx, vy, vz,
-			8192*FRACUNIT, MF_SHOOTABLE, ML_BLOCKEVERYTHING, source, trace,
+			distance, MF_SHOOTABLE, ML_BLOCKEVERYTHING, source, trace,
 			flags, ProcessNoPierceRailHit);
 	}
 
@@ -3922,7 +3926,7 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 		if ((RailHits[i].HitActor->flags & MF_NOBLOOD) ||
 			(RailHits[i].HitActor->flags2 & (MF2_DORMANT|MF2_INVULNERABLE)))
 		{
-			spawnpuff = puffclass != NULL;
+			spawnpuff = (puffclass != NULL);
 		}
 		else
 		{
@@ -3971,7 +3975,7 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 	end.X = FIXED2FLOAT(trace.X);
 	end.Y = FIXED2FLOAT(trace.Y);
 	end.Z = FIXED2FLOAT(trace.Z);
-	P_DrawRailTrail (source, start, end, color1, color2, maxdiff, silent);
+	P_DrawRailTrail (source, start, end, color1, color2, maxdiff, silent, spawnclass, source->angle + angleoffset, fullbright, duration, sparsity, drift);
 }
 
 //==========================================================================
