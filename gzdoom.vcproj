@@ -4305,6 +4305,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\thingdef\thingdef_function.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\thingdef\thingdef_parse.cpp"
 				>
 			</File>
