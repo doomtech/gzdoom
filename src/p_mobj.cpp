@@ -1763,7 +1763,7 @@ fixed_t P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 			line_t *BlockingLine = mo->BlockingLine;
 
 			if (!(mo->flags & MF_MISSILE) && (mo->BounceFlags & BOUNCE_MBF) 
-				&& (BlockingMobj != NULL ? P_BounceActor(mo, BlockingMobj) : P_BounceWall(mo)))
+				&& (BlockingMobj != NULL ? P_BounceActor(mo, BlockingMobj, false) : P_BounceWall(mo)))
 			{
 				// Do nothing, relevant actions already done in the condition.
 				// This allows to avoid setting velocities to 0 in the final else of this series.
@@ -1858,7 +1858,7 @@ fixed_t P_XYMovement (AActor *mo, fixed_t scrollx, fixed_t scrolly)
 					if (mo->BounceFlags & BOUNCE_Actors)
 					{
 						// Bounce test and code moved to P_BounceActor
-						if (!P_BounceActor(mo, BlockingMobj))
+						if (!P_BounceActor(mo, BlockingMobj, false))
 						{	// Struck a player/creature
 							P_ExplodeMissile (mo, NULL, BlockingMobj);
 						}
@@ -3305,9 +3305,16 @@ void AActor::Tick ()
 						} 
 						z = onmo->z + onmo->height;
 					}
-					flags2 |= MF2_ONMOBJ;
-					velz = 0;
-					Crash();
+					if (velz != 0 && (BounceFlags & BOUNCE_Actors))
+					{
+						P_BounceActor(this, onmo, true);
+					}
+					else
+					{
+						flags2 |= MF2_ONMOBJ;
+						velz = 0;
+						Crash();
+					}
 				}
 			}
 			else
