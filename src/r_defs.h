@@ -475,6 +475,7 @@ struct sector_t
 	void ClosestPoint(fixed_t x, fixed_t y, fixed_t &ox, fixed_t &oy) const;
 	int GetFloorLight () const;
 	int GetCeilingLight () const;
+	sector_t *GetHeightSec() const;
 
 	DInterpolation *SetInterpolation(int position, bool attach);
 	void StopInterpolation(int position);
@@ -634,14 +635,6 @@ struct sector_t
 	void ChangePlaneTexZ(int pos, fixed_t val)
 	{
 		planes[pos].TexZ += val;
-	}
-
-	sector_t *GetHeightSec() const 
-	{
-		return (heightsec &&
-			!(heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC) &&
-			!(this->e && this->e->XFloor.ffloors.Size())
-			)? heightsec : NULL;
 	}
 
 	static inline short ClampLight(int level)
