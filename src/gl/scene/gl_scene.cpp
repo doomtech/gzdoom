@@ -602,7 +602,6 @@ void FGLRenderer::DrawScene(bool toscreen)
 void FGLRenderer::DrawBlend(sector_t * viewsector)
 {
 	float blend[4]={0,0,0,0};
-	int cnt;
 	PalEntry blendv=0;
 	float extra_red;
 	float extra_green;
