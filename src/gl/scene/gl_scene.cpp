@@ -886,7 +886,6 @@ sector_t * FGLRenderer::RenderViewpoint (AActor * camera, GL_IRECT * bounds, flo
 
 	gl_frameCount++;	// This counter must be increased right before the interpolations are restored.
 	interpolator.RestoreInterpolations ();
-	P_UnPredictPlayer();
 	return retval;
 }
 
