@@ -54,7 +54,14 @@ struct FColormap
 	void GetFixedColormap()
 	{
 		Clear();
+#ifdef __GNUC__
+		// GCC has the stupidest warnings ever.
+		// "warning: enumeral and non-enumeral type in conditional expression"
+		if (gl_fixedcolormap >= CM_LITE) colormap = CM_DEFAULT;
+		else colormap = gl_fixedcolormap;
+#else
 		colormap = gl_fixedcolormap >= CM_LITE? CM_DEFAULT : gl_fixedcolormap;
+#endif
 	}
 
 	FColormap & operator=(FDynamicColormap * from)
