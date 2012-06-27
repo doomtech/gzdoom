@@ -539,14 +539,7 @@ void GLSkyPortal::DrawContents()
 
 	if (gl_fixedcolormap) 
 	{
-#ifdef __GNUC__
-		// GCC has the stupidest warnings ever.
-		// "warning: enumeral and non-enumeral type in conditional expression"
-		if (gl_fixedcolormap < CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size()) CM_Index = gl_fixedcolormap;
-		else colormap = CM_DEFAULT;
-#else
-	    CM_Index = gl_fixedcolormap < CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size() ? gl_fixedcolormap : CM_DEFAULT;
-#endif
+		CM_Index=gl_fixedcolormap<CM_FIRSTSPECIALCOLORMAP + SpecialColormaps.Size()? gl_fixedcolormap:CM_DEFAULT;
 	}
 	else 
 	{
