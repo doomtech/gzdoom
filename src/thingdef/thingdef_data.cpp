@@ -182,8 +182,6 @@ static FFlagDef ActorFlags[]=
 	DEFINE_FLAG(MF4, NOSKIN, AActor, flags4),
 	DEFINE_FLAG(MF4, BOSSDEATH, AActor, flags4),
 
-	DEFINE_FLAG(MF5, FASTER, AActor, flags5),
-	DEFINE_FLAG(MF5, FASTMELEE, AActor, flags5),
 	DEFINE_FLAG(MF5, NODROPOFF, AActor, flags5),
 	DEFINE_FLAG(MF5, COUNTSECRET, AActor, flags5),
 	DEFINE_FLAG(MF5, NODAMAGE, AActor, flags5),
@@ -233,6 +231,7 @@ static FFlagDef ActorFlags[]=
 	DEFINE_FLAG(MF6, DONTCORPSE, AActor, flags6),
 	DEFINE_FLAG(MF6, DOHARMSPECIES, AActor, flags6),
 	DEFINE_FLAG(MF6, POISONALWAYS, AActor, flags6),
+	DEFINE_FLAG(MF6, NOTAUTOAIMED, AActor, flags6),
 
 	// Effect flags
 	DEFINE_FLAG(FX, VISIBILITYPULSE, AActor, effects),
@@ -255,6 +254,7 @@ static FFlagDef ActorFlags[]=
 	DEFINE_FLAG2(BOUNCE_AllActors, BOUNCEONACTORS, AActor, BounceFlags),
 	DEFINE_FLAG2(BOUNCE_ExplodeOnWater, EXPLODEONWATER, AActor, BounceFlags),
 	DEFINE_FLAG2(BOUNCE_MBF, MBFBOUNCER, AActor, BounceFlags),
+	DEFINE_FLAG2(BOUNCE_AutoOffFloorOnly, BOUNCEAUTOOFFFLOORONLY, AActor, BounceFlags),
 
 	// Deprecated flags. Handling must be performed in HandleDeprecatedFlags
 	DEFINE_DEPRECATED_FLAG(FIREDAMAGE),
@@ -268,7 +268,11 @@ static FFlagDef ActorFlags[]=
 	DEFINE_DEPRECATED_FLAG(HEXENBOUNCE),
 	DEFINE_DEPRECATED_FLAG(DOOMBOUNCE),
 
-// Various Skulltag flags that are quite irrelevant to ZDoom
+	// Deprecated flags with no more existing functionality.
+	DEFINE_DUMMY_FLAG(FASTER),				// obsolete, replaced by 'Fast' state flag
+	DEFINE_DUMMY_FLAG(FASTMELEE),			// obsolete, replaced by 'Fast' state flag
+
+	// Various Skulltag flags that are quite irrelevant to ZDoom
 	DEFINE_DUMMY_FLAG(NONETID),				// netcode-based
 	DEFINE_DUMMY_FLAG(ALLOWCLIENTSPAWN),	// netcode-based
 	DEFINE_DUMMY_FLAG(CLIENTSIDEONLY),	    // netcode-based

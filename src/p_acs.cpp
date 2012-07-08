@@ -97,13 +97,6 @@ FRandom pr_acs ("ACS");
 #define NOT_FLOOR			8
 #define NOT_CEILING			16
 
-// Flags for SectorDamage
-
-#define DAMAGE_PLAYERS				1
-#define DAMAGE_NONPLAYERS			2
-#define DAMAGE_IN_AIR				4
-#define DAMAGE_SUBCLASSES_PROTECT	8
-
 struct CallReturn
 {
 	CallReturn(int pc, ScriptFunction *func, FBehavior *module, SDWORD *locals, bool discard, FString &str)
@@ -398,74 +391,6 @@ void P_WriteACSVars(FILE *stdfile)
 
 //============================================================================
 //
-// DoClearInv
-//
-// Clears the inventory of a single actor.
-//
-//============================================================================
-
-static void DoClearInv (AActor *actor)
-{
-	// In case destroying an inventory item causes another to be destroyed
-	// (e.g. Weapons destroy their sisters), keep track of the pointer to
-	// the next inventory item rather than the next inventory item itself.
-	// For example, if a weapon is immediately followed by its sister, the
-	// next weapon we had tracked would be to the sister, so it is now
-	// invalid and we won't be able to find the complete inventory by
-	// following it.
-	//
-	// When we destroy an item, we leave invp alone, since the destruction
-	// process will leave it pointing to the next item we want to check. If
-	// we don't destroy an item, then we move invp to point to its Inventory
-	// pointer.
-	//
-	// It should be safe to assume that an item being destroyed will only
-	// destroy items further down in the chain, because if it was going to
-	// destroy something we already processed, we've already destroyed it,
-	// so it won't have anything to destroy.
-
-	AInventory **invp = &actor->Inventory;
-
-	while (*invp != NULL)
-	{
-		AInventory *inv = *invp;
-		if (!(inv->ItemFlags & IF_UNDROPPABLE))
-		{
-			// For the sake of undroppable weapons, never remove ammo once
-			// it has been acquired; just set its amount to 0.
-			if (inv->IsKindOf(RUNTIME_CLASS(AAmmo)))
-			{
-				AAmmo *ammo = static_cast<AAmmo*>(inv);
-				ammo->Amount = 0;
-				invp = &inv->Inventory;
-			}
-			else
-			{
-				inv->Destroy ();
-			}
-		}
-		else if (inv->GetClass() == RUNTIME_CLASS(AHexenArmor))
-		{
-			AHexenArmor *harmor = static_cast<AHexenArmor *> (inv);
-			harmor->Slots[3] = harmor->Slots[2] = harmor->Slots[1] = harmor->Slots[0] = 0;
-			invp = &inv->Inventory;
-		}
-		else
-		{
-			invp = &inv->Inventory;
-		}
-	}
-	if (actor->player != NULL)
-	{
-		actor->player->ReadyWeapon = NULL;
-		actor->player->PendingWeapon = WP_NOCHANGE;
-		actor->player->psprites[ps_weapon].state = NULL;
-		actor->player->psprites[ps_flash].state = NULL;
-	}
-}
-
-//============================================================================
-//
 // ClearInventory
 //
 // Clears the inventory for one or more actors.
@@ -479,12 +404,12 @@ static void ClearInventory (AActor *activator)
 		for (int i = 0; i < MAXPLAYERS; ++i)
 		{
 			if (playeringame[i])
-				DoClearInv (players[i].mo);
+				players[i].mo->ClearInventory();
 		}
 	}
 	else
 	{
-		DoClearInv (activator);
+		activator->ClearInventory();
 	}
 }
 
@@ -1174,7 +1099,7 @@ FBehavior::FBehavior (int lumpnum, FileReader * fr, int len)
 	{
 		StringTable = LittleLong(((DWORD *)Data)[1]);
 		StringTable += LittleLong(((DWORD *)(Data + StringTable))[0]) * 12 + 4;
-		UnescapeStringTable(Data + StringTable, false);
+		UnescapeStringTable(Data + StringTable, Data, false);
 	}
 	else
 	{
@@ -1183,7 +1108,7 @@ FBehavior::FBehavior (int lumpnum, FileReader * fr, int len)
 		if (strings != NULL)
 		{
 			StringTable = DWORD(strings - Data + 8);
-			UnescapeStringTable(strings + 8, true);
+			UnescapeStringTable(strings + 8, NULL, true);
 		}
 		else
 		{
@@ -1594,7 +1519,7 @@ void FBehavior::LoadScriptsDirectory ()
 	scripts.b = FindChunk (MAKE_ID('S','F','L','G'));
 	if (scripts.dw != NULL)
 	{
-		max = scripts.dw[1];
+		max = scripts.dw[1] / 4;
 		scripts.dw += 2;
 		for (i = max; i > 0; --i, scripts.w += 2)
 		{
@@ -1626,7 +1551,7 @@ void FBehavior::LoadScriptsDirectory ()
 	scripts.b = FindChunk(MAKE_ID('S','N','A','M'));
 	if (scripts.dw != NULL)
 	{
-		UnescapeStringTable(scripts.b + 8, false);
+		UnescapeStringTable(scripts.b + 8, NULL, false);
 		for (i = 0; i < NumScripts; ++i)
 		{
 			// ACC stores script names as an index into the SNAM chunk, with the first index as
@@ -1693,15 +1618,23 @@ void FBehavior::UnencryptStrings ()
 // FBehavior :: UnescapeStringTable
 //
 // Processes escape sequences for every string in a string table.
+// Chunkstart points to the string table. Datastart points to the base address
+// for offsets in the string table; if NULL, it will use chunkstart. If
+// has_padding is true, then this is a STRL chunk with four bytes of padding
+// on either side of the string count.
 //
 //============================================================================
 
-void FBehavior::UnescapeStringTable(BYTE *chunkstart, bool has_padding)
+void FBehavior::UnescapeStringTable(BYTE *chunkstart, BYTE *datastart, bool has_padding)
 {
 	assert(chunkstart != NULL);
 
 	DWORD *chunk = (DWORD *)chunkstart;
 
+	if (datastart == NULL)
+	{
+		datastart = chunkstart;
+	}
 	if (!has_padding)
 	{
 		chunk[0] = LittleLong(chunk[0]);
@@ -1709,7 +1642,7 @@ void FBehavior::UnescapeStringTable(BYTE *chunkstart, bool has_padding)
 		{
 			int ofs = LittleLong(chunk[1 + strnum]);	// Byte swap offset, if needed.
 			chunk[1 + strnum] = ofs;
-			strbin((char *)chunk + ofs);
+			strbin((char *)datastart + ofs);
 		}
 	}
 	else
@@ -1719,7 +1652,7 @@ void FBehavior::UnescapeStringTable(BYTE *chunkstart, bool has_padding)
 		{
 			int ofs = LittleLong(chunk[3 + strnum]);	// Byte swap offset, if needed.
 			chunk[3 + strnum] = ofs;
-			strbin((char *)chunk + ofs);
+			strbin((char *)datastart + ofs);
 		}
 	}
 }
@@ -2037,19 +1970,35 @@ void FBehavior::StaticStopMyScripts (AActor *actor)
 
 void P_SerializeACSScriptNumber(FArchive &arc, int &scriptnum, bool was2byte)
 {
-	arc << scriptnum;
-	// If the script number is negative, then it's really a name.
-	// So read/store the name after it.
-	if (scriptnum < 0)
+	if (SaveVersion < 3359)
 	{
-		if (arc.IsStoring())
+		if (was2byte)
 		{
-			arc.WriteName(FName(ENamedName(-scriptnum)).GetChars());
+			WORD oldver;
+			arc << oldver;
+			scriptnum = oldver;
 		}
 		else
 		{
-			const char *nam = arc.ReadName();
-			scriptnum = -FName(nam);
+			arc << scriptnum;
+		}
+	}
+	else
+	{
+		arc << scriptnum;
+		// If the script number is negative, then it's really a name.
+		// So read/store the name after it.
+		if (scriptnum < 0)
+		{
+			if (arc.IsStoring())
+			{
+				arc.WriteName(FName(ENamedName(-scriptnum)).GetChars());
+			}
+			else
+			{
+				const char *nam = arc.ReadName();
+				scriptnum = -FName(nam);
+			}
 		}
 	}
 }
@@ -2717,7 +2666,7 @@ int DoSetMaster (AActor *self, AActor *master)
                 self->master = NULL;
                 level.total_monsters -= self->CountsAsKill();
                 self->flags|=MF_FRIENDLY;
-                self->FriendPlayer = int(master->player-players+1);
+                self->SetFriendPlayer(master->player);
 
                 AActor * attacker=master->player->attacker;
                 if (attacker)
@@ -2860,10 +2809,20 @@ void DLevelScript::DoSetActorProperty (AActor *actor, int property, int value)
 	switch (property)
 	{
 	case APROP_Health:
+		// Don't alter the health of dead things.
+		if (actor->health <= 0 || (actor->player != NULL && actor->player->playerstate == PST_DEAD))
+		{
+			break;
+		}
 		actor->health = value;
 		if (actor->player != NULL)
 		{
 			actor->player->health = value;
+		}
+		// If the health is set to a non-positive value, properly kill the actor.
+		if (value <= 0)
+		{
+			actor->Die(activator, activator);
 		}
 		break;
 
@@ -3149,6 +3108,66 @@ int DLevelScript::CheckActorProperty (int tid, int property, int value)
 	}
 	if (string == NULL) string = "";
 	return (!stricmp(string, FBehavior::StaticLookupString(value)));
+}
+
+bool DLevelScript::DoCheckActorTexture(int tid, AActor *activator, int string, bool floor)
+{
+	AActor *actor = SingleActorFromTID(tid, activator);
+	if (actor == NULL)
+	{
+		return 0;
+	}
+	FTexture *tex = TexMan.FindTexture(FBehavior::StaticLookupString(string));
+	if (tex == NULL)
+	{ // If the texture we want to check against doesn't exist, then
+	  // they're obviously not the same.
+		return 0;
+	}
+	int i, numff;
+	FTextureID secpic;
+	sector_t *sec = actor->Sector;
+	numff = sec->e->XFloor.ffloors.Size();
+
+	if (floor)
+	{
+		// Looking through planes from top to bottom
+		for (i = 0; i < numff; ++i)
+		{
+			F3DFloor *ff = sec->e->XFloor.ffloors[i];
+
+			if ((ff->flags & (FF_EXISTS | FF_SOLID)) == (FF_EXISTS | FF_SOLID) &&
+				actor->z >= ff->top.plane->ZatPoint(actor->x, actor->y))
+			{ // This floor is beneath our feet.
+				secpic = *ff->top.texture;
+				break;
+			}
+		}
+		if (i == numff)
+		{ // Use sector's floor
+			secpic = sec->GetTexture(sector_t::floor);
+		}
+	}
+	else
+	{
+		fixed_t z = actor->z + actor->height;
+		// Looking through planes from bottom to top
+		for (i = numff-1; i >= 0; --i)
+		{
+			F3DFloor *ff = sec->e->XFloor.ffloors[i];
+
+			if ((ff->flags & (FF_EXISTS | FF_SOLID)) == (FF_EXISTS | FF_SOLID) &&
+				z <= ff->bottom.plane->ZatPoint(actor->x, actor->y))
+			{ // This floor is above our eyes.
+				secpic = *ff->bottom.texture;
+				break;
+			}
+		}
+		if (i < 0)
+		{ // Use sector's ceiling
+			secpic = sec->GetTexture(sector_t::ceiling);
+		}
+	}
+	return tex == TexMan[secpic];
 }
 
 enum
@@ -3886,6 +3905,8 @@ enum
 #define NEXTSHORT	(fmt==ACS_LittleEnhanced?getshort(pc):NEXTWORD)
 #define STACK(a)	(Stack[sp - (a)])
 #define PushToStack(a)	(Stack[sp++] = (a))
+// Direct instructions that take strings need to have the tag applied.
+#define TAGSTR(a)	(a|activeBehavior->GetLibraryID())
 
 inline int getbyte (int *&pc)
 {
@@ -3923,8 +3944,8 @@ int DLevelScript::RunScript ()
 	FRemapTable *translation = 0;
 	int resultValue = 1;
 
-	// Hexen truncates all special arguments to bytes.
-	const int specialargmask = (level.flags2 & LEVEL2_HEXENHACK) ? 255 : ~0;
+	// Hexen truncates all special arguments to bytes (only when using an old MAPINFO and old ACS format
+	const int specialargmask = ((level.flags2 & LEVEL2_HEXENHACK) && activeBehavior->GetFormat() == ACS_Old) ? 255 : ~0;
 
 	switch (state)
 	{
@@ -3990,7 +4011,7 @@ int DLevelScript::RunScript ()
 
 	while (state == SCRIPT_Running)
 	{
-		if (++runaway > 500000)
+		if (++runaway > 2000000)
 		{
 			Printf ("Runaway %s terminated\n", ScriptPresentation(script).GetChars());
 			state = SCRIPT_PleaseRemove;
@@ -5179,7 +5200,7 @@ int DLevelScript::RunScript ()
 			break;
 
 		case PCD_CHANGEFLOORDIRECT:
-			ChangeFlat (uallong(pc[0]), uallong(pc[1]), 0);
+			ChangeFlat (uallong(pc[0]), TAGSTR(uallong(pc[1])), 0);
 			pc += 2;
 			break;
 
@@ -5189,7 +5210,7 @@ int DLevelScript::RunScript ()
 			break;
 
 		case PCD_CHANGECEILINGDIRECT:
-			ChangeFlat (uallong(pc[0]), uallong(pc[1]), 1);
+			ChangeFlat (uallong(pc[0]), TAGSTR(uallong(pc[1])), 1);
 			pc += 2;
 			break;
 
@@ -5230,6 +5251,9 @@ int DLevelScript::RunScript ()
 		case PCD_NEGATELOGICAL:
 			STACK(1) = !STACK(1);
 			break;
+
+
+
 
 		case PCD_NEGATEBINARY:
 			STACK(1) = ~STACK(1);
@@ -5279,8 +5303,11 @@ int DLevelScript::RunScript ()
 			break;
 
 		case PCD_CLEARLINESPECIAL:
-			if (activationline)
+			if (activationline != NULL)
+			{
 				activationline->special = 0;
+				DPrintf("Cleared line special on line %d\n", activationline - lines);
+			}
 			break;
 
 		case PCD_CASEGOTO:
@@ -5687,7 +5714,7 @@ int DLevelScript::RunScript ()
 			break;
 
 		case PCD_SETFONTDIRECT:
-			DoSetFont (uallong(pc[0]));
+			DoSetFont (TAGSTR(uallong(pc[0])));
 			pc++;
 			break;
 
@@ -5917,6 +5944,8 @@ int DLevelScript::RunScript ()
 					line->args[2] = STACK(3);
 					line->args[3] = STACK(2);
 					line->args[4] = STACK(1);
+					DPrintf("Set special on line %d (id %d) to %d(%d,%d,%d,%d,%d)\n",
+						linenum, STACK(7), specnum, arg0, STACK(4), STACK(3), STACK(2), STACK(1));
 				}
 				sp -= 7;
 			}
@@ -6017,7 +6046,7 @@ int DLevelScript::RunScript ()
 			break;
 
 		case PCD_SPAWNDIRECT:
-			PushToStack (DoSpawn (uallong(pc[0]), uallong(pc[1]), uallong(pc[2]), uallong(pc[3]), uallong(pc[4]), uallong(pc[5]), false));
+			PushToStack (DoSpawn (TAGSTR(uallong(pc[0])), uallong(pc[1]), uallong(pc[2]), uallong(pc[3]), uallong(pc[4]), uallong(pc[5]), false));
 			pc += 6;
 			break;
 
@@ -6027,7 +6056,7 @@ int DLevelScript::RunScript ()
 			break;
 
 		case PCD_SPAWNSPOTDIRECT:
-			PushToStack (DoSpawnSpot (uallong(pc[0]), uallong(pc[1]), uallong(pc[2]), uallong(pc[3]), false));
+			PushToStack (DoSpawnSpot (TAGSTR(uallong(pc[0])), uallong(pc[1]), uallong(pc[2]), uallong(pc[3]), false));
 			pc += 4;
 			break;
 
@@ -6083,7 +6112,7 @@ int DLevelScript::RunScript ()
 			break;
 
 		case PCD_GIVEINVENTORYDIRECT:
-			GiveInventory (activator, FBehavior::StaticLookupString (uallong(pc[0])), uallong(pc[1]));
+			GiveInventory (activator, FBehavior::StaticLookupString (TAGSTR(uallong(pc[0]))), uallong(pc[1]));
 			pc += 2;
 			break;
 
@@ -6113,7 +6142,7 @@ int DLevelScript::RunScript ()
 			break;
 
 		case PCD_TAKEINVENTORYDIRECT:
-			TakeInventory (activator, FBehavior::StaticLookupString (uallong(pc[0])), uallong(pc[1]));
+			TakeInventory (activator, FBehavior::StaticLookupString (TAGSTR(uallong(pc[0]))), uallong(pc[1]));
 			pc += 2;
 			break;
 
@@ -6128,7 +6157,7 @@ int DLevelScript::RunScript ()
 			break;
 
 		case PCD_CHECKINVENTORYDIRECT:
-			PushToStack (CheckInventory (activator, FBehavior::StaticLookupString (uallong(pc[0]))));
+			PushToStack (CheckInventory (activator, FBehavior::StaticLookupString (TAGSTR(uallong(pc[0])))));
 			pc += 1;
 			break;
 
@@ -6232,7 +6261,7 @@ int DLevelScript::RunScript ()
 			break;
 
 		case PCD_SETMUSICDIRECT:
-			S_ChangeMusic (FBehavior::StaticLookupString (uallong(pc[0])), uallong(pc[1]));
+			S_ChangeMusic (FBehavior::StaticLookupString (TAGSTR(uallong(pc[0]))), uallong(pc[1]));
 			pc += 3;
 			break;
 
@@ -6247,7 +6276,7 @@ int DLevelScript::RunScript ()
 		case PCD_LOCALSETMUSICDIRECT:
 			if (activator == players[consoleplayer].mo)
 			{
-				S_ChangeMusic (FBehavior::StaticLookupString (uallong(pc[0])), uallong(pc[1]));
+				S_ChangeMusic (FBehavior::StaticLookupString (TAGSTR(uallong(pc[0]))), uallong(pc[1]));
 			}
 			pc += 3;
 			break;
@@ -6878,53 +6907,7 @@ int DLevelScript::RunScript ()
 				int flags = STACK(1);
 				sp -= 5;
 
-				int secnum = -1;
-
-				while ((secnum = P_FindSectorFromTag (tag, secnum)) >= 0)
-				{
-					AActor *actor, *next;
-					sector_t *sec = &sectors[secnum];
-
-					for (actor = sec->thinglist; actor != NULL; actor = next)
-					{
-						next = actor->snext;
-
-						if (!(actor->flags & MF_SHOOTABLE))
-							continue;
-
-						if (!(flags & DAMAGE_NONPLAYERS) && actor->player == NULL)
-							continue;
-
-						if (!(flags & DAMAGE_PLAYERS) && actor->player != NULL)
-							continue;
-
-						if (!(flags & DAMAGE_IN_AIR) && actor->z != sec->floorplane.ZatPoint (actor->x, actor->y) && !actor->waterlevel)
-							continue;
-
-						if (protectClass != NULL)
-						{
-							if (!(flags & DAMAGE_SUBCLASSES_PROTECT))
-							{
-								if (actor->FindInventory (protectClass))
-									continue;
-							}
-							else
-							{
-								AInventory *item;
-
-								for (item = actor->Inventory; item != NULL; item = item->Inventory)
-								{
-									if (item->IsKindOf (protectClass))
-										break;
-								}
-								if (item != NULL)
-									continue;
-							}
-						}
-
-						P_DamageMobj (actor, NULL, NULL, amount, type);
-					}
-				}
+				P_SectorDamage(tag, amount, type, protectClass, flags);
 			}
 			break;
 
@@ -6934,30 +6917,14 @@ int DLevelScript::RunScript ()
 			break;
 
 		case PCD_CHECKACTORCEILINGTEXTURE:
-		{
-			AActor *actor = SingleActorFromTID(STACK(2), activator);
-			if (actor != NULL)
-			{
-				FTexture *tex = TexMan.FindTexture(FBehavior::StaticLookupString(STACK(1)));
-				STACK(2) = (tex == TexMan[actor->Sector->GetTexture(sector_t::ceiling)]);
-			}
-			else STACK(2)=0;
+			STACK(2) = DoCheckActorTexture(STACK(2), activator, STACK(1), false);
 			sp--;
 			break;
-		}
 
 		case PCD_CHECKACTORFLOORTEXTURE:
-		{
-			AActor *actor = SingleActorFromTID(STACK(2), activator);
-			if (actor != NULL)
-			{
-				FTexture *tex = TexMan.FindTexture(FBehavior::StaticLookupString(STACK(1)));
-				STACK(2) = (tex == TexMan[actor->Sector->GetTexture(sector_t::floor)]);
-			}
-			else STACK(2)=0;
+			STACK(2) = DoCheckActorTexture(STACK(2), activator, STACK(1), true);
 			sp--;
 			break;
-		}
 
 		case PCD_GETACTORLIGHTLEVEL:
 		{
@@ -7371,11 +7338,11 @@ static void addDefered (level_info_t *i, acsdefered_t::EType type, int script, c
 		def->next = i->defered;
 		def->type = type;
 		def->script = script;
-		for (j = 0; j < countof(def->args) && j < argcount; ++j)
+		for (j = 0; (size_t)j < countof(def->args) && j < argcount; ++j)
 		{
 			def->args[j] = args[j];
 		}
-		while (j < countof(def->args))
+		while ((size_t)j < countof(def->args))
 		{
 			def->args[j++] = 0;
 		}

@@ -288,7 +288,7 @@ bool P_ActivateLine (line_t *line, AActor *mo, int side, int activationType)
 
 bool P_TestActivateLine (line_t *line, AActor *mo, int side, int activationType)
 {
-	int lineActivation = line->activation;
+ 	int lineActivation = line->activation;
 
 	if (line->flags & ML_FIRSTSIDEONLY && side == 1)
 	{
@@ -587,6 +587,77 @@ void P_PlayerInSpecialSector (player_t *player, sector_t * sector)
 	}
 }
 
+//============================================================================
+//
+// P_SectorDamage
+//
+//============================================================================
+
+static void DoSectorDamage(AActor *actor, sector_t *sec, int amount, FName type, const PClass *protectClass, int flags)
+{
+	if (!(actor->flags & MF_SHOOTABLE))
+		return;
+
+	if (!(flags & DAMAGE_NONPLAYERS) && actor->player == NULL)
+		return;
+
+	if (!(flags & DAMAGE_PLAYERS) && actor->player != NULL)
+		return;
+
+	if (!(flags & DAMAGE_IN_AIR) && actor->z != sec->floorplane.ZatPoint(actor->x, actor->y) && !actor->waterlevel)
+		return;
+
+	if (protectClass != NULL)
+	{
+		if (actor->FindInventory(protectClass, !!(flags & DAMAGE_SUBCLASSES_PROTECT)))
+			return;
+	}
+
+	P_DamageMobj (actor, NULL, NULL, amount, type);
+}
+
+void P_SectorDamage(int tag, int amount, FName type, const PClass *protectClass, int flags)
+{
+	int secnum = -1;
+
+	while ((secnum = P_FindSectorFromTag (tag, secnum)) >= 0)
+	{
+		AActor *actor, *next;
+		sector_t *sec = &sectors[secnum];
+
+		// Do for actors in this sector.
+		for (actor = sec->thinglist; actor != NULL; actor = next)
+		{
+			next = actor->snext;
+			DoSectorDamage(actor, sec, amount, type, protectClass, flags);
+		}
+		// If this is a 3D floor control sector, also do for anything in/on
+		// those 3D floors.
+		for (unsigned i = 0; i < sec->e->XFloor.attached.Size(); ++i)
+		{
+			sector_t *sec2 = sec->e->XFloor.attached[i];
+
+			for (actor = sec2->thinglist; actor != NULL; actor = next)
+			{
+				next = actor->snext;
+				// Only affect actors touching the 3D floor
+				if (actor->z + actor->height > sec->floorplane.ZatPoint(actor->x, actor->y))
+				{
+					// If DAMAGE_IN_AIR is used, anything not beneath the 3D floor will be
+					// damaged (so, anything touching it or above it). Other 3D floors between
+					// the actor and this one will not stop this effect.
+					if ((flags & DAMAGE_IN_AIR) || actor->z <= sec->ceilingplane.ZatPoint(actor->x, actor->y))
+					{
+						// Here we pass the DAMAGE_IN_AIR flag to disable the floor check, since it
+						// only works with the real sector's floor. We did the appropriate height checks
+						// for 3D floors already.
+						DoSectorDamage(actor, NULL, amount, type, protectClass, flags | DAMAGE_IN_AIR);
+					}
+				}
+			}
+		}
+	}
+}
 
 //============================================================================
 //
@@ -729,7 +800,17 @@ IMPLEMENT_CLASS (DLightTransfer)
 void DLightTransfer::Serialize (FArchive &arc)
 {
 	Super::Serialize (arc);
-	arc << LastLight << Source << TargetTag << CopyFloor;
+	if (SaveVersion < 3223)
+	{
+		BYTE bytelight;
+		arc << bytelight;
+		LastLight = bytelight;
+	}
+	else
+	{
+		arc << LastLight;
+	}
+	arc << Source << TargetTag << CopyFloor;
 }
 
 DLightTransfer::DLightTransfer (sector_t *srcSec, int target, bool copyFloor)
@@ -812,7 +893,17 @@ IMPLEMENT_CLASS (DWallLightTransfer)
 void DWallLightTransfer::Serialize (FArchive &arc)
 {
 	Super::Serialize (arc);
-	arc << LastLight << Source << TargetID << Flags;
+	if (SaveVersion < 3223)
+	{
+		BYTE bytelight;
+		arc << bytelight;
+		LastLight = bytelight;
+	}
+	else
+	{
+		arc << LastLight;
+	}
+	arc << Source << TargetID << Flags;
 }
 
 DWallLightTransfer::DWallLightTransfer (sector_t *srcSec, int target, BYTE flags)
@@ -1165,6 +1256,9 @@ void P_SpawnSectorSpecial (sector_t * sector)
 			0, -1, int(sector-sectors), 0);
 		break;
 
+		case dScroll_EastLavaDamage:
+			new DStrobe (sector, STROBEBRIGHT, FASTDARK, false);
+			new DScroller (DScroller::sc_floor, (-FRACUNIT/2)<<3,
 	case Sector_Hidden:
 		sector->MoreFlags |= SECF_HIDDEN;
 		sector->special &= 0xff00;
@@ -1390,9 +1484,29 @@ void P_SpawnSpecials (void)
 // This is the main scrolling code
 // killough 3/7/98
 
+// [RH] Compensate for rotated sector textures by rotating the scrolling
+// in the opposite direction.
+static void RotationComp(const sector_t *sec, int which, fixed_t dx, fixed_t dy, fixed_t &tdx, fixed_t &tdy)
+{
+	angle_t an = sec->GetAngle(which);
+	if (an == 0)
+	{
+		tdx = dx;
+		tdy = dy;
+	}
+	else
+	{
+		an = an >> ANGLETOFINESHIFT;
+		fixed_t ca = -finecosine[an];
+		fixed_t sa = -finesine[an];
+		tdx = DMulScale16(dx, ca, -dy, sa);
+		tdy = DMulScale16(dy, ca,  dx, sa);
+	}
+}
+
 void DScroller::Tick ()
 {
-	fixed_t dx = m_dx, dy = m_dy;
+	fixed_t dx = m_dx, dy = m_dy, tdx, tdy;
 
 	if (m_Control != -1)
 	{	// compute scroll amounts based on a sector's height changes
@@ -1436,13 +1550,15 @@ void DScroller::Tick ()
 			break;
 
 		case sc_floor:						// killough 3/7/98: Scroll floor texture
-			sectors[m_Affectee].AddXOffset(sector_t::floor, dx);
-			sectors[m_Affectee].AddYOffset(sector_t::floor, dy);
+			RotationComp(&sectors[m_Affectee], sector_t::floor, dx, dy, tdx, tdy);
+			sectors[m_Affectee].AddXOffset(sector_t::floor, tdx);
+			sectors[m_Affectee].AddYOffset(sector_t::floor, tdy);
 			break;
 
 		case sc_ceiling:					// killough 3/7/98: Scroll ceiling texture
-			sectors[m_Affectee].AddXOffset(sector_t::ceiling, dx);
-			sectors[m_Affectee].AddYOffset(sector_t::ceiling, dy);
+			RotationComp(&sectors[m_Affectee], sector_t::ceiling, dx, dy, tdx, tdy);
+			sectors[m_Affectee].AddXOffset(sector_t::ceiling, tdx);
+			sectors[m_Affectee].AddYOffset(sector_t::ceiling, tdy);
 			break;
 
 		// [RH] Don't actually carry anything here. That happens later.

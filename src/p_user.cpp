@@ -247,6 +247,7 @@ player_t::player_t()
   ReadyWeapon(0),
   PendingWeapon(0),
   cheats(0),
+  timefreezer(0),
   refire(0),
   inconsistant(0),
   killcount(0),
@@ -326,21 +327,25 @@ size_t player_t::FixPointers (const DObject *old, DObject *rep)
 {
 	APlayerPawn *replacement = static_cast<APlayerPawn *>(rep);
 	size_t changed = 0;
-	if (mo == old)				mo = replacement, changed++;
-	if (poisoner == old)		poisoner = replacement, changed++;
-	if (attacker == old)		attacker = replacement, changed++;
-	if (camera == old)			camera = replacement, changed++;
-	if (dest == old)			dest = replacement, changed++;
-	if (prev == old)			prev = replacement, changed++;
-	if (enemy == old)			enemy = replacement, changed++;
-	if (missile == old)			missile = replacement, changed++;
-	if (mate == old)			mate = replacement, changed++;
-	if (last_mate == old)		last_mate = replacement, changed++;
-	if (ReadyWeapon == old)		ReadyWeapon = static_cast<AWeapon *>(rep), changed++;
-	if (PendingWeapon == old)	PendingWeapon = static_cast<AWeapon *>(rep), changed++;
-	if (PremorphWeapon == old)	PremorphWeapon = static_cast<AWeapon *>(rep), changed++;
-	if (ConversationNPC == old)	ConversationNPC = replacement, changed++;
-	if (ConversationPC == old)	ConversationPC = replacement, changed++;
+
+	// The construct *& is used in several of these to avoid the read barriers
+	// that would turn the pointer we want to check to NULL if the old object
+	// is pending deletion.
+	if (mo == old)					mo = replacement, changed++;
+	if (*&poisoner == old)			poisoner = replacement, changed++;
+	if (*&attacker == old)			attacker = replacement, changed++;
+	if (*&camera == old)			camera = replacement, changed++;
+	if (*&dest == old)				dest = replacement, changed++;
+	if (*&prev == old)				prev = replacement, changed++;
+	if (*&enemy == old)				enemy = replacement, changed++;
+	if (*&missile == old)			missile = replacement, changed++;
+	if (*&mate == old)				mate = replacement, changed++;
+	if (*&last_mate == old)			last_mate = replacement, changed++;
+	if (ReadyWeapon == old)			ReadyWeapon = static_cast<AWeapon *>(rep), changed++;
+	if (PendingWeapon == old)		PendingWeapon = static_cast<AWeapon *>(rep), changed++;
+	if (*&PremorphWeapon == old)	PremorphWeapon = static_cast<AWeapon *>(rep), changed++;
+	if (*&ConversationNPC == old)	ConversationNPC = replacement, changed++;
+	if (*&ConversationPC == old)	ConversationPC = replacement, changed++;
 	return changed;
 }
 
@@ -538,7 +543,7 @@ void APlayerPawn::PostBeginPlay()
 	{
 		dropoffz = floorz = Sector->floorplane.ZatPoint(x, y);
 		ceilingz = Sector->ceilingplane.ZatPoint(x, y);
-		P_FindFloorCeiling(this, true);
+		P_FindFloorCeiling(this, FFCF_ONLYSPAWNPOS);
 		z = floorz;
 	}
 	else
@@ -562,11 +567,21 @@ void APlayerPawn::SetupWeaponSlots()
 	if (player != NULL && player->mo == this)
 	{
 		player->weapons.StandardSetup(GetClass());
-		if (player - players == consoleplayer)
-		{ // If we're the local player, then there's a bit more work to do.
+		// If we're the local player, then there's a bit more work to do.
+		// This also applies if we're a bot and this is the net arbitrator.
+		if (player - players == consoleplayer ||
+			(player->isbot && consoleplayer == Net_Arbitrator))
+		{
 			FWeaponSlots local_slots(player->weapons);
-			local_slots.LocalSetup(GetClass());
-			local_slots.SendDifferences(player->weapons);
+			if (player->isbot)
+			{ // Bots only need weapons from KEYCONF, not INI modifications.
+				P_PlaybackKeyConfWeapons(&local_slots);
+			}
+			else
+			{
+				local_slots.LocalSetup(GetClass());
+			}
+			local_slots.SendDifferences(int(player - players), player->weapons);
 		}
 	}
 }
@@ -660,7 +675,7 @@ bool APlayerPawn::UseInventory (AInventory *item)
 	{ // You can't use items if you're totally frozen
 		return false;
 	}
-	if (( level.flags2 & LEVEL2_FROZEN ) && ( player == NULL || !( player->cheats & CF_TIMEFREEZE )))
+	if ((level.flags2 & LEVEL2_FROZEN) && (player == NULL || player->timefreezer == 0))
 	{
 		// Time frozen
 		return false;
@@ -946,6 +961,7 @@ void APlayerPawn::FilterCoopRespawnInventory (APlayerPawn *oldplayer)
 const char *APlayerPawn::GetSoundClass ()
 {
 	if (player != NULL &&
+		(player->mo == NULL || !(player->mo->flags4 &MF4_NOSKIN)) &&
 		(unsigned int)player->userinfo.skin >= PlayerClasses.Size () &&
 		(size_t)player->userinfo.skin < numskins)
 	{
@@ -1189,15 +1205,15 @@ void APlayerPawn::ActivateMorphWeapon ()
 //
 //===========================================================================
 
-void APlayerPawn::Die (AActor *source, AActor *inflictor)
+void APlayerPawn::Die (AActor *source, AActor *inflictor, int dmgflags)
 {
-	Super::Die (source, inflictor);
+	Super::Die (source, inflictor, dmgflags);
 
 	if (player != NULL && player->mo == this) player->bonuscount = 0;
 
 	if (player != NULL && player->mo != this)
 	{ // Make the real player die, too
-		player->mo->Die (source, inflictor);
+		player->mo->Die (source, inflictor, dmgflags);
 	}
 	else
 	{
@@ -1472,7 +1488,6 @@ void P_CheckPlayerSprites()
 			// Set the crouch sprite
 			if (player->crouchfactor < FRACUNIT*3/4)
 			{
-
 				if (mo->sprite == mo->SpawnState->sprite || mo->sprite == mo->crouchsprite) 
 				{
 					crouchspriteno = mo->crouchsprite;
@@ -1501,13 +1516,16 @@ void P_CheckPlayerSprites()
 			}
 			else	// Set the normal sprite
 			{
-				if (mo->sprite == mo->crouchsprite)
+				if (mo->sprite != 0)
 				{
-					mo->sprite = mo->SpawnState->sprite;
-				}
-				else if (mo->sprite == skins[player->userinfo.skin].crouchsprite)
-				{
-					mo->sprite = skins[player->userinfo.skin].sprite;
+					if (mo->sprite == mo->crouchsprite)
+					{
+						mo->sprite = mo->SpawnState->sprite;
+					}
+					else if (mo->sprite != 0 && mo->sprite == skins[player->userinfo.skin].crouchsprite)
+					{
+						mo->sprite = skins[player->userinfo.skin].sprite;
+					}
 				}
 				mo->scaleY = defscaleY;
 			}
@@ -2227,19 +2245,44 @@ void P_PlayerThink (player_t *player)
 		{
 			if (look == -32768 << 16)
 			{ // center view
-				player->mo->pitch = 0;
+				player->centering = true;
 			}
-			else
+			else if (!player->centering)
 			{
+				fixed_t oldpitch = player->mo->pitch;
 				player->mo->pitch -= look;
 				if (look > 0)
 				{ // look up
 					player->mo->pitch = MAX(player->mo->pitch, player->MinPitch);
+					if (player->mo->pitch > oldpitch)
+					{
+						player->mo->pitch = player->MinPitch;
+					}
 				}
 				else
 				{ // look down
 					player->mo->pitch = MIN(player->mo->pitch, player->MaxPitch);
+					if (player->mo->pitch < oldpitch)
+					{
+						player->mo->pitch = player->MaxPitch;
+					}
 				}
+			}
+		}
+	}
+	if (player->centering)
+	{
+		if (abs(player->mo->pitch) > 2*ANGLE_1)
+		{
+			player->mo->pitch = FixedMul(player->mo->pitch, FRACUNIT*2/3);
+		}
+		else
+		{
+			player->mo->pitch = 0;
+			player->centering = false;
+			if (player - players == consoleplayer)
+			{
+				LocalViewPitch = 0;
 			}
 		}
 	}
@@ -2405,15 +2448,6 @@ void P_PlayerThink (player_t *player)
 			P_PoisonDamage (player, player->poisoner, 1, true);
 		}
 
-		// [BC] Apply regeneration.
-		if (( level.time & 31 ) == 0 && ( player->cheats & CF_REGENERATION ) && ( player->health ))
-		{
-			if ( P_GiveBody( player->mo, 5 ))
-			{
-				S_Sound(player->mo, CHAN_ITEM, "*regenerate", 1, ATTN_NORM );
-			}
-		}
-
 		// Apply degeneration.
 		if (dmflags2 & DF2_YES_DEGENERATION)
 		{
@@ -2518,7 +2552,6 @@ void P_UnPredictPlayer ()
 {
 	player_t *player = &players[consoleplayer];
 
-
 	if (player->cheats & CF_PREDICTING)
 	{
 		AActor *act = player->mo;
@@ -2613,8 +2646,18 @@ void player_t::Serialize (FArchive &arc)
 		<< BlendR
 		<< BlendG
 		<< BlendB
-		<< BlendA
-		<< LogText
+		<< BlendA;
+	if (SaveVersion < 3427)
+	{
+		WORD oldaccuracy, oldstamina;
+		arc << oldaccuracy << oldstamina;
+		if (mo != NULL)
+		{
+			mo->accuracy = oldaccuracy;
+			mo->stamina = oldstamina;
+		}
+	}
+	arc << LogText
 		<< ConversationNPC
 		<< ConversationPC
 		<< ConversationNPCAngle
@@ -2633,6 +2676,29 @@ void player_t::Serialize (FArchive &arc)
 		<< crouchviewdelta
 		<< original_cmd
 		<< original_oldbuttons;
+
+	if (SaveVersion >= 3475)
+	{
+		arc << poisontype << poisonpaintype;
+	}
+	else if (poisoner != NULL)
+	{
+		poisontype = poisoner->DamageType;
+		poisonpaintype = poisoner->PainType != NAME_None ? poisoner->PainType : poisoner->DamageType;
+	}
+
+	if (SaveVersion >= 3599)
+	{
+		arc << timefreezer;
+	}
+	else
+	{
+		cheats &= ~(1 << 15);	// make sure old CF_TIMEFREEZE bit is cleared
+	}
+	if (SaveVersion < 3640)
+	{
+		cheats &= ~(1 << 17);	// make sure old CF_REGENERATION bit is cleared
+	}
 
 	if (isbot)
 	{
@@ -2724,5 +2790,5 @@ bool P_IsPlayerTotallyFrozen(const player_t *player)
 	return
 		gamestate == GS_TITLELEVEL ||
 		player->cheats & CF_TOTALLYFROZEN ||
-		((level.flags2 & LEVEL2_FROZEN) && !(player->cheats & CF_TIMEFREEZE));
+		((level.flags2 & LEVEL2_FROZEN) && player->timefreezer == 0);
 }

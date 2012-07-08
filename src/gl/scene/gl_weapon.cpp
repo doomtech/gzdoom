@@ -76,8 +76,8 @@ void FGLRenderer::DrawPSprite (player_t * player,pspdef_t *psp,fixed_t sx, fixed
 	int				x1,y1,x2,y2;
 	float			scale;
 	fixed_t			scalex;
-	fixed_t			texturemid;
-	static fixed_t xratio[] = {FRACUNIT, FRACUNIT*3/4, FRACUNIT * 5/6, FRACUNIT*3/4, FRACUNIT};
+	fixed_t			texturemid;// 4:3		16:9		16:10			17:10			5:4
+	static fixed_t xratio[] = {FRACUNIT, FRACUNIT*3/4, FRACUNIT*5/6, FRACUNIT*40/51, FRACUNIT};
 	
 	// [BB] In the HUD model step we just render the model and break out. 
 	if ( hudModelStep )
@@ -224,7 +224,7 @@ void FGLRenderer::DrawPlayerSprites(sector_t * viewsector, bool hudModelStep)
 		// calculate light level for weapon sprites
 		lightlevel = gl_ClampLight(fakesec->lightlevel);
 
-		lightlevel = gl_CheckSpriteGlow(viewsector->GetTexture(sector_t::floor), lightlevel, playermo->z-playermo->floorz);
+		lightlevel = gl_CheckSpriteGlow(viewsector, lightlevel, playermo->x, playermo->y, playermo->z);
 
 		// calculate colormap for weapon sprites
 		if (viewsector->e->XFloor.ffloors.Size() && !glset.nocoloredspritelighting)

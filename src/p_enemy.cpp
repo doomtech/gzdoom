@@ -431,7 +431,7 @@ bool P_Move (AActor *actor)
 
 	// [RH] Walking actors that are not on the ground cannot walk. We don't
 	// want to yank them to the ground here as Doom did, since that makes
-	// it difficult ot thrust them vertically in a reasonable manner.
+	// it difficult to thrust them vertically in a reasonable manner.
 	// [GZ] Let jumping actors jump.
 	if (!((actor->flags & MF_NOGRAVITY) || (actor->flags6 & MF6_CANJUMP))
 		&& actor->z > actor->floorz && !(actor->flags2 & MF2_ONMOBJ))
@@ -1127,7 +1127,7 @@ bool P_IsVisible(AActor *lookee, AActor *other, INTBOOL allaround, FLookExParams
 	else
 	{
 		mindist = maxdist = 0;
-		fov = allaround? 0 : ANGLE_180;
+		fov = allaround ? 0 : ANGLE_180;
 	}
 
 	fixed_t dist = P_AproxDistance (other->x - lookee->x, other->y - lookee->y);
@@ -1832,12 +1832,13 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_LookEx)
 	ACTION_PARAM_FIXED(minseedist, 1);
 	ACTION_PARAM_FIXED(maxseedist, 2);
 	ACTION_PARAM_FIXED(maxheardist, 3);
-	ACTION_PARAM_ANGLE(fov, 4);
+	ACTION_PARAM_DOUBLE(fov_f, 4);
 	ACTION_PARAM_STATE(seestate, 5);
 
 	AActor *targ = NULL; // Shuts up gcc
 	fixed_t dist;
-	FLookExParams params = {fov, minseedist, maxseedist, maxheardist, flags, seestate };
+	angle_t fov = (fov_f == 0) ? ANGLE_180 : angle_t(fov_f * ANGLE_90 / 90);
+	FLookExParams params = { fov, minseedist, maxseedist, maxheardist, flags, seestate };
 
 	if (self->flags5 & MF5_INCONVERSATION)
 		return;
@@ -2007,6 +2008,17 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_LookEx)
 }
 
 // [KS] *** End additions by me ***
+
+//==========================================================================
+//
+// A_ClearLastHeard
+//
+//==========================================================================
+
+DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ClearLastHeard)
+{
+	self->LastHeard = NULL;
+}
 
 //==========================================================================
 //
@@ -2715,7 +2727,7 @@ void A_Chase(AActor *self)
 // A_FaceTracer
 //
 //=============================================================================
-void A_Face (AActor *self, AActor *other, angle_t max_turn)
+void A_Face (AActor *self, AActor *other, angle_t max_turn, angle_t max_pitch)
 {
 	if (!other)
 		return;
@@ -2762,6 +2774,38 @@ void A_Face (AActor *self, AActor *other, angle_t max_turn)
 		self->angle = other_angle;
 	}
 
+	// [DH] Now set pitch. In order to maintain compatibility, this can be
+	// disabled and is so by default.
+	if (max_pitch <= ANGLE_180)
+	{
+		// [DH] Don't need to do proper fixed->double conversion, since the
+		// result is only used in a ratio.
+		double dist_x = self->target->x - self->x;
+		double dist_y = self->target->y - self->y;
+		double dist_z = self->target->z - self->z;
+		double dist = sqrt(dist_x*dist_x + dist_y*dist_y + dist_z*dist_z);
+
+		int other_pitch = (int)rad2bam(asin(dist_z / dist));
+
+		if (max_pitch != 0)
+		{
+			if (self->pitch > other_pitch)
+			{
+				max_pitch = MIN(max_pitch, unsigned(self->pitch - other_pitch));
+				self->pitch -= max_pitch;
+			}
+			else
+			{
+				max_pitch = MIN(max_pitch, unsigned(other_pitch - self->pitch));
+				self->pitch += max_pitch;
+			}
+		}
+		else
+		{
+			self->pitch = other_pitch;
+		}
+	}
+
 	// This will never work well if the turn angle is limited.
 	if (max_turn == 0 && (self->angle == other_angle) && other->flags & MF_SHADOW && !(self->flags6 & MF6_SEEINVISIBLE) )
     {
@@ -2769,43 +2813,46 @@ void A_Face (AActor *self, AActor *other, angle_t max_turn)
     }
 }
 
-void A_FaceTarget (AActor *self, angle_t max_turn)
+void A_FaceTarget (AActor *self, angle_t max_turn, angle_t max_pitch)
 {
-	A_Face(self, self->target, max_turn);
+	A_Face(self, self->target, max_turn, max_pitch);
 }
 
-void A_FaceMaster (AActor *self, angle_t max_turn)
+void A_FaceMaster (AActor *self, angle_t max_turn, angle_t max_pitch)
 {
-	A_Face(self, self->master, max_turn);
+	A_Face(self, self->master, max_turn, max_pitch);
 }
 
-void A_FaceTracer (AActor *self, angle_t max_turn)
+void A_FaceTracer (AActor *self, angle_t max_turn, angle_t max_pitch)
 {
-	A_Face(self, self->tracer, max_turn);
+	A_Face(self, self->tracer, max_turn, max_pitch);
 }
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FaceTarget)
 {
-	ACTION_PARAM_START(1);
+	ACTION_PARAM_START(2);
 	ACTION_PARAM_ANGLE(max_turn, 0);
+	ACTION_PARAM_ANGLE(max_pitch, 1);
 
-	A_FaceTarget(self, max_turn);
+	A_FaceTarget(self, max_turn, max_pitch);
 }
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FaceMaster)
 {
-	ACTION_PARAM_START(1);
+	ACTION_PARAM_START(2);
 	ACTION_PARAM_ANGLE(max_turn, 0);
+	ACTION_PARAM_ANGLE(max_pitch, 1);
 
-	A_FaceMaster(self, max_turn);
+	A_FaceMaster(self, max_turn, max_pitch);
 }
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FaceTracer)
 {
-	ACTION_PARAM_START(1);
+	ACTION_PARAM_START(2);
 	ACTION_PARAM_ANGLE(max_turn, 0);
+	ACTION_PARAM_ANGLE(max_pitch, 1);
 
-	A_FaceTracer(self, max_turn);
+	A_FaceTracer(self, max_turn, max_pitch);
 }
 
 //===========================================================================

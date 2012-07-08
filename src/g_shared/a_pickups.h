@@ -76,7 +76,7 @@ struct FWeaponSlots
 	void SetFromPlayer(const PClass *type);
 	void StandardSetup(const PClass *type);
 	void LocalSetup(const PClass *type);
-	void SendDifferences(const FWeaponSlots &other);
+	void SendDifferences(int playernum, const FWeaponSlots &other);
 	int RestoreSlots (FConfigFile *config, const char *section);
 	void PrintSettings();
 
@@ -262,6 +262,9 @@ public:
 	int SelectionOrder;						// Lower-numbered weapons get picked first
 	fixed_t MoveCombatDist;					// Used by bots, but do they *really* need it?
 	int ReloadCounter;						// For A_CheckForReload
+	int BobStyle;							// [XA] Bobbing style. Defines type of bobbing (e.g. Normal, Alpha)
+	fixed_t BobSpeed;						// [XA] Bobbing speed. Defines how quickly a weapon bobs.
+	fixed_t BobRangeX, BobRangeY;			// [XA] Bobbing range. Defines how far a weapon bobs in either direction.
 
 	// In-inventory instance variables
 	TObjPtr<AAmmo> Ammo1, Ammo2;
@@ -289,6 +292,8 @@ public:
 	virtual FState *GetReadyState ();
 	virtual FState *GetAtkState (bool hold);
 	virtual FState *GetAltAtkState (bool hold);
+	virtual FState *GetRelState ();
+	virtual FState *GetZoomState ();
 
 	virtual void PostMorphWeapon ();
 	virtual void EndPowerup ();
@@ -299,8 +304,18 @@ public:
 		AltFire,
 		EitherFire
 	};
-	bool CheckAmmo (int fireMode, bool autoSwitch, bool requireAmmo=false);
-	bool DepleteAmmo (bool altFire, bool checkEnough=true);
+	bool CheckAmmo (int fireMode, bool autoSwitch, bool requireAmmo=false, int ammocount = -1);
+	bool DepleteAmmo (bool altFire, bool checkEnough=true, int ammouse = -1);
+
+	enum
+	{
+		BobNormal,
+		BobInverse,
+		BobAlpha,
+		BobInverseAlpha,
+		BobSmooth,
+		BobInverseSmooth
+	};
 
 protected:
 	AAmmo *AddAmmo (AActor *other, const PClass *ammotype, int amount);
@@ -326,6 +341,8 @@ enum
 	WIF_STAFF2_KICKBACK =	0x00002000, // the powered-up Heretic staff has special kickback
 	WIF_NOAUTOAIM =			0x00004000, // this weapon never uses autoaim (useful for ballistic projectiles)
 	WIF_MELEEWEAPON =		0x00008000,	// melee weapon. Used by bots and monster AI.
+	WIF_DEHAMMO	=			0x00010000,	// Uses Doom's original amount of ammo for the respective attack functions so that old DEHACKED patches work as intended.
+										// AmmoUse1 will be set to the first attack's ammo use so that checking for empty weapons still works
 
 	WIF_CHEATNOTWEAPON	=	0x08000000,	// Give cheat considers this not a weapon (used by Sigil)
 

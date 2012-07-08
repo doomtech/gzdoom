@@ -682,7 +682,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 			rendersector->GetCeilingLight() : rendersector->GetFloorLight());
 	foglevel = (BYTE)clamp<short>(rendersector->lightlevel, 0, 255);
 
-	lightlevel = (byte)gl_CheckSpriteGlow(rendersector->GetTexture(sector_t::floor), lightlevel, thingz-thing->floorz);
+	lightlevel = (byte)gl_CheckSpriteGlow(rendersector, lightlevel, thingx, thingy, thingz);
 
 	// colormap stuff is a little more complicated here...
 	if (gl_fixedcolormap) 
@@ -873,7 +873,7 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 	{
 		Colormap.GetFixedColormap();
 	}
-	else
+	else if (!particle->bright)
 	{
 		TArray<lightlist_t> & lightlist=sector->e->XFloor.lightlist;
 		int lightbottom;
@@ -891,6 +891,12 @@ void GLSprite::ProcessParticle (particle_t *particle, sector_t *sector)//, int s
 				break;
 			}
 		}
+	}
+	else
+	{
+		lightlevel = 255;
+		Colormap = sector->ColorMap;
+		Colormap.ClearColor();
 	}
 
 	trans=particle->trans/255.0f;

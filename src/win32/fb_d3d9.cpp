@@ -2969,6 +2969,8 @@ void STACK_ARGS D3DFB::DrawTextureV (FTexture *img, double x, double y, uint32 t
 	float v1 = tex->Box->Bottom;
 	double uscale = 1.f / tex->Box->Owner->Width;
 	bool scissoring = false;
+	FBVERTEX *vert;
+	float yoffs;
 
 	if (parms.flipX)
 	{
@@ -3042,7 +3044,7 @@ void STACK_ARGS D3DFB::DrawTextureV (FTexture *img, double x, double y, uint32 t
 	quad->NumTris = 2;
 	quad->NumVerts = 4;
 
-	float yoffs = GatheringWipeScreen ? 0.5f : 0.5f - LBOffset;
+	yoffs = GatheringWipeScreen ? 0.5f : 0.5f - LBOffset;
 
 #if 0
 	// Coordinates are truncated to integers, because that's effectively
@@ -3059,7 +3061,7 @@ void STACK_ARGS D3DFB::DrawTextureV (FTexture *img, double x, double y, uint32 t
 	y1 = y1 - yoffs;
 #endif
 
-	FBVERTEX *vert = &VertexData[VertexPos];
+	vert = &VertexData[VertexPos];
 
 	// Fill the vertex buffer.
 	vert[0].x = float(x0);
@@ -3168,12 +3170,12 @@ void D3DFB::FlatFill(int left, int top, int right, int bottom, FTexture *src, bo
 	quad->Group1 = 0;
 	if (tex->GetTexFormat() == D3DFMT_L8 && !tex->IsGray)
 	{
-		quad->Flags = BQF_WrapUV | BQF_GamePalette | BQF_DisableAlphaTest;
+		quad->Flags = BQF_WrapUV | BQF_GamePalette; // | BQF_DisableAlphaTest;
 		quad->ShaderNum = BQS_PalTex;
 	}
 	else
 	{
-		quad->Flags = BQF_WrapUV | BQF_DisableAlphaTest;
+		quad->Flags = BQF_WrapUV; // | BQF_DisableAlphaTest;
 		quad->ShaderNum = BQS_Plain;
 	}
 	quad->Palette = NULL;

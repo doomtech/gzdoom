@@ -592,13 +592,16 @@ void PlayerIsGone (int netnode, int netconsole)
 		Printf ("%s left the game\n", players[netconsole].userinfo.netname);
 	}
 
-	// [RH] Revert to your own view if spying through the player who left
-	if (players[consoleplayer].camera == players[netconsole].mo)
+	// [RH] Revert each player to their own view if spying through the player who left
+	for (int ii = 0; ii < MAXPLAYERS; ++ii)
 	{
-		players[consoleplayer].camera = players[consoleplayer].mo;
-		if (StatusBar != NULL)
+		if (playeringame[ii] && players[ii].camera == players[netconsole].mo)
 		{
-			StatusBar->AttachToPlayer (&players[consoleplayer]);
+			players[ii].camera = players[ii].mo;
+			if (ii == consoleplayer && StatusBar != NULL)
+			{
+				StatusBar->AttachToPlayer (&players[ii]);
+			}
 		}
 	}
 
@@ -609,6 +612,11 @@ void PlayerIsGone (int netnode, int netconsole)
 		P_DisconnectEffect (players[netconsole].mo);
 		players[netconsole].mo->player = NULL;
 		players[netconsole].mo->Destroy ();
+		if (!(players[netconsole].mo->ObjectFlags & OF_EuthanizeMe))
+		{ // We just destroyed a morphed player, so now the original player
+		  // has taken their place. Destroy that one too.
+			players[netconsole].mo->Destroy();
+		}
 		players[netconsole].mo = NULL;
 		players[netconsole].camera = NULL;
 	}
@@ -2059,10 +2067,7 @@ void Net_DoCommand (int type, BYTE **stream, int player)
 		break;
 
 	case DEM_CENTERVIEW:
-		if (players[player].mo != NULL)
-		{
-			players[player].mo->pitch = 0;
-		}
+		players[player].centering = true;
 		break;
 
 	case DEM_INVUSEALL:
@@ -2420,17 +2425,27 @@ void Net_DoCommand (int type, BYTE **stream, int player)
 		break;
 
 	case DEM_SETSLOT:
+	case DEM_SETSLOTPNUM:
 		{
+			int pnum;
+			if (type == DEM_SETSLOTPNUM)
+			{
+				pnum = ReadByte(stream);
+			}
+			else
+			{
+				pnum = player;
+			}
 			unsigned int slot = ReadByte(stream);
 			int count = ReadByte(stream);
 			if (slot < NUM_WEAPON_SLOTS)
 			{
-				players[player].weapons.Slots[slot].Clear();
+				players[pnum].weapons.Slots[slot].Clear();
 			}
 			for(i = 0; i < count; ++i)
 			{
 				const PClass *wpn = Net_ReadWeapon(stream);
-				players[player].weapons.AddSlot(slot, wpn, player == consoleplayer);
+				players[pnum].weapons.AddSlot(slot, wpn, pnum == consoleplayer);
 			}
 		}
 		break;
@@ -2460,6 +2475,10 @@ void Net_DoCommand (int type, BYTE **stream, int player)
 		F_AdvanceIntermission();
 		break;
 
+	case DEM_REVERTCAMERA:
+		players[player].camera = players[player].mo;
+		break;
+
 	default:
 		I_Error ("Unknown net command: %d", type);
 		break;
@@ -2483,7 +2502,7 @@ static void RunScript(BYTE **stream, APlayerPawn *pawn, int snum, int argn, int 
 			arg[i] = argval;
 		}
 	}
-	P_StartScript(pawn, NULL, snum, level.mapname, arg, MIN<int>(countof(arg), argn), ACS_NET);
+	P_StartScript(pawn, NULL, snum, level.mapname, arg, MIN<int>(countof(arg), argn), ACS_NET | always);
 }
 
 void Net_SkipCommand (int type, BYTE **stream)
@@ -2588,9 +2607,10 @@ void Net_SkipCommand (int type, BYTE **stream)
 			break;
 
 		case DEM_SETSLOT:
+		case DEM_SETSLOTPNUM:
 			{
-				skip = 2;
-				for(int numweapons = (*stream)[1]; numweapons > 0; numweapons--)
+				skip = 2 + (type == DEM_SETSLOTPNUM);
+				for(int numweapons = (*stream)[skip-1]; numweapons > 0; numweapons--)
 				{
 					skip += 1 + ((*stream)[skip] >> 7);
 				}

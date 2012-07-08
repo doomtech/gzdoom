@@ -34,7 +34,6 @@
 #include "doomstat.h"
 #include "m_random.h"
 #include "m_bbox.h"
-#include "p_local.h"
 #include "r_local.h"
 #include "r_plane.h"
 #include "r_bsp.h"

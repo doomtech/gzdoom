@@ -851,7 +851,6 @@ static int FindGLNodesInFile(FileReader * f, const char * label)
 
 bool P_LoadGLNodes(MapData * map)
 {
-
 	if (map->MapLumps[ML_GLZNODES].Size != 0)
 	{
 		const int idcheck = MAKE_ID('Z','G','L','N');
@@ -1508,7 +1507,7 @@ void P_SetRenderSector()
 		seg_t *seg = ss->firstline;
 
 		// Check for one-dimensional subsectors. These should be ignored when
-		// being processed for automap drawinng etc.
+		// being processed for automap drawing etc.
 		ss->flags |= SSECF_DEGENERATE;
 		for(j=2; j<ss->numlines; j++)
 		{

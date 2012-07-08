@@ -200,6 +200,8 @@ xx(AltFire)
 xx(AltHold)
 xx(Flash)
 xx(AltFlash)
+xx(Reload)
+xx(Zoom)
 
 // State names used by ASwitchableDecoration
 xx(Active)
@@ -242,6 +244,7 @@ xx(Massacre)	// For death by a cheater!
 //(Melee)		already defined above, so don't define it again
 xx(InstantDeath)	// Strife "instant death"
 xx(PoisonCloud)	// makes monsters howl.
+xx(Hitscan)		// for normal guns and the like
 
 // Special death name for getting killed excessively. Could be used as
 // a damage type if you wanted to force an extreme death.
@@ -274,6 +277,7 @@ xx(MomZ)
 xx(Abs)
 xx(ACS_NamedExecuteWithResult)
 xx(CallACS)
+xx(Sqrt)
 
 // Various actor names which are used internally
 xx(MapSpot)

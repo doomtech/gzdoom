@@ -322,7 +322,7 @@ void DCanvas::Dim (PalEntry color)
 	if (color.a != 0)
 	{
 		float dim[4] = { color.r/255.f, color.g/255.f, color.b/255.f, color.a/255.f };
-		DBaseStatusBar::AddBlend (dimmer.r/255.f, dimmer.g/255.f, dimmer.b/255.f, amount, dim);
+		V_AddBlend (dimmer.r/255.f, dimmer.g/255.f, dimmer.b/255.f, amount, dim);
 		dimmer = PalEntry (BYTE(dim[0]*255), BYTE(dim[1]*255), BYTE(dim[2]*255));
 		amount = dim[3];
 	}
@@ -347,6 +347,23 @@ void DCanvas::Dim (PalEntry color, float damount, int x1, int y1, int w, int h)
 	int gap;
 	BYTE *spot;
 	int x, y;
+
+	if (x1 >= Width || y1 >= Height)
+	{
+		return;
+	}
+	if (x1 + w > Width)
+	{
+		w = Width - x1;
+	}
+	if (y1 + h > Height)
+	{
+		h = Height - y1;
+	}
+	if (w <= 0 || h <= 0)
+	{
+		return;
+	}
 
 	{
 		int amount;
@@ -1618,16 +1635,25 @@ CUSTOM_CVAR (Int, vid_aspect, 0, CVAR_GLOBALCONFIG|CVAR_ARCHIVE)
 // 0: 4:3
 // 1: 16:9
 // 2: 16:10
+// 3: 17:10
 // 4: 5:4
 int CheckRatio (int width, int height, int *trueratio)
 {
 	int fakeratio = -1;
 	int ratio;
 
-	if ((vid_aspect >=1) && (vid_aspect <=4))
+	if ((vid_aspect >= 1) && (vid_aspect <= 5))
 	{
 		// [SP] User wants to force aspect ratio; let them.
-		fakeratio = vid_aspect == 3? 0: int(vid_aspect);
+		fakeratio = int(vid_aspect);
+		if (fakeratio == 3)
+		{
+			fakeratio = 0;
+		}
+		else if (fakeratio == 5)
+		{
+			fakeratio = 3;
+		}
 	}
 	if (vid_nowidescreen)
 	{
@@ -1644,6 +1670,11 @@ int CheckRatio (int width, int height, int *trueratio)
 	if (abs (height * 16/9 - width) < 10)
 	{
 		ratio = 1;
+	}
+	// Consider 17:10 as well.
+	else if (abs (height * 17/10 - width) < 10)
+	{
+		ratio = 3;
 	}
 	// 16:10 has more variance in the pixel dimensions. Grr.
 	else if (abs (height * 16/10 - width) < 60)
@@ -1663,7 +1694,7 @@ int CheckRatio (int width, int height, int *trueratio)
 	{
 		ratio = 4;
 	}
-	// Assume anything else is 4:3.
+	// Assume anything else is 4:3. (Which is probably wrong these days...)
 	else
 	{
 		ratio = 0;
@@ -1676,16 +1707,21 @@ int CheckRatio (int width, int height, int *trueratio)
 	return (fakeratio >= 0) ? fakeratio : ratio;
 }
 
-// First column: Base width (unused)
+// First column: Base width
 // Second column: Base height (used for wall visibility multiplier)
 // Third column: Psprite offset (needed for "tallscreen" modes)
 // Fourth column: Width or height multiplier
+
+// For widescreen aspect ratio x:y ...
+//     base_width = 240 * x / y
+//     multiplier = 320 / base_width
+//     base_height = 200 * multiplier
 const int BaseRatioSizes[5][4] =
 {
 	{  960, 600, 0,                   48 },			//  4:3   320,      200,      multiplied by three
 	{ 1280, 450, 0,                   48*3/4 },		// 16:9   426.6667, 150,      multiplied by three
 	{ 1152, 500, 0,                   48*5/6 },		// 16:10  386,      166.6667, multiplied by three
-	{  960, 600, 0,                   48 },
+	{ 1224, 471, 0,                   48*40/51 },	// 17:10  408,		156.8627, multiplied by three
 	{  960, 640, (int)(6.5*FRACUNIT), 48*15/16 }	//  5:4   320,      213.3333, multiplied by three
 };
 

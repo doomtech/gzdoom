@@ -42,8 +42,8 @@ struct seg_t;
 #include "dthinker.h"
 #include "r_sky.h"
 
-#define MAXWIDTH 2560
-#define MAXHEIGHT 1600
+#define MAXWIDTH 2880
+#define MAXHEIGHT 1800
 
 const WORD NO_INDEX = 0xffffu;
 const DWORD NO_SIDE = 0xffffffffu;
@@ -488,6 +488,7 @@ struct sector_t
 	void ClosestPoint(fixed_t x, fixed_t y, fixed_t &ox, fixed_t &oy) const;
 	int GetFloorLight () const;
 	int GetCeilingLight () const;
+	sector_t *GetHeightSec() const;
 
 	DInterpolation *SetInterpolation(int position, bool attach);
 	void StopInterpolation(int position);
@@ -649,14 +650,6 @@ struct sector_t
 	void ChangePlaneTexZ(int pos, fixed_t val)
 	{
 		planes[pos].TexZ += val;
-	}
-
-	sector_t *GetHeightSec() const 
-	{
-		return (heightsec &&
-			!(heightsec->MoreFlags & SECF_IGNOREHEIGHTSEC) &&
-			!(this->e && this->e->XFloor.ffloors.Size())
-			)? heightsec : NULL;
 	}
 
 	static inline short ClampLight(int level)
@@ -877,7 +870,7 @@ struct side_t
 	BYTE		Flags;
 	int			Index;		// needed to access custom UDMF fields which are stored in loading order.
 
-	int GetLightLevel (bool foggy, int baselight, int *fake = NULL) const;
+	int GetLightLevel (bool foggy, int baselight, bool noabsolute=false, int *pfakecontrast_usedbygzdoom=NULL) const;
 
 	void SetLight(SWORD l)
 	{

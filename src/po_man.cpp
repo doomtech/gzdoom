@@ -1156,13 +1156,14 @@ bool FPolyObj::CheckMobjBlocking (side_t *sd)
 	int left, right, top, bottom;
 	line_t *ld;
 	bool blocked;
+	bool performBlockingThrust;
 
 	ld = sd->linedef;
 
-	top = (ld->bbox[BOXTOP]-bmaporgy) >> MAPBLOCKSHIFT;
-	bottom = (ld->bbox[BOXBOTTOM]-bmaporgy) >> MAPBLOCKSHIFT;
-	left = (ld->bbox[BOXLEFT]-bmaporgx) >> MAPBLOCKSHIFT;
-	right = (ld->bbox[BOXRIGHT]-bmaporgx) >> MAPBLOCKSHIFT;
+	top = GetSafeBlockY(ld->bbox[BOXTOP]-bmaporgy);
+	bottom = GetSafeBlockY(ld->bbox[BOXBOTTOM]-bmaporgy);
+	left = GetSafeBlockX(ld->bbox[BOXLEFT]-bmaporgx);
+	right = GetSafeBlockX(ld->bbox[BOXRIGHT]-bmaporgx);
 
 	blocked = false;
 	checker.Clear();
@@ -1195,8 +1196,9 @@ bool FPolyObj::CheckMobjBlocking (side_t *sd)
 					checker.Push (mobj);
 					if ((mobj->flags&MF_SOLID) && !(mobj->flags&MF_NOCLIP))
 					{
-						fixed_t top = -INT_MAX, bottom = INT_MAX;
-						bool above;
+						FLineOpening open;
+						open.top = INT_MAX;
+						open.bottom = -INT_MAX;
 						// [TN] Check wether this actor gets blocked by the line.
 						if (ld->backsector != NULL &&
 							!(ld->flags & (ML_BLOCKING|ML_BLOCKEVERYTHING))
@@ -1204,12 +1206,19 @@ bool FPolyObj::CheckMobjBlocking (side_t *sd)
 							&& !(ld->flags & ML_BLOCKMONSTERS && mobj->flags3 & MF3_ISMONSTER)
 							&& !((mobj->flags & MF_FLOAT) && (ld->flags & ML_BLOCK_FLOATERS))
 							&& (!(ld->flags & ML_3DMIDTEX) ||
-								(!P_LineOpening_3dMidtex(mobj, ld, bottom, top, &above) &&
-									(mobj->z + mobj->height < bottom)
-								) || (above && mobj->z > mobj->floorz))
+								(!P_LineOpening_3dMidtex(mobj, ld, open) &&
+									(mobj->z + mobj->height < open.top)
+								) || (open.abovemidtex && mobj->z > mobj->floorz))
 							)
 						{
-							continue;
+							// [BL] We can't just continue here since we must
+							// determine if the line's backsector is going to
+							// be blocked.
+							performBlockingThrust = false;
+						}
+						else
+						{
+							performBlockingThrust = true;
 						}
 
 						FBoundingBox box(mobj->x, mobj->y, mobj->radius);
@@ -1235,9 +1244,23 @@ bool FPolyObj::CheckMobjBlocking (side_t *sd)
 							{
 								continue;
 							}
+							// [BL] See if we hit below the floor/ceiling of the poly.
+							else if(!performBlockingThrust && (
+									mobj->z < ld->sidedef[!side]->sector->GetSecPlane(sector_t::floor).ZatPoint(mobj->x, mobj->y) ||
+									mobj->z + mobj->height > ld->sidedef[!side]->sector->GetSecPlane(sector_t::ceiling).ZatPoint(mobj->x, mobj->y)
+								))
+							{
+								performBlockingThrust = true;
+							}
 						}
-						ThrustMobj (mobj, sd);
-						blocked = true;
+
+						if(performBlockingThrust)
+						{
+							ThrustMobj (mobj, sd);
+							blocked = true;
+						}
+						else
+							continue;
 					}
 				}
 			}
@@ -1268,10 +1291,10 @@ void FPolyObj::LinkPolyobj ()
 		vt = Sidedefs[i]->linedef->v2;
 		Bounds.AddToBox(vt->x, vt->y);
 	}
-	bbox[BOXRIGHT] = (Bounds.Right() - bmaporgx) >> MAPBLOCKSHIFT;
-	bbox[BOXLEFT] = (Bounds.Left() - bmaporgx) >> MAPBLOCKSHIFT;
-	bbox[BOXTOP] = (Bounds.Top() - bmaporgy) >> MAPBLOCKSHIFT;
-	bbox[BOXBOTTOM] = (Bounds.Bottom() - bmaporgy) >> MAPBLOCKSHIFT;
+	bbox[BOXRIGHT] = GetSafeBlockX(Bounds.Right() - bmaporgx);
+	bbox[BOXLEFT] = GetSafeBlockX(Bounds.Left() - bmaporgx);
+	bbox[BOXTOP] = GetSafeBlockY(Bounds.Top() - bmaporgy);
+	bbox[BOXBOTTOM] = GetSafeBlockY(Bounds.Bottom() - bmaporgy);
 	// add the polyobj to each blockmap section
 	for(int j = bbox[BOXBOTTOM]*bmapwidth; j <= bbox[BOXTOP]*bmapwidth;
 		j += bmapwidth)

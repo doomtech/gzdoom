@@ -50,6 +50,7 @@ public:
 	bool isValid() const { return texnum > 0; }
 	bool Exists() const { return texnum >= 0; }
 	void SetInvalid() { texnum = -1; }
+	void SetNull() { texnum = 0; }
 	bool operator ==(const FTextureID &other) const { return texnum == other.texnum; }
 	bool operator !=(const FTextureID &other) const { return texnum != other.texnum; }
 	FTextureID operator +(int offset) throw();
@@ -355,6 +356,7 @@ public:
 		bool bBrightmapDisablesFullbright:1;	// This disables fullbright display
 		bool bNoFilter:1;
 		bool bNoCompress:1;
+		bool mExpanded:1;
 
 		MiscGLInfo() throw ();
 		~MiscGLInfo();

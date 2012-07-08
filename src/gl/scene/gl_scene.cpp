@@ -53,6 +53,8 @@
 #include "sbar.h"
 #include "po_man.h"
 #include "r_utility.h"
+#include "a_hexenglobal.h"
+#include "p_local.h"
 #include "gl/gl_functions.h"
 
 #include "gl/system/gl_framebuffer.h"
@@ -601,7 +603,6 @@ void FGLRenderer::DrawScene(bool toscreen)
 void FGLRenderer::DrawBlend(sector_t * viewsector)
 {
 	float blend[4]={0,0,0,0};
-	int cnt;
 	PalEntry blendv=0;
 	float extra_red;
 	float extra_green;
@@ -612,20 +613,6 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 	{
 		player=players[consoleplayer].camera->player;
 	}
-
-	// [RH] Amount of red flash for up to 114 damage points. Calculated by hand
-	//		using a logarithmic scale and my trusty HP48G.
-	static const byte DamageToAlpha[114] =
-	{
-		  0,   8,  16,  23,  30,  36,  42,  47,  53,  58,  62,  67,  71,  75,  79,
-		 83,  87,  90,  94,  97, 100, 103, 107, 109, 112, 115, 118, 120, 123, 125,
-		128, 130, 133, 135, 137, 139, 141, 143, 145, 147, 149, 151, 153, 155, 157,
-		159, 160, 162, 164, 165, 167, 169, 170, 172, 173, 175, 176, 178, 179, 181,
-		182, 183, 185, 186, 187, 189, 190, 191, 192, 194, 195, 196, 197, 198, 200,
-		201, 202, 203, 204, 205, 206, 207, 209, 210, 211, 212, 213, 214, 215, 216,
-		217, 218, 219, 220, 221, 221, 222, 223, 224, 225, 226, 227, 228, 229, 229,
-		230, 231, 232, 233, 234, 235, 235, 236, 237
-	};
 
 	// don't draw sector based blends when an invulnerability colormap is active
 	if (!gl_fixedcolormap)
@@ -710,7 +697,7 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 	}
 	else if (blendv.a)
 	{
-		DBaseStatusBar::AddBlend (blendv.r / 255.f, blendv.g / 255.f, blendv.b / 255.f, blendv.a/255.0f,blend);
+		V_AddBlend (blendv.r / 255.f, blendv.g / 255.f, blendv.b / 255.f, blendv.a/255.0f,blend);
 	}
 
 	// This mostly duplicates the code in shared_sbar.cpp
@@ -720,62 +707,14 @@ void FGLRenderer::DrawBlend(sector_t * viewsector)
 
 	if (player)
 	{
-		AInventory * in;
-		float maxinvalpha = 0.5f;
-
-		for(in=player->mo->Inventory;in;in=in->Inventory)
-		{
-			PalEntry color = in->GetBlend ();
-			if (color.a != 0)
-			{
-				DBaseStatusBar::AddBlend (color.r/255.f, color.g/255.f, color.b/255.f, color.a/255.f, blend);
-				if (color.a/255.f > maxinvalpha) maxinvalpha = color.a/255.f;
-			}
-		}
-		if (player->bonuscount)
-		{
-			cnt = player->bonuscount << 3;
-			DBaseStatusBar::AddBlend (RPART(gameinfo.pickupcolor)/255.f, GPART(gameinfo.pickupcolor)/255.f, 
-						BPART(gameinfo.pickupcolor)/255.f, cnt > 128 ? 0.5f : cnt / 255.f, blend);
-		}
-		
-		if (player->mo->DamageFade.a != 0)
-		{
-			cnt = DamageToAlpha[MIN (113, player->damagecount * player->mo->DamageFade.a / 255)];
-				
-			if (cnt)
-			{
-				if (cnt > 175) cnt = 175; // too strong and it gets too opaque
-
-				APlayerPawn *mo = player->mo;
-				DBaseStatusBar::AddBlend (mo->DamageFade.r / 255.f, mo->DamageFade.g / 255.f, mo->DamageFade.b / 255.f, cnt / 255.f, blend);
-			}
-		}
-		
-		if (player->poisoncount)
-		{
-			cnt = MIN (player->poisoncount, 64);
-			DBaseStatusBar::AddBlend (0.04f, 0.2571f, 0.f, cnt/93.2571428571f, blend);
-		}
-		else if (player->hazardcount)
-		{
-			cnt= MIN(player->hazardcount/8, 64);
-			DBaseStatusBar::AddBlend (0.04f, 0.2571f, 0.f, cnt/93.2571428571f, blend);
-		}
-		if (player->mo->flags&MF_ICECORPSE)
-		{
-			DBaseStatusBar::AddBlend (0.25f, 0.25f, 0.853f, 0.4f, blend);
-		}
-
-		// translucency may not go below 50%
-		if (blend[3] > maxinvalpha) blend[3] = maxinvalpha;
+		V_AddPlayerBlend(player, blend, 0.5, 175);
 	}
 	
 	if (players[consoleplayer].camera != NULL)
 	{
 		// except for fadeto effects
 		player_t *player = (players[consoleplayer].camera->player != NULL) ? players[consoleplayer].camera->player : &players[consoleplayer];
-		DBaseStatusBar::AddBlend (player->BlendR, player->BlendG, player->BlendB, player->BlendA, blend);
+		V_AddBlend (player->BlendR, player->BlendG, player->BlendB, player->BlendA, blend);
 	}
 
 	if (blend[3]>0.0f)
@@ -988,7 +927,8 @@ void FGLRenderer::RenderView (player_t* player)
 
 	// I stopped using BaseRatioSizes here because the information there wasn't well presented.
 	#define RMUL (1.6f/1.333333f)
-	static float ratios[]={RMUL*1.333333f, RMUL*1.777777f, RMUL*1.6f, RMUL*1.333333f, RMUL*1.25f};
+	//							4:3				16:9		16:10		17:10		5:4
+	static float ratios[]={RMUL*1.333333f, RMUL*1.777777f, RMUL*1.6f, RMUL*1.7f, RMUL*1.25f};
 
 	// now render the main view
 	float fovratio;
@@ -1148,7 +1088,7 @@ EXTERN_CVAR(Float, maxviewpitch)
 
 int FGLInterface::GetMaxViewPitch(bool down)
 {
-	return int(down? maxviewpitch : -maxviewpitch);
+	return int(maxviewpitch);
 }
 
 //===========================================================================

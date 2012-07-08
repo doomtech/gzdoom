@@ -761,6 +761,7 @@ add_executable( zdoom WIN32
 	tables.cpp
 	teaminfo.cpp
 	tempfiles.cpp
+	v_blend.cpp
 	v_collection.cpp
 	v_draw.cpp
 	v_font.cpp
@@ -944,6 +945,7 @@ add_executable( zdoom WIN32
 	thingdef/thingdef_data.cpp
 	thingdef/thingdef_exp.cpp
 	thingdef/thingdef_expression.cpp
+	thingdef/thingdef_function.cpp
 	thingdef/thingdef_parse.cpp
 	thingdef/thingdef_properties.cpp
 	thingdef/thingdef_states.cpp

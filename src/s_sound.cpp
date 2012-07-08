@@ -365,6 +365,9 @@ void S_Shutdown ()
 		delete PlayList;
 		PlayList = NULL;
 	}
+	S_StopMusic (true);
+	mus_playing.name = "";
+	LastSong = "";
 }
 
 //==========================================================================
@@ -898,6 +901,8 @@ static FSoundChan *S_StartSound(AActor *actor, const sector_t *sec, const FPolyO
 		}
 		else if (sfx->bRandomHeader)
 		{
+			// Random sounds attenuate based on the original (random) sound as well as the chosen one.
+			attenuation *= sfx->Attenuation;
 			sound_id = FSoundID(S_PickReplacement (sound_id));
 			if (near_limit < 0) 
 			{
@@ -924,6 +929,9 @@ static FSoundChan *S_StartSound(AActor *actor, const sector_t *sec, const FPolyO
 		}
 		sfx = &S_sfx[sound_id];
 	}
+
+	// Attenuate the attenuation based on the sound.
+	attenuation *= sfx->Attenuation;
 
 	// The passed rolloff overrides any sound-specific rolloff.
 	if (forcedrolloff != NULL && forcedrolloff->MinDistance != 0)
@@ -2379,6 +2387,10 @@ bool S_ChangeMusic (const char *musicname, int order, bool looping, bool force)
 				mus_playing.baseorder = order;
 			}
 		}
+		else if (!mus_playing.handle->IsPlaying())
+		{
+			mus_playing.handle->Play(looping, order);
+		}
 		return true;
 	}
 
@@ -2477,7 +2489,7 @@ bool S_ChangeMusic (const char *musicname, int order, bool looping, bool force)
 		if (snd_musicvolume <= 0)
 		{
 			mus_playing.loop = looping;
-			mus_playing.name = "";
+			mus_playing.name = musicname;
 			mus_playing.baseorder = order;
 			LastSong = musicname;
 			return true;
@@ -2743,6 +2755,7 @@ CCMD (stopmus)
 		PlayList = NULL;
 	}
 	S_StopMusic (false);
+	LastSong = "";	// forget the last played song so that it won't get restarted if some volume changes occur
 }
 
 //==========================================================================

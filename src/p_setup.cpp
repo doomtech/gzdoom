@@ -168,6 +168,8 @@ int				*blockmaplump;	// offsets in blockmap are from here
 
 fixed_t 		bmaporgx;		// origin of block map
 fixed_t 		bmaporgy;
+int				bmapnegx;		// min negs of block map before wrapping
+int				bmapnegy;
 
 FBlockNode**	blocklinks;		// for thing chains
 
@@ -1084,6 +1086,11 @@ void LoadZNodes(FileReaderBase &data, int glnodes)
 	unsigned int i;
 
 	data >> orgVerts >> newVerts;
+	if (orgVerts > (DWORD)numvertexes)
+	{ // These nodes are based on a map with more vertex data than we have.
+	  // We can't use them.
+		throw CRecoverableError("Incorrect number of vertexes in nodes.\n");
+	}
 	if (orgVerts + newVerts == (DWORD)numvertexes)
 	{
 		newvertarray = vertexes;
@@ -1136,10 +1143,7 @@ void LoadZNodes(FileReaderBase &data, int glnodes)
 	// segs used by subsectors.
 	if (numSegs != currSeg)
 	{
-		Printf ("Incorrect number of segs in nodes.\n");
-		delete[] subsectors;
-		ForceNodeBuild = true;
-		return;
+		throw CRecoverableError("Incorrect number of segs in nodes.\n");
 	}
 
 	numsegs = numSegs;
@@ -2516,7 +2520,14 @@ void P_LoadLineDefsHexen (MapData * map)
 
 		// convert the activation type
 		ld->activation = 1 << GET_SPAC(ld->flags);
-		if (ld->activation == SPAC_AnyCross) ld->activation = SPAC_Impact|SPAC_PCross;	// this is really PTouch
+		if (ld->activation == SPAC_AnyCross)
+		{ // this is really PTouch
+			ld->activation = SPAC_Impact | SPAC_PCross;
+		}
+		else if (ld->activation == SPAC_Impact)
+		{ // In non-UMDF maps, Impact implies PCross
+			ld->activation = SPAC_Impact | SPAC_PCross;
+		}
 		ld->flags &= ~ML_SPAC_MASK;
 	}
 	delete[] mldf;
@@ -3426,10 +3437,15 @@ void P_LoadBlockMap (MapData * map)
 
 	}
 
-	bmaporgx = blockmaplump[0]<<FRACBITS;
-	bmaporgy = blockmaplump[1]<<FRACBITS;
+	bmaporgx = blockmaplump[0] << FRACBITS;
+	bmaporgy = blockmaplump[1] << FRACBITS;
 	bmapwidth = blockmaplump[2];
 	bmapheight = blockmaplump[3];
+	// MAES: set blockmapxneg and blockmapyneg
+	// E.g. for a full 512x512 map, they should be both
+	// -1. For a 257*257, they should be both -255 etc.
+	bmapnegx = bmapwidth > 255 ? bmapwidth - 512 : -257;
+	bmapnegy = bmapheight > 255 ? bmapheight - 512 : -257;
 
 	// clear out mobj chains
 	count = bmapwidth*bmapheight;
@@ -3573,6 +3589,35 @@ static void P_GroupLines (bool buildmap)
 		// set the soundorg to the middle of the bounding box
 		sector->soundorg[0] = bbox.Right()/2 + bbox.Left()/2;
 		sector->soundorg[1] = bbox.Top()/2 + bbox.Bottom()/2;
+
+		// For triangular sectors the above does not calculate good points unless the longest of the triangle's lines is perfectly horizontal and vertical
+		if (sector->linecount == 3)
+		{
+			vertex_t *Triangle[2];
+			Triangle[0] = sector->lines[0]->v1;
+			Triangle[1] = sector->lines[0]->v2;
+			if (sector->linecount > 1)
+			{
+				fixed_t dx = Triangle[1]->x - Triangle[0]->x;
+				fixed_t dy = Triangle[1]->y - Triangle[0]->y;
+				// Find another point in the sector that does not lie
+				// on the same line as the first two points.
+				for (j = 0; j < 2; ++j)
+				{
+					vertex_t *v;
+
+					v = (j == 1) ? sector->lines[1]->v1 : sector->lines[1]->v2;
+					if (DMulScale32 (v->y - Triangle[0]->y, dx,
+									Triangle[0]->x - v->x, dy) != 0)
+					{
+						sector->soundorg[0] = Triangle[0]->x / 3 + Triangle[1]->x / 3 + v->x / 3;
+						sector->soundorg[1] = Triangle[0]->y / 3 + Triangle[1]->y / 3 + v->y / 3;
+						break;
+					}
+				}
+			}
+		}
+
 	}
 	delete[] linesDoneInEachSector;
 	times[3].Unclock();
@@ -3652,7 +3697,7 @@ void P_LoadReject (MapData * map, bool junk)
 		qwords *= 8;
 		for (i = 0; i < rejectsize; ++i)
 		{
-			if (rejectmatrix[qwords+rejectsize] != 0)
+			if (rejectmatrix[qwords + i] != 0)
 				return;
 		}
 
@@ -4365,7 +4410,7 @@ void P_SetupLevel (char *lumpname, int position)
 		{
 			if (P_LoadGLNodes(map)) 
 			{
-				ForceNodeBuild=false;
+				ForceNodeBuild = false;
 				reloop = true;
 			}
 		}

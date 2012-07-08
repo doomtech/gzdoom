@@ -84,6 +84,7 @@ struct FMenuDescriptor
 	FName mMenuName;
 	FString mNetgameMessage;
 	int mType;
+	const PClass *mClass;
 
 	virtual ~FMenuDescriptor() {}
 };
@@ -106,7 +107,6 @@ struct FListMenuDescriptor : public FMenuDescriptor
 	FFont *mFont;
 	EColorRange mFontColor;
 	EColorRange mFontColor2;
-	const PClass *mClass;
 	FMenuDescriptor *mRedirect;	// used to redirect overlong skill and episode menus to option menu based alternatives
 	bool mCenter;
 
@@ -151,7 +151,6 @@ struct FOptionMenuDescriptor : public FMenuDescriptor
 	int mIndent;
 	int mPosition;
 	bool mDontDim;
-	const PClass *mClass;
 
 	void CalcIndent();
 	FOptionMenuItem *GetItem(FName name);
@@ -344,6 +343,7 @@ class FListMenuItemPlayerDisplay : public FListMenuItem
 	void SetPlayerClass(int classnum, bool force = false);
 	bool UpdatePlayerClass();
 	void UpdateRandomClass();
+	void UpdateTranslation();
 
 public:
 

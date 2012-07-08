@@ -44,6 +44,8 @@
 #include "dobject.h"
 #include "doomdef.h"
 
+#include "m_fixed.h"
+
 struct Baggage;
 class FScanner;
 struct FActorInfo;
@@ -63,11 +65,12 @@ struct FState
 	SWORD		Tics;
 	int			Misc1;			// Was changed to SBYTE, reverted to long for MBF compat
 	int			Misc2;			// Was changed to BYTE, reverted to long for MBF compat
-	BYTE		Frame:6;
-	BYTE		Fullbright:1;	// State is fullbright
-	BYTE		SameFrame:1;	// Ignore Frame (except when spawning actor)
+	BYTE		Frame;
 	BYTE		DefineFlags;	// Unused byte so let's use it during state creation.
 	short		Light;
+	BYTE		Fullbright:1;	// State is fullbright
+	BYTE		SameFrame:1;	// Ignore Frame (except when spawning actor)
+	BYTE		Fast:1;
 	FState		*NextState;
 	actionf_p	ActionFunc;
 	int			ParameterIndex;
@@ -160,6 +163,12 @@ FArchive &operator<< (FArchive &arc, FState *&state);
 // Standard pre-defined skin colors
 struct FPlayerColorSet
 {
+	struct ExtraRange
+	{
+		BYTE RangeStart, RangeEnd;	// colors to remap
+		BYTE FirstColor, LastColor;	// colors to map to
+	};
+
 	FName Name;			// Name of this color
 
 	int Lump;			// Lump to read the translation from, otherwise use next 2 fields
@@ -167,12 +176,42 @@ struct FPlayerColorSet
 
 	BYTE RepresentativeColor;		// A palette entry representative of this translation,
 									// for map arrows and status bar backgrounds and such
+	BYTE NumExtraRanges;
+	ExtraRange Extra[6];
 };
 
-typedef TMap<FName, fixed_t> DmgFactors;
+struct DmgFactors : public TMap<FName, fixed_t>
+{
+	fixed_t *CheckFactor(FName type);
+};
 typedef TMap<FName, int> PainChanceList;
 typedef TMap<FName, PalEntry> PainFlashList;
 typedef TMap<int, FPlayerColorSet> FPlayerColorSetMap;
+
+
+
+struct DamageTypeDefinition
+{
+public:
+	DamageTypeDefinition() { Clear(); }
+
+	fixed_t DefaultFactor;
+	bool ReplaceFactor;
+	bool NoArmor;
+
+	void Apply(FName const type);
+	void Clear()
+	{
+		DefaultFactor = FRACUNIT;
+		ReplaceFactor = false;
+		NoArmor = false;
+	}
+
+	static DamageTypeDefinition *Get(FName const type);
+	static bool IgnoreArmor(FName const type);
+	static int ApplyMobjDamageFactor(int damage, FName const type, DmgFactors const * const factors);
+};
+
 
 struct FActorInfo
 {
@@ -192,6 +231,11 @@ struct FActorInfo
 	FState *FindState (FName name) const
 	{
 		return FindState(1, &name);
+	}
+
+	bool OwnsState(const FState *state)
+	{
+		return state >= OwnedStates && state < OwnedStates + NumOwnedStates;
 	}
 
 	FActorInfo *GetReplacement (bool lookskill=true);

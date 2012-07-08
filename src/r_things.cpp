@@ -327,6 +327,13 @@ void R_DrawVisSprite (vissprite_t *vis)
 
 	mode = R_SetPatchStyle (vis->Style.RenderStyle, vis->Style.alpha, vis->Translation, vis->FillColor);
 
+	if (vis->Style.RenderStyle == LegacyRenderStyles[STYLE_Shaded])
+	{ // For shaded sprites, R_SetPatchStyle sets a dc_colormap to an alpha table, but
+	  // it is the brightest one. We need to get back to the proper light level for
+	  // this sprite.
+		dc_colormap += vis->ColormapNum << COLORMAPSHIFT;
+	}
+
 	if (mode != DontDraw)
 	{
 		if (mode == DoDraw0)
@@ -604,7 +611,9 @@ void R_ProjectSprite (AActor *thing, int fakeside, F3DFloor *fakefloor, F3DFloor
 	tx2 = tx >> 4;
 
 	// too far off the side?
-	if ((abs(tx) >> 6) > abs(tz))
+	// if it's a voxel, it can be further off the side
+	if ((voxel == NULL && (abs(tx) >> 6) > abs(tz)) ||
+		(voxel != NULL && (abs(tx) >> 7) > abs(tz)))
 	{
 		return;
 	}
@@ -649,7 +658,7 @@ void R_ProjectSprite (AActor *thing, int fakeside, F3DFloor *fakefloor, F3DFloor
 		{
 			if (gzt < heightsec->floorplane.ZatPoint (fx, fy))
 				return;
-			if (gzb >= heightsec->ceilingplane.ZatPoint (fx, fy))
+			if (!(heightsec->MoreFlags & SECF_FAKEFLOORONLY) && gzb >= heightsec->ceilingplane.ZatPoint (fx, fy))
 				return;
 		}
 	}
@@ -739,7 +748,7 @@ void R_ProjectSprite (AActor *thing, int fakeside, F3DFloor *fakefloor, F3DFloor
 		if (voxelspin != 0)
 		{
 			double ang = double(I_FPSTime()) * voxelspin / 1000;
-			vis->angle += angle_t(ang * (4294967296.f / 360));
+			vis->angle -= angle_t(ang * (4294967296.f / 360));
 		}
 
 		// These are irrelevant for voxels.
@@ -768,6 +777,7 @@ void R_ProjectSprite (AActor *thing, int fakeside, F3DFloor *fakefloor, F3DFloor
 	vis->Style.alpha = thing->alpha;
 	vis->fakefloor = fakefloor;
 	vis->fakeceiling = fakeceiling;
+	vis->ColormapNum = 0;
 
 	if (voxel != NULL)
 	{
@@ -832,8 +842,9 @@ void R_ProjectSprite (AActor *thing, int fakeside, F3DFloor *fakefloor, F3DFloor
 		}
 		else
 		{ // diminished light
-			vis->Style.colormap = mybasecolormap->Maps + (GETPALOOKUP (
-				(fixed_t)DivScale12 (r_SpriteVisibility, MAX(tz, MINZ)), spriteshade) << COLORMAPSHIFT);
+			vis->ColormapNum = GETPALOOKUP(
+				(fixed_t)DivScale12 (r_SpriteVisibility, MAX(tz, MINZ)), spriteshade);
+			vis->Style.colormap = mybasecolormap->Maps + (vis->ColormapNum << COLORMAPSHIFT);
 		}
 	}
 }
@@ -993,6 +1004,7 @@ void R_DrawPSprite (pspdef_t* psp, int pspnum, AActor *owner, fixed_t sx, fixed_
 	vis->yscale = DivScale16(pspriteyscale, tex->yScale);
 	vis->Translation = 0;		// [RH] Use default colors
 	vis->pic = tex;
+	vis->ColormapNum = 0;
 
 	if (flip)
 	{
@@ -1658,7 +1670,7 @@ void R_DrawSprite (vissprite_t *spr)
 				hzb = MAX(hzb, hz);
 			}
 		}
-		if (spr->FakeFlatStat != FAKED_BelowFloor)
+		if (spr->FakeFlatStat != FAKED_BelowFloor && !(spr->heightsec->MoreFlags & SECF_FAKEFLOORONLY))
 		{
 			fixed_t hz = spr->heightsec->ceilingplane.ZatPoint (spr->gx, spr->gy);
 			fixed_t h = (centeryfrac - FixedMul (hz-viewz, scale)) >> FRACBITS;
@@ -2121,6 +2133,7 @@ void R_ProjectParticle (particle_t *particle, const sector_t *sector, int shade,
 	vis->renderflags = particle->trans;
 	vis->FakeFlatStat = fakeside;
 	vis->floorclip = 0;
+	vis->ColormapNum = 0;
 
 	if (fixedlightlev >= 0)
 	{
@@ -2130,12 +2143,15 @@ void R_ProjectParticle (particle_t *particle, const sector_t *sector, int shade,
 	{
 		vis->Style.colormap = fixedcolormap;
 	}
+	else if(particle->bright) {
+		vis->Style.colormap = map;
+	}
 	else
 	{
 		// Using MulScale15 instead of 16 makes particles slightly more visible
 		// than regular sprites.
-		vis->Style.colormap = map + (GETPALOOKUP (MulScale15 (tiz, r_SpriteVisibility),
-			shade) << COLORMAPSHIFT);
+		vis->ColormapNum = GETPALOOKUP(MulScale15 (tiz, r_SpriteVisibility), shade);
+		vis->Style.colormap = map + (vis->ColormapNum << COLORMAPSHIFT);
 	}
 }
 
@@ -2204,12 +2220,6 @@ void R_DrawParticle (vissprite_t *vis)
 	} while (--ycount);
 }
 
-static fixed_t distrecip(fixed_t y)
-{
-	y >>= 3;
-	return y == 0 ? 0 : SafeDivScale32(centerxwide, y);
-}
-
 extern fixed_t baseyaspectmul;
 
 void R_DrawVoxel(fixed_t dasprx, fixed_t daspry, fixed_t dasprz, angle_t dasprang,
@@ -2220,22 +2230,28 @@ void R_DrawVoxel(fixed_t dasprx, fixed_t daspry, fixed_t dasprz, angle_t daspran
 	fixed_t cosang, sinang, sprcosang, sprsinang;
 	int backx, backy, gxinc, gyinc;
 	int daxscalerecip, dayscalerecip, cnt, gxstart, gystart, dazscale;
-	int lx, rx, nx, ny, x1=0, y1=0, x2=0, y2=0, yplc, yinc=0;
+	int lx, rx, nx, ny, x1=0, y1=0, x2=0, y2=0, yinc=0;
 	int yoff, xs=0, ys=0, xe, ye, xi=0, yi=0, cbackx, cbacky, dagxinc, dagyinc;
 	kvxslab_t *voxptr, *voxend;
 	FVoxelMipLevel *mip;
+	int z1a[64], z2a[64], yplc[64];
 
 	const int nytooclose = centerxwide * 2100, nytoofar = 32768*32768 - 1048576;
 	const int xdimenscale = Scale(centerxwide, yaspectmul, 160);
 	const fixed_t globalposx =  viewx >> 12;
 	const fixed_t globalposy = -viewy >> 12;
 	const fixed_t globalposz = -viewz >> 8;
+	const double centerxwide_f = centerxwide;
+	const double centerxwidebig_f = centerxwide_f * 65536*65536*8;
 
 	dasprx =  dasprx >> 12;
 	daspry = -daspry >> 12;
 	dasprz = -dasprz >> 8;
-	daxscale >>= 10;
-	dayscale >>= 10;
+
+	// Shift the scales from 16 bits of fractional precision to 6.
+	// Also do some magic voodoo scaling to make them the right size.
+	daxscale = daxscale / (0xC000 >> 6);
+	dayscale = dayscale / (0xC000 >> 6);
 
 	cosang = viewcos >> 2;
 	sinang = -viewsin >> 2;
@@ -2300,7 +2316,7 @@ void R_DrawVoxel(fixed_t dasprx, fixed_t daspry, fixed_t dasprz, angle_t daspran
 		ggyinc[i] = y; y += gyinc;
 	}
 
-	syoff = DivScale21(globalposz - dasprz, dazscale) + (mip->PivotZ << 7);
+	syoff = DivScale21(globalposz - dasprz, FixedMul(dazscale, 0xE800)) + (mip->PivotZ << 7);
 	yoff = (abs(gxinc) + abs(gyinc)) >> 1;
 
 	for (cnt = 0; cnt < 8; cnt++)
@@ -2376,15 +2392,14 @@ void R_DrawVoxel(fixed_t dasprx, fixed_t daspry, fixed_t dasprz, angle_t daspran
 				voxend = (kvxslab_t *)(slabxoffs + xyoffs[y+1]);
 				if (voxptr >= voxend) continue;
 
-				lx = MulScale32(nx >> 3, distrecip(ny+y1)) + centerx;
+				lx = xs_RoundToInt(nx * centerxwide_f / (ny + y1)) + centerx;
 				if (lx < 0) lx = 0;
-				rx = MulScale32((nx + nxoff) >> 3, distrecip(ny+y2)) + centerx;
+				rx = xs_RoundToInt((nx + nxoff) * centerxwide_f / (ny + y2)) + centerx;
 				if (rx > viewwidth) rx = viewwidth;
 				if (rx <= lx) continue;
-				rx -= lx;
 
-				fixed_t l1 = distrecip(ny-yoff);
-				fixed_t l2 = distrecip(ny+yoff);
+				fixed_t l1 = xs_RoundToInt(centerxwidebig_f / (ny - yoff));
+				fixed_t l2 = xs_RoundToInt(centerxwidebig_f / (ny + yoff));
 				for (; voxptr < voxend; voxptr = (kvxslab_t *)((BYTE *)voxptr + voxptr->zleng + 3))
 				{
 					const BYTE *col = voxptr->col;
@@ -2429,43 +2444,88 @@ void R_DrawVoxel(fixed_t dasprx, fixed_t daspry, fixed_t dasprz, angle_t daspran
 						z2 = MulScale32(l1, j + (zleng << 15)) + centery;
 					}
 
+					if (z2 <= z1) continue;
+
 					if (zleng == 1)
 					{
-						yplc = 0; yinc = 0;
-						if (z1 < daumost[lx]) z1 = daumost[lx];
+						yinc = 0;
 					}
 					else
 					{
 						if (z2-z1 >= 1024) yinc = FixedDiv(zleng, z2 - z1);
-						else if (z2 > z1) yinc = (((1 << 24) - 1) / (z2 - z1)) * zleng >> 8;
-						if (z1 < daumost[lx]) { yplc = yinc*(daumost[lx]-z1); z1 = daumost[lx]; } else yplc = 0;
+						else yinc = (((1 << 24) - 1) / (z2 - z1)) * zleng >> 8;
 					}
-					if (z2 > dadmost[lx]) z2 = dadmost[lx];
-					z2 -= z1; if (z2 <= 0) continue;
-
-					if (!(flags & DVF_OFFSCREEN))
+					// [RH] Clip each column separately, not just by the first one.
+					for (int stripwidth = MIN<int>(countof(z1a), rx - lx), lxt = lx;
+						lxt < rx;
+						(lxt += countof(z1a)), stripwidth = MIN<int>(countof(z1a), rx - lxt))
 					{
-						// Draw directly to the screen.
-						R_DrawSlab(rx, yplc, z2, yinc, col, ylookup[z1] + lx + dc_destorg);
-					}
-					else
-					{
-						// Record the area covered and possibly draw to an offscreen buffer.
-						dc_yl = z1;
-						dc_yh = z1 + z2 - 1;
-						dc_count = z2;
-						dc_iscale = yinc;
-						for (int x = 0; x < rx; ++x)
+						// Calculate top and bottom pixels locations
+						for (int xxx = 0; xxx < stripwidth; ++xxx)
 						{
-							OffscreenCoverageBuffer->InsertSpan(lx + x, z1, z1 + z2);
-							if (!(flags & DVF_SPANSONLY))
+							if (zleng == 1)
 							{
-								dc_x = lx + x;
-								rt_initcols(OffscreenColorBuffer + (dc_x & ~3) * OffscreenBufferHeight);
-								dc_source = col;
-								dc_texturefrac = yplc;
-								hcolfunc_pre();
+								yplc[xxx] = 0;
+								z1a[xxx] = MAX<int>(z1, daumost[lxt + xxx]);
 							}
+							else
+							{
+								if (z1 < daumost[lxt + xxx])
+								{
+									yplc[xxx] = yinc * (daumost[lxt + xxx] - z1);
+									z1a[xxx] = daumost[lxt + xxx];
+								}
+								else
+								{
+									yplc[xxx] = 0;
+									z1a[xxx] = z1;
+								}
+							}
+							z2a[xxx] = MIN<int>(z2, dadmost[lxt + xxx]);
+						}
+						// Find top and bottom pixels that match and draw them as one strip
+						for (int xxl = 0, xxr; xxl < stripwidth; )
+						{
+							if (z1a[xxl] >= z2a[xxl])
+							{ // No column here
+								xxl++;
+								continue;
+							}
+							int z1 = z1a[xxl];
+							int z2 = z2a[xxl];
+							// How many columns share the same extents?
+							for (xxr = xxl + 1; xxr < stripwidth; ++xxr)
+							{
+								if (z1a[xxr] != z1 || z2a[xxr] != z2)
+									break;
+							}
+
+							if (!(flags & DVF_OFFSCREEN))
+							{
+								// Draw directly to the screen.
+								R_DrawSlab(xxr - xxl, yplc[xxl], z2 - z1, yinc, col, ylookup[z1] + lxt + xxl + dc_destorg);
+							}
+							else
+							{
+								// Record the area covered and possibly draw to an offscreen buffer.
+								dc_yl = z1;
+								dc_yh = z2 - 1;
+								dc_count = z2 - z1;
+								dc_iscale = yinc;
+								for (int x = xxl; x < xxr; ++x)
+								{
+									OffscreenCoverageBuffer->InsertSpan(lxt + x, z1, z2);
+									if (!(flags & DVF_SPANSONLY))
+									{
+										dc_x = lxt + x;
+										rt_initcols(OffscreenColorBuffer + (dc_x & ~3) * OffscreenBufferHeight);
+										dc_source = col;
+										dc_texturefrac = yplc[xxl];
+										hcolfunc_pre();
+									}
+								}
+							}
+							xxl = xxr;
 						}
 					}
 				}
@@ -2553,7 +2613,7 @@ void FCoverageBuffer::InsertSpan(int listnum, int start, int stop)
 			{ // The existing span completely covers this one.	//     +++++
 				return;
 			}
-			// Extend the existing span with the new one.		// ======
+extend:		// Extend the existing span with the new one.		// ======
 			span = *span_p;										//     +++++++
 			span->Stop = stop;									// (or)  +++++
 
@@ -2581,6 +2641,11 @@ void FCoverageBuffer::InsertSpan(int listnum, int start, int stop)
 		{ // The new span extends the existing span from		//    ++++
 		  // the beginning.										// (or) ++++
 			(*span_p)->Start = start;
+			if ((*span_p)->Stop < stop)
+			{ // The new span also extends the existing span	//     ======
+			  // at the bottom									// ++++++++++++++
+				goto extend;
+			}
 			goto check;
 		}
 		else													//         ======

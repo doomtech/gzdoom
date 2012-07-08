@@ -264,7 +264,11 @@ void GLWall::Put3DWall(lightlist_t * lightlist, bool translucent)
 		!gl_isBlack((COLORMAP_SELECT(lightlist->extra_colormap, LIGHT_WALLBOTH))->Fade)) && gl_isBlack
 		(Colormap.FadeColor);
 
-	lightlevel=*lightlist->p_lightlevel;
+	// only modify the light level if it doesn't originate from the seg's frontsector. This is to account for light transferring effects
+	if (lightlist->p_lightlevel != &seg->sidedef->sector->lightlevel)
+	{
+		lightlevel = gl_ClampLight(*lightlist->p_lightlevel);
+	}
 	// relative light won't get changed here. It is constant across the entire wall.
 
 	Colormap.CopyLightColor(COLORMAP_SELECT(lightlist->extra_colormap, LIGHT_WALLBOTH));
@@ -299,6 +303,7 @@ void GLWall::SplitWall(sector_t * frontsector, bool translucent)
 	float maplightbottomleft;
 	float maplightbottomright;
 	unsigned int i;
+	int origlight = lightlevel;
 	TArray<lightlist_t> & lightlist=frontsector->e->XFloor.lightlist;
 
 	if (glseg.x1==glseg.x2 && glseg.y1==glseg.y2)
@@ -517,7 +522,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 			{
 				light = P_GetPlaneLight(fs, &fs->ceilingplane, true);
 
-				if(!(fs->GetFlags(sector_t::ceiling)&PLANEF_ABSLIGHTING)) hi.lightlevel = *light->p_lightlevel;
+				if(!(fs->GetFlags(sector_t::ceiling)&PLANEF_ABSLIGHTING)) hi.lightlevel = gl_ClampLight(*light->p_lightlevel);
 				hi.colormap.LightColor = (COLORMAP_SELECT(light->extra_colormap, LIGHT_WALLBOTH))->Color;
 			}
 
@@ -546,7 +551,7 @@ bool GLWall::DoHorizon(seg_t * seg,sector_t * fs, vertex_t * v1,vertex_t * v2)
 			{
 				light = P_GetPlaneLight(fs, &fs->floorplane, false);
 
-				if(!(fs->GetFlags(sector_t::floor)&PLANEF_ABSLIGHTING)) hi.lightlevel = *light->p_lightlevel;
+				if(!(fs->GetFlags(sector_t::floor)&PLANEF_ABSLIGHTING)) hi.lightlevel = gl_ClampLight(*light->p_lightlevel);
 				hi.colormap.LightColor = (COLORMAP_SELECT(light->extra_colormap, LIGHT_WALLBOTH))->Color;
 			}
 
@@ -1526,8 +1531,20 @@ void GLWall::Process(seg_t *seg, sector_t * frontsector, sector_t * backsector)
 	flags = (!gl_isBlack(Colormap.FadeColor) || level.flags&LEVEL_HASFADETABLE)? GLWF_FOGGY : 0;
 
 	int rel = 0;
-	lightlevel = seg->sidedef->GetLightLevel(!!(flags&GLWF_FOGGY), gl_ClampLight(frontsector->lightlevel), &rel);
-	rellight = rel;
+	int orglightlevel = gl_ClampLight(frontsector->lightlevel);
+	lightlevel = seg->sidedef->GetLightLevel(!!(flags&GLWF_FOGGY), orglightlevel, false, &rel);
+	if (orglightlevel >= 253)			// with the software renderer fake contrast won't be visible above this.
+	{
+		rellight = 0;					
+	}
+	else if (lightlevel - rel > 256)	// the brighter part of fake contrast will be clamped so also clamp the darker part by the same amount for better looks
+	{	
+		rellight = 256 - lightlevel + rel;
+	}
+	else
+	{
+		rellight = rel;
+	}
 
 	alpha=1.0f;
 	RenderStyle=STYLE_Normal;

@@ -955,6 +955,11 @@ DEFINE_PROPERTY(bouncetype, S, Actor)
 	}
 	defaults->BounceFlags &= ~(BOUNCE_TypeMask | BOUNCE_UseSeeSound);
 	defaults->BounceFlags |= flags[match];
+	if (defaults->BounceFlags & (BOUNCE_Actors | BOUNCE_AllActors))
+	{
+		// PASSMOBJ is irrelevant for normal missiles, but not for bouncers.
+		defaults->flags2 |= MF2_PASSMOBJ;
+	}
 }
 
 //==========================================================================
@@ -1250,7 +1255,7 @@ DEFINE_PROPERTY(visibletoteam, I, Actor)
 //==========================================================================
 // [BB]
 //==========================================================================
-DEFINE_PROPERTY(visibletoplayerclass, S_s, Actor)
+DEFINE_PROPERTY(visibletoplayerclass, Ssssssssssssssssssss, Actor)
 {
 	info->VisibleToPlayerClass.Clear();
 	for(int i = 0;i < PROP_PARM_COUNT;++i)
@@ -1288,7 +1293,7 @@ DEFINE_PROPERTY(stamina, I, Actor)
 //==========================================================================
 //
 //==========================================================================
-DEFINE_CLASS_PROPERTY(restrictedto, S_s, Inventory)
+DEFINE_CLASS_PROPERTY(restrictedto, Ssssssssssssssssssss, Inventory)
 {
 	info->RestrictedToPlayerClass.Clear();
 	for(int i = 0;i < PROP_PARM_COUNT;++i)
@@ -1302,7 +1307,7 @@ DEFINE_CLASS_PROPERTY(restrictedto, S_s, Inventory)
 //==========================================================================
 //
 //==========================================================================
-DEFINE_CLASS_PROPERTY(forbiddento, S_s, Inventory)
+DEFINE_CLASS_PROPERTY(forbiddento, Ssssssssssssssssssss, Inventory)
 {
 	info->ForbiddenToPlayerClass.Clear();
 	for(int i = 0;i < PROP_PARM_COUNT;++i)
@@ -1472,16 +1477,23 @@ DEFINE_CLASS_PROPERTY(icon, S, Inventory)
 {
 	PROP_STRING_PARM(i, 0);
 
-	defaults->Icon = TexMan.CheckForTexture(i, FTexture::TEX_MiscPatch);
-	if (!defaults->Icon.isValid())
+	if (i == NULL || i[0] == '\0')
 	{
-		// Don't print warnings if the item is for another game or if this is a shareware IWAD. 
-		// Strife's teaser doesn't contain all the icon graphics of the full game.
-		if ((info->GameFilter == GAME_Any || info->GameFilter & gameinfo.gametype) &&
-			!(gameinfo.flags&GI_SHAREWARE) && Wads.GetLumpFile(bag.Lumpnum) != 0)
+		defaults->Icon.SetNull();
+	}
+	else
+	{
+		defaults->Icon = TexMan.CheckForTexture(i, FTexture::TEX_MiscPatch);
+		if (!defaults->Icon.isValid())
 		{
-			bag.ScriptPosition.Message(MSG_WARNING,
-				"Icon '%s' for '%s' not found\n", i, info->Class->TypeName.GetChars());
+			// Don't print warnings if the item is for another game or if this is a shareware IWAD. 
+			// Strife's teaser doesn't contain all the icon graphics of the full game.
+			if ((info->GameFilter == GAME_Any || info->GameFilter & gameinfo.gametype) &&
+				!(gameinfo.flags&GI_SHAREWARE) && Wads.GetLumpFile(bag.Lumpnum) != 0)
+			{
+				bag.ScriptPosition.Message(MSG_WARNING,
+					"Icon '%s' for '%s' not found\n", i, info->Class->TypeName.GetChars());
+			}
 		}
 	}
 }
@@ -1756,6 +1768,52 @@ DEFINE_CLASS_PROPERTY(yadjust, F, Weapon)
 {
 	PROP_FIXED_PARM(i, 0);
 	defaults->YAdjust = i;
+}
+
+//==========================================================================
+//
+//==========================================================================
+DEFINE_CLASS_PROPERTY(bobstyle, S, Weapon)
+{
+	static const char *names[] = { "Normal", "Inverse", "Alpha", "InverseAlpha", "Smooth", "InverseSmooth", NULL };
+	static const int flags[] = { AWeapon::BobNormal,
+		AWeapon::BobInverse, AWeapon::BobAlpha, AWeapon::BobInverseAlpha,
+		AWeapon::BobSmooth, AWeapon::BobInverseSmooth, };
+	PROP_STRING_PARM(id, 0);
+	int match = MatchString(id, names);
+	if (match < 0)
+	{
+		I_Error("Unknown bobstyle %s", id);
+		match = 0;
+	}
+	defaults->BobStyle |= flags[match];
+}
+
+//==========================================================================
+//
+//==========================================================================
+DEFINE_CLASS_PROPERTY(bobspeed, F, Weapon)
+{
+	PROP_FIXED_PARM(i, 0);
+	defaults->BobSpeed = i;
+}
+
+//==========================================================================
+//
+//==========================================================================
+DEFINE_CLASS_PROPERTY(bobrangex, F, Weapon)
+{
+	PROP_FIXED_PARM(i, 0);
+	defaults->BobRangeX = i;
+}
+
+//==========================================================================
+//
+//==========================================================================
+DEFINE_CLASS_PROPERTY(bobrangey, F, Weapon)
+{
+	PROP_FIXED_PARM(i, 0);
+	defaults->BobRangeY = i;
 }
 
 //==========================================================================
@@ -2069,7 +2127,7 @@ DEFINE_CLASS_PROPERTY_PREFIX(player, colorrange, I_I, PlayerPawn)
 //==========================================================================
 //
 //==========================================================================
-DEFINE_CLASS_PROPERTY_PREFIX(player, colorset, ISIII, PlayerPawn)
+DEFINE_CLASS_PROPERTY_PREFIX(player, colorset, ISIIIiiiiiiiiiiiiiiiiiiiiiiii, PlayerPawn)
 {
 	PROP_INT_PARM(setnum, 0);
 	PROP_STRING_PARM(setname, 1);
@@ -2083,6 +2141,34 @@ DEFINE_CLASS_PROPERTY_PREFIX(player, colorset, ISIII, PlayerPawn)
 	color.FirstColor = rangestart;
 	color.LastColor = rangeend;
 	color.RepresentativeColor = representative_color;
+	color.NumExtraRanges = 0;
+
+	if (PROP_PARM_COUNT > 5)
+	{
+		int count = PROP_PARM_COUNT - 5;
+		int start = 5;
+
+		while (count >= 4)
+		{
+			PROP_INT_PARM(range_start, start+0);
+			PROP_INT_PARM(range_end, start+1);
+			PROP_INT_PARM(first_color, start+2);
+			PROP_INT_PARM(last_color, start+3);
+			int extra = color.NumExtraRanges++;
+			assert (extra < (int)countof(color.Extra));
+
+			color.Extra[extra].RangeStart = range_start;
+			color.Extra[extra].RangeEnd = range_end;
+			color.Extra[extra].FirstColor = first_color;
+			color.Extra[extra].LastColor = last_color;
+			count -= 4;
+			start += 4;
+		}
+		if (count != 0)
+		{
+			bag.ScriptPosition.Message(MSG_WARNING, "Extra ranges require 4 parameters each.\n");
+		}
+	}
 
 	if (setnum < 0)
 	{
@@ -2108,6 +2194,8 @@ DEFINE_CLASS_PROPERTY_PREFIX(player, colorsetfile, ISSI, PlayerPawn)
 	color.Name = setname;
 	color.Lump = Wads.CheckNumForName(rangefile);
 	color.RepresentativeColor = representative_color;
+	color.NumExtraRanges = 0;
+
 	if (setnum < 0)
 	{
 		bag.ScriptPosition.Message(MSG_WARNING, "Color set number must not be negative.\n");

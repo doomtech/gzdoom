@@ -593,7 +593,7 @@ void R_InterpolateView (player_t *player, fixed_t frac, InterpolationViewer *ivi
 	{
 		viewangle = iview->nviewangle + (LocalViewAngle & 0xFFFF0000);
 
-		fixed_t delta = -(signed)(LocalViewPitch & 0xFFFF0000);
+		fixed_t delta = player->centering ? 0 : -(signed)(LocalViewPitch & 0xFFFF0000);
 
 		viewpitch = iview->nviewpitch;
 		if (delta > 0)
@@ -744,10 +744,6 @@ void R_SetupFrame (AActor *actor)
 		{
 			camera = player->camera = player->mo;
 		}
-		if (camera == actor)
-		{
-			P_PredictPlayer (player);
-		}
 	}
 	else
 	{
@@ -815,7 +811,6 @@ void R_SetupFrame (AActor *actor)
 	viewangle = TEST_ANGLE;
 #endif
 
-	Renderer->CopyStackedViewParameters();
 	R_SetViewAngle ();
 
 	interpolator.DoInterpolations (r_TicFrac);
@@ -911,9 +906,9 @@ void R_SetupFrame (AActor *actor)
 		}
 	}
 
+	Renderer->CopyStackedViewParameters();
 	Renderer->SetupFrame(player);
 
-	P_UnPredictPlayer ();
 	validcount++;
 
 	if (RenderTarget == screen && r_clearbuffer != 0)

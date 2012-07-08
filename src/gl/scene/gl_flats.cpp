@@ -113,7 +113,7 @@ void GLFlat::DrawSubsectorLights(subsector_t * sub, int pass)
 	Plane p;
 	Vector nearPt, up, right, t1;
 	float scale;
-	int k;
+	unsigned int k;
 	seg_t *v;
 
 	FLightNode * node = sub->lighthead[pass==GLPASS_LIGHT_ADDITIVE];
@@ -236,7 +236,7 @@ void GLFlat::DrawSubsector(subsector_t * sub)
 {
 	gl.Begin(GL_TRIANGLE_FAN);
 
-	for(int k=0; k<sub->numlines; k++)
+	for(unsigned int k=0; k<sub->numlines; k++)
 	{
 		vertex_t *vt = sub->firstline[k].v1;
 		gl.TexCoord2f(vt->fx/64.f, -vt->fy/64.f);
@@ -442,7 +442,7 @@ void GLFlat::Draw(int pass)
 // plane in the appropriate render list.
 //
 //==========================================================================
-inline void GLFlat::PutFlat(sector_t *model, bool fog)
+inline void GLFlat::PutFlat(bool fog)
 {
 	int list;
 
@@ -467,7 +467,7 @@ inline void GLFlat::PutFlat(sector_t *model, bool fog)
 
 		if (!gl_fixedcolormap)
 		{
-			foggy = gl_CheckFog(model, NULL) || level.flags&LEVEL_HASFADETABLE;
+			foggy = gl_CheckFog(&Colormap, lightlevel) || level.flags&LEVEL_HASFADETABLE;
 
 			if (gl_lights && !gl_dynlight_shader && GLRenderer->mLightCount)	// Are lights touching this sector?
 			{
@@ -523,7 +523,7 @@ void GLFlat::Process(sector_t * model, int whichplane, bool fog)
 
 	z = plane.plane.ZatPoint(0.f, 0.f);
 	
-	PutFlat(model, fog);
+	PutFlat(fog);
 	rendered_flats++;
 }
 

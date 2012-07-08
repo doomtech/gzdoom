@@ -158,12 +158,12 @@ class APoisonBolt : public AActor
 {
 	DECLARE_CLASS (APoisonBolt, AActor)
 public:
-	int DoSpecialDamage (AActor *target, int damage);
+	int DoSpecialDamage (AActor *target, int damage, FName damagetype);
 };
 
 IMPLEMENT_CLASS (APoisonBolt)
 
-int APoisonBolt::DoSpecialDamage (AActor *target, int damage)
+int APoisonBolt::DoSpecialDamage (AActor *target, int damage, FName damagetype)
 {
 	if (target->flags & MF_NOBLOOD)
 	{
@@ -266,7 +266,7 @@ void P_StrifeGunShot (AActor *mo, bool accurate, angle_t pitch)
 		angle += pr_sgunshot.Random2() << (20 - mo->player->mo->accuracy * 5 / 100);
 	}
 
-	P_LineAttack (mo, angle, PLAYERMISSILERANGE, pitch, damage, NAME_None, NAME_StrifePuff);
+	P_LineAttack (mo, angle, PLAYERMISSILERANGE, pitch, damage, NAME_Hitscan, NAME_StrifePuff);
 }
 
 //============================================================================
@@ -432,7 +432,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_FireMauler1)
 		// it should use a different puff. ZDoom's default range is longer
 		// than this, so let's not handicap it by being too faithful to the
 		// original.
-		P_LineAttack (self, angle, PLAYERMISSILERANGE, pitch, damage, NAME_None, NAME_MaulerPuff);
+		P_LineAttack (self, angle, PLAYERMISSILERANGE, pitch, damage, NAME_Hitscan, NAME_MaulerPuff);
 	}
 }
 
@@ -530,15 +530,11 @@ AActor *P_SpawnSubMissile (AActor *source, const PClass *type, AActor *target)
 	{
 		if (source->flags & MF_MISSILE && source->flags4 & MF4_SPECTRAL)
 		{
-			other->health = source->health;
-		}
-		else if (target->player != NULL)
-		{
-			other->health = -1;
+			other->FriendPlayer = source->FriendPlayer;
 		}
 		else
 		{
-			other->health = -2;
+			other->SetFriendPlayer(target->player);
 		}
 	}
 
@@ -555,18 +551,18 @@ class APhosphorousFire : public AActor
 {
 	DECLARE_CLASS (APhosphorousFire, AActor)
 public:
-	int DoSpecialDamage (AActor *target, int damage);
+	int DoSpecialDamage (AActor *target, int damage, FName damagetype);
 };
 
 IMPLEMENT_CLASS (APhosphorousFire)
 
-int APhosphorousFire::DoSpecialDamage (AActor *target, int damage)
+int APhosphorousFire::DoSpecialDamage (AActor *target, int damage, FName damagetype)
 {
 	if (target->flags & MF_NOBLOOD)
 	{
 		return damage / 2;
 	}
-	return Super::DoSpecialDamage (target, damage);
+	return Super::DoSpecialDamage (target, damage, damagetype);
 }
 
 DEFINE_ACTION_FUNCTION(AActor, A_BurnArea)
@@ -925,7 +921,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_FireSigil1)
 	}
 	if (spot != NULL)
 	{
-		spot->health = -1;
+		spot->SetFriendPlayer(player);
 		spot->target = self;
 	}
 }

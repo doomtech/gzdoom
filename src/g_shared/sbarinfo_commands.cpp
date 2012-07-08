@@ -41,6 +41,7 @@
 //      classes.
 ////////////////////////////////////////////////////////////////////////////////
 
+
 class CommandDrawImage : public SBarInfoCommand
 {
 	public:
@@ -169,9 +170,18 @@ class CommandDrawImage : public SBarInfoCommand
 			else if(type == WEAPONICON)
 			{
 				AWeapon *weapon = statusBar->CPlayer->ReadyWeapon;
-				if(weapon != NULL && weapon->Icon.isValid())
+				if(weapon != NULL)
 				{
-					texture = TexMan[weapon->Icon];
+					FTextureID icon;
+					if (weapon->Icon.isValid())
+					{
+						icon = weapon->Icon;
+					}
+					else
+					{
+						icon = GetWeaponIcon(weapon);
+					}
+					texture = TexMan[icon];
 				}
 			}
 			else if(type == SIGIL)
@@ -305,31 +315,35 @@ class CommandDrawSwitchableImage : public CommandDrawImage
 		}
 		void	Parse(FScanner &sc, bool fullScreenOffsets)
 		{
-			sc.MustGetToken(TK_Identifier);
-			if(sc.Compare("weaponslot"))
-			{
-				condition = WEAPONSLOT;
-				sc.MustGetToken(TK_IntConst);
-				conditionalValue[0] = sc.Number;
-			}
-			else if(sc.Compare("invulnerable"))
-			{
-				condition = INVULNERABILITY;
-			}
-			else if(sc.Compare("keyslot"))
-			{
-				condition = KEYSLOT;
-				sc.MustGetToken(TK_IntConst);
-				conditionalValue[0] = sc.Number;
-			}
-			else if(sc.Compare("armortype"))
-			{
-				condition = ARMORTYPE;
+			if(!sc.CheckToken(TK_StringConst))
 				sc.MustGetToken(TK_Identifier);
-				armorType[0] = FName(sc.String).GetIndex();
-				GetOperation(sc, conditionalOperator[0], conditionalValue[0]);
+			if(sc.TokenType == TK_Identifier)
+			{
+				if(sc.Compare("weaponslot"))
+				{
+					condition = WEAPONSLOT;
+					sc.MustGetToken(TK_IntConst);
+					conditionalValue[0] = sc.Number;
+				}
+				else if(sc.Compare("invulnerable"))
+				{
+					condition = INVULNERABILITY;
+				}
+				else if(sc.Compare("keyslot"))
+				{
+					condition = KEYSLOT;
+					sc.MustGetToken(TK_IntConst);
+					conditionalValue[0] = sc.Number;
+				}
+				else if(sc.Compare("armortype"))
+				{
+					condition = ARMORTYPE;
+					sc.MustGetToken(TK_Identifier);
+					armorType[0] = FName(sc.String).GetIndex();
+					GetOperation(sc, conditionalOperator[0], conditionalValue[0]);
+				}
 			}
-			else
+			if(condition == INVENTORY)
 			{
 				inventoryItem[0] = sc.String;
 				const PClass* item = PClass::FindClass(sc.String);
@@ -547,7 +561,8 @@ class CommandDrawString : public SBarInfoCommand
 		}
 		void	Parse(FScanner &sc, bool fullScreenOffsets)
 		{
-			sc.MustGetToken(TK_Identifier);
+			if(!sc.CheckToken(TK_StringConst))
+				sc.MustGetToken(TK_Identifier);
 			font = V_GetFont(sc.String);
 			if(font == NULL)
 			{
@@ -877,7 +892,8 @@ class CommandDrawNumber : public CommandDrawString
 			sc.MustGetToken(TK_IntConst);
 			length = sc.Number;
 			sc.MustGetToken(',');
-			sc.MustGetToken(TK_Identifier);
+			if(!sc.CheckToken(TK_StringConst))
+				sc.MustGetToken(TK_Identifier);
 			font = V_GetFont(sc.String);
 			if(font == NULL)
 			{
@@ -895,119 +911,126 @@ class CommandDrawNumber : public CommandDrawString
 			}
 			else
 			{
-				sc.MustGetToken(TK_Identifier);
-				if(sc.Compare("health"))
-					value = HEALTH;
-				else if(sc.Compare("armor"))
-					value = ARMOR;
-				else if(sc.Compare("ammo1"))
-					value = AMMO1;
-				else if(sc.Compare("ammo2"))
-					value = AMMO2;
-				else if(sc.Compare("ammo1capacity"))
-					value = AMMO1CAPACITY;
-				else if(sc.Compare("ammo2capacity"))
-					value = AMMO2CAPACITY;
-				else if(sc.Compare("score"))
-					value = SCORE;
-				else if(sc.Compare("ammo")) //request the next string to be an ammo type
-				{
-					bool parenthesized = sc.CheckToken('(');
-
-					value = AMMO;
+				if(!sc.CheckToken(TK_StringConst))
 					sc.MustGetToken(TK_Identifier);
-					inventoryItem = PClass::FindClass(sc.String);
-					if(inventoryItem == NULL || !RUNTIME_CLASS(AAmmo)->IsAncestorOf(inventoryItem)) //must be a kind of ammo
+				value = INVENTORY;
+				if(sc.TokenType == TK_Identifier)
+				{
+					if(sc.Compare("health"))
+						value = HEALTH;
+					else if(sc.Compare("armor"))
+						value = ARMOR;
+					else if(sc.Compare("ammo1"))
+						value = AMMO1;
+					else if(sc.Compare("ammo2"))
+						value = AMMO2;
+					else if(sc.Compare("ammo1capacity"))
+						value = AMMO1CAPACITY;
+					else if(sc.Compare("ammo2capacity"))
+						value = AMMO2CAPACITY;
+					else if(sc.Compare("score"))
+						value = SCORE;
+					else if(sc.Compare("ammo")) //request the next string to be an ammo type
 					{
-						sc.ScriptMessage("'%s' is not a type of ammo.", sc.String);
-						inventoryItem = RUNTIME_CLASS(AAmmo);
+						bool parenthesized = sc.CheckToken('(');
+
+						value = AMMO;
+						if(!parenthesized || !sc.CheckToken(TK_StringConst))
+							sc.MustGetToken(TK_Identifier);
+						inventoryItem = PClass::FindClass(sc.String);
+						if(inventoryItem == NULL || !RUNTIME_CLASS(AAmmo)->IsAncestorOf(inventoryItem)) //must be a kind of ammo
+						{
+							sc.ScriptMessage("'%s' is not a type of ammo.", sc.String);
+							inventoryItem = RUNTIME_CLASS(AAmmo);
+						}
+
+						if(parenthesized) sc.MustGetToken(')');
 					}
-
-					if(parenthesized) sc.MustGetToken(')');
-				}
-				else if(sc.Compare("ammocapacity"))
-				{
-					bool parenthesized = sc.CheckToken('(');
-
-					value = AMMOCAPACITY;
-					sc.MustGetToken(TK_Identifier);
-					inventoryItem = PClass::FindClass(sc.String);
-					if(inventoryItem == NULL || !RUNTIME_CLASS(AAmmo)->IsAncestorOf(inventoryItem)) //must be a kind of ammo
+					else if(sc.Compare("ammocapacity"))
 					{
-						sc.ScriptMessage("'%s' is not a type of ammo.", sc.String);
-						inventoryItem = RUNTIME_CLASS(AAmmo);
+						bool parenthesized = sc.CheckToken('(');
+
+						value = AMMOCAPACITY;
+						if(!parenthesized || !sc.CheckToken(TK_StringConst))
+							sc.MustGetToken(TK_Identifier);
+						inventoryItem = PClass::FindClass(sc.String);
+						if(inventoryItem == NULL || !RUNTIME_CLASS(AAmmo)->IsAncestorOf(inventoryItem)) //must be a kind of ammo
+						{
+							sc.ScriptMessage("'%s' is not a type of ammo.", sc.String);
+							inventoryItem = RUNTIME_CLASS(AAmmo);
+						}
+
+						if(parenthesized) sc.MustGetToken(')');
 					}
-
-					if(parenthesized) sc.MustGetToken(')');
-				}
-				else if(sc.Compare("frags"))
-					value = FRAGS;
-				else if(sc.Compare("kills"))
-					value = KILLS;
-				else if(sc.Compare("monsters"))
-					value = MONSTERS;
-				else if(sc.Compare("items"))
-					value = ITEMS;
-				else if(sc.Compare("totalitems"))
-					value = TOTALITEMS;
-				else if(sc.Compare("secrets"))
-					value = SECRETS;
-				else if(sc.Compare("totalsecrets"))
-					value = TOTALSECRETS;
-				else if(sc.Compare("armorclass"))
-					value = ARMORCLASS;
-				else if(sc.Compare("savepercent"))
-					value = SAVEPERCENT;
-				else if(sc.Compare("airtime"))
-					value = AIRTIME;
-				else if(sc.Compare("accuracy"))
-					value = ACCURACY;
-				else if(sc.Compare("stamina"))
-					value = STAMINA;
-				else if(sc.Compare("keys"))
-					value = KEYS;
-				else if(sc.Compare("globalvar"))
-				{
-					bool parenthesized = sc.CheckToken('(');
-
-					value = GLOBALVAR;
-					sc.MustGetToken(TK_IntConst);
-					if(sc.Number < 0 || sc.Number >= NUM_GLOBALVARS)
-						sc.ScriptError("Global variable number out of range: %d", sc.Number);
-					valueArgument = sc.Number;
-
-					if(parenthesized) sc.MustGetToken(')');
-				}
-				else if(sc.Compare("globalarray")) //acts like variable[playernumber()]
-				{
-					bool parenthesized = sc.CheckToken('(');
-
-					value = GLOBALARRAY;
-					sc.MustGetToken(TK_IntConst);
-					if(sc.Number < 0 || sc.Number >= NUM_GLOBALVARS)
-						sc.ScriptError("Global variable number out of range: %d", sc.Number);
-					valueArgument = sc.Number;
-
-					if(parenthesized) sc.MustGetToken(')');
-				}
-				else if(sc.Compare("poweruptime"))
-				{
-					bool parenthesized = sc.CheckToken('(');
-
-					value = POWERUPTIME;
-					sc.MustGetToken(TK_Identifier);
-					inventoryItem = PClass::FindClass(sc.String);
-					if(inventoryItem == NULL || !RUNTIME_CLASS(APowerupGiver)->IsAncestorOf(inventoryItem))
+					else if(sc.Compare("frags"))
+						value = FRAGS;
+					else if(sc.Compare("kills"))
+						value = KILLS;
+					else if(sc.Compare("monsters"))
+						value = MONSTERS;
+					else if(sc.Compare("items"))
+						value = ITEMS;
+					else if(sc.Compare("totalitems"))
+						value = TOTALITEMS;
+					else if(sc.Compare("secrets"))
+						value = SECRETS;
+					else if(sc.Compare("totalsecrets"))
+						value = TOTALSECRETS;
+					else if(sc.Compare("armorclass"))
+						value = ARMORCLASS;
+					else if(sc.Compare("savepercent"))
+						value = SAVEPERCENT;
+					else if(sc.Compare("airtime"))
+						value = AIRTIME;
+					else if(sc.Compare("accuracy"))
+						value = ACCURACY;
+					else if(sc.Compare("stamina"))
+						value = STAMINA;
+					else if(sc.Compare("keys"))
+						value = KEYS;
+					else if(sc.Compare("globalvar"))
 					{
-						sc.ScriptMessage("'%s' is not a type of PowerupGiver.", sc.String);
-						inventoryItem = RUNTIME_CLASS(APowerupGiver);
-					}
+						bool parenthesized = sc.CheckToken('(');
 
-					if(parenthesized) sc.MustGetToken(')');
+						value = GLOBALVAR;
+						sc.MustGetToken(TK_IntConst);
+						if(sc.Number < 0 || sc.Number >= NUM_GLOBALVARS)
+							sc.ScriptError("Global variable number out of range: %d", sc.Number);
+						valueArgument = sc.Number;
+
+						if(parenthesized) sc.MustGetToken(')');
+					}
+					else if(sc.Compare("globalarray")) //acts like variable[playernumber()]
+					{
+						bool parenthesized = sc.CheckToken('(');
+
+						value = GLOBALARRAY;
+						sc.MustGetToken(TK_IntConst);
+						if(sc.Number < 0 || sc.Number >= NUM_GLOBALVARS)
+							sc.ScriptError("Global variable number out of range: %d", sc.Number);
+						valueArgument = sc.Number;
+
+						if(parenthesized) sc.MustGetToken(')');
+					}
+					else if(sc.Compare("poweruptime"))
+					{
+						bool parenthesized = sc.CheckToken('(');
+
+						value = POWERUPTIME;
+						if(!parenthesized || !sc.CheckToken(TK_StringConst))
+							sc.MustGetToken(TK_Identifier);
+						inventoryItem = PClass::FindClass(sc.String);
+						if(inventoryItem == NULL || !RUNTIME_CLASS(APowerupGiver)->IsAncestorOf(inventoryItem))
+						{
+							sc.ScriptMessage("'%s' is not a type of PowerupGiver.", sc.String);
+							inventoryItem = RUNTIME_CLASS(APowerupGiver);
+						}
+
+						if(parenthesized) sc.MustGetToken(')');
+					}
 				}
-				else
+				if(value == INVENTORY)
 				{
-					value = INVENTORY;
 					inventoryItem = PClass::FindClass(sc.String);
 					if(inventoryItem == NULL || !RUNTIME_CLASS(AInventory)->IsAncestorOf(inventoryItem)) //must be a kind of ammo
 					{
@@ -1498,33 +1521,40 @@ class CommandDrawSelectedInventory : public SBarInfoCommandFlowControl, private 
 			value = SELECTEDINVENTORY;
 			while(true) //go until we get a font (non-flag)
 			{
-				sc.MustGetToken(TK_Identifier);
-				if(sc.Compare("alternateonempty"))
-					alternateOnEmpty = true;
-				else if(sc.Compare("artiflash"))
-					artiflash = true;
-				else if(sc.Compare("alwaysshowcounter"))
-					alwaysShowCounter = true;
-				else if(sc.Compare("itemflash"))
-					itemflash = true;
-				else if(sc.Compare("center"))
-					offset = CENTER;
-				else if(sc.Compare("centerbottom"))
-					offset = static_cast<Offset> (HMIDDLE|BOTTOM);
-				else if(sc.Compare("drawshadow"))
+				if(!sc.CheckToken(TK_StringConst))
+					sc.MustGetToken(TK_Identifier);
+				bool isFont = sc.TokenType != TK_Identifier;
+				if(sc.TokenType == TK_Identifier)
 				{
-					if(sc.CheckToken('('))
+					if(sc.Compare("alternateonempty"))
+						alternateOnEmpty = true;
+					else if(sc.Compare("artiflash"))
+						artiflash = true;
+					else if(sc.Compare("alwaysshowcounter"))
+						alwaysShowCounter = true;
+					else if(sc.Compare("itemflash"))
+						itemflash = true;
+					else if(sc.Compare("center"))
+						offset = CENTER;
+					else if(sc.Compare("centerbottom"))
+						offset = static_cast<Offset> (HMIDDLE|BOTTOM);
+					else if(sc.Compare("drawshadow"))
 					{
-						sc.MustGetToken(TK_IntConst);
-						shadowX = sc.Number;
-						sc.MustGetToken(',');
-						sc.MustGetToken(TK_IntConst);
-						shadowY = sc.Number;
-						sc.MustGetToken(')');
+						if(sc.CheckToken('('))
+						{
+							sc.MustGetToken(TK_IntConst);
+							shadowX = sc.Number;
+							sc.MustGetToken(',');
+							sc.MustGetToken(TK_IntConst);
+							shadowY = sc.Number;
+							sc.MustGetToken(')');
+						}
+						shadow = true;
 					}
-					shadow = true;
+					else
+						isFont = true;
 				}
-				else
+				if(isFont)
 				{
 					font = V_GetFont(sc.String);
 					if(font == NULL)
@@ -1732,17 +1762,25 @@ class CommandAspectRatio : public SBarInfoCommandFlowControl
 				ratio = ASPECTRATIO_16_9;
 			else if(sc.Compare("16:10"))
 				ratio = ASPECTRATIO_16_10;
+			else if(sc.Compare("17:10"))
+				ratio = ASPECTRATIO_17_10;
 			else if(sc.Compare("5:4"))
 				ratio = ASPECTRATIO_5_4;
 			else
 				sc.ScriptError("Unkown aspect ratio: %s", sc.String);
+
+			// Make this ratio known and map to itself
+			// In the future, should another aspect ratio get added, you'd want
+			// to also make any wider ratio remap to this one if suitable.
+			ratioMap[ratio] = ratio;
+
 			SBarInfoCommandFlowControl::Parse(sc, fullScreenOffsets);
 		}
 		void	Tick(const SBarInfoMainBlock *block, const DSBarInfo *statusBar, bool hudChanged)
 		{
 			SBarInfoCommandFlowControl::Tick(block, statusBar, hudChanged);
 
-			SetTruth(CheckRatio(screen->GetWidth(), screen->GetHeight()) == ratio, block, statusBar);
+			SetTruth(ratioMap[CheckRatio(screen->GetWidth(), screen->GetHeight())] == ratio, block, statusBar);
 		}
 	protected:
 		enum Ratio
@@ -1750,11 +1788,17 @@ class CommandAspectRatio : public SBarInfoCommandFlowControl
 			ASPECTRATIO_4_3 = 0,
 			ASPECTRATIO_16_9 = 1,
 			ASPECTRATIO_16_10 = 2,
+			ASPECTRATIO_17_10 = 3,
 			ASPECTRATIO_5_4 = 4
 		};
+		// Since the number of aspect ratios may change at any time, we should
+		// track what aspect ratios the statusbar supports and use the widest
+		// or tallest available ratio.
+		static Ratio	ratioMap[5];
 
-		Ratio	ratio;
+		Ratio			ratio;
 };
+CommandAspectRatio::Ratio CommandAspectRatio::ratioMap[5] = {ASPECTRATIO_4_3,ASPECTRATIO_16_9,ASPECTRATIO_16_10,ASPECTRATIO_16_10,ASPECTRATIO_5_4};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -2035,7 +2079,8 @@ class CommandDrawInventoryBar : public SBarInfoCommand
 			sc.MustGetToken(TK_IntConst);
 			size = sc.Number;
 			sc.MustGetToken(',');
-			sc.MustGetToken(TK_Identifier);
+			if(!sc.CheckToken(TK_StringConst))
+				sc.MustGetToken(TK_Identifier);
 			font = V_GetFont(sc.String);
 			if(font == NULL)
 			{
@@ -2345,7 +2390,8 @@ class CommandDrawBar : public SBarInfoCommand
 			{
 				bool parenthesized = sc.CheckToken('(');
 
-				sc.MustGetToken(TK_Identifier);
+				if(!parenthesized || !sc.CheckToken(TK_StringConst))
+						sc.MustGetToken(TK_Identifier);
 				type = AMMO;
 				data.inventoryItem = PClass::FindClass(sc.String);
 				if(data.inventoryItem == NULL || !RUNTIME_CLASS(AAmmo)->IsAncestorOf(data.inventoryItem)) //must be a kind of ammo
@@ -2370,14 +2416,19 @@ class CommandDrawBar : public SBarInfoCommand
 				type = SAVEPERCENT;
 			else if(sc.Compare("poweruptime"))
 			{
+				bool parenthesized = sc.CheckToken('(');
+
 				type = POWERUPTIME;
-				sc.MustGetToken(TK_Identifier);
+				if(!parenthesized || !sc.CheckToken(TK_StringConst))
+						sc.MustGetToken(TK_Identifier);
 				data.inventoryItem = PClass::FindClass(sc.String);
 				if(data.inventoryItem == NULL || !RUNTIME_CLASS(APowerupGiver)->IsAncestorOf(data.inventoryItem))
 				{
 					sc.ScriptMessage("'%s' is not a type of PowerupGiver.", sc.String);
 					data.inventoryItem = RUNTIME_CLASS(APowerupGiver);
 				}
+
+				if(parenthesized) sc.MustGetToken(')');
 			}
 			else
 			{
@@ -2595,7 +2646,7 @@ class CommandDrawBar : public SBarInfoCommand
 		{
 			bool extendedSyntax = sc.CheckToken('(');
 
-			if(sc.CheckToken(TK_Identifier)) //comparing reference
+			if(sc.CheckToken(TK_Identifier) || (extendedSyntax && sc.CheckToken(TK_StringConst))) //comparing reference
 			{
 				data.inventoryItem = PClass::FindClass(sc.String);
 				if(data.inventoryItem == NULL || !RUNTIME_CLASS(AInventory)->IsAncestorOf(data.inventoryItem)) //must be a kind of inventory
@@ -2676,7 +2727,6 @@ class CommandIsSelected : public SBarInfoCommandFlowControl
 
 		void	Parse(FScanner &sc, bool fullScreenOffsets)
 		{
-			//Using StringConst instead of Identifieres is deperecated!
 			if(sc.CheckToken(TK_Identifier))
 			{
 				if(sc.Compare("not"))
@@ -2793,7 +2843,8 @@ class CommandPlayerType : public SBarInfoCommandFlowControl
 
 		void	Parse(FScanner &sc, bool fullScreenOffsets)
 		{
-			sc.MustGetToken(TK_Identifier);
+			if(!sc.CheckToken(TK_StringConst))
+				sc.MustGetToken(TK_Identifier);
 			do
 			{
 				bool foundClass = false;
@@ -2810,7 +2861,7 @@ class CommandPlayerType : public SBarInfoCommandFlowControl
 				if(!sc.CheckToken(','))
 					break;
 			}
-			while(sc.CheckToken(TK_Identifier));
+			while(sc.CheckToken(TK_Identifier) || sc.CheckToken(TK_StringConst));
 			SBarInfoCommandFlowControl::Parse(sc, fullScreenOffsets);
 		}
 		void	Tick(const SBarInfoMainBlock *block, const DSBarInfo *statusBar, bool hudChanged)
@@ -2846,7 +2897,8 @@ class CommandHasWeaponPiece : public SBarInfoCommandFlowControl
 
 		void	Parse(FScanner &sc, bool fullScreenOffsets)
 		{
-			sc.MustGetToken(TK_Identifier);
+			if(!sc.CheckToken(TK_StringConst))
+				sc.MustGetToken(TK_Identifier);
 			weapon = PClass::FindClass(sc.String);
 			if(weapon == NULL || !RUNTIME_CLASS(AWeapon)->IsAncestorOf(weapon)) //must be a weapon
 			{
@@ -3031,11 +3083,13 @@ class CommandWeaponAmmo : public SBarInfoCommandFlowControl
 
 		void	Parse(FScanner &sc, bool fullScreenOffsets)
 		{
-			sc.MustGetToken(TK_Identifier);
-			if(sc.Compare("not"))
+			if(!sc.CheckToken(TK_StringConst))
+				sc.MustGetToken(TK_Identifier);
+			if(sc.Compare("not") && sc.TokenType == TK_Identifier)
 			{
 				negate = true;
-				sc.MustGetToken(TK_Identifier);
+				if(!sc.CheckToken(TK_StringConst))
+					sc.MustGetToken(TK_Identifier);
 			}
 			for(int i = 0;i < 2;i++)
 			{
@@ -3049,12 +3103,14 @@ class CommandWeaponAmmo : public SBarInfoCommandFlowControl
 				if(sc.CheckToken(TK_OrOr))
 				{
 					conditionAnd = false;
-					sc.MustGetToken(TK_Identifier);
+					if(!sc.CheckToken(TK_StringConst))
+						sc.MustGetToken(TK_Identifier);
 				}
 				else if(sc.CheckToken(TK_AndAnd))
 				{
 					conditionAnd = true;
-					sc.MustGetToken(TK_Identifier);
+					if(!sc.CheckToken(TK_StringConst))
+						sc.MustGetToken(TK_Identifier);
 				}
 				else
 					break;
@@ -3134,11 +3190,13 @@ class CommandInInventory : public SBarInfoCommandFlowControl
 
 		void	Parse(FScanner &sc, bool fullScreenOffsets)
 		{
-			sc.MustGetToken(TK_Identifier);
-			if(sc.Compare("not"))
+			if(!sc.CheckToken(TK_StringConst))
+				sc.MustGetToken(TK_Identifier);
+			if(sc.Compare("not") && sc.TokenType == TK_Identifier)
 			{
 				negate = true;
-				sc.MustGetToken(TK_Identifier);
+				if(!sc.CheckToken(TK_StringConst))
+					sc.MustGetToken(TK_Identifier);
 			}
 			for(int i = 0;i < 2;i++)
 			{
@@ -3158,12 +3216,14 @@ class CommandInInventory : public SBarInfoCommandFlowControl
 				if(sc.CheckToken(TK_OrOr))
 				{
 					conditionAnd = false;
-					sc.MustGetToken(TK_Identifier);
+					if(!sc.CheckToken(TK_StringConst))
+						sc.MustGetToken(TK_Identifier);
 				}
 				else if(sc.CheckToken(TK_AndAnd))
 				{
 					conditionAnd = true;
-					sc.MustGetToken(TK_Identifier);
+					if(!sc.CheckToken(TK_StringConst))
+						sc.MustGetToken(TK_Identifier);
 				}
 				else
 					break;

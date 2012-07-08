@@ -380,7 +380,7 @@ bool P_CheckFor3DFloorHit(AActor * mo)
 
 		if(rover->flags & FF_SOLID && rover->model->SecActTarget)
 		{
-			if(mo->z == rover->top.plane->ZatPoint(mo->x, mo->y)) 
+			if(mo->floorz == rover->top.plane->ZatPoint(mo->x, mo->y)) 
 			{
 				rover->model->SecActTarget->TriggerAction (mo, SECSPAC_HitFloor);
 				return true;
@@ -410,7 +410,7 @@ bool P_CheckFor3DCeilingHit(AActor * mo)
 
 		if(rover->flags & FF_SOLID && rover->model->SecActTarget)
 		{
-			if(mo->z+mo->height == rover->bottom.plane->ZatPoint(mo->x, mo->y)) 
+			if(mo->ceilingz == rover->bottom.plane->ZatPoint(mo->x, mo->y)) 
 			{
 				rover->model->SecActTarget->TriggerAction (mo, SECSPAC_HitCeiling);
 				return true;
@@ -710,7 +710,7 @@ lightlist_t * P_GetPlaneLight(sector_t * sector, secplane_t * plane, bool unders
 //==========================================================================
 
 void P_LineOpening_XFloors (FLineOpening &open, AActor * thing, const line_t *linedef, 
-							fixed_t x, fixed_t y, fixed_t refx, fixed_t refy)
+							fixed_t x, fixed_t y, fixed_t refx, fixed_t refy, bool restrict)
 {
     if(thing)
     {
@@ -756,7 +756,7 @@ void P_LineOpening_XFloors (FLineOpening &open, AActor * thing, const line_t *li
 						lowestceilingpic = *rover->bottom.texture;
 					}
 					
-					if(ff_top > highestfloor && delta1 < delta2)
+					if(ff_top > highestfloor && delta1 < delta2 && (!restrict || thing->z >= ff_top))
 					{
 						highestfloor = ff_top;
 						highestfloorpic = *rover->top.texture;
