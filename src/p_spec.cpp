@@ -1252,13 +1252,11 @@ void P_SpawnSectorSpecial (sector_t * sector)
 		break;
 
 	case dScroll_EastLavaDamage:
+		new DStrobe (sector, STROBEBRIGHT, FASTDARK, false);
 		new DScroller (DScroller::sc_floor, (-FRACUNIT/2)<<3,
 			0, -1, int(sector-sectors), 0);
 		break;
 
-		case dScroll_EastLavaDamage:
-			new DStrobe (sector, STROBEBRIGHT, FASTDARK, false);
-			new DScroller (DScroller::sc_floor, (-FRACUNIT/2)<<3,
 	case Sector_Hidden:
 		sector->MoreFlags |= SECF_HIDDEN;
 		sector->special &= 0xff00;
