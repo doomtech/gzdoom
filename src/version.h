@@ -42,7 +42,7 @@
 /** Lots of different version numbers **/
 
 #define DOTVERSIONSTR_NOREV "1.6.0"
-#define ZDVER_STRING "2.6.0"
+#define ZDVER_STRING "2.6.1"
 
 // The version string the user actually sees.
 #define DOTVERSIONSTR DOTVERSIONSTR_NOREV " (r" SVN_REVISION_STRING ") / ZDoom " ZDVER_STRING " (r" ZD_SVN_REVISION_STRING ")"
