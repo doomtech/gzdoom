@@ -121,8 +121,7 @@ static inline const char *MakeSaveSig()
 #define BUGS_FORUM_URL	"http://forum.drdteam.org/viewforum.php?f=24"
 
 #ifdef unix
-#define HOME_DIR "~/.gzdoom"
-#define GAME_DIR ".gzdoom"
+#define GAME_DIR ".config/gzdoom"
 #elif defined(__APPLE__)
 #define GAME_DIR GAMENAME
 #else
