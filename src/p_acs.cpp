@@ -3377,6 +3377,9 @@ enum EACSFunctions
 	ACSF_ACS_NamedExecuteAlways,
 	ACSF_UniqueTID,
 	ACSF_IsTIDUsed,
+	ACSF_Sqrt,
+	ACSF_FixedSqrt,
+	ACSF_VectorLength,
 
 	// ZDaemon
 	ACSF_GetTeamScore = 19620,
@@ -3900,6 +3903,15 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
 		case ACSF_IsTIDUsed:
 			return P_IsTIDUsed(args[0]);
 			break;
+
+		case ACSF_Sqrt:
+			return xs_FloorToInt(sqrt(double(args[0])));
+
+		case ACSF_FixedSqrt:
+			return FLOAT2FIXED(sqrt(FIXED2DBL(args[0])));
+
+		case ACSF_VectorLength:
+			return FLOAT2FIXED(TVector2<double>(FIXED2DBL(args[0]), FIXED2DBL(args[1])).Length());
 
 		default:
 			break;

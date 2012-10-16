@@ -603,7 +603,7 @@ public:
 		PCD_SCRIPTWAITNAMED,
 		PCD_TRANSLATIONRANGE3,
 
-/*361*/	PCODE_COMMAND_COUNT
+/*363*/	PCODE_COMMAND_COUNT
 	};
 
 	// Some constants used by ACS scripts
