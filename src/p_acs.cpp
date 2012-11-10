@@ -2283,13 +2283,9 @@ int DLevelScript::ThingCount (int type, int stringid, int tid, int tag)
 	int count = 0;
 	bool replacemented = false;
 
-	if (type >= MAX_SPAWNABLES)
+	if (type > 0)
 	{
-		return 0;
-	}
-	else if (type > 0)
-	{
-		kind = SpawnableThings[type];
+		kind = P_GetSpawnableType(type);
 		if (kind == NULL)
 			return 0;
 	}
@@ -2766,6 +2762,8 @@ enum
 	APROP_Mass			= 32,
 	APROP_Accuracy      = 33,
 	APROP_Stamina       = 34,
+	APROP_Height		= 35,
+	APROP_Radius		= 36,
 };
 
 // These are needed for ACS's APROP_RenderStyle
@@ -3045,6 +3043,8 @@ int DLevelScript::GetActorProperty (int tid, int property)
 	case APROP_Mass: 		return actor->Mass;
 	case APROP_Accuracy:    return actor->accuracy;
 	case APROP_Stamina:     return actor->stamina;
+	case APROP_Height:		return actor->height;
+	case APROP_Radius:		return actor->radius;
 
 	default:				return 0;
 	}
@@ -3085,6 +3085,8 @@ int DLevelScript::CheckActorProperty (int tid, int property, int value)
 		case APROP_Mass:
 		case APROP_Accuracy:
 		case APROP_Stamina:
+		case APROP_Height:
+		case APROP_Radius:
 			return (GetActorProperty(tid, property) == value);
 
 		// Boolean values need to compare to a binary version of value
