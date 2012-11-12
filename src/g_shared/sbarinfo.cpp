@@ -483,7 +483,7 @@ void SBarInfo::ParseSBarInfo(int lump)
 				{
 					baselump = Wads.CheckNumForFullName("sbarinfo/doom.txt", true);
 				}
-				if(sc.Compare("Doom64"))
+				else if(sc.Compare("Doom64"))
 				{
 					baselump = Wads.CheckNumForFullName("sbarinfo/doom64.txt", true);
 				}

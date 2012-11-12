@@ -38,7 +38,7 @@ gameinfo
 	definventorymaxamount = 25
 	defaultrespawntime = 12
 	defaultdropstyle = 1
-	endoom = "ENDOOM"
+	endoom = ""
 	player5start = 4001
 	pickupcolor = "d6 ba 45"
 	quitmessages = "$QUITMSG30", "$QUITMSG31", "$QUITMSG32", "$QUITMSG33"
