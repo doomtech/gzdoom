@@ -2452,7 +2452,16 @@ void V_InitFonts()
 	}
 	if (!(ConFont = FFont::FindFont("ConsoleFont")))
 	{
-		ConFont = new FSingleLumpFont ("ConsoleFont", Wads.GetNumForName ("CONFONT"));
+		if (gameinfo.gametype == GAME_Doom64)
+		{
+			// Get console font from zdoom.pk3, since the CONFONT lump 
+			// in the IWAD is a graphic that cannot be used as-is.
+			ConFont = new FSingleLumpFont ("ConsoleFont", Wads.CheckNumForName ("CONFONT", ns_global, 0));
+		}
+		else
+		{
+			ConFont = new FSingleLumpFont ("ConsoleFont", Wads.GetNumForName ("CONFONT"));
+		}
 	}
 	if (!(IntermissionFont = FFont::FindFont("IntermissionFont")))
 	{

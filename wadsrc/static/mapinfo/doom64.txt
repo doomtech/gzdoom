@@ -3,7 +3,7 @@ gameinfo
 {
 	titlepage = "TITLEPIC"
 	creditpage = "CREDIT"
-	titlemusic = ""
+	titlemusic = "MUSTITLE"
 	titletime = 11
 	advisorytime = 0
 	pagetime = 5
@@ -123,167 +123,283 @@ adddefaultmap
 	sky1 = "SPACE"
 }
 
-map MAP01 "Staging Area"
+map MAP01 lookup "SHUSTR01"
 {
-	next = MAP02
+	levelnum = 1
+	music = "MUSAMB04"
+	cluster = 0
 }
 
-map MAP02 "The Terraformer"
+map MAP02 lookup "SHUSTR02"
 {
-	next = MAP03
+	levelnum = 2
+	music = "MUSAMB05"
+	cluster = 0
 }
 
-map MAP03 "Main Engineering"
+map MAP03 lookup "SHUSTR03"
 {
-	next = MAP04
+	levelnum = 3
+	music = "MUSAMB13"
+	cluster = 0
 }
 
-map MAP04 "Holding Area"
+map MAP04 lookup "SHUSTR04"
 {
-	next = MAP05
+	levelnum = 4
+	music = "MUSAMB12"
+	cluster = 0
 }
 
-map MAP05 "Tech Center"
+map MAP05 lookup "SHUSTR05"
 {
-	next = MAP06
+	levelnum = 5
+	music = "MUSAMB09"
+	cluster = 0
 }
 
-map MAP06 "Alpha Quadrant"
+map MAP06 lookup "SHUSTR06"
 {
-	next = MAP07
+	levelnum = 6
+	music = "MUSAMB15"
+	cluster = 0
 }
 
-map MAP07 "Research Lab"
+map MAP07 lookup "SHUSTR07"
 {
-	next = MAP08
+	levelnum = 7
+	music = "MUSAMB16"
+	cluster = 0
 }
 
-map MAP08 "Final Outpost"
+map MAP08 lookup "SHUSTR08"
 {
-	next = MAP09
+	levelnum = 8
+	music = "MUSAMB18"
+	cluster = 0
 }
 
-map MAP09 "Even Simpler"
+map MAP09 lookup "SHUSTR09"
 {
-	next = MAP10
+	levelnum = 9
+	music = "MUSAMB03"
+	cluster = 1
 }
 
-map MAP10 "The Bleeding"
+map MAP10 lookup "SHUSTR10"
 {
-	next = MAP11
+	levelnum = 10
+	music = "MUSAMB06"
+	cluster = 0
 }
 
-map MAP11 "Terror Core"
+map MAP11 lookup "SHUSTR11"
 {
-	next = MAP12
+	levelnum = 11
+	music = "MUSAMB07"
+	cluster = 0
 }
 
-map MAP12 "Altar Of Pain"
+map MAP12 lookup "SHUSTR12"
 {
-	next = MAP13
+	levelnum = 12
+	music = "MUSAMB10"
+	cluster = 0
 }
 
-map MAP13 "Dark Citadel"
+map MAP13 lookup "SHUSTR13"
 {
-	next = MAP14
+	levelnum = 13
+	music = "MUSAMB01"
+	cluster = 0
 }
 
-map MAP14 "Eye Of The Storm"
+map MAP14 lookup "SHUSTR14"
 {
-	next = MAP15
+	levelnum = 14
+	music = "MUSAMB14"
+	cluster = 0
 }
 
-map MAP15 "Dark Entries"
+map MAP15 lookup "SHUSTR15"
 {
-	next = MAP16
+	levelnum = 15
+	music = "MUSAMB19"
+	cluster = 0
 }
 
-map MAP16 "Blood Keep"
+map MAP16 lookup "SHUSTR16"
 {
-	next = MAP17
+	levelnum = 16
+	music = "MUSAMB05"
+	cluster = 0
 }
 
-map MAP17 "Watch Your Step"
+map MAP17 lookup "SHUSTR17"
 {
-	next = MAP18
+	levelnum = 17
+	music = "MUSAMB11"
+	cluster = 0
 }
 
-map MAP18 "Spawned Fear"
+map MAP18 lookup "SHUSTR18"
 {
-	next = MAP19
+	levelnum = 18
+	music = "MUSAMB02"
+	cluster = 0
 }
 
-map MAP19 "The Spiral"
+map MAP19 lookup "SHUSTR19"
 {
-	next = MAP20
+	levelnum = 19
+	music = "MUSAMB08"
+	cluster = 0
 }
 
-map MAP20 "Breakdown"
+map MAP20 lookup "SHUSTR20"
 {
-	next = MAP21
+	levelnum = 20
+	music = "MUSAMB20"
+	cluster = 0
 }
 
-map MAP21 "Pitfalls"
+map MAP21 lookup "SHUSTR21"
 {
-	next = MAP22
+	levelnum = 21
+	music = "MUSAMB17"
+	cluster = 0
 }
 
-map MAP22 "Burnt Offerings"
+map MAP22 lookup "SHUSTR22"
 {
-	next = MAP23
+	levelnum = 22
+	music = "MUSAMB09"
+	cluster = 0
 }
 
-map MAP23 "Unholy Temple"
+map MAP23 lookup "SHUSTR23"
 {
-	next = MAP24
+	levelnum = 23
+	music = "MUSAMB16"
+	cluster = 0
 }
 
-map MAP24 "No Escape"
+map MAP24 lookup "SHUSTR24"
 {
-	next = MAP25
+	levelnum = 24
+	music = "MUSAMB06"
+	cluster = 0
 }
 
-map MAP25 "Cat And Mouse"
+map MAP25 lookup "SHUSTR25"
 {
-	next = MAP26
+	levelnum = 25
+	music = "MUSAMB05"
+	cluster = 0
 }
 
-map MAP26 "Hardcore"
+map MAP26 lookup "SHUSTR26"
 {
-	next = MAP27
+	levelnum = 26
+	music = "MUSAMB06"
+	cluster = 0
 }
 
-map MAP27 "Playground"
+map MAP27 lookup "SHUSTR27"
 {
-	next = MAP28
+	levelnum = 27
+	music = "MUSAMB02"
+	cluster = 0
 }
 
-map MAP28 "The Absolution"
+map MAP28 lookup "SHUSTR28"
 {
-	next = MAP29
+	levelnum = 28
+	music = "MUSAMB07"
+	cluster = 6
 }
 
-map MAP29 "Outpost Omega"
+map MAP29 lookup "SHUSTR29"
 {
-	next = MAP05
+	levelnum = 29
+	music = "MUSAMB09"
+	cluster = 2
 }
 
-map MAP30 "The Lair"
+map MAP30 lookup "SHUSTR30"
 {
-	next = MAP13
+	levelnum = 30
+	music = "MUSAMB10"
+	cluster = 3
 }
 
-map MAP31 "In The Void"
+map MAP31 lookup "SHUSTR31"
 {
-	next = MAP19
+	levelnum = 31
+	music = "MUSAMB11"
+	cluster = 4
 }
 
-map MAP32 "Hectic"
+map MAP32 lookup "SHUSTR32"
 {
-	next = MAP02
+	levelnum = 32
+	music = "MUSAMB12"
+	cluster = 5
 }
 
-map MAP33 "Intro"
+map MAP33 lookup "SHUSTR33"
 {
-	next = MAP01
+	levelnum = 33
+	music = "MUSINTRO"
 }
+
+cluster 1
+{
+	pic = "EVIL"
+	pic_x = 64
+	pic_y = 30
+	entertext =	lookup, "S1TEXT"
+}
+
+cluster 2
+{
+	pic = "EVIL"
+	pic_x = 64
+	pic_y = 30
+	entertext =	lookup, "S2TEXT"
+}
+
+cluster 3
+{
+	pic = "EVIL"
+	pic_x = 64
+	pic_y = 30
+	entertext =	lookup, "S3TEXT"
+}
+
+cluster 4
+{
+	pic = "EVIL"
+	pic_x = 64
+	pic_y = 30
+	entertext =	lookup, "S4TEXT"
+}
+
+cluster 5
+{
+	pic = "EVIL"
+	pic_x = 64
+	pic_y = 30
+	entertext =	lookup, "S5TEXT"
+}
+
+cluster 6
+{
+	pic = "FINAL"
+	music = "MUSFINAL"
+	pic_x = 0
+	pic_y = 0
+	scrolltextend
+	exittext = lookup, "S6TEXT"
+}
+

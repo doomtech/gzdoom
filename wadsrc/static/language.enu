@@ -263,6 +263,40 @@ THUSTR_30 = "level 30: last call";
 THUSTR_31 = "level 31: pharaoh";
 THUSTR_32 = "level 32: caribbean";
 
+SHUSTR_01 = "Staging Area";
+SHUSTR_02 = "The Terraformer";
+SHUSTR_03 = "Main Engineering";
+SHUSTR_04 = "Holding Area";
+SHUSTR_05 = "Tech Center";
+SHUSTR_06 = "Alpha Quadrant";
+SHUSTR_07 = "Research Lab";
+SHUSTR_08 = "Final Outpost";
+SHUSTR_09 = "Even Simpler";
+SHUSTR_10 = "The Bleeding";
+SHUSTR_11 = "Terror Core";
+SHUSTR_12 = "Altar of Pain";
+SHUSTR_13 = "Dark Citadel";
+SHUSTR_14 = "Eye of the Storm";
+SHUSTR_15 = "Dark Entries";
+SHUSTR_16 = "Blood Keep";
+SHUSTR_17 = "Watch Your Step";
+SHUSTR_18 = "Spawned Fear";
+SHUSTR_19 = "The Spiral";
+SHUSTR_20 = "Breakdown";
+SHUSTR_21 = "Pitfalls";
+SHUSTR_22 = "Burnt Offerings";
+SHUSTR_23 = "Unholy Temple";
+SHUSTR_24 = "No Escape";
+SHUSTR_25 = "Cat And Mouse";
+SHUSTR_26 = "HardCore";
+SHUSTR_27 = "Playground";
+SHUSTR_28 = "The Absolution";
+SHUSTR_29 = "Outpost Omega";
+SHUSTR_30 = "The Lair";
+SHUSTR_31 = "In The Void";
+SHUSTR_32 = "Hectic";
+SHUSTR_33 = "TITLE";
+
 HUSTR_TALKTOSELF1 = "You mumble to yourself";
 HUSTR_TALKTOSELF2 = "Who's there?";
 HUSTR_TALKTOSELF3 = "You scare yourself";
@@ -544,6 +578,82 @@ T6TEXT =
 	"\n"
 	"As you step off the transport, you hear\n"
 	"the stomp of a cyberdemon's iron shoe.";
+S1TEXT =
+	"you cackle as the\n"
+	"familiarity of the\n"
+	"situation occurs to you.\n"
+	"The gateway to the Demons\n"
+	"domain was too accessible.\n"
+	"You realize the demons mock\n"
+	"you with their invitation.\n"
+	"It does not matter...\n"
+	"The demons spawn like rats\n"
+	"and you have the grade AAA\n"
+	"U.A.C. poison they crave.\n"
+	"Your bloodthirsty scream\n"
+	"shatters the teleport haze.\n"
+	"Once again you find yourself\n"
+	"amidst...";
+S2TEXT =
+	"The vast silence reminds\n"
+	"you of the military morgue.\n"
+	"\n"
+	"You knew the installation\n"
+	"had a classified level.\n"
+	"\n"
+	"The U.A.C. had some good\n"
+	"reason to hide this place.\n"
+	"\n"
+	"You wonder what it\n"
+	"could be...";
+S3TEXT =
+	"You smile.\n"
+	"\n"
+	"What strange place have\n"
+	"you stumbled upon?\n"
+	"\n"
+	"The Demons did not expect\n"
+	"you to survive this far.\n"
+	"You feel their demonic\n"
+	"presence waiting for you...\n"
+	"\n"
+	"Let them taste their guts!";
+S4TEXT =
+	"You wretch as a strange\n"
+	"acrid odor assaults you.\n"
+	"\n"
+	"Death and Demon carcass!\n"
+	"\n"
+	"No nightmare could have\n"
+	"prepared you for this.\n"
+	"\n"
+	"You realize that this\n"
+	"place was not meant for\n"
+	"living humans.";
+S5TEXT =
+	"Congratulations!\n"
+	"You found...\n"
+	"\n"
+	"HECTIC\n"
+	"\n"
+	"Only the best will reap\n"
+	"its rewards.";
+S6TEXT =
+	"Finally...\n"
+	"The mother of all demons\n"
+	"is dead!\n"
+	"\n"
+	"The blood pours from\n"
+	"your eyes as you stand\n"
+	"in defiance.\n"
+	"\n"
+	"As the only marine to\n"
+	"endure the slaughter-\n"
+	"you decide to remain\n"
+	"in Hell and ensure no\n"
+	"demon ever rises again.\n"
+	"\n"
+	"The End.";
 
 // Cast list (must appear in this order)
 CC_ZOMBIE = "ZOMBIEMAN";
