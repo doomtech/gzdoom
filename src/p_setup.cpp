@@ -396,7 +396,7 @@ MapData *P_OpenMapData(const char * mapname)
 			if(!map->isText && stricmp(lumpname, "THINGS") != 0)
 			{
 				DWORD id;
-				map->file = Wads.ReopenLumpNum(lump_name);
+				wadReader = map->file = Wads.ReopenLumpNum(lump_name);
 				map->file->Read(&id, sizeof(id));
 				if (id != IWAD_ID && id != PWAD_ID)
 					return map;
@@ -433,6 +433,11 @@ MapData *P_OpenMapData(const char * mapname)
 	{
 		char maplabel[9]="";
 		int index=0;
+
+		if (map->resource == NULL)
+		{
+			map->resource = FResourceFile::OpenResourceFile(Wads.GetLumpFullName(Wads.CheckNumForName(mapname)), wadReader, true);
+		}
 
 		map->MapLumps[0].Reader = map->resource->GetLump(0)->NewReader();
 
@@ -565,6 +570,11 @@ void MapData::GetChecksum(BYTE cksum[16])
 		{
 			Seek(ML_BEHAVIOR);
 			md5.Update(file, Size(ML_BEHAVIOR));
+		}
+		if (HasMacros)
+		{
+			Seek(ML_MACROS);
+			md5.Update(file, Size(ML_MACROS));
 		}
 	}
 	md5.Final(cksum);
