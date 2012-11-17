@@ -61,6 +61,8 @@ static cluster_info_t TheDefaultClusterInfo;
 
 TArray<FEpisode> AllEpisodes;
 
+extern TMap<int, FString> HexenMusic;
+
 //==========================================================================
 //
 //
@@ -269,6 +271,7 @@ void level_info_t::Reset()
 	teamdamage = 0.f;
 	specialactions.Clear();
 	DefaultEnvironment = 0;
+	PrecacheSounds.Clear();
 }
 
 
@@ -301,6 +304,10 @@ FString level_info_t::LookupLevelName()
 			else if (mapname[0] == 'M' && mapname[1] == 'A' && mapname[2] == 'P')
 			{
 				mysnprintf (checkstring, countof(checkstring), "%d: ", atoi(mapname + 3));
+			}
+			else if (mapname[0] == 'L' && mapname[1] == 'E' && mapname[2] == 'V' && mapname[3] == 'E' && mapname[4] == 'L')
+			{
+				mysnprintf (checkstring, countof(checkstring), "%d: ", atoi(mapname + 5));
 			}
 			thename = strstr (lookedup, checkstring);
 			if (thename == NULL)
@@ -934,8 +941,6 @@ DEFINE_MAP_OPTION(music, true)
 {
 	parse.ParseAssign();
 	parse.ParseMusic(info->Music, info->musicorder);
-	// Flag the level so that the $MAP command doesn't override this.
-	info->flags2 |= LEVEL2_MUSICDEFINED;
 }
 
 DEFINE_MAP_OPTION(intermusic, true)
@@ -1046,7 +1051,7 @@ DEFINE_MAP_OPTION(specialaction, true)
 	sa->Action = P_FindLineSpecial(parse.sc.String, &min_arg, &max_arg);
 	if (sa->Action == 0 || min_arg < 0)
 	{
-		parse.sc.ScriptError("Unknown specialaction '%s'");
+		parse.sc.ScriptError("Unknown specialaction '%s'", parse.sc.String);
 	}
 	int j = 0;
 	while (j < 5 && parse.sc.CheckString(","))
@@ -1055,6 +1060,25 @@ DEFINE_MAP_OPTION(specialaction, true)
 		sa->Args[j++] = parse.sc.Number;
 	}
 	if (parse.format_type == parse.FMT_Old) parse.sc.SetCMode(false);
+}
+
+DEFINE_MAP_OPTION(PrecacheSounds, true)
+{
+	parse.ParseAssign();
+
+	do
+	{
+		parse.sc.MustGetString();
+		FSoundID snd = parse.sc.String;
+		if (snd == 0)
+		{
+			parse.sc.ScriptMessage("Unknown sound \"%s\"", parse.sc.String);
+		}
+		else
+		{
+			info->PrecacheSounds.Push(snd);
+		}
+	} while (parse.sc.CheckString(","));
 }
 
 DEFINE_MAP_OPTION(redirect, true)
@@ -1301,6 +1325,8 @@ MapFlagHandlers[] =
 	{ "endofgame",						MITYPE_SETFLAG2,	LEVEL2_ENDGAME, 0 },
 	{ "nostatistics",					MITYPE_SETFLAG2,	LEVEL2_NOSTATISTICS, 0 },
 	{ "noautosavehint",					MITYPE_SETFLAG2,	LEVEL2_NOAUTOSAVEHINT, 0 },
+	{ "forgetstate",					MITYPE_SETFLAG2,	LEVEL2_FORGETSTATE, 0 },
+	{ "rememberstate",					MITYPE_CLRFLAG2,	LEVEL2_FORGETSTATE, 0 },
 	{ "unfreezesingleplayerconversations",MITYPE_SETFLAG2,	LEVEL2_CONV_SINGLE_UNFREEZE, 0 },
 	{ "nobotnodes",						MITYPE_IGNORE,	0, 0 },		// Skulltag option: nobotnodes
 	{ "compat_shorttex",				MITYPE_COMPATFLAG, COMPATF_SHORTTEX, 0 },
@@ -1572,6 +1598,14 @@ level_info_t *FMapInfoParser::ParseMapHeader(level_info_t &defaultinfo)
 	// Set up levelnum now so that you can use Teleport_NewMap specials
 	// to teleport to maps with standard names without needing a levelnum.
 	levelinfo->levelnum = GetDefaultLevelNum(levelinfo->mapname);
+
+	// Does this map have a song defined via SNDINFO's $map command?
+	// Set that as this map's default music if it does.
+	FString *song;
+	if ((song = HexenMusic.CheckKey(levelinfo->levelnum)) != NULL)
+	{
+		levelinfo->Music = *song;
+	}
 
 	return levelinfo;
 }
@@ -1866,7 +1900,6 @@ void FMapInfoParser::ParseMapInfo (int lump, level_info_t &gamedefaults, level_i
 		}
 	}
 }
-
 
 //==========================================================================
 //

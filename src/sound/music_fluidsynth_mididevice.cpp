@@ -42,6 +42,7 @@
 #include "m_swap.h"
 #include "w_wad.h"
 #include "v_text.h"
+#include "cmdlib.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -49,9 +50,11 @@
 
 #ifdef _WIN32
 #ifndef _M_X64
-#define FLUIDSYNTHLIB	"fluidsynth.dll"
+#define FLUIDSYNTHLIB1	"fluidsynth.dll"
+#define FLUIDSYNTHLIB2	"libfluidsynth.dll"
 #else
-#define FLUIDSYNTHLIB	"fluidsynth64.dll"
+#define FLUIDSYNTHLIB1	"fluidsynth64.dll"
+#define FLUIDSYNTHLIB2	"libfluidsynth64.dll"
 #endif
 #else
 #include <dlfcn.h>
@@ -471,7 +474,21 @@ int FluidSynthMIDIDevice::LoadPatchSets(const char *patches)
 	count = 0;
 	while (tok != NULL)
 	{
-		if (FLUID_FAILED != fluid_synth_sfload(FluidSynth, tok, count == 0))
+		FString path;
+#ifdef _WIN32
+		// If the path does not contain any path separators, automatically
+		// prepend $PROGDIR to the path.
+		if (strcspn(tok, ":/\\") == strlen(tok))
+		{
+			path << "$PROGDIR/" << tok;
+			path = NicePath(path);
+		}
+		else
+#endif
+		{
+			path = NicePath(tok);
+		}
+		if (FLUID_FAILED != fluid_synth_sfload(FluidSynth, path, count == 0))
 		{
 			DPrintf("Loaded patch set %s.\n", tok);
 			count++;
@@ -650,16 +667,21 @@ bool FluidSynthMIDIDevice::LoadFluidSynth()
 		{ (void **)&fluid_synth_sysex,					"fluid_synth_sysex" },
 	};
 	int fail = 0;
+	const char *libname;
 
 #ifdef _WIN32
-	FluidSynthDLL = LoadLibrary(FLUIDSYNTHLIB);
+	FluidSynthDLL = LoadLibrary((libname = FLUIDSYNTHLIB1));
 	if (FluidSynthDLL == NULL)
 	{
-		Printf(TEXTCOLOR_RED"Could not load " FLUIDSYNTHLIB "\n");
-		return false;
+		FluidSynthDLL = LoadLibrary((libname = FLUIDSYNTHLIB2));
+		if (FluidSynthDLL == NULL)
+		{
+			Printf(TEXTCOLOR_RED"Could not load " FLUIDSYNTHLIB1 " or " FLUIDSYNTHLIB2 "\n");
+			return false;
+		}
 	}
 #else
-	FluidSynthSO = dlopen(FLUIDSYNTHLIB, RTLD_LAZY);
+	FluidSynthSO = dlopen((libname = FLUIDSYNTHLIB), RTLD_LAZY);
 	if (FluidSynthSO == NULL)
 	{
 		Printf(TEXTCOLOR_RED"Could not load " FLUIDSYNTHLIB ": %s\n", dlerror());
@@ -676,7 +698,7 @@ bool FluidSynthMIDIDevice::LoadFluidSynth()
 #endif
 		if (proc == NULL)
 		{
-			Printf(TEXTCOLOR_RED"Failed to find %s in %s\n", imports[i].FuncName, FLUIDSYNTHLIB);
+			Printf(TEXTCOLOR_RED"Failed to find %s in %s\n", imports[i].FuncName, libname);
 			fail++;
 		}
 		*imports[i].FuncPointer = (void *)proc;

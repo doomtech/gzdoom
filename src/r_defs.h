@@ -42,8 +42,8 @@ struct seg_t;
 #include "dthinker.h"
 #include "r_sky.h"
 
-#define MAXWIDTH 2880
-#define MAXHEIGHT 1800
+#define MAXWIDTH 5760
+#define MAXHEIGHT 3600
 
 const WORD NO_INDEX = 0xffffu;
 const DWORD NO_SIDE = 0xffffffffu;
@@ -838,6 +838,7 @@ enum
 	WALLF_CLIP_MIDTEX	 = 16,	// Like the line counterpart, but only for this side.
 	WALLF_WRAP_MIDTEX	 = 32,	// Like the line counterpart, but only for this side.
 	WALLF_POLYOBJ		 = 64,	// This wall belongs to a polyobject.
+	WALLF_LIGHT_FOG      = 128,	// This wall's Light is used even in fog.
 };
 
 struct side_t
@@ -926,11 +927,11 @@ struct side_t
 
 	void SetTextureXScale(int which, fixed_t scale)
 	{
-		textures[which].xscale = scale <= 0? FRACUNIT : scale;
+		textures[which].xscale = scale == 0 ? FRACUNIT : scale;
 	}
 	void SetTextureXScale(fixed_t scale)
 	{
-		textures[top].xscale = textures[mid].xscale = textures[bottom].xscale = scale <= 0? FRACUNIT : scale;
+		textures[top].xscale = textures[mid].xscale = textures[bottom].xscale = scale == 0 ? FRACUNIT : scale;
 	}
 	fixed_t GetTextureXScale(int which) const
 	{
@@ -944,11 +945,11 @@ struct side_t
 
 	void SetTextureYScale(int which, fixed_t scale)
 	{
-		textures[which].yscale = scale <= 0? FRACUNIT : scale;
+		textures[which].yscale = scale == 0 ? FRACUNIT : scale;
 	}
 	void SetTextureYScale(fixed_t scale)
 	{
-		textures[top].yscale = textures[mid].yscale = textures[bottom].yscale = scale <= 0? FRACUNIT : scale;
+		textures[top].yscale = textures[mid].yscale = textures[bottom].yscale = scale == 0 ? FRACUNIT : scale;
 	}
 	fixed_t GetTextureYScale(int which) const
 	{
@@ -1005,7 +1006,7 @@ struct line_t
 	slopetype_t	slopetype;	// To aid move clipping.
 	sector_t	*frontsector, *backsector;
 	int 		validcount;	// if == validcount, already checked
-	int		locknumber;	// [Dusk] lock number for special
+	int			locknumber;	// [Dusk] lock number for special
 };
 
 // phares 3/14/98

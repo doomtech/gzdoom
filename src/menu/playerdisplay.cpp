@@ -385,7 +385,11 @@ void FListMenuItemPlayerDisplay::UpdateRandomClass()
 		if (++mRandomClass >= (int)PlayerClasses.Size ()) mRandomClass = 0;
 		mPlayerClass = &PlayerClasses[mRandomClass];
 		mPlayerState = GetDefaultByType (mPlayerClass->Type)->SeeState;
-		mPlayerTics = mPlayerState->GetTics();
+		if (mPlayerState == NULL)
+		{ // No see state, so try spawn state.
+			mPlayerState = GetDefaultByType (mPlayerClass->Type)->SpawnState;
+		}
+		mPlayerTics = mPlayerState != NULL ? mPlayerState->GetTics() : -1;
 		mRandomTimer = 6;
 
 		// Since the newly displayed class may used a different translation
@@ -436,7 +440,11 @@ void FListMenuItemPlayerDisplay::SetPlayerClass(int classnum, bool force)
 	{
 		mPlayerClass = &PlayerClasses[classnum];
 		mPlayerState = GetDefaultByType (mPlayerClass->Type)->SeeState;
-		mPlayerTics = mPlayerState->GetTics();
+		if (mPlayerState == NULL)
+		{ // No see state, so try spawn state.
+			mPlayerState = GetDefaultByType (mPlayerClass->Type)->SpawnState;
+		}
+		mPlayerTics = mPlayerState != NULL ? mPlayerState->GetTics() : -1;
 		mClassNum = classnum;
 	}
 }
@@ -558,17 +566,20 @@ void FListMenuItemPlayerDisplay::Drawer(bool selected)
 	spriteframe_t *sprframe;
 	fixed_t scaleX, scaleY;
 
-	if (mSkin == 0)
+	if (mPlayerState != NULL)
 	{
-		sprframe = &SpriteFrames[sprites[mPlayerState->sprite].spriteframes + mPlayerState->GetFrame()];
-		scaleX = GetDefaultByType(mPlayerClass->Type)->scaleX;
-		scaleY = GetDefaultByType(mPlayerClass->Type)->scaleY;
-	}
-	else
-	{
-		sprframe = &SpriteFrames[sprites[skins[mSkin].sprite].spriteframes + mPlayerState->GetFrame()];
-		scaleX = skins[mSkin].ScaleX;
-		scaleY = skins[mSkin].ScaleY;
+		if (mSkin == 0)
+		{
+			sprframe = &SpriteFrames[sprites[mPlayerState->sprite].spriteframes + mPlayerState->GetFrame()];
+			scaleX = GetDefaultByType(mPlayerClass->Type)->scaleX;
+			scaleY = GetDefaultByType(mPlayerClass->Type)->scaleY;
+		}
+		else
+		{
+			sprframe = &SpriteFrames[sprites[skins[mSkin].sprite].spriteframes + mPlayerState->GetFrame()];
+			scaleX = skins[mSkin].ScaleX;
+			scaleY = skins[mSkin].ScaleY;
+		}
 	}
 
 	if (sprframe != NULL)
@@ -580,8 +591,8 @@ void FListMenuItemPlayerDisplay::Drawer(bool selected)
 			if (mTranslate) trans = translationtables[TRANSLATION_Players](MAXPLAYERS);
 			screen->DrawTexture (tex,
 				x + 36*CleanXfac, y + 71*CleanYfac,
-				DTA_DestWidth, MulScale16 (tex->GetWidth() * CleanXfac, scaleX),
-				DTA_DestHeight, MulScale16 (tex->GetHeight() * CleanYfac, scaleY),
+				DTA_DestWidth, MulScale16 (tex->GetScaledWidth() * CleanXfac, scaleX),
+				DTA_DestHeight, MulScale16 (tex->GetScaledHeight() * CleanYfac, scaleY),
 				DTA_Translation, trans,
 				DTA_FlipX, sprframe->Flip & (1 << mRotation),
 				TAG_DONE);

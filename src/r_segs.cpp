@@ -1965,7 +1965,7 @@ void R_NewWall (bool needlights)
 				}
 				if (midtexture->bWorldPanning)
 				{
-					rw_midtexturemid = MulScale16(rowoffset, yrepeat);
+					rw_midtexturemid += MulScale16(rowoffset, yrepeat);
 				}
 				else
 				{
@@ -2429,7 +2429,20 @@ void R_StoreWallRange (int start, int stop)
 			}
 			ds_p->light = rw_light;
 			ds_p->lightstep = rw_lightstep;
-			ds_p->shade = wallshade;
+
+			// Masked midtextures should get the light level from the sector they reference,
+			// not from the current subsector, which is what the current wallshade value
+			// comes from. We make an exeption for polyobjects, however, since their "home"
+			// sector should be whichever one they move into.
+			if (curline->sidedef->Flags & WALLF_POLYOBJ)
+			{
+				ds_p->shade = wallshade;
+			}
+			else
+			{
+				ds_p->shade = LIGHT2SHADE(curline->sidedef->GetLightLevel(foggy, curline->frontsector->lightlevel)
+					+ r_actualextralight);
+			}
 
 			if (ds_p->bFogBoundary || ds_p->maskedtexturecol != -1)
 			{
@@ -2771,6 +2784,7 @@ int WallMost (short *mostbuf, const secplane_t &plane)
 static void PrepWallRoundFix(fixed_t *lwall, fixed_t walxrepeat)
 {
 	// fix for rounding errors
+	walxrepeat = abs(walxrepeat);
 	fixed_t fix = (MirrorFlags & RF_XFLIP) ? walxrepeat-1 : 0;
 	int x;
 
@@ -2805,7 +2819,7 @@ static void PrepWallRoundFix(fixed_t *lwall, fixed_t walxrepeat)
 void PrepWall (fixed_t *swall, fixed_t *lwall, fixed_t walxrepeat)
 { // swall = scale, lwall = texturecolumn
 	double top, bot, i;
-	double xrepeat = walxrepeat;
+	double xrepeat = fabs((double)walxrepeat);
 
 	i = WallSX1 - centerx;
 	top = WallUoverZorg + WallUoverZstep * i;
@@ -2814,7 +2828,14 @@ void PrepWall (fixed_t *swall, fixed_t *lwall, fixed_t walxrepeat)
 	for (int x = WallSX1; x < WallSX2; x++)
 	{
 		double frac = top / bot;
-		lwall[x] = xs_RoundToInt(frac * xrepeat);
+		if (walxrepeat < 0)
+		{
+			lwall[x] = xs_RoundToInt(xrepeat - frac * xrepeat);
+		}
+		else
+		{
+			lwall[x] = xs_RoundToInt(frac * xrepeat);
+		}
 		swall[x] = xs_RoundToInt(frac * WallDepthScale + WallDepthOrg);
 		top += WallUoverZstep;
 		bot += WallInvZstep;
@@ -2825,7 +2846,7 @@ void PrepWall (fixed_t *swall, fixed_t *lwall, fixed_t walxrepeat)
 void PrepLWall (fixed_t *lwall, fixed_t walxrepeat)
 { // lwall = texturecolumn
 	double top, bot, i;
-	double xrepeat = walxrepeat;
+	double xrepeat = fabs((double)walxrepeat);
 	double topstep;
 
 	i = WallSX1 - centerx;
@@ -2837,7 +2858,14 @@ void PrepLWall (fixed_t *lwall, fixed_t walxrepeat)
 
 	for (int x = WallSX1; x < WallSX2; x++)
 	{
-		lwall[x] = xs_RoundToInt(top / bot);
+		if (walxrepeat < 0)
+		{
+			lwall[x] = xs_RoundToInt(xrepeat - top / bot);
+		}
+		else
+		{
+			lwall[x] = xs_RoundToInt(top / bot);
+		}
 		top += topstep;
 		bot += WallInvZstep;
 	}

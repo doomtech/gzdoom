@@ -86,9 +86,24 @@ FRandom pr_acs ("ACS");
 #define STACK_SIZE 4096
 
 #define CLAMPCOLOR(c)		(EColorRange)((unsigned)(c) >= NUM_TEXT_COLORS ? CR_UNTRANSLATED : (c))
-#define HUDMSG_LOG			(0x80000000)
-#define HUDMSG_COLORSTRING	(0x40000000)
 #define LANGREGIONMASK		MAKE_ID(0,0,0xff,0xff)
+
+// HUD message flags
+#define HUDMSG_LOG					(0x80000000)
+#define HUDMSG_COLORSTRING			(0x40000000)
+#define HUDMSG_ADDBLEND				(0x20000000)
+#define HUDMSG_ALPHA				(0x10000000)
+#define HUDMSG_NOWRAP				(0x08000000)
+
+// HUD message layers; these are not flags
+#define HUDMSG_LAYER_SHIFT			12
+#define HUDMSG_LAYER_MASK			(0x0000F000)
+// See HUDMSGLayer enumerations in sbar.h
+
+// HUD message visibility flags
+#define HUDMSG_VISIBILITY_SHIFT		16
+#define HUDMSG_VISIBILITY_MASK		(0x00070000)
+// See HUDMSG visibility enumerations in sbar.h
 
 // Flags for ReplaceTextures
 #define NOT_BOTTOM			1
@@ -99,13 +114,12 @@ FRandom pr_acs ("ACS");
 
 struct CallReturn
 {
-	CallReturn(int pc, ScriptFunction *func, FBehavior *module, SDWORD *locals, bool discard, FString &str)
+	CallReturn(int pc, ScriptFunction *func, FBehavior *module, SDWORD *locals, bool discard)
 		: ReturnFunction(func),
 		  ReturnModule(module),
 		  ReturnLocals(locals),
 		  ReturnAddress(pc),
-		  bDiscardResult(discard),
-		  StringBuilder(str)
+		  bDiscardResult(discard)
 	{}
 
 	ScriptFunction *ReturnFunction;
@@ -113,7 +127,6 @@ struct CallReturn
 	SDWORD *ReturnLocals;
 	int ReturnAddress;
 	int bDiscardResult;
-	FString StringBuilder;
 };
 
 static DLevelScript *P_GetScriptGoing (AActor *who, line_t *where, int num, const ScriptPtr *code, FBehavior *module,
@@ -157,8 +170,8 @@ TArray<FString>
 	ACS_StringsOnTheFly,
 	ACS_StringBuilderStack;
 
-#define STRINGBUILDER_START(Builder) if (*Builder.GetChars() || ACS_StringBuilderStack.Size()) { ACS_StringBuilderStack.Push(Builder); Builder = ""; }
-#define STRINGBUILDER_FINISH(Builder) if (!ACS_StringBuilderStack.Pop(Builder)) Builder = "";
+#define STRINGBUILDER_START(Builder) if (Builder.IsNotEmpty() || ACS_StringBuilderStack.Size()) { ACS_StringBuilderStack.Push(Builder); Builder = ""; }
+#define STRINGBUILDER_FINISH(Builder) if (!ACS_StringBuilderStack.Pop(Builder)) { Builder = ""; }
 
 //============================================================================
 //
@@ -2162,6 +2175,15 @@ void DLevelScript::Serialize (FArchive &arc)
 
 	arc << activefont
 		<< hudwidth << hudheight;
+	if (SaveVersion >= 3960)
+	{
+		arc << ClipRectLeft << ClipRectTop << ClipRectWidth << ClipRectHeight
+			<< WrapWidth;
+	}
+	else
+	{
+		ClipRectLeft = ClipRectTop = ClipRectWidth = ClipRectHeight = WrapWidth = 0;
+	}
 }
 
 DLevelScript::DLevelScript ()
@@ -2276,13 +2298,9 @@ int DLevelScript::ThingCount (int type, int stringid, int tid, int tag)
 	int count = 0;
 	bool replacemented = false;
 
-	if (type >= MAX_SPAWNABLES)
+	if (type > 0)
 	{
-		return 0;
-	}
-	else if (type > 0)
-	{
-		kind = SpawnableThings[type];
+		kind = P_GetSpawnableType(type);
 		if (kind == NULL)
 			return 0;
 	}
@@ -2764,6 +2782,8 @@ enum
 	APROP_Mass			= 32,
 	APROP_Accuracy      = 33,
 	APROP_Stamina       = 34,
+	APROP_Height		= 35,
+	APROP_Radius		= 36,
 };
 
 // These are needed for ACS's APROP_RenderStyle
@@ -3043,6 +3063,8 @@ int DLevelScript::GetActorProperty (int tid, int property)
 	case APROP_Mass: 		return actor->Mass;
 	case APROP_Accuracy:    return actor->accuracy;
 	case APROP_Stamina:     return actor->stamina;
+	case APROP_Height:		return actor->height;
+	case APROP_Radius:		return actor->radius;
 
 	default:				return 0;
 	}
@@ -3083,6 +3105,8 @@ int DLevelScript::CheckActorProperty (int tid, int property, int value)
 		case APROP_Mass:
 		case APROP_Accuracy:
 		case APROP_Stamina:
+		case APROP_Height:
+		case APROP_Radius:
 			return (GetActorProperty(tid, property) == value);
 
 		// Boolean values need to compare to a binary version of value
@@ -3373,6 +3397,17 @@ enum EACSFunctions
 	ACSF_ACS_NamedLockedExecuteDoor,
 	ACSF_ACS_NamedExecuteWithResult,
 	ACSF_ACS_NamedExecuteAlways,
+	ACSF_UniqueTID,
+	ACSF_IsTIDUsed,
+	ACSF_Sqrt,
+	ACSF_FixedSqrt,
+	ACSF_VectorLength,
+	ACSF_SetHUDClipRect,
+	ACSF_SetHUDWrapWidth,
+
+	// ZDaemon
+	ACSF_GetTeamScore = 19620,	// (int team)
+	ACSF_SetTeamScore,			// (int team, int value)
 };
 
 int DLevelScript::SideFromID(int id, int side)
@@ -3885,6 +3920,33 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
 			}
 			break;
 
+		case ACSF_UniqueTID:
+			return P_FindUniqueTID(argCount > 0 ? args[0] : 0, argCount > 1 ? args[1] : 0);
+
+		case ACSF_IsTIDUsed:
+			return P_IsTIDUsed(args[0]);
+
+		case ACSF_Sqrt:
+			return xs_FloorToInt(sqrt(double(args[0])));
+
+		case ACSF_FixedSqrt:
+			return FLOAT2FIXED(sqrt(FIXED2DBL(args[0])));
+
+		case ACSF_VectorLength:
+			return FLOAT2FIXED(TVector2<double>(FIXED2DBL(args[0]), FIXED2DBL(args[1])).Length());
+
+		case ACSF_SetHUDClipRect:
+			ClipRectLeft = argCount > 0 ? args[0] : 0;
+			ClipRectTop = argCount > 1 ? args[1] : 0;
+			ClipRectWidth = argCount > 2 ? args[2] : 0;
+			ClipRectHeight = argCount > 3 ? args[3] : 0;
+			WrapWidth = argCount > 4 ? args[4] : 0;
+			break;
+
+		case ACSF_SetHUDWrapWidth:
+			WrapWidth = argCount > 0 ? args[0] : 0;
+			break;
+
 		default:
 			break;
 	}
@@ -4306,7 +4368,7 @@ int DLevelScript::RunScript ()
 				}
 				sp += i;
 				::new(&Stack[sp]) CallReturn(activeBehavior->PC2Ofs(pc), activeFunction,
-					activeBehavior, mylocals, pcd == PCD_CALLDISCARD, work);
+					activeBehavior, mylocals, pcd == PCD_CALLDISCARD);
 				sp += (sizeof(CallReturn) + sizeof(int) - 1) / sizeof(int);
 				pc = module->Ofs2PC (func->Address);
 				activeFunction = func;
@@ -4345,7 +4407,6 @@ int DLevelScript::RunScript ()
 				{
 					Stack[sp++] = value;
 				}
-				work = ret->StringBuilder;
 				ret->~CallReturn();
 			}
 			break;
@@ -5307,20 +5368,24 @@ int DLevelScript::RunScript ()
 
 		case PCD_SCRIPTWAIT:
 			statedata = STACK(1);
+			sp--;
+scriptwait:
 			if (controller->RunningScripts.CheckKey(statedata) != NULL)
 				state = SCRIPT_ScriptWait;
 			else
 				state = SCRIPT_ScriptWaitPre;
-			sp--;
 			PutLast ();
 			break;
 
 		case PCD_SCRIPTWAITDIRECT:
-			state = SCRIPT_ScriptWait;
 			statedata = uallong(pc[0]);
 			pc++;
-			PutLast ();
-			break;
+			goto scriptwait;
+
+		case PCD_SCRIPTWAITNAMED:
+			statedata = -FName(FBehavior::StaticLookupString(STACK(1)));
+			sp--;
+			goto scriptwait;
 
 		case PCD_CLEARLINESPECIAL:
 			if (activationline != NULL)
@@ -5662,6 +5727,7 @@ int DLevelScript::RunScript ()
 					float x = FIXED2FLOAT(Stack[optstart-3]);
 					float y = FIXED2FLOAT(Stack[optstart-2]);
 					float holdTime = FIXED2FLOAT(Stack[optstart-1]);
+					fixed_t alpha;
 					DHUDMessage *msg;
 
 					if (type & HUDMSG_COLORSTRING)
@@ -5673,14 +5739,16 @@ int DLevelScript::RunScript ()
 						color = CLAMPCOLOR(Stack[optstart-4]);
 					}
 
-					switch (type & 0xFFFF)
+					switch (type & 0xFF)
 					{
 					default:	// normal
+						alpha = (optstart < sp) ? Stack[optstart] : FRACUNIT;
 						msg = new DHUDMessage (activefont, work, x, y, hudwidth, hudheight, color, holdTime);
 						break;
 					case 1:		// fade out
 						{
 							float fadeTime = (optstart < sp) ? FIXED2FLOAT(Stack[optstart]) : 0.5f;
+							alpha = (optstart < sp-1) ? Stack[optstart+1] : FRACUNIT;
 							msg = new DHUDMessageFadeOut (activefont, work, x, y, hudwidth, hudheight, color, holdTime, fadeTime);
 						}
 						break;
@@ -5688,6 +5756,7 @@ int DLevelScript::RunScript ()
 						{
 							float typeTime = (optstart < sp) ? FIXED2FLOAT(Stack[optstart]) : 0.05f;
 							float fadeTime = (optstart < sp-1) ? FIXED2FLOAT(Stack[optstart+1]) : 0.5f;
+							alpha = (optstart < sp-2) ? Stack[optstart+2] : FRACUNIT;
 							msg = new DHUDMessageTypeOnFadeOut (activefont, work, x, y, hudwidth, hudheight, color, typeTime, holdTime, fadeTime);
 						}
 						break;
@@ -5695,11 +5764,31 @@ int DLevelScript::RunScript ()
 						{
 							float inTime = (optstart < sp) ? FIXED2FLOAT(Stack[optstart]) : 0.5f;
 							float outTime = (optstart < sp-1) ? FIXED2FLOAT(Stack[optstart+1]) : 0.5f;
+							alpha = (optstart < sp-2) ? Stack[optstart+2] : FRACUNIT;
 							msg = new DHUDMessageFadeInOut (activefont, work, x, y, hudwidth, hudheight, color, holdTime, inTime, outTime);
 						}
 						break;
 					}
-					StatusBar->AttachMessage (msg, id ? 0xff000000|id : 0);
+					msg->SetClipRect(ClipRectLeft, ClipRectTop, ClipRectWidth, ClipRectHeight);
+					if (WrapWidth != 0)
+					{
+						msg->SetWrapWidth(WrapWidth);
+					}
+					msg->SetVisibility((type & HUDMSG_VISIBILITY_MASK) >> HUDMSG_VISIBILITY_SHIFT);
+					if (type & HUDMSG_NOWRAP)
+					{
+						msg->SetNoWrap(true);
+					}
+					if (type & HUDMSG_ALPHA)
+					{
+						msg->SetAlpha(alpha);
+					}
+					if (type & HUDMSG_ADDBLEND)
+					{
+						msg->SetRenderStyle(STYLE_Add);
+					}
+					StatusBar->AttachMessage (msg, id ? 0xff000000|id : 0,
+						(type & HUDMSG_LAYER_MASK) >> HUDMSG_LAYER_SHIFT);
 					if (type & HUDMSG_LOG)
 					{
 						static const char bar[] = TEXTCOLOR_ORANGE "\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"
@@ -6347,7 +6436,18 @@ int DLevelScript::RunScript ()
 		case PCD_GETACTORZ:
 			{
 				AActor *actor = SingleActorFromTID(STACK(1), activator);
-				STACK(1) = actor == NULL ? 0 : (&actor->x)[pcd - PCD_GETACTORX];
+				if (actor == NULL)
+				{
+					STACK(1) = 0;
+				}
+				else if (pcd == PCD_GETACTORZ)
+				{
+					STACK(1) = actor->z + actor->GetBobOffset();
+				}
+				else
+				{
+					STACK(1) =  (&actor->x)[pcd - PCD_GETACTORX];
+				}
 			}
 			break;
 
@@ -6486,6 +6586,25 @@ int DLevelScript::RunScript ()
 
 				if (translation != NULL)
 					translation->AddColorRange(start, end, r1, g1, b1, r2, g2, b2);
+			}
+			break;
+
+		case PCD_TRANSLATIONRANGE3:
+			{ // translation using desaturation
+				int start = STACK(8);
+				int end = STACK(7);
+				fixed_t r1 = STACK(6);
+				fixed_t g1 = STACK(5);
+				fixed_t b1 = STACK(4);
+				fixed_t r2 = STACK(3);
+				fixed_t g2 = STACK(2);
+				fixed_t b2 = STACK(1);
+				sp -= 8;
+
+				if (translation != NULL)
+					translation->AddDesaturation(start, end,
+						FIXED2DBL(r1), FIXED2DBL(g1), FIXED2DBL(b1),
+						FIXED2DBL(r2), FIXED2DBL(g2), FIXED2DBL(b2));
 			}
 			break;
 
@@ -6893,7 +7012,8 @@ int DLevelScript::RunScript ()
 			}
 			else
 			{
-				userinfo_t *userinfo = &players[STACK(2)].userinfo;
+				player_t *pl = &players[STACK(2)];
+				userinfo_t *userinfo = &pl->userinfo;
 				switch (STACK(1))
 				{
 				case PLAYERINFO_TEAM:			STACK(2) = userinfo->team; break;
@@ -6904,6 +7024,8 @@ int DLevelScript::RunScript ()
 				case PLAYERINFO_MOVEBOB:		STACK(2) = userinfo->MoveBob; break;
 				case PLAYERINFO_STILLBOB:		STACK(2) = userinfo->StillBob; break;
 				case PLAYERINFO_PLAYERCLASS:	STACK(2) = userinfo->PlayerClass; break;
+				case PLAYERINFO_DESIREDFOV:		STACK(2) = (int)pl->DesiredFOV; break;
+				case PLAYERINFO_FOV:			STACK(2) = (int)pl->FOV; break;
 				default:						STACK(2) = 0; break;
 				}
 			}
@@ -7270,7 +7392,9 @@ DLevelScript::DLevelScript (AActor *who, line_t *where, int num, const ScriptPtr
 	backSide = flags & ACS_BACKSIDE;
 	activefont = SmallFont;
 	hudwidth = hudheight = 0;
+	ClipRectLeft = ClipRectTop = ClipRectWidth = ClipRectHeight = WrapWidth = 0;
 	state = SCRIPT_Running;
+
 	// Hexen waited one second before executing any open scripts. I didn't realize
 	// this when I wrote my ACS implementation. Now that I know, it's still best to
 	// run them right away because there are several map properties that can't be
@@ -7526,6 +7650,3 @@ void DACSThinker::DumpScriptStatus ()
 		script = script->next;
 	}
 }
-
-#undef STRINGBUILDER_START
-#undef STRINGBUILDER_FINISH

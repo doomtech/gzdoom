@@ -45,6 +45,7 @@
 #include "p_udmf.h"
 #include "r_state.h"
 #include "r_data/colormaps.h"
+#include "w_wad.h"
 
 //===========================================================================
 //
@@ -97,6 +98,11 @@ static char HexenSectorSpecialOk[256]={
 	1,1,1,1,1,
 };
 
+static inline bool P_IsThingSpecial(int specnum)
+{
+	return (specnum >= Thing_Projectile && specnum <= Thing_SpawnNoFog) ||
+			specnum == Thing_SpawnFacing || Thing_ProjectileIntercept || Thing_ProjectileAimed;
+}
 
 enum
 {
@@ -466,7 +472,7 @@ public:
 
 	void ParseThing(FMapThing *th)
 	{
-		FString arg0str;
+		FString arg0str, arg1str;
 
 		memset(th, 0, sizeof(*th));
 		sc.MustGetToken('{');
@@ -521,6 +527,11 @@ public:
 			case NAME_Arg0Str:
 				CHECK_N(Zd);
 				arg0str = CheckString(key);
+				break;
+
+			case NAME_Arg1Str:
+				CHECK_N(Zd);
+				arg1str = CheckString(key);
 				break;
 
 			case NAME_Skill1:
@@ -623,9 +634,13 @@ public:
 				break;
 			}
 		}
-		if (arg0str.IsNotEmpty() && P_IsACSSpecial(th->special))
+		if (arg0str.IsNotEmpty() && (P_IsACSSpecial(th->special) || th->special == 0))
 		{
 			th->args[0] = -FName(arg0str);
+		}
+		if (arg1str.IsNotEmpty() && (P_IsThingSpecial(th->special) || th->special == 0))
+		{
+			th->args[1] = -FName(arg1str);
 		}
 		// Thing specials are only valid in namespaces with Hexen-type specials
 		// and in ZDoomTranslated - which will use the translator on them.
@@ -662,7 +677,7 @@ public:
 	{
 		bool passuse = false;
 		bool strifetrans = false;
-		FString arg0str;
+		FString arg0str, arg1str;
 
 		memset(ld, 0, sizeof(*ld));
 		ld->Alpha = FRACUNIT;
@@ -721,6 +736,11 @@ public:
 			case NAME_Arg0Str:
 				CHECK_N(Zd);
 				arg0str = CheckString(key);
+				continue;
+
+			case NAME_Arg1Str:
+				CHECK_N(Zd);
+				arg1str = CheckString(key);
 				continue;
 
 			case NAME_Blocking:
@@ -937,9 +957,13 @@ public:
 			ld->sidedef[0] = (side_t*)(intptr_t)(1);
 			Printf("Line %d has no first side.\n", index);
 		}
-		if (arg0str.IsNotEmpty() && P_IsACSSpecial(ld->special))
+		if (arg0str.IsNotEmpty() && (P_IsACSSpecial(ld->special) || ld->special == 0))
 		{
 			ld->args[0] = -FName(arg0str);
+		}
+		if (arg1str.IsNotEmpty() && (P_IsThingSpecial(ld->special) || ld->special == 0))
+		{
+			ld->args[1] = -FName(arg1str);
 		}
 	}
 
@@ -1050,6 +1074,10 @@ public:
 
 			case NAME_lightabsolute:
 				Flag(sd->Flags, WALLF_ABSLIGHTING, key);
+				continue;
+
+			case NAME_lightfog:
+				Flag(sd->Flags, WALLF_LIGHT_FOG, key);
 				continue;
 
 			case NAME_nofakecontrast:

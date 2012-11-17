@@ -199,7 +199,7 @@ PSymbolActionFunction *FindGlobalActionFunction(const char *name);
 //==========================================================================
 
 FActorInfo *CreateNewActor(const FScriptPosition &sc, FName typeName, FName parentName, bool native);
-void SetReplacement(FActorInfo *info, FName replaceName);
+void SetReplacement(FScanner &sc, FActorInfo *info, FName replaceName);
 
 void HandleActorFlag(FScanner &sc, Baggage &bag, const char *part1, const char *part2, int mod);
 void FinishActor(const FScriptPosition &sc, FActorInfo *info, Baggage &bag);
@@ -363,7 +363,6 @@ int MatchString (const char *in, const char **strings);
 struct StateCallData
 {
 	FState *State;
-	AActor *Item;
 	bool Result;
 };
 

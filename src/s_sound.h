@@ -57,6 +57,7 @@ struct sfxinfo_t
 	WORD		bUsed:1;
 	WORD		bSingular:1;
 	WORD		bTentative:1;
+	WORD		bPlayerSilent:1;		// This player sound is intentionally silent.
 
 	int			LoopStart;				// -1 means no specific loop defined
 
@@ -65,6 +66,8 @@ struct sfxinfo_t
 
 	FRolloffInfo	Rolloff;
 	float		Attenuation;			// Multiplies the attenuation passed to S_Sound.
+
+	void		MarkUsed();				// Marks this sound as used.
 };
 
 // Rolloff types
@@ -131,6 +134,10 @@ public:
 	operator const char *() const
 	{
 		return ID ? S_sfx[ID].name.GetChars() : NULL;
+	}
+	void MarkUsed() const
+	{
+		S_sfx[ID].MarkUsed();
 	}
 private:
 	int ID;
@@ -351,6 +358,7 @@ int S_AddSoundLump (const char *logicalname, int lump);	// Add sound by lump ind
 int S_AddPlayerSound (const char *playerclass, const int gender, int refid, const char *lumpname);
 int S_AddPlayerSound (const char *playerclass, const int gender, int refid, int lumpnum, bool fromskin=false);
 int S_AddPlayerSoundExisting (const char *playerclass, const int gender, int refid, int aliasto, bool fromskin=false);
+void S_MarkPlayerSounds (const char *playerclass);
 void S_ShrinkPlayerSoundLists ();
 void S_UnloadSound (sfxinfo_t *sfx);
 sfxinfo_t *S_LoadSound(sfxinfo_t *sfx);

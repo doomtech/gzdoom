@@ -114,8 +114,6 @@ void	P_UnPredictPlayer ();
 #define ONCEILINGZ		FIXED_MAX
 #define FLOATRANDZ		(FIXED_MAX-1)
 
-extern fixed_t FloatBobOffsets[64];
-
 APlayerPawn *P_SpawnPlayer (struct FPlayerStart *mthing, int playernum, bool tempplayer=false);
 
 void P_ThrustMobj (AActor *mo, angle_t angle, fixed_t move);
@@ -157,8 +155,7 @@ void P_CheckFakeFloorTriggers (AActor *mo, fixed_t oldz, bool oldz_has_viewheigh
 //
 // [RH] P_THINGS
 //
-#define MAX_SPAWNABLES	(256)
-extern const PClass *SpawnableThings[MAX_SPAWNABLES];
+extern TMap<int, const PClass *> SpawnableThings;
 
 bool	P_Thing_Spawn (int tid, AActor *source, int type, angle_t angle, bool fog, int newtid);
 bool	P_Thing_Projectile (int tid, AActor *source, int type, const char * type_name, angle_t angle,
@@ -170,7 +167,7 @@ int		P_Thing_Damage (int tid, AActor *whofor0, int amount, FName type);
 void	P_Thing_SetVelocity(AActor *actor, fixed_t vx, fixed_t vy, fixed_t vz, bool add, bool setbob);
 void P_RemoveThing(AActor * actor);
 bool P_Thing_Raise(AActor *thing);
-
+const PClass *P_GetSpawnableType(int spawnnum);
 
 //
 // P_MAPUTL
@@ -481,8 +478,15 @@ void	P_PlaySpawnSound(AActor *missile, AActor *spawner);
 void	P_AimCamera (AActor *t1, fixed_t &x, fixed_t &y, fixed_t &z, sector_t *&sec);
 
 // [RH] Means of death
+enum
+{
+	RADF_HURTSOURCE = 1,
+	RADF_NOIMPACTDAMAGE = 2,
+	RADF_SOURCEISSPOT = 4,
+	RADF_NODAMAGE = 8,
+};
 void	P_RadiusAttack (AActor *spot, AActor *source, int damage, int distance, 
-						FName damageType, bool hurtSelf, bool dodamage=true, int fulldamagedistance=0, bool noimpactdamage=false);
+						FName damageType, int flags, int fulldamagedistance=0);
 
 void	P_DelSector_List();
 void	P_DelSeclist(msecnode_t *);							// phares 3/16/98

@@ -598,10 +598,12 @@ public:
 		PCD_STRCPYTOMAPCHRANGE,	// [FDARI] input range (copy string to all/part of array)
 		PCD_STRCPYTOWORLDCHRANGE,
 		PCD_STRCPYTOGLOBALCHRANGE,
-		PCD_PUSHFUNCTION,
-/*360*/	PCD_CALLSTACK,
+		PCD_PUSHFUNCTION,		// from Eternity
+/*360*/	PCD_CALLSTACK,			// from Eternity
+		PCD_SCRIPTWAITNAMED,
+		PCD_TRANSLATIONRANGE3,
 
-/*361*/	PCODE_COMMAND_COUNT
+/*363*/	PCODE_COMMAND_COUNT
 	};
 
 	// Some constants used by ACS scripts
@@ -663,7 +665,9 @@ public:
 		PLAYERINFO_NEVERSWITCH,
 		PLAYERINFO_MOVEBOB,
 		PLAYERINFO_STILLBOB,
-		PLAYERINFO_PLAYERCLASS
+		PLAYERINFO_PLAYERCLASS,
+		PLAYERINFO_FOV,
+		PLAYERINFO_DESIREDFOV,
 	};
 
 	enum EScriptState
@@ -703,6 +707,8 @@ protected:
 	bool			backSide;
 	FFont			*activefont;
 	int				hudwidth, hudheight;
+	int				ClipRectLeft, ClipRectTop, ClipRectWidth, ClipRectHeight;
+	int				WrapWidth;
 	FBehavior	    *activeBehavior;
 
 	void Link ();

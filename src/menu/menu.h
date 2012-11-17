@@ -137,7 +137,6 @@ struct FOptionMenuSettings
 	EColorRange mFontColorHighlight;
 	EColorRange mFontColorSelection;
 	int mLinespacing;
-	int mLabelOffset;
 };
 
 struct FOptionMenuDescriptor : public FMenuDescriptor

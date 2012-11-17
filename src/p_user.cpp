@@ -463,6 +463,28 @@ void APlayerPawn::Serialize (FArchive &arc)
 		<< DamageFade
 		<< PlayerFlags
 		<< FlechetteType;
+	if (SaveVersion < 3829)
+	{
+		GruntSpeed = 12*FRACUNIT;
+		FallingScreamMinSpeed = 35*FRACUNIT;
+		FallingScreamMaxSpeed = 40*FRACUNIT;
+	}
+	else
+	{
+		arc << GruntSpeed << FallingScreamMinSpeed << FallingScreamMaxSpeed;
+	}
+}
+
+//===========================================================================
+//
+// APlayerPawn :: MarkPrecacheSounds
+//
+//===========================================================================
+
+void APlayerPawn::MarkPrecacheSounds() const
+{
+	Super::MarkPrecacheSounds();
+	S_MarkPlayerSounds(GetSoundClass());
 }
 
 //===========================================================================
@@ -958,7 +980,7 @@ void APlayerPawn::FilterCoopRespawnInventory (APlayerPawn *oldplayer)
 //
 //===========================================================================
 
-const char *APlayerPawn::GetSoundClass ()
+const char *APlayerPawn::GetSoundClass() const
 {
 	if (player != NULL &&
 		(player->mo == NULL || !(player->mo->flags4 &MF4_NOSKIN)) &&
@@ -1615,7 +1637,11 @@ void P_CalcHeight (player_t *player)
 	// it causes bobbing jerkiness when the player moves from ice to non-ice,
 	// and vice-versa.
 
-	if ((player->mo->flags & MF_NOGRAVITY) && !onground)
+	if (player->cheats & CF_NOCLIP2)
+	{
+		player->bob = 0;
+	}
+	else if ((player->mo->flags & MF_NOGRAVITY) && !onground)
 	{
 		player->bob = FRACUNIT / 2;
 	}
@@ -1740,7 +1766,7 @@ void P_MovePlayer (player_t *player)
 		mo->angle += cmd->ucmd.yaw << 16;
 	}
 
-	onground = (mo->z <= mo->floorz) || (mo->flags2 & MF2_ONMOBJ) || (mo->BounceFlags & BOUNCE_MBF);
+	onground = (mo->z <= mo->floorz) || (mo->flags2 & MF2_ONMOBJ) || (mo->BounceFlags & BOUNCE_MBF) || (player->cheats & CF_NOCLIP2);
 
 	// killough 10/98:
 	//
@@ -2121,13 +2147,25 @@ void P_PlayerThink (player_t *player)
 		player->inventorytics--;
 	}
 	// No-clip cheat
-	if (player->cheats & CF_NOCLIP || (player->mo->GetDefault()->flags & MF_NOCLIP))
+	if ((player->cheats & (CF_NOCLIP | CF_NOCLIP2)) == CF_NOCLIP2)
+	{ // No noclip2 without noclip
+		player->cheats &= ~CF_NOCLIP2;
+	}
+	if (player->cheats & (CF_NOCLIP | CF_NOCLIP2) || (player->mo->GetDefault()->flags & MF_NOCLIP))
 	{
 		player->mo->flags |= MF_NOCLIP;
 	}
 	else
 	{
 		player->mo->flags &= ~MF_NOCLIP;
+	}
+	if (player->cheats & CF_NOCLIP2)
+	{
+		player->mo->flags |= MF_NOGRAVITY;
+	}
+	else if (!(player->mo->flags2 & MF2_FLY) && !(player->mo->GetDefault()->flags & MF_NOGRAVITY))
+	{
+		player->mo->flags &= ~MF_NOGRAVITY;
 	}
 	cmd = &player->cmd;
 
@@ -2349,7 +2387,7 @@ void P_PlayerThink (player_t *player)
 			{
 				cmd->ucmd.upmove = ksgn (cmd->ucmd.upmove) * 0x300;
 			}
-			if (player->mo->waterlevel >= 2 || (player->mo->flags2 & MF2_FLY))
+			if (player->mo->waterlevel >= 2 || (player->mo->flags2 & MF2_FLY) || (player->cheats & CF_NOCLIP2))
 			{
 				player->mo->velz = cmd->ucmd.upmove << 9;
 				if (player->mo->waterlevel < 2 && !(player->mo->flags & MF_NOGRAVITY))
@@ -2383,8 +2421,8 @@ void P_PlayerThink (player_t *player)
 			P_PlayerInSpecialSector (player);
 		}
 		P_PlayerOnSpecialFlat (player, P_GetThingFloorType (player->mo));
-		if (player->mo->velz <= -35*FRACUNIT &&
-			player->mo->velz >= -40*FRACUNIT && !player->morphTics &&
+		if (player->mo->velz <= -player->mo->FallingScreamMinSpeed &&
+			player->mo->velz >= -player->mo->FallingScreamMaxSpeed && !player->morphTics &&
 			player->mo->waterlevel == 0)
 		{
 			int id = S_FindSkinnedSound (player->mo, "*falling");
@@ -2467,7 +2505,7 @@ void P_PlayerThink (player_t *player)
 		{
 			if (player->mo->waterlevel < 3 ||
 				(player->mo->flags2 & MF2_INVULNERABLE) ||
-				(player->cheats & CF_GODMODE))
+				(player->cheats & (CF_GODMODE | CF_NOCLIP2)))
 			{
 				player->mo->ResetAirSupply ();
 			}
@@ -2698,6 +2736,14 @@ void player_t::Serialize (FArchive &arc)
 	if (SaveVersion < 3640)
 	{
 		cheats &= ~(1 << 17);	// make sure old CF_REGENERATION bit is cleared
+	}
+	if (SaveVersion >= 3780)
+	{
+		arc << settings_controller;
+	}
+	else
+	{
+		settings_controller = (this - players == Net_Arbitrator);
 	}
 
 	if (isbot)
