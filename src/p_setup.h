@@ -35,6 +35,7 @@ struct MapData
 		FileReader *Reader;
 	} MapLumps[ML_MAX];
 	bool HasBehavior;
+	bool HasLights;
 	bool HasMacros;
 	bool Encrypted;
 	bool isDoom64;
@@ -50,6 +51,7 @@ struct MapData
 		resource = NULL;
 		lumpnum = -1;
 		HasBehavior = false;
+		HasLights = false;
 		HasMacros = false;
 		Encrypted = false;
 		isDoom64 = false;

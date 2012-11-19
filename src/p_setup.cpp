@@ -309,7 +309,7 @@ MapData *P_OpenMapData(const char * mapname)
 
 			// This case can only happen if the lump is inside a real WAD file.
 			// As such any special handling for other types of lumps is skipped.
-			map->MapLumps[0].Reader = Wads.ReopenLumpNum(lump_name);
+			map->MapLumps[0].Reader = map->file = Wads.ReopenLumpNum(lump_name);
 			map->Encrypted = Wads.IsEncryptedFile(lump_name);
 
 			if (map->Encrypted)
@@ -376,6 +376,11 @@ MapData *P_OpenMapData(const char * mapname)
 					{
 						index = ML_BEHAVIOR;
 						map->HasBehavior = true;
+					}
+					else if (!stricmp(lumpname, "LIGHTS"))
+					{
+						index = ML_LIGHTS;
+						map->HasLights = true;
 					}
 					else if (!stricmp(lumpname, "MACROS"))
 					{
@@ -570,6 +575,11 @@ void MapData::GetChecksum(BYTE cksum[16])
 		{
 			Seek(ML_BEHAVIOR);
 			md5.Update(file, Size(ML_BEHAVIOR));
+		}
+		if (HasLights)
+		{
+			Seek(ML_LIGHTS);
+			md5.Update(file, Size(ML_LIGHTS));
 		}
 		if (HasMacros)
 		{
