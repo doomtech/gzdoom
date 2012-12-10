@@ -683,7 +683,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 	// allow disabling of the fullbright flag by a brightmap definition
 	// (e.g. to do the gun flashes of Doom's zombies correctly.
 	fullbright = 
-		(thing->renderflags & RF_FULLBRIGHT) &&
+		((thing->flags5 & MF5_BRIGHT || thing->renderflags & RF_FULLBRIGHT)) &&
 		(!gl_BrightmapsActive() || !gltexture || !gltexture->tex->gl_info.bBrightmapDisablesFullbright);
 
 	lightlevel=fullbright? 255 : 
