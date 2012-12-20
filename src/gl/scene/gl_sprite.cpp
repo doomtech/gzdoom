@@ -115,7 +115,7 @@ void GLSprite::Draw(int pass)
 
 
 	bool additivefog = false;
-	int rel = extralight*gl_weaponlight;
+	int rel = getExtraLight();
 
 	if (pass==GLPASS_TRANSLUCENT)
 	{
