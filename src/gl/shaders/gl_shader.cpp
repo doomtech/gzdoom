@@ -238,7 +238,7 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 		"#define NO_GLOW\n#define NO_DESATURATE\n#define DYNLIGHT\n",
 		"#define NO_DESATURATE\n#define DYNLIGHT\n",
 		"#define NO_GLOW\n#define DYNLIGHT\n",
-		"\n#define DYNLIGHT\n"
+		"\n#define DYNLIGHT\n",
 		"#define NO_GLOW\n#define NO_DESATURATE\n#define SOFTLIGHT\n",
 		"#define NO_DESATURATE\n#define SOFTLIGHT\n",
 		"#define NO_GLOW\n#define SOFTLIGHT\n",
