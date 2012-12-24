@@ -51,7 +51,7 @@ float R_DoomLightingEquation(float light, float dist)
 	float min_L = clamp(36.0/31.0 - L, 0.0, 1.0);
 
 	float scale = 1.0 / dist;
-	float index = (59.0/31.0 - L) - (scale * 192.0/31.0 - 192.0/31.0);
+	float index = (59.0/31.0 - L) - (scale * 232.0/31.0 - 232.0/31.0);
 
 	/* result is colormap index (0 bright .. 31 dark) */
 	return clamp(index, min_L, 1.0);
