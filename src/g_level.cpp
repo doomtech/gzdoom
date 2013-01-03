@@ -882,6 +882,10 @@ void G_DoLoadLevel (int position, bool autosave)
 	{
 		level.flags2 &= ~LEVEL2_NOMONSTERS;
 	}
+	if (changeflags & CHANGELEVEL_PRERAISEWEAPON)
+	{
+		level.flags2 |= LEVEL2_PRERAISEWEAPON;
+	}
 
 	level.maptime = 0;
 	P_SetupLevel (level.mapname, position);
@@ -1128,7 +1132,7 @@ void G_FinishTravel ()
 
 			// The player being spawned here is a short lived dummy and
 			// must not start any ENTER script or big problems will happen.
-			pawndup = P_SpawnPlayer (&playerstarts[pawn->player - players], int(pawn->player - players), true);
+			pawndup = P_SpawnPlayer (&playerstarts[pawn->player - players], int(pawn->player - players), SPF_TEMPPLAYER);
 			if (!(changeflags & CHANGELEVEL_KEEPFACING))
 			{
 				pawn->angle = pawndup->angle;
