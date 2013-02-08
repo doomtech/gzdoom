@@ -905,6 +905,15 @@ static void it_pickup_stop_at_end(DUMB_RESAMPLER *resampler, void *data)
 
 
 
+static void it_pickup_stop_after_reverse(DUMB_RESAMPLER *resampler, void *data)
+{
+    (void)data;
+
+    resampler->dir = 0;
+}
+
+
+
 static void it_playing_update_resamplers(IT_PLAYING *playing)
 {
 	if ((playing->sample->flags & IT_SAMPLE_SUS_LOOP) && !(playing->flags & IT_PLAYING_SUSTAINOFF)) {
@@ -925,8 +934,13 @@ static void it_playing_update_resamplers(IT_PLAYING *playing)
 			playing->resampler.pickup = &it_pickup_pingpong_loop;
 		else
 			playing->resampler.pickup = &it_pickup_loop;
-	} else {
-		if (playing->sample->flags & IT_SAMPLE_SUS_LOOP)
+    } else if (playing->flags & IT_PLAYING_REVERSE) {
+        playing->resampler.start = 0;
+        playing->resampler.end = playing->sample->length;
+        playing->resampler.dir = -1;
+        playing->resampler.pickup = &it_pickup_stop_after_reverse;
+    } else {
+        if (playing->sample->flags & IT_SAMPLE_SUS_LOOP)
 			playing->resampler.start = playing->sample->sus_loop_start;
 		else
 			playing->resampler.start = 0;
@@ -1572,7 +1586,8 @@ static void it_note_off(IT_PLAYING *playing)
 static void xm_note_off(DUMB_IT_SIGDATA *sigdata, IT_CHANNEL *channel)
 {
 	if (channel->playing) {
-		if (!(sigdata->instrument[channel->instrument-1].volume_envelope.flags & IT_ENVELOPE_ON))
+		if (!channel->instrument || channel->instrument > sigdata->n_instruments ||
+			!(sigdata->instrument[channel->instrument-1].volume_envelope.flags & IT_ENVELOPE_ON))
 			//if (!(entry->mask & IT_ENTRY_INSTRUMENT))
 			// dunno what that was there for ...
 				channel->volume = 0;
@@ -2075,7 +2090,18 @@ Yxy             This uses a table 4 times larger (hence 4 times slower) than
 					/*if (entry->effectvalue == 255)
 						if (sigrenderer->callbacks->xm_speed_zero && (*sigrenderer->callbacks->xm_speed_zero)(sigrenderer->callbacks->xm_speed_zero_data))
 							return 1;*/
-					sigrenderer->tick = sigrenderer->speed = entry->effectvalue;
+                    if (sigdata->flags & IT_WAS_AN_STM)
+                    {
+                        int n = entry->effectvalue;
+                        if (n >= 32)
+                        {
+                            sigrenderer->tick = sigrenderer->speed = n;
+                        }
+                    }
+                    else
+                    {
+                        sigrenderer->tick = sigrenderer->speed = entry->effectvalue;
+                    }
 				}
 				else if ((sigdata->flags & (IT_WAS_AN_XM|IT_WAS_A_MOD)) == IT_WAS_AN_XM) {
 #ifdef BIT_ARRAY_BULLSHIT
@@ -2255,11 +2281,11 @@ Yxy             This uses a table 4 times larger (hence 4 times slower) than
 							playing = sigrenderer->playing[i];
 							if (!playing || playing->channel != channel) continue;
 						}
-						if (channel->playing) {
+                        if (playing) {
 							if ((v & 0xF0) == 0xF0)
-								channel->playing->slide += (v & 15) << 4;
+                                playing->slide += (v & 15) << 4;
 							else if ((v & 0xF0) == 0xE0)
-								channel->playing->slide += (v & 15) << 2;
+                                playing->slide += (v & 15) << 2;
 							else if (i < 0 && sigdata->flags & IT_WAS_A_669)
 								channel->portamento += v << 3;
 							else if (i < 0)
@@ -2582,7 +2608,7 @@ Yxy             This uses a table 4 times larger (hence 4 times slower) than
 					}
 				}
 				break;
-			case IT_S:
+            case IT_S:
 				{
 					/* channel->lastS was set in update_pattern_variables(). */
 					unsigned char effectvalue = channel->lastS;
@@ -2742,7 +2768,13 @@ Yxy             This uses a table 4 times larger (hence 4 times slower) than
 								channel->playing->panbrello_depth = 0;
 							break;
 						case IT_S_SET_SURROUND_SOUND:
-							if ((effectvalue & 15) == 1) {
+                            if ((effectvalue & 15) == 15) {
+                                if (channel->playing && channel->playing->sample &&
+                                    !(channel->playing->sample->flags & (IT_SAMPLE_LOOP | IT_SAMPLE_SUS_LOOP))) {
+                                    channel->playing->flags |= IT_PLAYING_REVERSE;
+                                    it_playing_reset_resamplers( channel->playing, channel->playing->sample->length - 1 );
+                                }
+                            } else if ((effectvalue & 15) == 1) {
 								channel->pan = IT_SURROUND;
 								channel->truepan = channel->pan << IT_ENVELOPE_SHIFT;
 							}
@@ -4323,9 +4355,12 @@ static int process_tick(DUMB_IT_SIGRENDERER *sigrenderer)
 			update_effects(sigrenderer);
 		}
 	} else {
-		speed0:
-		update_effects(sigrenderer);
-		update_tick_counts(sigrenderer);
+        if ( !(sigdata->flags & IT_WAS_AN_STM) || !(sigrenderer->tick & 15))
+        {
+            speed0:
+            update_effects(sigrenderer);
+            update_tick_counts(sigrenderer);
+        }
 	}
 
 	if (sigrenderer->globalvolume == 0) {
@@ -4348,7 +4383,12 @@ static int process_tick(DUMB_IT_SIGRENDERER *sigrenderer)
 	process_all_playing(sigrenderer);
 
 	{
-		LONG_LONG t = sigrenderer->sub_time_left + ((LONG_LONG)TICK_TIME_DIVIDEND << 16) / sigrenderer->tempo;
+        LONG_LONG t = ((LONG_LONG)TICK_TIME_DIVIDEND << 16) / sigrenderer->tempo;
+        if ( sigrenderer->sigdata->flags & IT_WAS_AN_STM )
+        {
+            t /= 16;
+        }
+        t += sigrenderer->sub_time_left;
 		sigrenderer->time_left += (int)(t >> 16);
 		sigrenderer->sub_time_left = (int)t & 65535;
 	}

@@ -412,6 +412,8 @@ struct IT_PATTERN
 
 #define IT_WAS_AN_OKT     2048
 
+#define IT_WAS_AN_STM     4096
+
 #define IT_ORDER_END  255
 #define IT_ORDER_SKIP 254
 
@@ -465,6 +467,7 @@ struct IT_PLAYING_ENVELOPE
 #define IT_PLAYING_SUSTAINOFF 2
 #define IT_PLAYING_FADING     4
 #define IT_PLAYING_DEAD       8
+#define IT_PLAYING_REVERSE    16
 
 struct IT_PLAYING
 {
