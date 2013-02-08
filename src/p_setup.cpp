@@ -1022,7 +1022,7 @@ void P_LoadGLZSegs (FileReaderBase &data, int type)
 			BYTE side;
 
 			data >> v1 >> partner;
-			if (type == 2)
+			if (type >= 2)
 			{
 				data >> line;
 			}
@@ -1175,13 +1175,20 @@ void LoadZNodes(FileReaderBase &data, int glnodes)
 
 	for (i = 0; i < numNodes; ++i)
 	{
-		SWORD x, y, dx, dy;
+		if (glnodes < 3)
+		{
+			SWORD x, y, dx, dy;
 
-		data >> x >> y >> dx >> dy;
-		nodes[i].x = x << FRACBITS;
-		nodes[i].y = y << FRACBITS;
-		nodes[i].dx = dx << FRACBITS;
-		nodes[i].dy = dy << FRACBITS;
+			data >> x >> y >> dx >> dy;
+			nodes[i].x = x << FRACBITS;
+			nodes[i].y = y << FRACBITS;
+			nodes[i].dx = dx << FRACBITS;
+			nodes[i].dy = dy << FRACBITS;
+		}
+		else
+		{
+			data >> nodes[i].x >> nodes[i].y >> nodes[i].dx >> nodes[i].dy;
+		}
 		for (int j = 0; j < 2; ++j)
 		{
 			for (int k = 0; k < 4; ++k)
@@ -1230,6 +1237,11 @@ void P_LoadZNodes (FileReader &dalump, DWORD id)
 		compressed = true;
 		break;
 
+	case MAKE_ID('Z','G','L','3'):
+		type = 3;
+		compressed = true;
+		break;
+
 	case MAKE_ID('X','N','O','D'):
 		type = 0;
 		compressed = false;
@@ -1242,6 +1254,11 @@ void P_LoadZNodes (FileReader &dalump, DWORD id)
 
 	case MAKE_ID('X','G','L','2'):
 		type = 2;
+		compressed = false;
+		break;
+
+	case MAKE_ID('X','G','L','3'):
+		type = 3;
 		compressed = false;
 		break;
 
@@ -4207,6 +4224,10 @@ void P_SetupLevel (char *lumpname, int position)
 			level.maptype = MAPTYPE_UDMF;
 		}
 		CheckCompatibility(map);
+		if (ib_compatflags & BCOMPATF_REBUILDNODES)
+		{
+			ForceNodeBuild = true;
+		}
 		T_LoadScripts(map);
 
 		if (!map->HasBehavior || map->isText)
@@ -4318,7 +4339,7 @@ void P_SetupLevel (char *lumpname, int position)
 	{
 		// Check for compressed nodes first, then uncompressed nodes
 		FWadLump test;
-		DWORD id = MAKE_ID('X','x','X','x'), idcheck = 0, idcheck2 = 0, idcheck3 = 0, idcheck4 = 0;
+		DWORD id = MAKE_ID('X','x','X','x'), idcheck = 0, idcheck2 = 0, idcheck3 = 0, idcheck4 = 0, idcheck5 = 0, idcheck6 = 0;
 
 		if (map->Size(ML_ZNODES) != 0)
 		{
@@ -4332,12 +4353,14 @@ void P_SetupLevel (char *lumpname, int position)
 			map->Seek(ML_GLZNODES);
 			idcheck = MAKE_ID('Z','G','L','N');
 			idcheck2 = MAKE_ID('Z','G','L','2');
-			idcheck3 = MAKE_ID('X','G','L','N');
-			idcheck4 = MAKE_ID('X','G','L','2');
+			idcheck3 = MAKE_ID('Z','G','L','3');
+			idcheck4 = MAKE_ID('X','G','L','N');
+			idcheck5 = MAKE_ID('X','G','L','2');
+			idcheck6 = MAKE_ID('X','G','L','3');
 		}
 
 		map->file->Read (&id, 4);
-		if (id != 0 && (id == idcheck || id == idcheck2 || id == idcheck3 || id == idcheck4))
+		if (id != 0 && (id == idcheck || id == idcheck2 || id == idcheck3 || id == idcheck4 || id == idcheck5 || id == idcheck6))
 		{
 			try
 			{
@@ -4607,7 +4630,7 @@ void P_SetupLevel (char *lumpname, int position)
 			{
 				players[i].mo = NULL;
 				FPlayerStart *mthing = G_PickPlayerStart(i);
-				P_SpawnPlayer(mthing, i);
+				P_SpawnPlayer(mthing, i, (level.flags2 & LEVEL2_PRERAISEWEAPON) ? SPF_WEAPONFULLYUP : 0);
 			}
 		}
 	}

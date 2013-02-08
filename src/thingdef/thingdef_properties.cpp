@@ -1776,7 +1776,7 @@ DEFINE_CLASS_PROPERTY(yadjust, F, Weapon)
 DEFINE_CLASS_PROPERTY(bobstyle, S, Weapon)
 {
 	static const char *names[] = { "Normal", "Inverse", "Alpha", "InverseAlpha", "Smooth", "InverseSmooth", NULL };
-	static const int flags[] = { AWeapon::BobNormal,
+	static const int styles[] = { AWeapon::BobNormal,
 		AWeapon::BobInverse, AWeapon::BobAlpha, AWeapon::BobInverseAlpha,
 		AWeapon::BobSmooth, AWeapon::BobInverseSmooth, };
 	PROP_STRING_PARM(id, 0);
@@ -1786,7 +1786,7 @@ DEFINE_CLASS_PROPERTY(bobstyle, S, Weapon)
 		I_Error("Unknown bobstyle %s", id);
 		match = 0;
 	}
-	defaults->BobStyle |= flags[match];
+	defaults->BobStyle = styles[match];
 }
 
 //==========================================================================

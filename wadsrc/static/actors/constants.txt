@@ -84,6 +84,7 @@ const int JLOSF_TARGETLOS = 128;
 const int JLOSF_FLIPFOV = 256;
 const int JLOSF_ALLYNOJUMP = 512;
 const int JLOSF_COMBATANTONLY = 1024;
+const int JLOSF_NOAUTOAIM = 2048;
 
 // Flags for A_ChangeVelocity
 const int CVF_RELATIVE = 1;
@@ -91,12 +92,13 @@ const int CVF_REPLACE = 2;
 
 // Flags for A_WeaponReady
 const int WRF_NOBOB = 1;
-const int WRF_NOFIRE = 12;
 const int WRF_NOSWITCH = 2;
 const int WRF_NOPRIMARY = 4;
 const int WRF_NOSECONDARY = 8;
+const int WRF_NOFIRE = WRF_NOPRIMARY | WRF_NOSECONDARY;
 const int WRF_ALLOWRELOAD = 16;
 const int WRF_ALLOWZOOM = 32;
+const int WRF_DISABLESWITCH = 64;
 
 // Morph constants
 const int MRF_ADDSTAMINA = 1;

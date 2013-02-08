@@ -1,4 +1,9 @@
 
+// Changing this constant gives results very similar to changing r_visibility.
+// Default is 232, it seems to give exactly the same light bands as software renderer.
+#define DOOMLIGHTFACTOR 232.0
+
+
 #ifdef DYNLIGHT
 
 // ATI does not like this inside an #ifdef so it will be prepended by the compiling code inside the .EXE now.
@@ -6,7 +11,7 @@
 //#extension GL_EXT_gpu_shader4 : enable
 
 uniform ivec3 lightrange;
-#ifdef MAXLIGHTS128
+#ifndef MAXLIGHTS128
 uniform vec4 lights[256];
 #else
 uniform vec4 lights[128];
@@ -18,6 +23,7 @@ uniform vec4 lights[128];
 
 uniform int fogenabled;
 uniform vec4 fogcolor;
+uniform vec3 dlightcolor;
 uniform vec3 camerapos;
 varying vec4 pixelpos;
 varying vec4 fogparm;
@@ -33,6 +39,33 @@ uniform sampler2D tex;
 
 vec4 Process(vec4 color);
 
+
+varying float lightlevel;
+
+#ifdef SOFTLIGHT
+// Doom lighting equation ripped from EDGE.
+// Big thanks to EDGE developers for making the only port
+// that actually replicates software renderer's lighting in OpenGL.
+// Float version.
+// Basically replace int with float and divide all constants by 31.
+float R_DoomLightingEquation(float light, float dist)
+{
+	/* L in the range 0 to 63 */
+	float L = light * 63.0/31.0;
+
+	float min_L = clamp(36.0/31.0 - L, 0.0, 1.0);
+
+	// Fix objects getting totally black when close.
+	if (dist < 0.0001)
+		dist = 0.0001;
+
+	float scale = 1.0 / dist;
+	float index = (59.0/31.0 - L) - (scale * DOOMLIGHTFACTOR/31.0 - DOOMLIGHTFACTOR/31.0);
+
+	/* result is colormap index (0 bright .. 31 dark) */
+	return clamp(index, min_L, 1.0);
+}
+#endif
 
 //===========================================================================
 //
@@ -59,14 +92,17 @@ vec4 desaturate(vec4 texel)
 vec4 getLightColor(float fogdist, float fogfactor)
 {
 	vec4 color = gl_Color;
-
+	#ifdef SOFTLIGHT
+		float newlightlevel = 1.0 - R_DoomLightingEquation(lightlevel, gl_FragCoord.z);
+		color.rgb *= clamp(vec3(newlightlevel) + dlightcolor, 0.0, 1.0);
+	#endif
 	#ifndef NO_FOG
 	//
 	// apply light diminishing	
 	//
 	if (fogenabled > 0)
 	{
-		#if !defined(NO_SM4) || defined(DOOMLIGHT)
+		#if (!defined(NO_SM4) || defined(DOOMLIGHT)) && !defined SOFTLIGHT
 			// special lighting mode 'Doom' not available on older cards for performance reasons.
 			if (fogdist < fogparm.y) 
 			{

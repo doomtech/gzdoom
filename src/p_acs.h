@@ -74,6 +74,25 @@ void P_WriteACSVars(FILE*);
 void P_ClearACSVars(bool);
 void P_SerializeACSScriptNumber(FArchive &arc, int &scriptnum, bool was2byte);
 
+struct ACSProfileInfo
+{
+	unsigned long long TotalInstr;
+	unsigned int NumRuns;
+	unsigned int MinInstrPerRun;
+	unsigned int MaxInstrPerRun;
+
+	ACSProfileInfo();
+	void AddRun(unsigned int num_instr);
+	void Reset();
+};
+
+struct ProfileCollector
+{
+	ACSProfileInfo *ProfileData;
+	class FBehavior *Module;
+	int Index;
+};
+
 // The in-memory version
 struct ScriptPtr
 {
@@ -83,6 +102,8 @@ struct ScriptPtr
 	BYTE ArgCount;
 	WORD VarCount;
 	WORD Flags;
+
+	ACSProfileInfo ProfileData;
 };
 
 // The present ZDoom version
@@ -165,6 +186,7 @@ public:
 	void StartTypedScripts (WORD type, AActor *activator, bool always, int arg1, bool runNow);
 	DWORD PC2Ofs (int *pc) const { return (DWORD)((BYTE *)pc - Data); }
 	int *Ofs2PC (DWORD ofs) const {	return (int *)(Data + ofs); }
+	int *Jump2PC (DWORD jumpPoint) const { return Ofs2PC(JumpPoints[jumpPoint]); }
 	ACSFormat GetFormat() const { return Format; }
 	ScriptFunction *GetFunction (int funcnum, FBehavior *&module) const;
 	int GetArrayVal (int arraynum, int index) const;
@@ -176,7 +198,12 @@ public:
 	int FindMapArray (const char *arrayname) const;
 	int GetLibraryID () const { return LibraryID; }
 	int *GetScriptAddress (const ScriptPtr *ptr) const { return (int *)(ptr->Address + Data); }
-
+	int GetScriptIndex (const ScriptPtr *ptr) const { ptrdiff_t index = ptr - Scripts; return index >= NumScripts ? -1 : (int)index; }
+	ScriptPtr *GetScriptPtr(int index) const { return index >= 0 && index < NumScripts ? &Scripts[index] : NULL; }
+	int GetLumpNum() const { return LumpNum; }
+	const char *GetModuleName() const { return ModuleName; }
+	ACSProfileInfo *GetFunctionProfileData(int index) { return index >= 0 && index < NumFunctions ? &FunctionProfileData[index] : NULL; }
+	ACSProfileInfo *GetFunctionProfileData(ScriptFunction *func) { return GetFunctionProfileData((int)(func - (ScriptFunction *)Functions)); }
 	SDWORD *MapVars[NUM_MAPVARS];
 
 	static FBehavior *StaticLoadModule (int lumpnum, FileReader * fr=NULL, int len=0);
@@ -203,6 +230,7 @@ private:
 	ScriptPtr *Scripts;
 	int NumScripts;
 	BYTE *Functions;
+	ACSProfileInfo *FunctionProfileData;
 	int NumFunctions;
 	ArrayInfo *ArrayStore;
 	int NumArrays;
@@ -213,6 +241,7 @@ private:
 	TArray<FBehavior *> Imports;
 	DWORD LibraryID;
 	char ModuleName[9];
+	TArray<int> JumpPoints;
 
 	static TArray<FBehavior *> StaticModules;
 
@@ -226,6 +255,9 @@ private:
 
 	void SerializeVars (FArchive &arc);
 	void SerializeVarSet (FArchive &arc, SDWORD *vars, int max);
+
+	friend void ArrangeScriptProfiles(TArray<ProfileCollector> &profiles);
+	friend void ArrangeFunctionProfiles(TArray<ProfileCollector> &profiles);
 };
 
 class DLevelScript : public DObject
@@ -602,6 +634,7 @@ public:
 /*360*/	PCD_CALLSTACK,			// from Eternity
 		PCD_SCRIPTWAITNAMED,
 		PCD_TRANSLATIONRANGE3,
+		PCD_GOTOSTACK,
 
 /*363*/	PCODE_COMMAND_COUNT
 	};
@@ -710,6 +743,7 @@ protected:
 	int				ClipRectLeft, ClipRectTop, ClipRectWidth, ClipRectHeight;
 	int				WrapWidth;
 	FBehavior	    *activeBehavior;
+	int				InModuleScriptNumber;
 
 	void Link ();
 	void Unlink ();

@@ -1868,7 +1868,8 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_LookEx)
 	{
 		if (!(flags & LOF_NOSOUNDCHECK))
 		{
-			targ = (self->flags & MF_NOSECTOR)? self->Sector->SoundTarget : self->LastHeard;
+			targ = (i_compatflags & COMPATF_SOUNDTARGET || self->flags & MF_NOSECTOR)?
+				self->Sector->SoundTarget : self->LastHeard;
 			if (targ != NULL)
 			{
 				// [RH] If the soundtarget is dead, don't chase it
@@ -3069,6 +3070,8 @@ AInventory *P_DropItem (AActor *source, const PClass *type, int dropamount, int 
 				ModifyDropAmount(inv, dropamount);
 				if (inv->SpecialDropAction (source))
 				{
+					// The special action indicates that the item should not spawn
+					inv->Destroy();
 					return NULL;
 				}
 				return inv;

@@ -164,7 +164,6 @@ CVAR(Bool, demo_compress, true, CVAR_ARCHIVE|CVAR_GLOBALCONFIG);
 FString			demoname;
 bool 			demorecording;
 bool 			demoplayback;
-bool 			netdemo;
 bool			demonew;				// [RH] Only used around G_InitNew for demos
 int				demover;
 BYTE*			demobuffer;
@@ -1131,7 +1130,7 @@ void G_Ticker ()
 				Printf ("%s is turbo!\n", players[i].userinfo.netname);
 			}
 
-			if (netgame && !players[i].isbot && !netdemo && (gametic%ticdup) == 0)
+			if (netgame && !players[i].isbot && !demoplayback && (gametic%ticdup) == 0)
 			{
 				//players[i].inconsistant = 0;
 				if (gametic > BACKUPTICS*ticdup && consistancy[i][buf] != cmd->consistancy)
@@ -1386,6 +1385,10 @@ bool G_CheckSpot (int playernum, FPlayerStart *mthing)
 	y = mthing->y;
 	z = mthing->z;
 
+	if (!(level.flags & LEVEL_USEPLAYERSTARTZ))
+	{
+		z = 0;
+	}
 	z += P_PointInSector (x, y)->floorplane.ZatPoint (x, y);
 
 	if (!players[playernum].mo)
@@ -2049,7 +2052,6 @@ static void PutSavePic (FILE *file, int width, int height)
 	}
 	else
 	{
-		P_CheckPlayerSprites();
 		Renderer->WriteSavePic(&players[consoleplayer], file, width, height);
 	}
 }
@@ -2504,7 +2506,7 @@ bool G_ProcessIFFDemo (char *mapname)
 	}
 
 	if (numPlayers > 1)
-		multiplayer = netgame = netdemo = true;
+		multiplayer = netgame = true;
 
 	if (uncompSize > 0)
 	{
@@ -2642,7 +2644,6 @@ bool G_CheckDemoStatus (void)
 
 		P_SetupWeapons_ntohton();
 		demoplayback = false;
-		netdemo = false;
 		netgame = false;
 		multiplayer = false;
 		singletics = false;

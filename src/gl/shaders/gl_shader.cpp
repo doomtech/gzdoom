@@ -49,6 +49,7 @@
 #include "sc_man.h"
 #include "cmdlib.h"
 
+#include "gl/data/gl_data.h"
 #include "gl/renderer/gl_renderer.h"
 #include "gl/renderer/gl_renderstate.h"
 #include "gl/system/gl_cvars.h"
@@ -141,6 +142,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 
 		gl.BindAttribLocation(hShader, VATTR_GLOWDISTANCE, "glowdistance");
 		gl.BindAttribLocation(hShader, VATTR_FOGPARAMS, "fogparams");
+		gl.BindAttribLocation(hShader, VATTR_LIGHTLEVEL, "lightlevel_in"); // Korshun.
 
 		gl.LinkProgram(hShader);
 
@@ -178,6 +180,7 @@ bool FShader::Load(const char * name, const char * vert_prog_lump, const char * 
 		lightrange_index = gl.GetUniformLocation(hShader, "lightrange");
 		fogcolor_index = gl.GetUniformLocation(hShader, "fogcolor");
 		lights_index = gl.GetUniformLocation(hShader, "lights");
+		dlightcolor_index = gl.GetUniformLocation(hShader, "dlightcolor");
 
 		glowbottomcolor_index = gl.GetUniformLocation(hShader, "bottomglowcolor");
 		glowtopcolor_index = gl.GetUniformLocation(hShader, "topglowcolor");
@@ -236,7 +239,15 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 		"#define NO_GLOW\n#define NO_DESATURATE\n#define DYNLIGHT\n",
 		"#define NO_DESATURATE\n#define DYNLIGHT\n",
 		"#define NO_GLOW\n#define DYNLIGHT\n",
-		"\n#define DYNLIGHT\n"
+		"\n#define DYNLIGHT\n",
+		"#define NO_GLOW\n#define NO_DESATURATE\n#define SOFTLIGHT\n",
+		"#define NO_DESATURATE\n#define SOFTLIGHT\n",
+		"#define NO_GLOW\n#define SOFTLIGHT\n",
+		"\n#define SOFTLIGHT\n",
+		"#define NO_GLOW\n#define NO_DESATURATE\n#define DYNLIGHT\n#define SOFTLIGHT\n",
+		"#define NO_DESATURATE\n#define DYNLIGHT\n#define SOFTLIGHT\n",
+		"#define NO_GLOW\n#define DYNLIGHT\n#define SOFTLIGHT\n",
+		"\n#define DYNLIGHT\n#define SOFTLIGHT\n"
 	};
 
 	const char * shaderdesc[] = {
@@ -248,6 +259,14 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 		"::glow+dynlight",
 		"::desaturate+dynlight",
 		"::glow+desaturate+dynlight",
+		"::softlight",
+		"::glow+softlight",
+		"::desaturate+softlight",
+		"::glow+desaturate+softlight",
+		"::default+dynlight+softlight",
+		"::glow+dynlight+softlight",
+		"::desaturate+dynlight+softlight",
+		"::glow+desaturate+dynlight+softlight",
 	};
 
 	FString name;
@@ -280,11 +299,24 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 			try
 			{
 				FString str;
-				if (i>3)
+				if ((i&4) != 0)
 				{
+					if (gl.maxuniforms < 1024 || gl.shadermodel != 4)
+					{
+						shader[i] = NULL;
+						continue;
+					}
 					// this can't be in the shader code due to ATI strangeness.
 					str = "#version 120\n#extension GL_EXT_gpu_shader4 : enable\n";
 					if (gl.MaxLights() == 128) str += "#define MAXLIGHTS128\n";
+				}
+				if ((i&8) == 0)
+				{
+					if (gl.shadermodel != 4)
+					{
+						shader[i] = NULL;
+						continue;
+					}
 				}
 				str += shaderdefines[i];
 				shader[i] = new FShader;
@@ -298,11 +330,6 @@ FShaderContainer::FShaderContainer(const char *ShaderName, const char *ShaderPat
 			{
 				shader[i] = NULL;
 				I_Error("Unable to load shader %s:\n%s\n", name.GetChars(), err.GetMessage());
-			}
-			if (i==3 && gl.maxuniforms < 1024)
-			{
-				shader[4] = shader[5] = shader[6] = shader[7] = 0;
-				break;
 			}
 		}
 	}
@@ -356,7 +383,7 @@ FShader *FShaderContainer::Bind(int cm, bool glowing, float Speed, bool lights)
 	else
 	{
 		bool desat = cm>=CM_DESAT1 && cm<=CM_DESAT31;
-		sh = shader[glowing + 2*desat + 4*lights];
+		sh = shader[glowing + 2*desat + 4*lights + (glset.lightmode & 8)];
 		// [BB] If there was a problem when loading the shader, sh is NULL here.
 		if( sh )
 		{

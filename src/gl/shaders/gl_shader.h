@@ -9,11 +9,10 @@ extern bool gl_shaderactive;
 
 const int VATTR_GLOWDISTANCE = 15;
 const int VATTR_FOGPARAMS = 14;
+const int VATTR_LIGHTLEVEL = 13; // Korshun.
 
 //==========================================================================
 //
-// set brightness map and glowstatus
-// Change will only take effect when the texture is rebound!
 //
 //==========================================================================
 
@@ -37,6 +36,7 @@ class FShader
 	int lightrange_index;
 	int fogcolor_index;
 	int lights_index;
+	int dlightcolor_index;
 
 	int glowbottomcolor_index;
 	int glowtopcolor_index;
@@ -71,6 +71,7 @@ public:
 		lightrange_index = -1;
 		fogcolor_index = -1;
 		lights_index = -1;
+		dlightcolor_index = -1;
 
 	}
 
@@ -100,7 +101,7 @@ class FShaderContainer
 
 	FName Name;
 
-	enum { NUM_SHADERS = 8 };
+	enum { NUM_SHADERS = 16 };
 
 	FShader *shader[NUM_SHADERS];
 	FShader *shader_cm;	// the shader for fullscreen colormaps

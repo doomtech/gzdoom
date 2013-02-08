@@ -5,6 +5,13 @@
 #define APIENTRY
 #endif // __APPLE__
 
+#ifndef PFNGLMULTITEXCOORD2FPROC
+typedef void (APIENTRYP PFNGLMULTITEXCOORD2FPROC) (GLenum target, GLfloat s, GLfloat t);
+#endif
+#ifndef PFNGLMULTITEXCOORD2FVPROC
+typedef void (APIENTRYP PFNGLMULTITEXCOORD2FVPROC) (GLenum target, const GLfloat *v);
+#endif
+
 enum RenderFlags
 {
 	RFL_NPOT_TEXTURE=1,

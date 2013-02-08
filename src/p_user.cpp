@@ -247,6 +247,7 @@ player_t::player_t()
   ReadyWeapon(0),
   PendingWeapon(0),
   cheats(0),
+  WeaponState(0),
   timefreezer(0),
   refire(0),
   inconsistant(0),
@@ -791,7 +792,7 @@ AWeapon *APlayerPawn::PickNewWeapon (const PClass *ammotype)
 		player->PendingWeapon = best;
 		if (player->ReadyWeapon != NULL)
 		{
-			P_SetPsprite (player, ps_weapon, player->ReadyWeapon->GetDownState());
+			P_DropWeapon(player);
 		}
 		else if (player->PendingWeapon != WP_NOCHANGE)
 		{
@@ -1483,75 +1484,50 @@ DEFINE_ACTION_FUNCTION(AActor, A_CheckPlayerDone)
 //
 // P_CheckPlayerSprites
 //
-// Here's the place where crouching sprites are handled
-// This must be called each frame before rendering
+// Here's the place where crouching sprites are handled.
+// R_ProjectSprite() calls this for any players.
 //
 //===========================================================================
 
-void P_CheckPlayerSprites()
+void P_CheckPlayerSprite(AActor *actor, int &spritenum, fixed_t &scalex, fixed_t &scaley)
 {
-	for(int i=0; i<MAXPLAYERS; i++)
+	player_t *player = actor->player;
+	int crouchspriteno;
+
+	if (player->userinfo.skin != 0 && !(actor->flags4 & MF4_NOSKIN))
 	{
-		player_t * player = &players[i];
-		APlayerPawn * mo = player->mo;
+		// Convert from default scale to skin scale.
+		fixed_t defscaleY = actor->GetDefault()->scaleY;
+		fixed_t defscaleX = actor->GetDefault()->scaleX;
+		scaley = Scale(scaley, skins[player->userinfo.skin].ScaleY, defscaleY);
+		scalex = Scale(scalex, skins[player->userinfo.skin].ScaleX, defscaleX);
+	}
 
-		if (playeringame[i] && mo != NULL)
+	// Set the crouch sprite?
+	if (player->crouchfactor < FRACUNIT*3/4)
+	{
+		if (spritenum == actor->SpawnState->sprite || spritenum == player->mo->crouchsprite) 
 		{
-			int crouchspriteno;
-			fixed_t defscaleY = mo->GetDefault()->scaleY;
-			fixed_t defscaleX = mo->GetDefault()->scaleX;
-			
-			if (player->userinfo.skin != 0 && !(player->mo->flags4 & MF4_NOSKIN))
-			{
-				defscaleY = skins[player->userinfo.skin].ScaleY;
-				defscaleX = skins[player->userinfo.skin].ScaleX;
-			}
-			
-			// Set the crouch sprite
-			if (player->crouchfactor < FRACUNIT*3/4)
-			{
-				if (mo->sprite == mo->SpawnState->sprite || mo->sprite == mo->crouchsprite) 
-				{
-					crouchspriteno = mo->crouchsprite;
-				}
-				else if (!(player->mo->flags4 & MF4_NOSKIN) &&
-						(mo->sprite == skins[player->userinfo.skin].sprite ||
-						 mo->sprite == skins[player->userinfo.skin].crouchsprite))
-				{
-					crouchspriteno = skins[player->userinfo.skin].crouchsprite;
-				}
-				else
-				{
-					// no sprite -> squash the existing one
-					crouchspriteno = -1;
-				}
+			crouchspriteno = player->mo->crouchsprite;
+		}
+		else if (!(actor->flags4 & MF4_NOSKIN) &&
+				(spritenum == skins[player->userinfo.skin].sprite ||
+				 spritenum == skins[player->userinfo.skin].crouchsprite))
+		{
+			crouchspriteno = skins[player->userinfo.skin].crouchsprite;
+		}
+		else
+		{ // no sprite -> squash the existing one
+			crouchspriteno = -1;
+		}
 
-				if (crouchspriteno > 0) 
-				{
-					mo->sprite = crouchspriteno;
-					mo->scaleY = defscaleY;
-				}
-				else if (player->playerstate != PST_DEAD)
-				{
-					mo->scaleY = player->crouchfactor < FRACUNIT*3/4 ? defscaleY/2 : defscaleY;
-				}
-			}
-			else	// Set the normal sprite
-			{
-				if (mo->sprite != 0)
-				{
-					if (mo->sprite == mo->crouchsprite)
-					{
-						mo->sprite = mo->SpawnState->sprite;
-					}
-					else if (mo->sprite != 0 && mo->sprite == skins[player->userinfo.skin].crouchsprite)
-					{
-						mo->sprite = skins[player->userinfo.skin].sprite;
-					}
-				}
-				mo->scaleY = defscaleY;
-			}
-			mo->scaleX = defscaleX;
+		if (crouchspriteno > 0) 
+		{
+			spritenum = crouchspriteno;
+		}
+		else if (player->playerstate != PST_DEAD && player->crouchfactor < FRACUNIT*3/4)
+		{
+			scaley /= 2;
 		}
 	}
 }
@@ -2694,6 +2670,16 @@ void player_t::Serialize (FArchive &arc)
 			mo->accuracy = oldaccuracy;
 			mo->stamina = oldstamina;
 		}
+	}
+	if (SaveVersion < 4041)
+	{
+		// Move weapon state flags from cheats and into WeaponState.
+		WeaponState = ((cheats >> 14) & 1) | ((cheats & (0x37 << 24)) >> (24 - 1));
+		cheats &= ~((1 << 14) | (0x37 << 24));
+	}
+	else
+	{
+		arc << WeaponState;
 	}
 	arc << LogText
 		<< ConversationNPC

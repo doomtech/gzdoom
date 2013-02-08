@@ -68,6 +68,7 @@ CVAR(Float, gl_sclipthreshold, 10.0, CVAR_ARCHIVE)
 CVAR(Float, gl_sclipfactor, 1.8, CVAR_ARCHIVE)
 CVAR(Int, gl_particles_style, 2, CVAR_ARCHIVE | CVAR_GLOBALCONFIG) // 0 = square, 1 = round, 2 = smooth
 CVAR(Int, gl_billboard_mode, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, gl_billboard_particles, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Int, gl_enhanced_nv_stealth, 3, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CUSTOM_CVAR(Int, gl_fuzztype, 0, CVAR_ARCHIVE)
 {
@@ -115,7 +116,7 @@ void GLSprite::Draw(int pass)
 
 
 	bool additivefog = false;
-	int rel = extralight*gl_weaponlight;
+	int rel = getExtraLight();
 
 	if (pass==GLPASS_TRANSLUCENT)
 	{
@@ -215,9 +216,9 @@ void GLSprite::Draw(int pass)
 	if (!modelframe)
 	{
 		// [BB] Billboard stuff
-		const bool drawWithXYBillboard = ( !(actor && actor->renderflags & RF_FORCEYBILLBOARD)
+		const bool drawWithXYBillboard = ( (particle && gl_billboard_particles) || (!(actor && actor->renderflags & RF_FORCEYBILLBOARD)
 		                                   //&& GLRenderer->mViewActor != NULL
-		                                   && (gl_billboard_mode == 1 || (actor && actor->renderflags & RF_FORCEXYBILLBOARD )) );
+		                                   && (gl_billboard_mode == 1 || (actor && actor->renderflags & RF_FORCEXYBILLBOARD ))) );
 		gl_RenderState.Apply();
 		gl.Begin(GL_TRIANGLE_STRIP);
 		if ( drawWithXYBillboard )
@@ -303,6 +304,7 @@ void GLSprite::Draw(int pass)
 		Colormap.FadeColor = backupfade;
 
 	gl_RenderState.EnableTexture(true);
+	gl_RenderState.SetDynLight(0,0,0);
 }
 
 
@@ -443,8 +445,19 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 	// don't draw the thing that's used as camera (for viewshifts during quakes!)
 	if (thing==GLRenderer->mViewActor) return;
 
- 	// invisible things
-	if (thing->sprite==0) return;
+	// Don't waste time projecting sprites that are definitely not visible.
+	if (thing == NULL || thing->sprite == 0 || !thing->IsVisibleToPlayer())
+	{
+		return;
+	}
+
+	int spritenum = thing->sprite;
+	fixed_t spritescaleX = thing->scaleX;
+	fixed_t spritescaleY = thing->scaleY;
+	if (thing->player != NULL)
+	{
+		P_CheckPlayerSprite(thing, spritenum, spritescaleX, spritescaleY);
+	}
 
 	if (thing->renderflags & RF_INVISIBLE || !thing->RenderStyle.IsVisible(thing->alpha)) 
 	{
@@ -452,7 +465,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 			return; 
 	}
 
-	// If this thing is in a map section that's not in view it can't possible be visible
+	// If this thing is in a map section that's not in view it can't possibly be visible
 	if (!(currentmapsection[thing->subsector->mapsection>>3] & (1 << (thing->subsector->mapsection & 7)))) return;
 
 	// [RH] Interpolate the sprite's position to make it look smooth
@@ -460,13 +473,13 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 	fixed_t thingy = thing->PrevY + FixedMul (r_TicFrac, thing->y - thing->PrevY);
 	fixed_t thingz = thing->PrevZ + FixedMul (r_TicFrac, thing->z - thing->PrevZ);
 
-	// too close to the camera. This doesn't look good if it is a sprite.
+	// Too close to the camera. This doesn't look good if it is a sprite.
 	if (P_AproxDistance(thingx-viewx, thingy-viewy)<2*FRACUNIT)
 	{
 		// exclude vertically moving objects from this check.
 		if (!(thing->velx==0 && thing->vely==0 && thing->velz!=0))
 		{
-			if (!gl_FindModelFrame(RUNTIME_TYPE(thing), thing->sprite, thing->frame, false))
+			if (!gl_FindModelFrame(RUNTIME_TYPE(thing), spritenum, thing->frame, false))
 			{
 				return;
 			}
@@ -502,13 +515,13 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 	z = FIXED2FLOAT(thingz-thing->floorclip);
 	y = FIXED2FLOAT(thingy);
 	
-	modelframe = gl_FindModelFrame(RUNTIME_TYPE(thing), thing->sprite, thing->frame, !!(thing->flags & MF_DROPPED));
+	modelframe = gl_FindModelFrame(RUNTIME_TYPE(thing), spritenum, thing->frame, !!(thing->flags & MF_DROPPED));
 	if (!modelframe)
 	{
 		angle_t ang = R_PointToAngle(thingx, thingy);
 
 		bool mirror;
-		FTextureID patch = gl_GetSpriteFrame(thing->sprite, thing->frame, -1, ang - thing->angle, &mirror);
+		FTextureID patch = gl_GetSpriteFrame(spritenum, thing->frame, -1, ang - thing->angle, &mirror);
 		if (!patch.isValid()) return;
 		gltexture=FMaterial::ValidateTexture(patch, false);
 		if (!gltexture) return;
@@ -548,7 +561,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 			}
 		}
 
-		r.Scale(FIXED2FLOAT(thing->scaleX),FIXED2FLOAT(thing->scaleY));
+		r.Scale(FIXED2FLOAT(spritescaleX),FIXED2FLOAT(spritescaleY));
 
 		float rightfac=-r.left;
 		float leftfac=rightfac-r.width;
@@ -556,7 +569,7 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 		z1=z-r.top;
 		z2=z1-r.height;
 
-		float spriteheight = FIXED2FLOAT(thing->scaleY) * gltexture->GetScaledHeightFloat(GLUSE_SPRITE);
+		float spriteheight = FIXED2FLOAT(spritescaleY) * gltexture->GetScaledHeightFloat(GLUSE_SPRITE);
 		
 		// Tests show that this doesn't look good for many decorations and corpses
 		if (spriteheight>0 && gl_spriteclip>0)
@@ -682,9 +695,8 @@ void GLSprite::Process(AActor* thing,sector_t * sector)
 
 	// allow disabling of the fullbright flag by a brightmap definition
 	// (e.g. to do the gun flashes of Doom's zombies correctly.
-	fullbright = 
-		(thing->renderflags & RF_FULLBRIGHT) &&
-		(!gl_BrightmapsActive() || !gltexture || !gltexture->tex->gl_info.bBrightmapDisablesFullbright);
+	fullbright = (thing->flags5 & MF5_BRIGHT) ||
+		((thing->renderflags & RF_FULLBRIGHT) && (!gl_BrightmapsActive() || !gltexture || !gltexture->tex->gl_info.bBrightmapDisablesFullbright));
 
 	lightlevel=fullbright? 255 : 
 		gl_ClampLight(rendersector->GetTexture(sector_t::ceiling) == skyflatnum ? 

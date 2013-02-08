@@ -223,6 +223,7 @@ xx(Rocket)
 xx(Plasma)
 xx(BFG)
 //xx(Railgun)
+xx(Dagger)
 
 // Damage types
 //xx(Fire)		already defined above
