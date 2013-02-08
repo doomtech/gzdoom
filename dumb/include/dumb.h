@@ -233,7 +233,6 @@ int32 DUMBEXPORT duh_get_length(DUH *duh);
 
 const char *DUMBEXPORT duh_get_tag(DUH *duh, const char *key);
 
-
 /* Signal Rendering Functions */
 
 typedef struct DUH_SIGRENDERER DUH_SIGRENDERER;
@@ -395,6 +394,8 @@ void DUMBEXPORT dumb_it_set_global_volume_zero_callback(DUMB_IT_SIGRENDERER *sig
 
 int DUMBCALLBACK dumb_it_callback_terminate(void *data);
 int DUMBCALLBACK dumb_it_callback_midi_block(void *data, int channel, unsigned char midi_byte);
+
+/* dumb_*_mod*: restrict |= 1-Don't read 15 sample files / 2-Use old pattern counting method */
 
 DUH *DUMBEXPORT dumb_load_it(const char *filename);
 DUH *DUMBEXPORT dumb_load_xm(const char *filename);
@@ -609,6 +610,8 @@ sigdata_t *DUMBEXPORT duh_get_raw_sigdata(DUH *duh, int sig, int32 type);
 
 DUH_SIGRENDERER *DUMBEXPORT duh_encapsulate_raw_sigrenderer(sigrenderer_t *vsigrenderer, DUH_SIGTYPE_DESC *desc, int n_channels, int32 pos);
 sigrenderer_t *DUMBEXPORT duh_get_raw_sigrenderer(DUH_SIGRENDERER *sigrenderer, int32 type);
+
+int DUMBEXPORT duh_add_signal(DUH *duh, DUH_SIGTYPE_DESC *desc, sigdata_t *sigdata);
 
 
 /* Standard Signal Types */
