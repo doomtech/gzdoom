@@ -227,7 +227,7 @@ void G_NewInit ()
 	int i;
 
 	G_ClearSnapshots ();
-	SB_state = screen->GetPageCount ();
+	ST_SetNeedRefresh();
 	netgame = false;
 	multiplayer = false;
 	if (demoplayback)
@@ -424,7 +424,7 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 	demoplayback = false;
 	automapactive = false;
 	viewactive = true;
-	BorderNeedRefresh = screen->GetPageCount ();
+	V_SetBorderNeedRefresh();
 
 	//Added by MC: Initialize bots.
 	if (!deathmatch)
@@ -927,7 +927,7 @@ void G_DoLoadLevel (int position, bool autosave)
 	G_UnSnapshotLevel (!savegamerestore);	// [RH] Restore the state of the level.
 	G_FinishTravel ();
 	// For each player, if they are viewing through a player, make sure it is themselves.
-	for (int ii = 0; i < MAXPLAYERS; ++i)
+	for (int ii = 0; ii < MAXPLAYERS; ++ii)
 	{
 		if (playeringame[ii] && (players[ii].camera == NULL || players[ii].camera->player != NULL))
 		{
