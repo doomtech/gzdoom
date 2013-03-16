@@ -40,6 +40,7 @@ struct MapData
 	bool Encrypted;
 	bool isDoom64;
 	bool isText;
+	bool InWad;
 	int lumpnum;
 	FileReader * file;
 	FResourceFile * resource;
@@ -56,6 +57,7 @@ struct MapData
 		Encrypted = false;
 		isDoom64 = false;
 		isText = false;
+		InWad = false;
 	}
 	
 	~MapData()
@@ -163,5 +165,15 @@ struct FMissingCount
 	int Count;
 };
 typedef TMap<FString,FMissingCount> FMissingTextureTracker;
+
+// Record of user data for UDMF maps
+struct FMapThingUserData
+{
+	FName Property;
+	int Value;
+};
+extern TMap<unsigned,unsigned> MapThingsUserDataIndex;	// from mapthing idx -> user data idx
+extern TArray<FMapThingUserData> MapThingsUserData;
+
 
 #endif

@@ -227,7 +227,7 @@ void G_NewInit ()
 	int i;
 
 	G_ClearSnapshots ();
-	SB_state = screen->GetPageCount ();
+	ST_SetNeedRefresh();
 	netgame = false;
 	multiplayer = false;
 	if (demoplayback)
@@ -424,7 +424,7 @@ void G_InitNew (const char *mapname, bool bTitleLevel)
 	demoplayback = false;
 	automapactive = false;
 	viewactive = true;
-	BorderNeedRefresh = screen->GetPageCount ();
+	V_SetBorderNeedRefresh();
 
 	//Added by MC: Initialize bots.
 	if (!deathmatch)
@@ -489,7 +489,7 @@ void G_ChangeLevel(const char *levelname, int position, int flags, int nextSkill
 	}
 	else if (strncmp(levelname, "enDSeQ", 6) != 0)
 	{
-		nextinfo = FindLevelInfo (levelname);
+		nextinfo = FindLevelInfo (levelname, false);
 		if (nextinfo != NULL)
 		{
 			level_info_t *nextredir = nextinfo->CheckLevelRedirect();
@@ -655,17 +655,14 @@ void G_DoCompleted (void)
 	}
 	else
 	{
-		if (strncmp (nextlevel, "enDSeQ", 6) == 0)
+		level_info_t *nextinfo = FindLevelInfo (nextlevel, false);
+		if (nextinfo == NULL || strncmp (nextlevel, "enDSeQ", 6) == 0)
 		{
 			wminfo.next = nextlevel;
 			wminfo.LName1 = NULL;
 		}
 		else
 		{
-
-
-
-			level_info_t *nextinfo = FindLevelInfo (nextlevel);
 			wminfo.next = nextinfo->mapname;
 			wminfo.LName1 = TexMan[TexMan.CheckForTexture(nextinfo->pname, FTexture::TEX_MiscPatch)];
 		}
@@ -930,7 +927,7 @@ void G_DoLoadLevel (int position, bool autosave)
 	G_UnSnapshotLevel (!savegamerestore);	// [RH] Restore the state of the level.
 	G_FinishTravel ();
 	// For each player, if they are viewing through a player, make sure it is themselves.
-	for (int ii = 0; i < MAXPLAYERS; ++i)
+	for (int ii = 0; ii < MAXPLAYERS; ++ii)
 	{
 		if (playeringame[ii] && (players[ii].camera == NULL || players[ii].camera->player != NULL))
 		{

@@ -4768,8 +4768,9 @@ AActor *P_SpawnMapThing (FMapThing *mthing, int position)
 AActor *P_SpawnPuff (AActor *source, const PClass *pufftype, fixed_t x, fixed_t y, fixed_t z, angle_t dir, int updown, int flags)
 {
 	AActor *puff;
-
-	z += pr_spawnpuff.Random2 () << 10;
+	
+	if (!(flags & PF_NORANDOMZ))
+		z += pr_spawnpuff.Random2 () << 10;
 
 	puff = Spawn (pufftype, x, y, z, ALLOW_REPLACE);
 	if (puff == NULL) return NULL;
@@ -5657,7 +5658,9 @@ AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 	if (source && source->player && source->player->ReadyWeapon && (source->player->ReadyWeapon->WeaponFlags & WIF_NOAUTOAIM))
 	{
 		// Keep exactly the same angle and pitch as the player's own aim
-		pitch = source->pitch; linetarget = NULL;
+		an = angle;
+		pitch = source->pitch;
+		linetarget = NULL;
 	}
 	else // see which target is to be aimed at
 	{
@@ -5675,14 +5678,14 @@ AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 				break;
 			}
 		} while (linetarget == NULL && --i >= 0);
-	}
 
-	if (linetarget == NULL)
-	{
-		an = angle;
-		if (nofreeaim || !level.IsFreelookAllowed())
+		if (linetarget == NULL)
 		{
-			pitch = 0;
+			an = angle;
+			if (nofreeaim || !level.IsFreelookAllowed())
+			{
+				pitch = 0;
+			}
 		}
 	}
 	if (pLineTarget) *pLineTarget = linetarget;
@@ -6131,9 +6134,9 @@ void PrintMiscActorInfo(AActor *query)
         toprint.AppendFormat("\n\tflags6: %x", query->flags6);
         for (flagi = 0; flagi < 31; flagi++)
             if (query->flags6 & 1<<flagi) Printf(" %s", FLAG_NAME(1<<flagi, flags6));
-        toprint.AppendFormat("\nBounce style: %x\nBounce factors: f:%f, w:%f\nBounce flags: %x",
+        toprint.AppendFormat("\nBounce flags: %x\nBounce factors: f:%f, w:%f",
             query->BounceFlags, FIXED2FLOAT(query->bouncefactor),
-            FIXED2FLOAT(query->wallbouncefactor), query->BounceFlags);
+            FIXED2FLOAT(query->wallbouncefactor));
 		/*for (flagi = 0; flagi < 31; flagi++)
 			if (query->BounceFlags & 1<<flagi) Printf(" %s", flagnamesb[flagi]);*/
 		toprint.AppendFormat("\nRender style = %i:%s, alpha %f\nRender flags: %x", 

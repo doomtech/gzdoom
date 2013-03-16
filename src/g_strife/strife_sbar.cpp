@@ -234,7 +234,7 @@ public:
 		{
 			if (state == HUD_Fullscreen)
 			{
-				SB_state = screen->GetPageCount ();
+				ST_SetNeedRefresh();
 				DrawFullScreenStuff ();
 			}
 
@@ -311,7 +311,7 @@ private:
 
 		CursorImage = Images[imgINVCURS] != NULL ? imgINVCURS : imgCURSOR01;
 
-		SB_state = screen->GetPageCount ();
+		ST_SetNeedRefresh();
 
 		CurrentPop = POP_None;
 		PendingPop = POP_NoChange;
@@ -445,6 +445,7 @@ private:
 		}
 
 		// Inventory
+		CPlayer->inventorytics = 0;
 		CPlayer->mo->InvFirst = ValidateInvFirst (6);
 		for (item = CPlayer->mo->InvFirst, i = 0; item != NULL && i < 6; item = item->NextInv(), ++i)
 		{

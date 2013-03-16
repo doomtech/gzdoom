@@ -68,6 +68,7 @@
 #include "g_shared/a_specialspot.h"
 #include "actorptrselect.h"
 #include "m_bbox.h"
+#include "r_data/r_translate.h"
 
 
 static FRandom pr_camissile ("CustomActorfire");
@@ -1041,6 +1042,7 @@ enum CBA_Flags
 	CBAF_NORANDOM = 2,
 	CBAF_EXPLICITANGLE = 4,
 	CBAF_NOPITCH = 8,
+	CBAF_NORANDOMPUFFZ = 16,
 };
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomBulletAttack)
@@ -1059,6 +1061,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomBulletAttack)
 	int i;
 	int bangle;
 	int bslope = 0;
+	int laflags = (Flags & CBAF_NORANDOMPUFFZ)? LAF_NORANDOMPUFFZ : 0;
 
 	if (self->target || (Flags & CBAF_AIMFACING))
 	{
@@ -1091,7 +1094,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomBulletAttack)
 			if (!(Flags & CBAF_NORANDOM))
 				damage *= ((pr_cabullet()%3)+1);
 
-			P_LineAttack(self, angle, Range, slope, damage, NAME_Hitscan, pufftype);
+			P_LineAttack(self, angle, Range, slope, damage, NAME_Hitscan, pufftype, laflags);
 		}
     }
 }
@@ -1206,6 +1209,7 @@ enum FB_Flags
 	FBF_EXPLICITANGLE = 4,
 	FBF_NOPITCH = 8,
 	FBF_NOFLASH = 16,
+	FBF_NORANDOMPUFFZ = 32,
 };
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FireBullets)
@@ -1227,6 +1231,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FireBullets)
 	int i;
 	int bangle;
 	int bslope = 0;
+	int laflags = (Flags & FBF_NORANDOMPUFFZ)? LAF_NORANDOMPUFFZ : 0;
 
 	if ((Flags & FBF_USEAMMO) && weapon)
 	{
@@ -1251,7 +1256,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FireBullets)
 		if (!(Flags & FBF_NORANDOM))
 			damage *= ((pr_cwbullet()%3)+1);
 
-		P_LineAttack(self, bangle, Range, bslope, damage, NAME_Hitscan, PuffType);
+		P_LineAttack(self, bangle, Range, bslope, damage, NAME_Hitscan, PuffType, laflags);
 	}
 	else 
 	{
@@ -1277,7 +1282,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FireBullets)
 			if (!(Flags & FBF_NORANDOM))
 				damage *= ((pr_cwbullet()%3)+1);
 
-			P_LineAttack(self, angle, Range, slope, damage, NAME_Hitscan, PuffType);
+			P_LineAttack(self, angle, Range, slope, damage, NAME_Hitscan, PuffType, laflags);
 		}
 	}
 }
@@ -1358,6 +1363,7 @@ enum
 	CPF_USEAMMO = 1,
 	CPF_DAGGER = 2,
 	CPF_PULLIN = 4,
+	CPF_NORANDOMPUFFZ = 8,
 };
 
 DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomPunch)
@@ -1393,8 +1399,9 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_CustomPunch)
 	}
 
 	if (!PuffType) PuffType = PClass::FindClass(NAME_BulletPuff);
+	int puffFlags = LAF_ISMELEEATTACK | (flags & CPF_NORANDOMPUFFZ)? LAF_NORANDOMPUFFZ : 0;
 
-	P_LineAttack (self, angle, Range, pitch, Damage, NAME_Melee, PuffType, true, &linetarget);
+	P_LineAttack (self, angle, Range, pitch, Damage, NAME_Melee, PuffType, puffFlags, &linetarget);
 
 	// turn to face target
 	if (linetarget)
@@ -1723,6 +1730,7 @@ enum SIX_Flags
 	SIXF_TRANSFERAMBUSHFLAG=256,
 	SIXF_TRANSFERPITCH=512,
 	SIXF_TRANSFERPOINTERS=1024,
+	SIXF_USEBLOODCOLOR=2048,
 };
 
 
@@ -1732,9 +1740,18 @@ static bool InitSpawnedItem(AActor *self, AActor *mo, int flags)
 	{
 		AActor * originator = self;
 
-		if ((flags & SIXF_TRANSFERTRANSLATION) && !(mo->flags2 & MF2_DONTTRANSLATE))
+		if (!(mo->flags2 & MF2_DONTTRANSLATE))
 		{
-			mo->Translation = self->Translation;
+			if (flags & SIXF_TRANSFERTRANSLATION)
+			{
+				mo->Translation = self->Translation;
+			}
+			else if (flags & SIXF_USEBLOODCOLOR)
+			{
+				// [XA] Use the spawning actor's BloodColor to translate the newly-spawned object.
+				PalEntry bloodcolor = self->GetBloodColor();
+				mo->Translation = TRANSLATION(TRANSLATION_Blood, bloodcolor.a);
+			}
 		}
 		if (flags & SIXF_TRANSFERPOINTERS)
 		{
@@ -4524,4 +4541,18 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SetTics)
 	ACTION_PARAM_INT(tics_to_set, 0);
 
 	self->tics = tics_to_set;
+}
+
+//==========================================================================
+//
+// A_SetDamageType
+//
+//==========================================================================
+
+DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SetDamageType)
+{
+	ACTION_PARAM_START(1);
+	ACTION_PARAM_NAME(damagetype, 0);
+
+	self->DamageType = damagetype;
 }

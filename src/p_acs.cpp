@@ -7185,19 +7185,13 @@ scriptwait:
 
 				if (tag == 0)
 				{
-					if (activator->player)
+					if (activator != NULL && activator->player)
 					{
-						if (P_MorphPlayer(activator->player, activator->player, playerclass, duration, style, morphflash, unmorphflash))
-						{
-							changes++;
-						}
+						changes += P_MorphPlayer(activator->player, activator->player, playerclass, duration, style, morphflash, unmorphflash);
 					}
 					else
 					{
-						if (P_MorphMonster(activator, monsterclass, duration, style, morphflash, unmorphflash))
-						{
-							changes++;
-						}
+						changes += P_MorphMonster(activator, monsterclass, duration, style, morphflash, unmorphflash);
 					}
 				}
 				else
@@ -7209,17 +7203,12 @@ scriptwait:
 					{
 						if (actor->player)
 						{
-							if (P_MorphPlayer(activator->player, actor->player, playerclass, duration, style, morphflash, unmorphflash))
-							{
-								changes++;
-							}
+							changes += P_MorphPlayer(activator == NULL ? NULL : activator->player,
+								actor->player, playerclass, duration, style, morphflash, unmorphflash);
 						}
 						else
 						{
-							if (P_MorphMonster(actor, monsterclass, duration, style, morphflash, unmorphflash))
-							{
-								changes++;
-							}
+							changes += P_MorphMonster(actor, monsterclass, duration, style, morphflash, unmorphflash);
 						}
 					}
 				}
@@ -7348,7 +7337,12 @@ scriptwait:
 				{
 					case PCD_STRCPYTOMAPCHRANGE:
 						{
-							Stack[sp-6] = activeBehavior->CopyStringToArray(STACK(5), index, capacity, lookup);
+							int a = STACK(5);
+							if (a < NUM_MAPVARS && a > 0 &&
+								activeBehavior->MapVars[a])
+							{
+								Stack[sp-6] = activeBehavior->CopyStringToArray(*(activeBehavior->MapVars[a]), index, capacity, lookup);
+							}
 						}
 						break;
 					case PCD_STRCPYTOWORLDCHRANGE:
@@ -7877,7 +7871,7 @@ static void ShowProfileData(TArray<ProfileCollector> &profiles, long ilimit,
 		}
 
 		// Module name
-		mysnprintf(modname, sizeof(modname), prof->Module->GetModuleName());
+		mysnprintf(modname, sizeof(modname), "%s", prof->Module->GetModuleName());
 
 		// Script/function name
 		if (functions)
@@ -7953,7 +7947,7 @@ CCMD(acsprofile)
 			// If it's a name, set the sort method. We accept partial matches for
 			// options that are shorter than the sort name.
 			size_t optlen = strlen(argv[i]);
-			int j;
+			unsigned int j;
 			for (j = 0; j < countof(sort_names); ++j)
 			{
 				if (optlen < sort_match_len[j] || optlen > strlen(sort_names[j]))
