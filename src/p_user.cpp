@@ -766,6 +766,12 @@ AWeapon *APlayerPawn::BestWeapon (const PClass *ammotype)
 			!weap->CheckAmmo (AWeapon::PrimaryFire, false))
 			continue;
 
+		// Don't select if if there isn't enough ammo as determined by the weapon's author.
+		if (weap->MinSelAmmo1 > 0 && (weap->Ammo1 == NULL || weap->Ammo1->Amount < weap->MinSelAmmo1))
+			continue;
+		if (weap->MinSelAmmo2 > 0 && (weap->Ammo2 == NULL || weap->Ammo2->Amount < weap->MinSelAmmo2))
+			continue;
+
 		// This weapon is usable!
 		bestOrder = weap->SelectionOrder;
 		bestMatch = weap;
@@ -2103,7 +2109,7 @@ void P_PlayerThink (player_t *player)
 		player->ReadyWeapon != NULL &&			// No adjustment if no weapon.
 		player->ReadyWeapon->FOVScale != 0)		// No adjustment if the adjustment is zero.
 	{
-		// A negative scale is used top prevent G_AddViewAngle/G_AddViewPitch
+		// A negative scale is used to prevent G_AddViewAngle/G_AddViewPitch
 		// from scaling with the FOV scale.
 		desired *= fabs(player->ReadyWeapon->FOVScale);
 	}
@@ -2373,7 +2379,7 @@ void P_PlayerThink (player_t *player)
 			}
 			if (player->mo->waterlevel >= 2 || (player->mo->flags2 & MF2_FLY) || (player->cheats & CF_NOCLIP2))
 			{
-				player->mo->velz = cmd->ucmd.upmove << 9;
+				player->mo->velz = FixedMul(player->mo->Speed, cmd->ucmd.upmove << 9);
 				if (player->mo->waterlevel < 2 && !(player->mo->flags & MF_NOGRAVITY))
 				{
 					player->mo->flags2 |= MF2_FLY;

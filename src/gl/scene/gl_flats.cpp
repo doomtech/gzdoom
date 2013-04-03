@@ -632,8 +632,11 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 		if (x.ffloors.Size())
 		{
 			light = P_GetPlaneLight(sector, &frontsector->floorplane, false);
-			if (!(sector->GetFlags(sector_t::floor)&PLANEF_ABSLIGHTING) || light!=&x.lightlist[0])	
+			if ((!(sector->GetFlags(sector_t::floor)&PLANEF_ABSLIGHTING) || light!=&x.lightlist[0])	
+				&& (light->p_lightlevel != &frontsector->lightlevel))
+			{
 				lightlevel = *light->p_lightlevel;
+			}
 
 			Colormap.CopyLightColor(COLORMAP_SELECT(light->extra_colormap, LIGHT_FLOOR));
 		}
@@ -682,7 +685,11 @@ void GLFlat::ProcessSector(sector_t * frontsector)
 		{
 			light = P_GetPlaneLight(sector, &sector->ceilingplane, true);
 
-			if(!(sector->GetFlags(sector_t::ceiling)&PLANEF_ABSLIGHTING)) lightlevel = *light->p_lightlevel;
+			if ((!(sector->GetFlags(sector_t::ceiling)&PLANEF_ABSLIGHTING))
+				&& (light->p_lightlevel != &frontsector->lightlevel))
+			{
+				lightlevel = *light->p_lightlevel;
+			}
 			Colormap.CopyLightColor(COLORMAP_SELECT(light->extra_colormap, LIGHT_CEILING));
 		}
 		renderstyle = STYLE_Translucent;

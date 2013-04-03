@@ -3054,37 +3054,36 @@ void AActor::Tick ()
 		}
 
 
-		if (cl_rockettrails & 2)
+		if (effects & FX_ROCKET) 
 		{
-			if (effects & FX_ROCKET) 
+			if (++smokecounter == 4)
 			{
-				if (++smokecounter==4)
+				// add some smoke behind the rocket 
+				smokecounter = 0;
+				AActor *th = Spawn("RocketSmokeTrail", x-velx, y-vely, z-velz, ALLOW_REPLACE);
+				if (th)
 				{
-					// add some smoke behind the rocket 
-					smokecounter = 0;
-					AActor * th = Spawn("RocketSmokeTrail", x-velx, y-vely, z-velz, ALLOW_REPLACE);
-					if (th)
-					{
-						th->tics -= pr_rockettrail()&3;
-						if (th->tics < 1) th->tics = 1;
-					}
+					th->tics -= pr_rockettrail()&3;
+					if (th->tics < 1) th->tics = 1;
+					if (!(cl_rockettrails & 2)) th->renderflags |= RF_INVISIBLE;
 				}
 			}
-			else if (effects & FX_GRENADE) 
+		}
+		else if (effects & FX_GRENADE) 
+		{
+			if (++smokecounter == 8)
 			{
-				if (++smokecounter==8)
+				smokecounter = 0;
+				angle_t moveangle = R_PointToAngle2(0,0,velx,vely);
+				AActor * th = Spawn("GrenadeSmokeTrail", 
+					x - FixedMul (finecosine[(moveangle)>>ANGLETOFINESHIFT], radius*2) + (pr_rockettrail()<<10),
+					y - FixedMul (finesine[(moveangle)>>ANGLETOFINESHIFT], radius*2) + (pr_rockettrail()<<10),
+					z - (height>>3) * (velz>>16) + (2*height)/3, ALLOW_REPLACE);
+				if (th)
 				{
-					smokecounter = 0;
-					angle_t moveangle = R_PointToAngle2(0,0,velx,vely);
-					AActor * th = Spawn("GrenadeSmokeTrail", 
-						x - FixedMul (finecosine[(moveangle)>>ANGLETOFINESHIFT], radius*2) + (pr_rockettrail()<<10),
-						y - FixedMul (finesine[(moveangle)>>ANGLETOFINESHIFT], radius*2) + (pr_rockettrail()<<10),
-						z - (height>>3) * (velz>>16) + (2*height)/3, ALLOW_REPLACE);
-					if (th)
-					{
-						th->tics -= pr_rockettrail()&3;
-						if (th->tics < 1) th->tics = 1;
-					}
+					th->tics -= pr_rockettrail()&3;
+					if (th->tics < 1) th->tics = 1;
+					if (!(cl_rockettrails & 2)) th->renderflags |= RF_INVISIBLE;
 				}
 			}
 		}
@@ -5288,10 +5287,8 @@ void P_CheckSplash(AActor *self, fixed_t distance)
 //
 //---------------------------------------------------------------------------
 
-bool P_CheckMissileSpawn (AActor* th)
+bool P_CheckMissileSpawn (AActor* th, fixed_t maxdist)
 {
-	int shift, count = 1;
-
 	// [RH] Don't decrement tics if they are already less than 1
 	if ((th->flags4 & MF4_RANDOMIZE) && th->tics > 0)
 	{
@@ -5300,76 +5297,67 @@ bool P_CheckMissileSpawn (AActor* th)
 			th->tics = 1;
 	}
 
-	// move a little forward so an angle can be computed if it immediately explodes
-	if (th->Speed >= 100*FRACUNIT)
-	{ // Ultra-fast ripper spawning missile
-		shift = 3;
-	}
-	else
-	{ // Normal missile
-		shift = 1;
-	}
-
-	if (th->radius > 0)
+	if (maxdist > 0)
 	{
-		while ( ((th->velx >> shift) > th->radius) || ((th->vely >> shift) > th->radius))
+		// move a little forward so an angle can be computed if it immediately explodes
+		TVector3<double> advance(FIXED2DBL(th->velx), FIXED2DBL(th->vely), FIXED2DBL(th->velz));
+		double maxsquared = FIXED2DBL(maxdist);
+		maxsquared *= maxsquared;
+
+		// Keep halving the advance vector until we get something less than maxdist
+		// units away, since we still want to spawn the missile inside the shooter.
+		do
 		{
-			// we need to take smaller steps but to produce the same end result
-			// we have to do more of them.
-			shift++;
-			count<<=1;
+			advance *= 0.5f;
 		}
+		while (TVector2<double>(advance).LengthSquared() >= maxsquared);
+		th->x += FLOAT2FIXED(advance.X);
+		th->y += FLOAT2FIXED(advance.Y);
+		th->z += FLOAT2FIXED(advance.Z);
 	}
 
 	FCheckPosition tm(!!(th->flags2 & MF2_RIP));
 
-	for(int i=0; i<count; i++)
+	// killough 8/12/98: for non-missile objects (e.g. grenades)
+	// 
+	// [GZ] MBF excludes non-missile objects from the P_TryMove test
+	// and subsequent potential P_ExplodeMissile call. That is because
+	// in MBF, a projectile is not an actor with the MF_MISSILE flag
+	// but an actor with either or both the MF_MISSILE and MF_BOUNCES
+	// flags, and a grenade is identified by not having MF_MISSILE.
+	// Killough wanted grenades not to explode directly when spawned,
+	// therefore they can be fired safely even when humping a wall as
+	// they will then just drop on the floor at their shooter's feet.
+	//
+	// However, ZDoom does allow non-missiles to be shot as well, so
+	// Killough's check for non-missiles is inadequate here. So let's
+	// replace it by a check for non-missile and MBF bounce type.
+	// This should allow MBF behavior where relevant without altering
+	// established ZDoom behavior for crazy stuff like a cacodemon cannon.
+	bool MBFGrenade = (!(th->flags & MF_MISSILE) || (th->BounceFlags & BOUNCE_MBF));
+
+	// killough 3/15/98: no dropoff (really = don't care for missiles)
+	if (!(P_TryMove (th, th->x, th->y, false, NULL, tm, true)))
 	{
-		th->x += th->velx >> shift;
-		th->y += th->vely >> shift;
-		th->z += th->velz >> shift;
-
-		// killough 8/12/98: for non-missile objects (e.g. grenades)
-		// 
-		// [GZ] MBF excludes non-missile objects from the P_TryMove test
-		// and subsequent potential P_ExplodeMissile call. That is because
-		// in MBF, a projectile is not an actor with the MF_MISSILE flag
-		// but an actor with either or both the MF_MISSILE and MF_BOUNCES
-		// flags, and a grenade is identified by not having MF_MISSILE.
-		// Killough wanted grenades not to explode directly when spawned,
-		// therefore they can be fired safely even when humping a wall as
-		// they will then just drop on the floor at their shooter's feet.
-		//
-		// However, ZDoom does allow non-missiles to be shot as well, so
-		// Killough's check for non-missiles is inadequate here. So let's
-		// replace it by a check for non-missile and MBF bounce type.
-		// This should allow MBF behavior where relevant without altering
-		// established ZDoom behavior for crazy stuff like a cacodemon cannon.
-		bool MBFGrenade = (!(th->flags & MF_MISSILE) || (th->BounceFlags & BOUNCE_MBF));
-
-		// killough 3/15/98: no dropoff (really = don't care for missiles)
-		if (!(P_TryMove (th, th->x, th->y, false, NULL, tm, true)))
+		// [RH] Don't explode ripping missiles that spawn inside something
+		if (th->BlockingMobj == NULL || !(th->flags2 & MF2_RIP) || (th->BlockingMobj->flags5 & MF5_DONTRIP))
 		{
-			// [RH] Don't explode ripping missiles that spawn inside something
-			if (th->BlockingMobj == NULL || !(th->flags2 & MF2_RIP) || (th->BlockingMobj->flags5 & MF5_DONTRIP))
+			// If this is a monster spawned by A_CustomMissile subtract it from the counter.
+			th->ClearCounters();
+			// [RH] Don't explode missiles that spawn on top of horizon lines
+			if (th->BlockingLine != NULL && th->BlockingLine->special == Line_Horizon)
 			{
-				// If this is a monster spawned by A_CustomMissile subtract it from the counter.
-				th->ClearCounters();
-				// [RH] Don't explode missiles that spawn on top of horizon lines
-				if (th->BlockingLine != NULL && th->BlockingLine->special == Line_Horizon)
-				{
-					th->Destroy ();
-				}
-				else if (MBFGrenade && th->BlockingLine != NULL													)
-				{
-					P_BounceWall(th);
-				}
-				else
-				{
-					P_ExplodeMissile (th, NULL, th->BlockingMobj);
-				}
-				return false;
+				th->Destroy ();
 			}
+			else if (MBFGrenade && th->BlockingLine != NULL)
+			{
+				P_BounceWall(th);
+			}
+			else
+			{
+				P_ExplodeMissile (th, NULL, th->BlockingMobj);
+			}
+			return false;
 		}
 	}
 	return true;
@@ -5503,7 +5491,7 @@ AActor *P_SpawnMissileXYZ (fixed_t x, fixed_t y, fixed_t z,
 		th->SetFriendPlayer(owner->player);
 	}
 
-	return (!checkspawn || P_CheckMissileSpawn (th)) ? th : NULL;
+	return (!checkspawn || P_CheckMissileSpawn (th, source->radius)) ? th : NULL;
 }
 
 AActor * P_OldSpawnMissile(AActor * source, AActor * owner, AActor * dest, const PClass *type)
@@ -5533,7 +5521,7 @@ AActor * P_OldSpawnMissile(AActor * source, AActor * owner, AActor * dest, const
 		th->SetFriendPlayer(owner->player);
 	}
 
-	P_CheckMissileSpawn(th);
+	P_CheckMissileSpawn(th, source->radius);
 	return th;
 }
 
@@ -5622,7 +5610,7 @@ AActor *P_SpawnMissileAngleZSpeed (AActor *source, fixed_t z,
 		mo->SetFriendPlayer(owner->player);
 	}
 
-	return (!checkspawn || P_CheckMissileSpawn(mo)) ? mo : NULL;
+	return (!checkspawn || P_CheckMissileSpawn(mo, source->radius)) ? mo : NULL;
 }
 
 /*
@@ -5649,11 +5637,11 @@ AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 							  bool nofreeaim)
 {
 	static const int angdiff[3] = { -1<<26, 1<<26, 0 };
-	int i;
 	angle_t an = angle;
 	angle_t pitch;
 	AActor *linetarget;
-	int vrange = nofreeaim? ANGLE_1*35 : 0;
+	AActor *defaultobject = GetDefaultByType(type);
+	int vrange = nofreeaim ? ANGLE_1*35 : 0;
 
 	if (source && source->player && source->player->ReadyWeapon && (source->player->ReadyWeapon->WeaponFlags & WIF_NOAUTOAIM))
 	{
@@ -5664,11 +5652,16 @@ AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 	}
 	else // see which target is to be aimed at
 	{
-		i = 2;
+		// [XA] If MaxTargetRange is defined in the spawned projectile, use this as the
+		//      maximum range for the P_AimLineAttack call later; this allows MaxTargetRange
+		//      to function as a "maximum tracer-acquisition range" for seeker missiles.
+		fixed_t linetargetrange = defaultobject->maxtargetrange > 0 ? defaultobject->maxtargetrange*64 : 16*64*FRACUNIT;
+
+		int i = 2;
 		do
 		{
 			an = angle + angdiff[i];
-			pitch = P_AimLineAttack (source, an, 16*64*FRACUNIT, &linetarget, vrange);
+			pitch = P_AimLineAttack (source, an, linetargetrange, &linetarget, vrange);
 	
 			if (source->player != NULL &&
 				!nofreeaim &&
@@ -5689,8 +5682,6 @@ AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 		}
 	}
 	if (pLineTarget) *pLineTarget = linetarget;
-
-	i = GetDefaultByType (type)->flags3;
 
 	if (z != ONFLOORZ && z != ONCEILINGZ)
 	{
@@ -5738,7 +5729,7 @@ AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 	{
 		MissileActor->SetFriendPlayer(source->player);
 	}
-	if (P_CheckMissileSpawn (MissileActor))
+	if (P_CheckMissileSpawn (MissileActor, source->radius))
 	{
 		return MissileActor;
 	}

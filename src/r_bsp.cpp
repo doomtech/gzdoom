@@ -1075,7 +1075,12 @@ void R_Subsector (subsector_t *sub)
 	{
 		light = P_GetPlaneLight(frontsector, &frontsector->ceilingplane, false);
 		basecolormap = EXTRACOLORMAP(light, LIGHT_CEILING);
-		ceilinglightlevel = *light->p_lightlevel;
+		// If this is the real ceiling, don't discard plane lighting R_FakeFlat()
+		// accounted for.
+		if (light->p_lightlevel != &frontsector->lightlevel)
+		{
+			ceilinglightlevel = *light->p_lightlevel;
+		}
 	}
 	else
 	{
@@ -1108,7 +1113,12 @@ void R_Subsector (subsector_t *sub)
 	{
 		light = P_GetPlaneLight(frontsector, &frontsector->floorplane, false);
 		basecolormap = EXTRACOLORMAP(light, LIGHT_FLOOR);
-		floorlightlevel = *light->p_lightlevel;
+		// If this is the real floor, don't discard plane lighting R_FakeFlat()
+		// accounted for.
+		if (light->p_lightlevel != &frontsector->lightlevel)
+		{
+			floorlightlevel = *light->p_lightlevel;
+		}
 	}
 	else
 	{

@@ -1075,19 +1075,18 @@ bool PIT_CheckThing (AActor *thing, FCheckPosition &tm)
 					//     friendliness and hate status.
 					if (tm.thing->target->flags & MF_SHOOTABLE)
 					{
-						if (!(thing->flags3 & MF3_ISMONSTER))
+						// Question: Should monsters be allowed to shoot barrels in this mode?
+						// The old code does not.
+						if (thing->flags3 & MF3_ISMONSTER)
 						{
-							return false;	// Question: Should monsters be allowed to shoot barrels in this mode?
-											// The old code does not.
-						}
-
-						// Monsters that are clearly hostile can always hurt each other
-						if (!thing->IsHostile (tm.thing->target))
-						{
-							// The same if the shooter hates the target
-							if (thing->tid == 0 || tm.thing->target->TIDtoHate != thing->tid)
+							// Monsters that are clearly hostile can always hurt each other
+							if (!thing->IsHostile (tm.thing->target))
 							{
-								return false;
+								// The same if the shooter hates the target
+								if (thing->tid == 0 || tm.thing->target->TIDtoHate != thing->tid)
+								{
+									return false;
+								}
 							}
 						}
 					}
@@ -3424,38 +3423,36 @@ fixed_t P_AimLineAttack (AActor *t1, angle_t angle, fixed_t distance, AActor **p
 //
 //==========================================================================
 
-static bool CheckForGhost (FTraceResults &res)
+static ETraceStatus CheckForGhost (FTraceResults &res, void *userdata)
 {
 	if (res.HitType != TRACE_HitActor)
 	{
-		return false;
+		return TRACE_Stop;
 	}
 
 	// check for physical attacks on a ghost
 	if (res.Actor->flags3 & MF3_GHOST || res.Actor->flags4 & MF4_SPECTRAL)
 	{
-		res.HitType = TRACE_HitNone;
-		return true;
+		return TRACE_Skip;
 	}
 
-	return false;
+	return TRACE_Stop;
 }
 
-static bool CheckForSpectral (FTraceResults &res)
+static ETraceStatus CheckForSpectral (FTraceResults &res, void *userdata)
 {
 	if (res.HitType != TRACE_HitActor)
 	{
-		return false;
+		return TRACE_Stop;
 	}
 
 	// check for physical attacks on spectrals
 	if (res.Actor->flags4 & MF4_SPECTRAL)
 	{
-		res.HitType = TRACE_HitNone;
-		return true;
+		return TRACE_Skip;
 	}
 
-	return false;
+	return TRACE_Stop;
 }
 
 //==========================================================================
@@ -3885,28 +3882,33 @@ struct SRailHit
 	AActor *HitActor;
 	fixed_t Distance;
 };
-static TArray<SRailHit> RailHits (16);
-
-static bool ProcessRailHit (FTraceResults &res)
+struct RailData
 {
+	TArray<SRailHit> RailHits;
+	bool StopAtOne;
+};
+
+static ETraceStatus ProcessRailHit (FTraceResults &res, void *userdata)
+{
+	RailData *data = (RailData *)userdata;
 	if (res.HitType != TRACE_HitActor)
 	{
-		return false;
+		return TRACE_Stop;
 	}
 
 	// Invulnerable things completely block the shot
 	if (res.Actor->flags2 & MF2_INVULNERABLE)
 	{
-		return false;
+		return TRACE_Stop;
 	}
 
 	// Save this thing for damaging later, and continue the trace
 	SRailHit newhit;
 	newhit.HitActor = res.Actor;
 	newhit.Distance = res.Distance - 10*FRACUNIT;	// put blood in front
-	RailHits.Push (newhit);
+	data->RailHits.Push (newhit);
 
-	return true;
+	return data->StopAtOne ? TRACE_Stop : TRACE_Continue;
 }
 
 //==========================================================================
@@ -3914,35 +3916,7 @@ static bool ProcessRailHit (FTraceResults &res)
 //
 //
 //==========================================================================
-
-static bool ProcessNoPierceRailHit (FTraceResults &res)
-{
-	if (res.HitType != TRACE_HitActor)
-	{
-		return false;
-	}
-
-	// Invulnerable things completely block the shot
-	if (res.Actor->flags2 & MF2_INVULNERABLE)
-	{
-		return false;
-	}
-
-	// Only process the first hit
-	SRailHit newhit;
-	newhit.HitActor = res.Actor;
-	newhit.Distance = res.Distance - 10*FRACUNIT;	// put blood in front
-	RailHits.Push (newhit);
-
-	return false;
-}
-
-//==========================================================================
-//
-//
-//
-//==========================================================================
-void P_RailAttack (AActor *source, int damage, int offset, int color1, int color2, float maxdiff, int railflags, const PClass *puffclass, angle_t angleoffset, angle_t pitchoffset, fixed_t distance, int duration, float sparsity, float drift, const PClass *spawnclass)
+void P_RailAttack (AActor *source, int damage, int offset_xy, fixed_t offset_z, int color1, int color2, float maxdiff, int railflags, const PClass *puffclass, angle_t angleoffset, angle_t pitchoffset, fixed_t distance, int duration, float sparsity, float drift, const PClass *spawnclass)
 {
 	fixed_t vx, vy, vz;
 	angle_t angle, pitch;
@@ -3963,7 +3937,7 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 	x1 = source->x;
 	y1 = source->y;
 
-	shootz = source->z - source->floorclip + (source->height >> 1);
+	shootz = source->z - source->floorclip + (source->height >> 1) + offset_z;
 
 	if (!(railflags & RAF_CENTERZ))
 	{
@@ -3978,10 +3952,12 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 	}
 
 	angle = ((source->angle + angleoffset) - ANG90) >> ANGLETOFINESHIFT;
-	x1 += offset*finecosine[angle];
-	y1 += offset*finesine[angle];
+	x1 += offset_xy * finecosine[angle];
+	y1 += offset_xy * finesine[angle];
 
-	RailHits.Clear ();
+	RailData rail_data;
+
+	rail_data.StopAtOne = !!(railflags & RAF_NOPIERCE);
 	start.X = FIXED2FLOAT(x1);
 	start.Y = FIXED2FLOAT(y1);
 	start.Z = FIXED2FLOAT(shootz);
@@ -3995,7 +3971,7 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 
 	Trace (x1, y1, shootz, source->Sector, vx, vy, vz,
 		distance, MF_SHOOTABLE, ML_BLOCKEVERYTHING, source, trace,
-		flags, (railflags & RAF_NOPIERCE) ? ProcessNoPierceRailHit : ProcessRailHit);
+		flags, ProcessRailHit, &rail_data);
 
 	// Hurt anything the trace hit
 	unsigned int i;
@@ -4006,20 +3982,22 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 	
 	if (puffclass != NULL) thepuff = Spawn (puffclass, source->x, source->y, source->z, ALLOW_REPLACE);
 
-	for (i = 0; i < RailHits.Size (); i++)
+	for (i = 0; i < rail_data.RailHits.Size (); i++)
 	{
 		fixed_t x, y, z;
 		bool spawnpuff;
 		bool bleed = false;
 
 		int puffflags = PF_HITTHING;
+		AActor *hitactor = rail_data.RailHits[i].HitActor;
+		fixed_t hitdist = rail_data.RailHits[i].Distance;
 
-		x = x1 + FixedMul (RailHits[i].Distance, vx);
-		y = y1 + FixedMul (RailHits[i].Distance, vy);
-		z = shootz + FixedMul (RailHits[i].Distance, vz);
+		x = x1 + FixedMul(hitdist, vx);
+		y = y1 + FixedMul(hitdist, vy);
+		z = shootz + FixedMul(hitdist, vz);
 
-		if ((RailHits[i].HitActor->flags & MF_NOBLOOD) ||
-			(RailHits[i].HitActor->flags2 & (MF2_DORMANT|MF2_INVULNERABLE)))
+		if ((hitactor->flags & MF_NOBLOOD) ||
+			(hitactor->flags2 & (MF2_DORMANT|MF2_INVULNERABLE)))
 		{
 			spawnpuff = (puffclass != NULL);
 		}
@@ -4027,21 +4005,24 @@ void P_RailAttack (AActor *source, int damage, int offset, int color1, int color
 		{
 			spawnpuff = (puffclass != NULL && puffDefaults->flags3 & MF3_ALWAYSPUFF);
 			puffflags |= PF_HITTHINGBLEED; // [XA] Allow for puffs to jump to XDeath state.
-			if(!(puffDefaults->flags3 & MF3_BLOODLESSIMPACT)) 
+			if (!(puffDefaults->flags3 & MF3_BLOODLESSIMPACT)) 
 			{
 				bleed = true;
 			}
 		}
 		if (spawnpuff)
-			P_SpawnPuff (source, puffclass, x, y, z, (source->angle + angleoffset) - ANG90, 1, puffflags);
+		{
+			P_SpawnPuff(source, puffclass, x, y, z, (source->angle + angleoffset) - ANG90, 1, puffflags);
+		}
 		if (puffDefaults && puffDefaults->PoisonDamage > 0 && puffDefaults->PoisonDuration != INT_MIN)
-			P_PoisonMobj(RailHits[i].HitActor, thepuff ? thepuff : source, source, puffDefaults->PoisonDamage, puffDefaults->PoisonDuration, puffDefaults->PoisonPeriod, puffDefaults->PoisonDamageType);
-
-		int newdam = P_DamageMobj (RailHits[i].HitActor, thepuff? thepuff:source, source, damage, damagetype, DMG_INFLICTOR_IS_PUFF);
+		{
+			P_PoisonMobj(hitactor, thepuff ? thepuff : source, source, puffDefaults->PoisonDamage, puffDefaults->PoisonDuration, puffDefaults->PoisonPeriod, puffDefaults->PoisonDamageType);
+		}
+		int newdam = P_DamageMobj(hitactor, thepuff? thepuff:source, source, damage, damagetype, DMG_INFLICTOR_IS_PUFF);
 		if (bleed)
 		{
-			P_SpawnBlood (x, y, z, (source->angle + angleoffset) - ANG180, newdam > 0 ? newdam : damage, RailHits[i].HitActor);
-			P_TraceBleed (newdam > 0 ? newdam : damage, x, y, z, RailHits[i].HitActor, source->angle, pitch);
+			P_SpawnBlood(x, y, z, (source->angle + angleoffset) - ANG180, newdam > 0 ? newdam : damage, hitactor);
+			P_TraceBleed(newdam > 0 ? newdam : damage, x, y, z, hitactor, source->angle, pitch);
 		}
 	}
 
@@ -4478,7 +4459,7 @@ void P_RadiusAttack (AActor *bombspot, AActor *bombsource, int bombdamage, int b
 	AActor *thing;
 
 	if (flags & RADF_SOURCEISSPOT)
-	{ // The source is actually the same as the spot, even if that wasn't what we receized.
+	{ // The source is actually the same as the spot, even if that wasn't what we received.
 		bombsource = bombspot;
 	}
 
@@ -4567,11 +4548,12 @@ void P_RadiusAttack (AActor *bombspot, AActor *bombsource, int bombdamage, int b
 			}
 			points *= thing->GetClass()->Meta.GetMetaFixed(AMETA_RDFactor, FRACUNIT)/(double)FRACUNIT;
 
-			if (points > 0.f && P_CheckSight (thing, bombspot, SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY))
+			// points and bombdamage should be the same sign
+			if ((points * bombdamage) > 0 && P_CheckSight (thing, bombspot, SF_IGNOREVISIBILITY|SF_IGNOREWATERBOUNDARY))
 			{ // OK to damage; target is in direct path
 				double velz;
 				double thrust;
-				int damage = (int)points;
+				int damage = abs((int)points);
 				int newdam = damage;
 
 				if (!(flags & RADF_NODAMAGE))
