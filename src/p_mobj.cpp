@@ -3520,7 +3520,7 @@ void AActor::Tick ()
 					return; 		// freed itself
 			}
 		}
-		while (newtics < 0);
+		while (newtics < 0 && tics != -1);
 	}
 	else
 	{
