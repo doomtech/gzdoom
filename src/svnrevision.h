@@ -4,4 +4,4 @@
 // updaterevision tool. Do not edit by hand.
 
 #define ZD_SVN_REVISION_STRING "4249"
-#define ZD_SVN_REVISION_NUMBER 42469
+#define ZD_SVN_REVISION_NUMBER 4249
