@@ -327,7 +327,7 @@ void AActor::Serialize (FArchive &arc)
 				!(flags4 & MF4_NOSKIN) &&
 				state->sprite == GetDefaultByType (player->cls)->SpawnState->sprite)
 			{ // Give player back the skin
-				sprite = skins[player->userinfo.skin].sprite;
+				sprite = skins[player->userinfo.GetSkin()].sprite;
 			}
 			if (Speed == 0)
 			{
@@ -462,7 +462,7 @@ bool AActor::SetState (FState *newstate, bool nofunction)
 				// spawning.
 					if (player != NULL && skins != NULL)
 					{
-						sprite = skins[player->userinfo.skin].sprite;
+						sprite = skins[player->userinfo.GetSkin()].sprite;
 					}
 					else if (newsprite != prevsprite)
 					{
@@ -910,8 +910,8 @@ bool AActor::IsVisibleToPlayer() const
 	if ( players[consoleplayer].camera == NULL )
 		return true;
  
-	if ( VisibleToTeam != 0 && teamplay &&
-		VisibleToTeam-1 != players[consoleplayer].userinfo.team )
+	if (VisibleToTeam != 0 && teamplay &&
+		VisibleToTeam-1 != players[consoleplayer].userinfo.GetTeam())
 		return false;
 
 	const player_t* pPlayer = players[consoleplayer].camera->player;
@@ -1062,11 +1062,12 @@ bool AActor::Grind(bool items)
 				gib->alpha = alpha;
 				gib->height = 0;
 				gib->radius = 0;
+
+				PalEntry bloodcolor = GetBloodColor();
+				if (bloodcolor != 0)
+					gib->Translation = TRANSLATION(TRANSLATION_Blood, bloodcolor.a);
 			}
 			S_Sound (this, CHAN_BODY, "misc/fallingsplat", 1, ATTN_IDLE);
-
-			PalEntry bloodcolor = GetBloodColor();
-			if (bloodcolor!=0) gib->Translation = TRANSLATION(TRANSLATION_Blood, bloodcolor.a);
 		}
 		if (flags & MF_ICECORPSE)
 		{
@@ -4185,7 +4186,7 @@ APlayerPawn *P_SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
 			}
 			else
 			{
-				type = p->userinfo.PlayerClass;
+				type = p->userinfo.GetPlayerClassNum();
 				if (type < 0)
 				{
 					type = pr_multiclasschoice() % PlayerClasses.Size ();
@@ -4267,8 +4268,7 @@ APlayerPawn *P_SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
 	}
 
 	// [GRB] Reset skin
-	p->userinfo.skin = R_FindSkin (skins[p->userinfo.skin].name, p->CurrentPlayerClass);
-
+	p->userinfo.SkinNumChanged(R_FindSkin (skins[p->userinfo.GetSkin()].name, p->CurrentPlayerClass));
 
 	if (!(mobj->flags2 & MF2_DONTTRANSLATE))
 	{
@@ -4289,7 +4289,7 @@ APlayerPawn *P_SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
 	// [RH] Set player sprite based on skin
 	if (!(mobj->flags4 & MF4_NOSKIN))
 	{
-		mobj->sprite = skins[p->userinfo.skin].sprite;
+		mobj->sprite = skins[p->userinfo.GetSkin()].sprite;
 	}
 
 	p->DesiredFOV = p->FOV = 90.f;
@@ -5736,11 +5736,10 @@ bool AActor::IsTeammate (AActor *other)
 	int myTeam = DesignatedTeam;
 	int otherTeam = other->DesignatedTeam;
 	if (player)
-		myTeam = player->userinfo.team;
+		myTeam = player->userinfo.GetTeam();
 	if (other->player)
-		otherTeam = other->player->userinfo.team;
-	if (teamplay && myTeam != TEAM_NONE &&
-		myTeam == otherTeam)
+		otherTeam = other->player->userinfo.GetTeam();
+	if (teamplay && myTeam != TEAM_NONE && myTeam == otherTeam)
 	{
 		return true;
 	}
