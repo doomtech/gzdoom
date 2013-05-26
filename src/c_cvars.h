@@ -61,6 +61,8 @@ enum
 	CVAR_GLOBALCONFIG	= 1024,	// cvar is saved to global config section
 	CVAR_VIDEOCONFIG	= 2048, // cvar is saved to video config section (not implemented)
 	CVAR_NOSAVE			= 4096, // when used with CVAR_SERVERINFO, do not save var to savegame
+	CVAR_MODARCHIVE		= 8192,	// cvar will be saved to a mod-specific section of the ini
+	CVAR_NOSEND			= 16384,// do not send cvar across the network (dummy mod cvar)
 };
 
 union UCVarValue
@@ -157,7 +159,7 @@ private:
 	friend FBaseCVar *FindCVar (const char *var_name, FBaseCVar **prev);
 	friend FBaseCVar *FindCVarSub (const char *var_name, int namelen);
 	friend void UnlatchCVars (void);
-	friend void C_ArchiveCVars (FConfigFile *f, int type);
+	friend void C_ArchiveCVars (FConfigFile *f, uint32 filter);
 	friend void C_SetCVarsToDefaults (void);
 	friend void FilterCompactCVars (TArray<FBaseCVar *> &cvars, uint32 filter);
 	friend void C_DeinitConsole();
@@ -189,7 +191,7 @@ FBaseCVar *C_CreateCVar(const char *var_name, ECVarType var_type, DWORD flags);
 void UnlatchCVars (void);
 
 // archive cvars to FILE f
-void C_ArchiveCVars (FConfigFile *f, int type);
+void C_ArchiveCVars (FConfigFile *f, uint32 filter);
 
 // initialize cvars to default values after they are created
 void C_SetCVarsToDefaults (void);
