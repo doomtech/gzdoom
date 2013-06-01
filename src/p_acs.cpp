@@ -3479,6 +3479,7 @@ enum
 	APROP_Height		= 35,
 	APROP_Radius		= 36,
 	APROP_ReactionTime  = 37,
+	APROP_MeleeRange	= 38,
 };
 
 // These are needed for ACS's APROP_RenderStyle
@@ -3765,6 +3766,15 @@ int DLevelScript::GetActorProperty (int tid, int property)
 	case APROP_Height:		return actor->height;
 	case APROP_Radius:		return actor->radius;
 	case APROP_ReactionTime:return actor->reactiontime;
+	case APROP_MeleeRange:	return actor->meleerange;
+
+	case APROP_SeeSound:	return GlobalACSStrings.AddString(actor->SeeSound);
+	case APROP_AttackSound:	return GlobalACSStrings.AddString(actor->AttackSound);
+	case APROP_PainSound:	return GlobalACSStrings.AddString(actor->PainSound);
+	case APROP_DeathSound:	return GlobalACSStrings.AddString(actor->DeathSound);
+	case APROP_ActiveSound:	return GlobalACSStrings.AddString(actor->ActiveSound);
+	case APROP_Species:		return GlobalACSStrings.AddString(actor->GetSpecies());
+	case APROP_NameTag:		return GlobalACSStrings.AddString(actor->GetTag());
 
 	default:				return 0;
 	}
@@ -3808,6 +3818,7 @@ int DLevelScript::CheckActorProperty (int tid, int property, int value)
 		case APROP_Height:
 		case APROP_Radius:
 		case APROP_ReactionTime:
+		case APROP_MeleeRange:
 			return (GetActorProperty(tid, property) == value);
 
 		// Boolean values need to compare to a binary version of value
@@ -3822,7 +3833,8 @@ int DLevelScript::CheckActorProperty (int tid, int property, int value)
 		case APROP_Dormant:
 			return (GetActorProperty(tid, property) == (!!value));
 
-		// Strings are not covered by GetActorProperty, so make the check here
+		// Strings are covered by GetActorProperty, but they're fairly
+		// heavy-duty, so make the check here.
 		case APROP_SeeSound:	string = actor->SeeSound; break;
 		case APROP_AttackSound:	string = actor->AttackSound; break;
 		case APROP_PainSound:	string = actor->PainSound; break;
@@ -4113,6 +4125,8 @@ enum EACSFunctions
 	ACSF_GetUserCVarString,
 	ACSF_SetUserCVarString,
 	ACSF_LineAttack,
+	ACSF_PlaySound,
+	ACSF_StopSound,
 
 	// ZDaemon
 	ACSF_GetTeamScore = 19620,	// (int team)
@@ -4876,6 +4890,62 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
 					while ((source = it.Next()) != NULL)
 					{
 						P_LineAttack(activator, angle, range, pitch, damage, damagetype, pufftype);
+					}
+				}
+			}
+			break;
+
+		case ACSF_PlaySound:
+			// PlaySound(tid, "SoundName", channel, volume, looping, attenuation)
+			{
+				const char *lookup = FBehavior::StaticLookupString(args[1]);
+				if (lookup != NULL)
+				{
+					FActorIterator it(args[0]);
+					AActor *spot;
+
+					FSoundID sid(lookup);
+					int chan = argCount > 2 ? args[2] : CHAN_BODY;
+					float vol = argCount > 3 ? FIXED2FLOAT(args[3]) : 1.f;
+					INTBOOL looping = argCount > 4 ? args[4] : false;
+					float atten = argCount > 5 ? FIXED2FLOAT(args[5]) : ATTN_NORM;
+
+					if (args[0] == 0)
+					{
+						spot = activator;
+						goto doplaysound;
+					}
+					while ((spot = it.Next()) != NULL)
+					{
+doplaysound:			if (!looping)
+						{
+							S_Sound(spot, chan, sid, vol, atten);
+						}
+						else if (!S_IsActorPlayingSomething(spot, chan, sid))
+						{
+							S_Sound(spot, chan | CHAN_LOOP, sid, vol, atten);
+						}
+					}
+				}
+			}
+			break;
+
+		case ACSF_StopSound:
+			{
+				int chan = argCount > 1 ? args[1] : CHAN_BODY;
+
+				if (args[0] == 0)
+				{
+					S_StopSound(activator, chan);
+				}
+				else
+				{
+					FActorIterator it(args[0]);
+					AActor *spot;
+
+					while ((spot = it.Next()) != NULL)
+					{
+						S_StopSound(spot, chan);
 					}
 				}
 			}
