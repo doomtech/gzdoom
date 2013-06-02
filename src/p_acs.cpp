@@ -4127,6 +4127,14 @@ enum EACSFunctions
 	ACSF_LineAttack,
 	ACSF_PlaySound,
 	ACSF_StopSound,
+	ACSF_strcmp,
+	ACSF_stricmp,
+	ACSF_StrLeft,
+	ACSF_StrRight,
+	ACSF_StrMid,
+	ACSF_GetActorClass,
+	ACSF_GetWeapon,
+	ACSF_SoundVolume,
 
 	// ZDaemon
 	ACSF_GetTeamScore = 19620,	// (int team)
@@ -4593,7 +4601,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
 			FName varname(FBehavior::StaticLookupString(args[1]), true);
 			if (varname != NAME_None)
 			{
-				AActor *a = args[0] == 0 ? (AActor *)activator : SingleActorFromTID(args[0], NULL); 
+				AActor *a = SingleActorFromTID(args[0], activator); 
 				return a != NULL ? GetUserVariable(a, varname, 0) : 0;
 			}
 			return 0;
@@ -4632,7 +4640,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
 			FName varname(FBehavior::StaticLookupString(args[1]), true);
 			if (varname != NAME_None)
 			{
-				AActor *a = args[0] == 0 ? (AActor *)activator : SingleActorFromTID(args[0], NULL); 
+				AActor *a = SingleActorFromTID(args[0], activator); 
 				return a != NULL ? GetUserVariable(a, varname, args[2]) : 0;
 			}
 			return 0;
@@ -4644,8 +4652,14 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, SDWORD *args)
 
 		case ACSF_CheckActorClass:
 		{
-			AActor *a = args[0] == 0 ? (AActor *)activator : SingleActorFromTID(args[0], NULL);
+			AActor *a = SingleActorFromTID(args[0], activator);
 			return a == NULL ? false : a->GetClass()->TypeName == FName(FBehavior::StaticLookupString(args[1]));
+		}
+
+		case ACSF_GetActorClass:
+		{
+			AActor *a = SingleActorFromTID(args[0], activator);
+			return GlobalACSStrings.AddString(a == NULL ? "None" : a->GetClass()->TypeName.GetChars());
 		}
 
 		case ACSF_SoundSequenceOnActor:
@@ -4950,6 +4964,109 @@ doplaysound:			if (!looping)
 				}
 			}
 			break;
+
+		case ACSF_SoundVolume:
+			// SoundVolume(int tid, int channel, fixed volume)
+			{
+				int chan = args[1];
+				float volume = FIXED2FLOAT(args[2]);
+
+				if (args[0] == 0)
+				{
+					S_ChangeSoundVolume(activator, chan, volume);
+				}
+				else
+				{
+					FActorIterator it(args[0]);
+					AActor *spot;
+
+					while ((spot = it.Next()) != NULL)
+					{
+						S_ChangeSoundVolume(spot, chan, volume);
+					}
+				}
+			}
+			break;
+
+		case ACSF_strcmp:
+		case ACSF_stricmp:
+			if (argCount >= 2)
+			{
+				const char *a, *b;
+				a = FBehavior::StaticLookupString(args[0]);
+				b = FBehavior::StaticLookupString(args[1]);
+
+				// Don't crash on invalid strings.
+				if (a == NULL) a = "";
+				if (b == NULL) b = "";
+
+				if (argCount > 2)
+				{
+					int n = args[2];
+					return (funcIndex == ACSF_strcmp) ? strncmp(a, b, n) : strnicmp(a, b, n);
+				}
+				else
+				{
+					return (funcIndex == ACSF_strcmp) ? strcmp(a, b) : stricmp(a, b);
+				}
+			}
+			break;
+
+		case ACSF_StrLeft:
+		case ACSF_StrRight:
+			if (argCount >= 2)
+			{
+				const char *oldstr = FBehavior::StaticLookupString(args[0]);
+				if (oldstr == NULL || *oldstr == '\0')
+				{
+					return GlobalACSStrings.AddString("");
+				}
+				size_t oldlen = strlen(oldstr);
+				size_t newlen = args[1];
+
+				if (oldlen < newlen)
+				{
+					newlen = oldlen;
+				}
+				FString newstr(funcIndex == ACSF_StrLeft ? oldstr : oldstr + oldlen - newlen, newlen);
+				return GlobalACSStrings.AddString(newstr);
+			}
+			break;
+
+		case ACSF_StrMid:
+			if (argCount >= 3)
+			{
+				const char *oldstr = FBehavior::StaticLookupString(args[0]);
+				if (oldstr == NULL || *oldstr == '\0')
+				{
+					return GlobalACSStrings.AddString("");
+				}
+				size_t oldlen = strlen(oldstr);
+				size_t pos = args[1];
+				size_t newlen = args[2];
+
+				if (pos >= oldlen)
+				{
+					return GlobalACSStrings.AddString("");
+				}
+				if (pos + newlen > oldlen || pos + newlen < pos)
+				{
+					newlen = oldlen - pos;
+				}
+				return GlobalACSStrings.AddString(FString(oldstr + pos, newlen));
+			}
+			break;
+
+		case ACSF_GetWeapon:
+            if (activator == NULL || activator->player == NULL || // Non-players do not have weapons
+                activator->player->ReadyWeapon == NULL)
+            {
+                return GlobalACSStrings.AddString("None");
+            }
+            else
+            {
+				return GlobalACSStrings.AddString(activator->player->ReadyWeapon->GetClass()->TypeName.GetChars());
+            }
 
 		default:
 			break;
