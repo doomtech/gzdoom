@@ -42,7 +42,7 @@
 /** Lots of different version numbers **/
 
 #define DOTVERSIONSTR_NOREV "1.7.1"
-#define ZDVER_STRING "2.6.1"
+#define ZDVER_STRING "2.7.0"
 
 // The version string the user actually sees.
 #define DOTVERSIONSTR DOTVERSIONSTR_NOREV " (r" SVN_REVISION_STRING ") / ZDoom " ZDVER_STRING " (r" ZD_SVN_REVISION_STRING ")"
@@ -56,7 +56,7 @@
 // Version identifier for network games.
 // Bump it every time you do a release unless you're certain you
 // didn't change anything that will affect sync.
-#define NETGAMEVERSION 228
+#define NETGAMEVERSION 229
 
 // Version stored in the ini's [LastRun] section.
 // Bump it if you made some configuration change that you want to
