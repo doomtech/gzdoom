@@ -183,6 +183,13 @@ xx(Idle)
 xx(GenericFreezeDeath)
 xx(GenericCrush)
 
+// Bounce state names
+xx(Bounce)
+xx(Wall)
+xx(Floor)
+xx(Ceiling)
+xx(Creature)
+
 // Compatible death names for the decorate parser.
 xx(XDeath)
 xx(Burn)
@@ -554,3 +561,10 @@ xx(Inter_Strife_Lose)
 xx(Inter_Strife_MAP03)
 xx(Inter_Strife_MAP10)
 xx(Multiplayer)
+
+// more stuff
+xx(ColorSet)
+xx(NeverSwitchOnPickup)
+xx(MoveBob)
+xx(StillBob)
+xx(PlayerClass)

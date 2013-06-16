@@ -539,7 +539,7 @@ void APlayerPawn::BeginPlay ()
 
 void APlayerPawn::Tick()
 {
-	if (player != NULL && player->mo == this && player->morphTics == 0 && player->playerstate != PST_DEAD)
+	if (player != NULL && player->mo == this && player->CanCrouch() && player->playerstate != PST_DEAD)
 	{
 		height = FixedMul(GetDefault()->height, player->crouchfactor);
 	}
@@ -819,7 +819,7 @@ AWeapon *APlayerPawn::PickNewWeapon (const PClass *ammotype)
 
 void APlayerPawn::CheckWeaponSwitch(const PClass *ammotype)
 {
-	if (!player->userinfo.neverswitch &&
+	if (!player->userinfo.GetNeverSwitch() &&
 		player->PendingWeapon == WP_NOCHANGE && 
 		(player->ReadyWeapon == NULL ||
 		 (player->ReadyWeapon->WeaponFlags & WIF_WIMPY_WEAPON)))
@@ -991,10 +991,10 @@ const char *APlayerPawn::GetSoundClass() const
 {
 	if (player != NULL &&
 		(player->mo == NULL || !(player->mo->flags4 &MF4_NOSKIN)) &&
-		(unsigned int)player->userinfo.skin >= PlayerClasses.Size () &&
-		(size_t)player->userinfo.skin < numskins)
+		(unsigned int)player->userinfo.GetSkin() >= PlayerClasses.Size () &&
+		(size_t)player->userinfo.GetSkin() < numskins)
 	{
-		return skins[player->userinfo.skin].name;
+		return skins[player->userinfo.GetSkin()].name;
 	}
 
 	// [GRB]
@@ -1500,13 +1500,13 @@ void P_CheckPlayerSprite(AActor *actor, int &spritenum, fixed_t &scalex, fixed_t
 	player_t *player = actor->player;
 	int crouchspriteno;
 
-	if (player->userinfo.skin != 0 && !(actor->flags4 & MF4_NOSKIN))
+	if (player->userinfo.GetSkin() != 0 && !(actor->flags4 & MF4_NOSKIN))
 	{
 		// Convert from default scale to skin scale.
 		fixed_t defscaleY = actor->GetDefault()->scaleY;
 		fixed_t defscaleX = actor->GetDefault()->scaleX;
-		scaley = Scale(scaley, skins[player->userinfo.skin].ScaleY, defscaleY);
-		scalex = Scale(scalex, skins[player->userinfo.skin].ScaleX, defscaleX);
+		scaley = Scale(scaley, skins[player->userinfo.GetSkin()].ScaleY, defscaleY);
+		scalex = Scale(scalex, skins[player->userinfo.GetSkin()].ScaleX, defscaleX);
 	}
 
 	// Set the crouch sprite?
@@ -1517,10 +1517,10 @@ void P_CheckPlayerSprite(AActor *actor, int &spritenum, fixed_t &scalex, fixed_t
 			crouchspriteno = player->mo->crouchsprite;
 		}
 		else if (!(actor->flags4 & MF4_NOSKIN) &&
-				(spritenum == skins[player->userinfo.skin].sprite ||
-				 spritenum == skins[player->userinfo.skin].crouchsprite))
+				(spritenum == skins[player->userinfo.GetSkin()].sprite ||
+				 spritenum == skins[player->userinfo.GetSkin()].crouchsprite))
 		{
-			crouchspriteno = skins[player->userinfo.skin].crouchsprite;
+			crouchspriteno = skins[player->userinfo.GetSkin()].crouchsprite;
 		}
 		else
 		{ // no sprite -> squash the existing one
@@ -1644,7 +1644,7 @@ void P_CalcHeight (player_t *player)
 		}
 		else
 		{
-			player->bob = FixedMul (player->bob, player->userinfo.MoveBob);
+			player->bob = FixedMul (player->bob, player->userinfo.GetMoveBob());
 
 			if (player->bob > MAXBOB)
 				player->bob = MAXBOB;
@@ -1668,7 +1668,7 @@ void P_CalcHeight (player_t *player)
 		if (player->health > 0)
 		{
 			angle = DivScale13 (level.time, 120*TICRATE/35) & FINEMASK;
-			bob = FixedMul (player->userinfo.StillBob, finesine[angle]);
+			bob = FixedMul (player->userinfo.GetStillBob(), finesine[angle]);
 		}
 		else
 		{
@@ -1788,7 +1788,7 @@ void P_MovePlayer (player_t *player)
 		sm = FixedMul (sm, player->mo->Speed);
 
 		// When crouching, speed and bobbing have to be reduced
-		if (player->morphTics == 0 && player->crouchfactor != FRACUNIT)
+		if (player->CanCrouch() && player->crouchfactor != FRACUNIT)
 		{
 			fm = FixedMul(fm, player->crouchfactor);
 			sm = FixedMul(sm, player->crouchfactor);
@@ -2204,7 +2204,7 @@ void P_PlayerThink (player_t *player)
 	{
 		player->cmd.ucmd.buttons &= ~BT_CROUCH;
 	}
-	if (player->morphTics == 0 && player->health > 0 && level.IsCrouchingAllowed())
+	if (player->CanCrouch() && player->health > 0 && level.IsCrouchingAllowed())
 	{
 		if (!totallyfrozen)
 		{
@@ -2212,11 +2212,11 @@ void P_PlayerThink (player_t *player)
 		
 			if (crouchdir == 0)
 			{
-				crouchdir = (player->cmd.ucmd.buttons & BT_CROUCH)? -1 : 1;
+				crouchdir = (player->cmd.ucmd.buttons & BT_CROUCH) ? -1 : 1;
 			}
 			else if (player->cmd.ucmd.buttons & BT_CROUCH)
 			{
-				player->crouching=0;
+				player->crouching = 0;
 			}
 			if (crouchdir == 1 && player->crouchfactor < FRACUNIT &&
 				player->mo->z + player->mo->height < player->mo->ceilingz)
@@ -2338,10 +2338,9 @@ void P_PlayerThink (player_t *player)
 				// Jumping while crouching will force an un-crouch but not jump
 				player->crouching = 1;
 			}
-			else
-			if (player->mo->waterlevel >= 2)
+			else if (player->mo->waterlevel >= 2)
 			{
-				player->mo->velz = 4*FRACUNIT;
+				player->mo->velz = FixedMul(4*FRACUNIT, player->mo->Speed);
 			}
 			else if (player->mo->flags & MF_NOGRAVITY)
 			{

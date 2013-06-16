@@ -163,6 +163,7 @@ enum
 {
 	PPF_NOTHRUSTWHENINVUL = 1,	// Attacks do not thrust the player if they are invulnerable.
 	PPF_CANSUPERMORPH = 2,		// Being remorphed into this class can give you a Tome of Power
+	PPF_CROUCHABLEMORPH = 4,	// This morphed player can crouch
 };
 
 //
@@ -227,6 +228,29 @@ enum
 
 #define MAXPLAYERNAME	15
 
+// [GRB] Custom player classes
+enum
+{
+	PCF_NOMENU			= 1,	// Hide in new game menu
+};
+
+class FPlayerClass
+{
+public:
+	FPlayerClass ();
+	FPlayerClass (const FPlayerClass &other);
+	~FPlayerClass ();
+
+	bool CheckSkin (int skin);
+
+	const PClass *Type;
+	DWORD Flags;
+	TArray<int> Skins;
+};
+
+extern TArray<FPlayerClass> PlayerClasses;
+
+// User info (per-player copies of each CVAR_USERINFO cvar)
 enum
 {
 	GENDER_MALE,
@@ -234,20 +258,80 @@ enum
 	GENDER_NEUTER
 };
 
-struct userinfo_t
+struct userinfo_t : TMap<FName,FBaseCVar *>
 {
-	char		netname[MAXPLAYERNAME+1];
-	BYTE		team;
-	int			aimdist;
-	int			color;
-	int			colorset;
-	int			skin;
-	int			gender;
-	bool		neverswitch;
-	fixed_t		MoveBob, StillBob;
-	int			PlayerClass;
+	int GetAimDist() const
+	{
+		if (dmflags2 & DF2_NOAUTOAIM)
+		{
+			return 0;
+		}
 
-	int GetAimDist() const { return (dmflags2 & DF2_NOAUTOAIM)? 0 : aimdist; }
+		float aim = *static_cast<FFloatCVar *>(*CheckKey(NAME_Autoaim));
+		if (aim > 35 || aim < 0)
+		{
+			return ANGLE_1*35;
+		}
+		else
+		{
+			return xs_RoundToInt(fabs(aim * ANGLE_1));
+		}
+	}
+	const char *GetName() const
+	{
+		return *static_cast<FStringCVar *>(*CheckKey(NAME_Name));
+	}
+	int GetTeam() const
+	{
+		return *static_cast<FIntCVar *>(*CheckKey(NAME_Team));
+	}
+	int GetColorSet() const
+	{
+		return *static_cast<FIntCVar *>(*CheckKey(NAME_ColorSet));
+	}
+	uint32 GetColor() const
+	{
+		return *static_cast<FColorCVar *>(*CheckKey(NAME_Color));
+	}
+	bool GetNeverSwitch() const
+	{
+		return *static_cast<FBoolCVar *>(*CheckKey(NAME_NeverSwitchOnPickup));
+	}
+	fixed_t GetMoveBob() const
+	{
+		return FLOAT2FIXED(*static_cast<FFloatCVar *>(*CheckKey(NAME_MoveBob)));
+	}
+	fixed_t GetStillBob() const
+	{
+		return FLOAT2FIXED(*static_cast<FFloatCVar *>(*CheckKey(NAME_StillBob)));
+	}
+	int GetPlayerClassNum() const
+	{
+		return *static_cast<FIntCVar *>(*CheckKey(NAME_PlayerClass));
+	}
+	const PClass *GetPlayerClassType() const
+	{
+		return PlayerClasses[GetPlayerClassNum()].Type;
+	}
+	int GetSkin() const
+	{
+		return *static_cast<FIntCVar *>(*CheckKey(NAME_Skin));
+	}
+	int GetGender() const
+	{
+		return *static_cast<FIntCVar *>(*CheckKey(NAME_Gender));
+	}
+
+	void Reset();
+	int TeamChanged(int team);
+	int SkinChanged(const char *skinname);
+	int SkinNumChanged(int skinnum);
+	int GenderChanged(const char *gendername);
+	int PlayerClassChanged(const char *classname);
+	int PlayerClassNumChanged(int classnum);
+	uint32 ColorChanged(const char *colorname);
+	uint32 ColorChanged(uint32 colorval);
+	int ColorSetChanged(int setnum);
 };
 
 FArchive &operator<< (FArchive &arc, userinfo_t &info);
@@ -320,6 +404,7 @@ public:
 	int			timefreezer;			// Player has an active time freezer
 	short		refire;					// refired shots are less accurate
 	short		inconsistant;
+	bool		waiting;
 	int			killcount, itemcount, secretcount;		// for intermission
 	int			damagecount, bonuscount;// for screen flashing
 	int			hazardcount;			// for delayed Strife damage
@@ -425,6 +510,11 @@ public:
 		crouching = 0;
 		crouchviewdelta = 0;
 	}
+	
+	bool CanCrouch() const
+	{
+		return morphTics == 0 || mo->PlayerFlags & PPF_CROUCHABLEMORPH;
+	}
 
 	int GetSpawnClass();
 };
@@ -460,27 +550,5 @@ inline bool AActor::IsNoClip2() const
 #define CROUCHSPEED (FRACUNIT/12)
 
 bool P_IsPlayerTotallyFrozen(const player_t *player);
-
-// [GRB] Custom player classes
-enum
-{
-	PCF_NOMENU			= 1,	// Hide in new game menu
-};
-
-class FPlayerClass
-{
-public:
-	FPlayerClass ();
-	FPlayerClass (const FPlayerClass &other);
-	~FPlayerClass ();
-
-	bool CheckSkin (int skin);
-
-	const PClass *Type;
-	DWORD Flags;
-	TArray<int> Skins;
-};
-
-extern TArray<FPlayerClass> PlayerClasses;
 
 #endif // __D_PLAYER_H__

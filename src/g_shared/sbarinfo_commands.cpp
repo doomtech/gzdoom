@@ -736,9 +736,9 @@ class CommandDrawString : public SBarInfoCommand
 					}
 					break;
 				case PLAYERCLASS:
-					if(statusBar->CPlayer->userinfo.PlayerClass != cache)
+					if(statusBar->CPlayer->userinfo.GetPlayerClassNum() != cache)
 					{
-						cache = statusBar->CPlayer->userinfo.PlayerClass;
+						cache = statusBar->CPlayer->userinfo.GetPlayerClassNum();
 						str = GetPrintableDisplayName(statusBar->CPlayer->cls);
 						RealignString();
 					}
@@ -758,7 +758,7 @@ class CommandDrawString : public SBarInfoCommand
 				case PLAYERNAME:
 					// Can't think of a good way to detect changes to this, so
 					// I guess copying it every tick will have to do.
-					str = statusBar->CPlayer->userinfo.netname;
+					str = statusBar->CPlayer->userinfo.GetName();
 					RealignString();
 					break;
 				case GLOBALVAR:
@@ -3374,7 +3374,7 @@ SBarInfoCommand *SBarInfoCommandFlowControl::NextCommand(FScanner &sc)
 			case SBARINFO_DRAWSTRING: return new CommandDrawString(script);
 			case SBARINFO_DRAWNUMBER: return new CommandDrawNumber(script);
 			case SBARINFO_DRAWMUGSHOT: return new CommandDrawMugShot(script);
-			case SBARINFO_DRAWSELECTEDINVENTORY: return reinterpret_cast<CommandDrawImage *> (new CommandDrawSelectedInventory(script));
+			case SBARINFO_DRAWSELECTEDINVENTORY: return static_cast<SBarInfoCommandFlowControl *> (new CommandDrawSelectedInventory(script));
 			case SBARINFO_DRAWSHADER: return new CommandDrawShader(script);
 			case SBARINFO_DRAWINVENTORYBAR: return new CommandDrawInventoryBar(script);
 			case SBARINFO_DRAWKEYBAR: return new CommandDrawKeyBar(script);

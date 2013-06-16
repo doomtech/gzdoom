@@ -287,11 +287,11 @@ bool P_UndoPlayerMorph (player_t *activator, player_t *player, int unmorphflag, 
 			size_t skinindex = 0;
 			// If a custom skin was in use, then reload it
 			// or else the base skin for the player class.
-			if ((unsigned int)player->userinfo.skin >= PlayerClasses.Size () &&
-				(size_t)player->userinfo.skin < numskins)
+			if ((unsigned int)player->userinfo.GetSkin() >= PlayerClasses.Size () &&
+				(size_t)player->userinfo.GetSkin() < numskins)
 			{
 
-				skinindex = player->userinfo.skin;
+				skinindex = player->userinfo.GetSkin();
 			}
 			else if (PlayerClasses.Size () > 1)
 			{
@@ -394,8 +394,8 @@ bool P_MorphMonster (AActor *actor, const PClass *spawntype, int duration, int s
 	morphed->MorphStyle = style;
 	morphed->MorphExitFlash = (exit_flash) ? exit_flash : RUNTIME_CLASS(ATeleportFog);
 	morphed->FlagsSave = actor->flags & ~MF_JUSTHIT;
-	//morphed->special = actor->special;
-	//memcpy (morphed->args, actor->args, sizeof(actor->args));
+	morphed->special = actor->special;
+	memcpy (morphed->args, actor->args, sizeof(actor->args));
 	morphed->CopyFriendliness (actor, true);
 	morphed->flags |= actor->flags & MF_SHADOW;
 	morphed->flags3 |= actor->flags3 & MF3_GHOST;
@@ -405,6 +405,7 @@ bool P_MorphMonster (AActor *actor, const PClass *spawntype, int duration, int s
 	}
 	morphed->AddToHash ();
 	actor->RemoveFromHash ();
+	actor->special = 0;
 	actor->tid = 0;
 	actor->flags &= ~(MF_SOLID|MF_SHOOTABLE);
 	actor->flags |= MF_UNMORPHED;
@@ -427,7 +428,8 @@ bool P_UndoMonsterMorph (AMorphedMonster *beast, bool force)
 
 	if (beast->UnmorphTime == 0 || 
 		beast->UnmorphedMe == NULL ||
-		beast->flags3 & MF3_STAYMORPHED)
+		beast->flags3 & MF3_STAYMORPHED ||
+		beast->UnmorphedMe->flags3 & MF3_STAYMORPHED)
 	{
 		return false;
 	}
@@ -435,10 +437,13 @@ bool P_UndoMonsterMorph (AMorphedMonster *beast, bool force)
 	actor->SetOrigin (beast->x, beast->y, beast->z);
 	actor->flags |= MF_SOLID;
 	beast->flags &= ~MF_SOLID;
+	int beastflags6 = beast->flags6;
+	beast->flags6 &= ~MF6_TOUCHY;
 	if (!force && !P_TestMobjLocation (actor))
 	{ // Didn't fit
 		actor->flags &= ~MF_SOLID;
 		beast->flags |= MF_SOLID;
+		beast->flags6 = beastflags6;
 		beast->UnmorphTime = level.time + 5*TICRATE; // Next try in 5 seconds
 		return false;
 	}

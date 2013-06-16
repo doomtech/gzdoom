@@ -1834,7 +1834,15 @@ bool P_TryMove (AActor *thing, fixed_t x, fixed_t y,
 					// If moving down, cancel vertical component of the velocity
 					if (thing->velz < 0)
 					{
-						thing->velz = 0;
+						// If it's a bouncer, let it bounce off its new floor, too.
+						if (thing->BounceFlags & BOUNCE_Floors)
+						{
+							thing->FloorBounceMissile (tm.floorsector->floorplane);
+						}
+						else
+						{
+							thing->velz = 0;
+						}
 					}
 				}
 			}
@@ -2869,6 +2877,14 @@ bool FSlide::BounceWall (AActor *mo)
 	}
 	mo->velx = FixedMul(movelen, finecosine[deltaangle]);
 	mo->vely = FixedMul(movelen, finesine[deltaangle]);
+	if (mo->BounceFlags & BOUNCE_UseBounceState)
+	{
+		FState *bouncestate = mo->FindState(NAME_Bounce, NAME_Wall);
+		if (bouncestate != NULL)
+		{
+			mo->SetState(bouncestate);
+		}
+	}
 	return true;
 }
 
@@ -2906,6 +2922,22 @@ bool P_BounceActor (AActor *mo, AActor *BlockingMobj, bool ontop)
 			mo->velx = FixedMul (speed, finecosine[angle]);
 			mo->vely = FixedMul (speed, finesine[angle]);
 			mo->PlayBounceSound(true);
+			if (mo->BounceFlags & BOUNCE_UseBounceState)
+			{
+				FName names[] = { NAME_Bounce, NAME_Actor, NAME_Creature };
+				FState *bouncestate;
+				int count = 2;
+				
+				if ((BlockingMobj->flags & MF_SHOOTABLE) && !(BlockingMobj->flags & MF_NOBLOOD))
+				{
+					count = 3;
+				}
+				bouncestate = mo->FindState(count, names);
+				if (bouncestate != NULL)
+				{
+					mo->SetState(bouncestate);
+				}
+			}
 		}
 		else
 		{
@@ -3360,7 +3392,7 @@ fixed_t P_AimLineAttack (AActor *t1, angle_t angle, fixed_t distance, AActor **p
 				// vrange of 0 degrees, because then toppitch and bottompitch will
 				// be equal, and PTR_AimTraverse will never find anything to shoot at
 				// if it crosses a line.
-				vrange = clamp (t1->player->userinfo.aimdist, ANGLE_1/2, ANGLE_1*35);
+				vrange = clamp (t1->player->userinfo.GetAimDist(), ANGLE_1/2, ANGLE_1*35);
 			}
 		}
 	}
@@ -3514,9 +3546,10 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 		(t1->player->ReadyWeapon->flags2 & MF2_THRUGHOST)) ||
 		(puffDefaults && (puffDefaults->flags2 & MF2_THRUGHOST));
 
-	// if the puff uses a non-standard damage type this will override default, hitscan and melee damage type.
+	// if the puff uses a non-standard damage type, this will override default, hitscan and melee damage type.
 	// All other explicitly passed damage types (currenty only MDK) will be preserved.
-	if ((damageType == NAME_None || damageType == NAME_Melee || damageType == NAME_Hitscan) && puffDefaults->DamageType != NAME_None)
+	if ((damageType == NAME_None || damageType == NAME_Melee || damageType == NAME_Hitscan) &&
+		puffDefaults != NULL && puffDefaults->DamageType != NAME_None)
 	{
 		damageType = puffDefaults->DamageType;
 	}
@@ -3536,7 +3569,7 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 		{ // Play miss sound
 			S_Sound (t1, CHAN_WEAPON, puffDefaults->ActiveSound, 1, ATTN_NORM);
 		}
-		if (puffDefaults->flags3 & MF3_ALWAYSPUFF)
+		if (puffDefaults != NULL && puffDefaults->flags3 & MF3_ALWAYSPUFF)
 		{ // Spawn the puff anyway
 			puff = P_SpawnPuff (t1, pufftype, trace.X, trace.Y, trace.Z, angle - ANG180, 2, puffFlags);
 		}
@@ -3613,7 +3646,7 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 			hitz = shootz + FixedMul (vz, dist);
 
 			// Spawn bullet puffs or blood spots, depending on target type.
-			if ((puffDefaults->flags3 & MF3_PUFFONACTORS) ||
+			if ((puffDefaults != NULL && puffDefaults->flags3 & MF3_PUFFONACTORS) ||
 				(trace.Actor->flags & MF_NOBLOOD) ||
 				(trace.Actor->flags2 & (MF2_INVULNERABLE|MF2_DORMANT)))
 			{
@@ -3625,7 +3658,7 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 			}
 
 			// Allow puffs to inflict poison damage, so that hitscans can poison, too.
-			if (puffDefaults->PoisonDamage > 0 && puffDefaults->PoisonDuration != INT_MIN)
+			if (puffDefaults != NULL && puffDefaults->PoisonDamage > 0 && puffDefaults->PoisonDuration != INT_MIN)
 			{
 				P_PoisonMobj(trace.Actor, puff ? puff : t1, t1, puffDefaults->PoisonDamage, puffDefaults->PoisonDuration, puffDefaults->PoisonPeriod, puffDefaults->PoisonDamageType);
 			}
@@ -3633,7 +3666,7 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 			// [GZ] If MF6_FORCEPAIN is set, we need to call P_DamageMobj even if damage is 0!
 			// Note: The puff may not yet be spawned here so we must check the class defaults, not the actor.
 			int newdam = damage;
-			if (damage || (puffDefaults->flags6 & MF6_FORCEPAIN))
+			if (damage || (puffDefaults != NULL && puffDefaults->flags6 & MF6_FORCEPAIN))
 			{
 				int dmgflags = DMG_INFLICTOR_IS_PUFF | pflag;
 				// Allow MF5_PIERCEARMOR on a weapon as well.
@@ -3652,7 +3685,7 @@ AActor *P_LineAttack (AActor *t1, angle_t angle, fixed_t distance,
 				}
 				newdam = P_DamageMobj (trace.Actor, puff ? puff : t1, t1, damage, damageType, dmgflags);
 			}
-			if (!(puffDefaults->flags3&MF3_BLOODLESSIMPACT))
+			if (!(puffDefaults != NULL && puffDefaults->flags3&MF3_BLOODLESSIMPACT))
 			{
 				if (!bloodsplatter && !axeBlood &&
 					!(trace.Actor->flags & MF_NOBLOOD) &&
@@ -3886,6 +3919,7 @@ struct RailData
 {
 	TArray<SRailHit> RailHits;
 	bool StopAtOne;
+	bool StopAtInvul;
 };
 
 static ETraceStatus ProcessRailHit (FTraceResults &res, void *userdata)
@@ -3897,7 +3931,7 @@ static ETraceStatus ProcessRailHit (FTraceResults &res, void *userdata)
 	}
 
 	// Invulnerable things completely block the shot
-	if (res.Actor->flags2 & MF2_INVULNERABLE)
+	if (data->StopAtInvul && res.Actor->flags2 & MF2_INVULNERABLE)
 	{
 		return TRACE_Stop;
 	}
@@ -3964,10 +3998,11 @@ void P_RailAttack (AActor *source, int damage, int offset_xy, fixed_t offset_z, 
 
 	int flags;
 
-	AActor *puffDefaults = puffclass == NULL ? NULL : GetDefaultByType (puffclass->GetReplacement());
+	assert(puffclass != NULL);		// Because we set it to a default above
+	AActor *puffDefaults = GetDefaultByType (puffclass->GetReplacement());
 
-	if (puffDefaults != NULL && puffDefaults->flags6 & MF6_NOTRIGGER) flags = 0;
-	else flags = TRACE_PCross|TRACE_Impact;
+	flags = (puffDefaults->flags6 & MF6_NOTRIGGER) ? 0 : TRACE_PCross|TRACE_Impact;
+	rail_data.StopAtInvul = (puffDefaults->flags3 & MF3_FOILINVUL) ? false : true;
 
 	Trace (x1, y1, shootz, source->Sector, vx, vy, vz,
 		distance, MF_SHOOTABLE, ML_BLOCKEVERYTHING, source, trace,
@@ -4036,24 +4071,21 @@ void P_RailAttack (AActor *source, int damage, int offset_xy, fixed_t offset_z, 
 		}
 
 	}
-	if (trace.HitType == TRACE_HitFloor &&
-		trace.CrossedWater == NULL &&
-		trace.Sector->heightsec == NULL)
+	if(thepuff != NULL)
 	{
-		if (thepuff != NULL)
+		if (trace.HitType == TRACE_HitFloor &&
+			trace.CrossedWater == NULL &&
+			trace.Sector->heightsec == NULL)
 		{
 			thepuff->SetOrigin(trace.X, trace.Y, trace.Z);
 			P_HitWater (thepuff, trace.Sector);
 		}
-	}
-	if (trace.Crossed3DWater || trace.CrossedWater)
-	{
-		if (thepuff != NULL)
+		if (trace.Crossed3DWater || trace.CrossedWater)
 		{
 			SpawnDeepSplash (source, trace, thepuff, vx, vy, vz, shootz, trace.Crossed3DWater != NULL);
 		}
+		thepuff->Destroy ();
 	}
-	thepuff->Destroy ();
 
 	// Draw the slug's trail.
 	end.X = FIXED2FLOAT(trace.X);

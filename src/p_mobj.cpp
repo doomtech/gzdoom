@@ -105,7 +105,6 @@ static FRandom pr_chunk ("Chunk");
 static FRandom pr_checkmissilespawn ("CheckMissileSpawn");
 static FRandom pr_spawnmissile ("SpawnMissile");
 static FRandom pr_missiledamage ("MissileDamage");
- FRandom pr_slam ("SkullSlam");
 static FRandom pr_multiclasschoice ("MultiClassChoice");
 static FRandom pr_rockettrail("RocketTrail");
 static FRandom pr_uniquetid("UniqueTID");
@@ -327,7 +326,7 @@ void AActor::Serialize (FArchive &arc)
 				!(flags4 & MF4_NOSKIN) &&
 				state->sprite == GetDefaultByType (player->cls)->SpawnState->sprite)
 			{ // Give player back the skin
-				sprite = skins[player->userinfo.skin].sprite;
+				sprite = skins[player->userinfo.GetSkin()].sprite;
 			}
 			if (Speed == 0)
 			{
@@ -462,7 +461,7 @@ bool AActor::SetState (FState *newstate, bool nofunction)
 				// spawning.
 					if (player != NULL && skins != NULL)
 					{
-						sprite = skins[player->userinfo.skin].sprite;
+						sprite = skins[player->userinfo.GetSkin()].sprite;
 					}
 					else if (newsprite != prevsprite)
 					{
@@ -910,8 +909,8 @@ bool AActor::IsVisibleToPlayer() const
 	if ( players[consoleplayer].camera == NULL )
 		return true;
  
-	if ( VisibleToTeam != 0 && teamplay &&
-		VisibleToTeam-1 != players[consoleplayer].userinfo.team )
+	if (VisibleToTeam != 0 && teamplay &&
+		(signed)(VisibleToTeam-1) != players[consoleplayer].userinfo.GetTeam())
 		return false;
 
 	const player_t* pPlayer = players[consoleplayer].camera->player;
@@ -998,7 +997,7 @@ bool AActor::Grind(bool items)
 		// ZDoom behavior differs from standard as crushed corpses cannot be raised.
 		// The reason for the change was originally because of a problem with players,
 		// see rh_log entry for February 21, 1999. Don't know if it is still relevant.
-		if (state == NULL 												// Only use the default crushed state if:
+		if (state == NULL 									// Only use the default crushed state if:
 			&& !(flags & MF_NOBLOOD)						// 1. the monster bleeeds,
 			&& (i_compatflags & COMPATF_CORPSEGIBS)			// 2. the compat setting is on,
 			&& player == NULL)								// 3. and the thing isn't a player.
@@ -1062,11 +1061,12 @@ bool AActor::Grind(bool items)
 				gib->alpha = alpha;
 				gib->height = 0;
 				gib->radius = 0;
+
+				PalEntry bloodcolor = GetBloodColor();
+				if (bloodcolor != 0)
+					gib->Translation = TRANSLATION(TRANSLATION_Blood, bloodcolor.a);
 			}
 			S_Sound (this, CHAN_BODY, "misc/fallingsplat", 1, ATTN_IDLE);
-
-			PalEntry bloodcolor = GetBloodColor();
-			if (bloodcolor!=0) gib->Translation = TRANSLATION(TRANSLATION_Blood, bloodcolor.a);
 		}
 		if (flags & MF_ICECORPSE)
 		{
@@ -1083,13 +1083,6 @@ bool AActor::Grind(bool items)
 		{
 			Destroy ();
 		}
-		return false;		// keep checking
-	}
-
-	// crunch dropped items
-	if (flags & MF_DROPPED)
-	{
-		if (items) Destroy (); // Only destroy dropped items if wanted
 		return false;		// keep checking
 	}
 
@@ -1390,6 +1383,22 @@ bool AActor::FloorBounceMissile (secplane_t &plane)
 	}
 
 	PlayBounceSound(true);
+
+	// Set bounce state
+	if (BounceFlags & BOUNCE_UseBounceState)
+	{
+		FName names[2];
+		FState *bouncestate;
+
+		names[0] = NAME_Bounce;
+		names[1] = plane.c < 0 ? NAME_Ceiling : NAME_Floor;
+		bouncestate = FindState(2, names);
+		if (bouncestate != NULL)
+		{
+			SetState(bouncestate);
+		}
+	}
+
 	if (BounceFlags & BOUNCE_MBF) // Bring it to rest below a certain speed
 	{
 		if (abs(velz) < (fixed_t)(Mass * GetGravity() / 64))
@@ -3502,23 +3511,35 @@ void AActor::Tick ()
 		}
 	}
 
+	assert (state != NULL);
+	if (state == NULL)
+	{
+		Destroy();
+		return;
+	}
+	if (ObjectFlags & OF_JustSpawned && state->GetNoDelay())
+	{
+		// For immediately spawned objects with the NoDelay flag set for their
+		// Spawn state, explicitly set the current state so that it calls its
+		// action and chains 0-tic states.
+		int starttics = tics;
+		if (!SetState(state))
+			return;				// freed itself
+		// If the initial state had a duration of 0 tics, let the next state run
+		// normally. Otherwise, increment tics by 1 so that we don't double up ticks.
+		if (starttics > 0 && tics >= 0)
+		{
+			tics++;
+		}
+	}
 	// cycle through states, calling action functions at transitions
 	if (tics != -1)
 	{
-		tics--;
-				
-		// you can cycle through multiple states in a tic
-		// [RH] Use <= 0 instead of == 0 so that spawnstates
+		// [RH] Use tics <= 0 instead of == 0 so that spawnstates
 		// of 0 tics work as expected.
-		if (tics <= 0)
+		if (--tics <= 0)
 		{
-			assert (state != NULL);
-			if (state == NULL)
-			{
-				Destroy();
-				return;
-			}
-			if (!SetState (state->GetNextState()))
+			if (!SetState(state->GetNextState()))
 				return; 		// freed itself
 		}
 	}
@@ -3857,7 +3878,7 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 		actor->SpawnPoint[2] = (actor->z - actor->floorz);
 	}
 
-	actor->FloatBobPhase = rng();	// Don't make everything bob in sync
+	if (actor->FloatBobPhase == (BYTE)-1) actor->FloatBobPhase = rng();	// Don't make everything bob in sync (unless deliberately told to do)
 	if (actor->flags2 & MF2_FLOORCLIP)
 	{
 		actor->AdjustFloorClip ();
@@ -4194,7 +4215,7 @@ APlayerPawn *P_SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
 			}
 			else
 			{
-				type = p->userinfo.PlayerClass;
+				type = p->userinfo.GetPlayerClassNum();
 				if (type < 0)
 				{
 					type = pr_multiclasschoice() % PlayerClasses.Size ();
@@ -4276,8 +4297,7 @@ APlayerPawn *P_SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
 	}
 
 	// [GRB] Reset skin
-	p->userinfo.skin = R_FindSkin (skins[p->userinfo.skin].name, p->CurrentPlayerClass);
-
+	p->userinfo.SkinNumChanged(R_FindSkin (skins[p->userinfo.GetSkin()].name, p->CurrentPlayerClass));
 
 	if (!(mobj->flags2 & MF2_DONTTRANSLATE))
 	{
@@ -4298,7 +4318,7 @@ APlayerPawn *P_SpawnPlayer (FPlayerStart *mthing, int playernum, int flags)
 	// [RH] Set player sprite based on skin
 	if (!(mobj->flags4 & MF4_NOSKIN))
 	{
-		mobj->sprite = skins[p->userinfo.skin].sprite;
+		mobj->sprite = skins[p->userinfo.GetSkin()].sprite;
 	}
 
 	p->DesiredFOV = p->FOV = 90.f;
@@ -5643,7 +5663,11 @@ AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 	AActor *defaultobject = GetDefaultByType(type);
 	int vrange = nofreeaim ? ANGLE_1*35 : 0;
 
-	if (source && source->player && source->player->ReadyWeapon && (source->player->ReadyWeapon->WeaponFlags & WIF_NOAUTOAIM))
+	if (source == NULL)
+	{
+		return NULL;
+	}
+	if (source->player && source->player->ReadyWeapon && (source->player->ReadyWeapon->WeaponFlags & WIF_NOAUTOAIM))
 	{
 		// Keep exactly the same angle and pitch as the player's own aim
 		an = angle;
@@ -5745,11 +5769,10 @@ bool AActor::IsTeammate (AActor *other)
 	int myTeam = DesignatedTeam;
 	int otherTeam = other->DesignatedTeam;
 	if (player)
-		myTeam = player->userinfo.team;
+		myTeam = player->userinfo.GetTeam();
 	if (other->player)
-		otherTeam = other->player->userinfo.team;
-	if (teamplay && myTeam != TEAM_NONE &&
-		myTeam == otherTeam)
+		otherTeam = other->player->userinfo.GetTeam();
+	if (teamplay && myTeam != TEAM_NONE && myTeam == otherTeam)
 	{
 		return true;
 	}

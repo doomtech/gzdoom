@@ -157,6 +157,7 @@ public:
 	virtual bool SpecialDropAction (AActor *dropper);
 	virtual bool DrawPowerup (int x, int y);
 	virtual void DoEffect ();
+	virtual bool Grind(bool items);
 
 	virtual const char *PickupMessage ();
 	virtual void PlayPickupSound (AActor *toucher);
@@ -358,7 +359,17 @@ enum
 	WIF_BOT_BFG =			1<<28,		// this is a BFG
 };
 
-#define S_LIGHTDONE 0
+class AWeaponGiver : public AWeapon
+{
+	DECLARE_CLASS(AWeaponGiver, AWeapon)
+
+public:
+	bool TryPickup(AActor *&toucher);
+	void Serialize(FArchive &arc);
+
+	fixed_t DropAmmoFactor;
+};
+
 
 // Health is some item that gives the player health when picked up.
 class AHealth : public AInventory

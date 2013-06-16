@@ -69,6 +69,56 @@ extern FWorldGlobalArray ACS_WorldArrays[NUM_WORLDVARS];
 extern SDWORD ACS_GlobalVars[NUM_GLOBALVARS];
 extern FWorldGlobalArray ACS_GlobalArrays[NUM_GLOBALVARS];
 
+#define LIBRARYID_MASK			0xFFF00000
+#define LIBRARYID_SHIFT			20
+
+// Global ACS string table
+#define STRPOOL_LIBRARYID		(INT_MAX >> LIBRARYID_SHIFT)
+#define STRPOOL_LIBRARYID_OR	(STRPOOL_LIBRARYID << LIBRARYID_SHIFT)
+
+class ACSStringPool
+{
+public:
+	ACSStringPool();
+	int AddString(const char *str, const SDWORD *stack, int stackdepth);
+	int AddString(FString &str, const SDWORD *stack, int stackdepth);
+	const char *GetString(int strnum);
+	void LockString(int strnum);
+	void UnlockString(int strnum);
+	void UnlockAll();
+	void MarkString(int strnum);
+	void LockStringArray(const int *strnum, unsigned int count);
+	void UnlockStringArray(const int *strnum, unsigned int count);
+	void MarkStringArray(const int *strnum, unsigned int count);
+	void MarkStringMap(const FWorldGlobalArray &array);
+	void PurgeStrings();
+	void Clear();
+	void Dump() const;
+	void ReadStrings(PNGHandle *png, DWORD id);
+	void WriteStrings(FILE *file, DWORD id) const;
+
+private:
+	int FindString(const char *str, size_t len, unsigned int h, unsigned int bucketnum);
+	int InsertString(FString &str, unsigned int h, unsigned int bucketnum, const SDWORD *stack, int stackdepth);
+
+	enum { NUM_BUCKETS = 251 };
+	enum { FREE_ENTRY = 0xFFFFFFFE };	// Stored in PoolEntry's Next field
+	enum { NO_ENTRY = 0xFFFFFFFF };
+	enum { MIN_GC_SIZE = 100 };			// Don't auto-collect until there are this many strings
+	struct PoolEntry
+	{
+		FString Str;
+		unsigned int Hash;
+		unsigned int Next;
+		unsigned int LockCount;
+	};
+	TArray<PoolEntry> Pool;
+	unsigned int PoolBuckets[NUM_BUCKETS];
+	unsigned int FirstFreeEntry;
+};
+extern ACSStringPool GlobalACSStrings;
+
+void P_CollectACSGlobalStrings(const SDWORD *stack, int stackdepth);
 void P_ReadACSVars(PNGHandle *);
 void P_WriteACSVars(FILE*);
 void P_ClearACSVars(bool);
@@ -204,6 +254,8 @@ public:
 	const char *GetModuleName() const { return ModuleName; }
 	ACSProfileInfo *GetFunctionProfileData(int index) { return index >= 0 && index < NumFunctions ? &FunctionProfileData[index] : NULL; }
 	ACSProfileInfo *GetFunctionProfileData(ScriptFunction *func) { return GetFunctionProfileData((int)(func - (ScriptFunction *)Functions)); }
+	const char *LookupString (DWORD index) const;
+
 	SDWORD *MapVars[NUM_MAPVARS];
 
 	static FBehavior *StaticLoadModule (int lumpnum, FileReader * fr=NULL, int len=0);
@@ -212,6 +264,9 @@ public:
 	static bool StaticCheckAllGood ();
 	static FBehavior *StaticGetModule (int lib);
 	static void StaticSerializeModuleStates (FArchive &arc);
+	static void StaticMarkLevelVarStrings();
+	static void StaticLockLevelVarStrings();
+	static void StaticUnlockLevelVarStrings();
 
 	static const ScriptPtr *StaticFindScript (int script, FBehavior *&module);
 	static const char *StaticLookupString (DWORD index);
@@ -251,10 +306,13 @@ private:
 	void UnencryptStrings ();
 	void UnescapeStringTable(BYTE *chunkstart, BYTE *datastart, bool haspadding);
 	int FindStringInChunk (DWORD *chunk, const char *varname) const;
-	const char *LookupString (DWORD index) const;
 
 	void SerializeVars (FArchive &arc);
 	void SerializeVarSet (FArchive &arc, SDWORD *vars, int max);
+
+	void MarkMapVarStrings() const;
+	void LockMapVarStrings() const;
+	void UnlockMapVarStrings() const;
 
 	friend void ArrangeScriptProfiles(TArray<ProfileCollector> &profiles);
 	friend void ArrangeFunctionProfiles(TArray<ProfileCollector> &profiles);
@@ -727,6 +785,21 @@ public:
 	inline void SetState (EScriptState newstate) { state = newstate; }
 	inline EScriptState GetState () { return state; }
 
+	DLevelScript *GetNext() const { return next; }
+
+	void MarkLocalVarStrings() const
+	{
+		GlobalACSStrings.MarkStringArray(localvars, numlocalvars);
+	}
+	void LockLocalVarStrings() const
+	{
+		GlobalACSStrings.LockStringArray(localvars, numlocalvars);
+	}
+	void UnlockLocalVarStrings() const
+	{
+		GlobalACSStrings.UnlockStringArray(localvars, numlocalvars);
+	}
+
 protected:
 	DLevelScript	*next, *prev;
 	int				script;
@@ -760,7 +833,7 @@ protected:
 	int DoSpawnSpot (int type, int spot, int tid, int angle, bool forced);
 	int DoSpawnSpotFacing (int type, int spot, int tid, bool forced);
 	int DoClassifyActor (int tid);
-	int CallFunction(int argCount, int funcIndex, SDWORD *args);
+	int CallFunction(int argCount, int funcIndex, SDWORD *args, const SDWORD *stack, int stackdepth);
 
 	void DoFadeTo (int r, int g, int b, int a, fixed_t time);
 	void DoFadeRange (int r1, int g1, int b1, int a1,
@@ -768,7 +841,7 @@ protected:
 	void DoSetFont (int fontnum);
 	void SetActorProperty (int tid, int property, int value);
 	void DoSetActorProperty (AActor *actor, int property, int value);
-	int GetActorProperty (int tid, int property);
+	int GetActorProperty (int tid, int property, const SDWORD *stack, int stackdepth);
 	int CheckActorProperty (int tid, int property, int value);
 	int GetPlayerInput (int playernum, int inputnum);
 
@@ -804,6 +877,7 @@ private:
 	DLevelScript *Scripts;				// List of all running scripts
 
 	friend class DLevelScript;
+	friend class FBehavior;
 };
 
 // The structure used to control scripts between maps

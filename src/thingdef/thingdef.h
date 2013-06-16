@@ -22,12 +22,15 @@ struct FFlagDef
 	unsigned int flagbit;
 	const char *name;
 	int structoffset;
+	int fieldsize;
 };
 
 FFlagDef *FindFlag (const PClass *type, const char *part1, const char *part2);
 void HandleDeprecatedFlags(AActor *defaults, FActorInfo *info, bool set, int index);
-bool CheckDeprecatedFlags(AActor *actor, FActorInfo *info, int index);
+bool CheckDeprecatedFlags(const AActor *actor, FActorInfo *info, int index);
 const char *GetFlagName(unsigned int flagnum, int flagoffset);
+void ModActorFlag(AActor *actor, FFlagDef *fd, bool set);
+INTBOOL CheckActorFlag(const AActor *actor, FFlagDef *fd);
 
 #define FLAG_NAME(flagnum, flagvar) GetFlagName(flagnum, myoffsetof(AActor, flagvar))
 
@@ -91,6 +94,7 @@ public:
 
 	void SetStateLabel (const char * statename, FState * state, BYTE defflags = SDF_STATE);
 	void AddStateLabel (const char * statename);
+	int GetStateLabelIndex (FName statename);
 	void InstallStates(FActorInfo *info, AActor *defaults);
 	int FinishStates (FActorInfo *actor, AActor *defaults);
 
